@@ -1,0 +1,268 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: var(--primary-color); color: #000;">USER ACCESS & SECURITY</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1">Staff & User Management</h3>
+                    <small class="text-white-50"><%= company.name %> • Role-Based Access Control (RBAC)</small>
+                </div>
+                <div class="d-flex gap-2 mt-3 mt-md-0">
+                    <button class="btn btn-sm btn-warning text-dark font-weight-bold" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                        <i class="icofont-plus-circle"></i> Add Staff / Manager
+                    </button>
+                    <a href="/admin" class="btn btn-sm btn-outline-light">← Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <!-- Toast notification -->
+            <div id="empToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+                <span id="empToastMsg">User updated successfully.</span>
+                <button type="button" class="btn-close" onclick="document.getElementById('empToast').classList.add('d-none')"></button>
+            </div>
+
+            <!-- Users Table Card -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="font-weight-bold text-dark mb-0">System Users & Field Personnel</h5>
+                        <small class="text-muted">Total accounts: <%= users.length %></small>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Staff Name</th>
+                                <th>Employee ID</th>
+                                <th>Email</th>
+                                <th>Mobile</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (users && users.length > 0) { %>
+                                <% users.forEach(u => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="font-weight-bold text-dark"><%= u.name %></div>
+                                        </td>
+                                        <td><code><%= u.employeeId || 'N/A' %></code></td>
+                                        <td><%= u.email %></td>
+                                        <td><%= u.mobile %></td>
+                                        <td>
+                                            <% if (u.role === 'SUPER_ADMIN') { %>
+                                                <span class="badge bg-dark">SUPER ADMIN</span>
+                                            <% } else if (u.role === 'BRANCH_MANAGER') { %>
+                                                <span class="badge bg-info text-dark">BRANCH MANAGER</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">EMPLOYEE</span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <% if (u.status === 'ACTIVE') { %>
+                                                <span class="badge bg-success">ACTIVE</span>
+                                            <% } else if (u.status === 'PENDING') { %>
+                                                <span class="badge bg-warning text-dark">PENDING APPROVAL</span>
+                                            <% } else if (u.status === 'SUSPENDED') { %>
+                                                <span class="badge bg-danger">SUSPENDED</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary"><%= u.status %></span>
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <%= u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN') : 'Never' %>
+                                        </td>
+                                        <td class="text-end">
+                                            <% if (u.status === 'PENDING') { %>
+                                                <button onclick="updateStatus('<%= u._id %>', 'ACTIVE')" class="btn btn-sm btn-success py-0 px-2 me-1" title="Approve Employee">
+                                                    Approve
+                                                </button>
+                                                <button onclick="updateStatus('<%= u._id %>', 'REJECTED')" class="btn btn-sm btn-outline-danger py-0 px-2 me-1" title="Reject Registration">
+                                                    Reject
+                                                </button>
+                                            <% } else if (u.status === 'ACTIVE') { %>
+                                                <% if (u.role !== 'SUPER_ADMIN') { %>
+                                                    <button onclick="updateStatus('<%= u._id %>', 'SUSPENDED')" class="btn btn-sm btn-outline-danger py-0 px-2 me-1" title="Suspend Account">
+                                                        Suspend
+                                                    </button>
+                                                <% } %>
+                                            <% } else if (u.status === 'SUSPENDED') { %>
+                                                <button onclick="updateStatus('<%= u._id %>', 'ACTIVE')" class="btn btn-sm btn-outline-success py-0 px-2 me-1" title="Reactivate Account">
+                                                    Activate
+                                                </button>
+                                            <% } %>
+                                            <button onclick="promptResetPassword('<%= u._id %>', '<%= u.name %>')" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Reset Password">
+                                                <i class="icofont-key"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">No staff records found in database.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Modal: Create User -->
+<div class="modal fade" id="createUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h6 class="modal-title font-weight-bold">Add Staff / Branch Manager</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createStaffForm" onsubmit="submitNewUser(event)">
+                    <div class="mb-2">
+                        <label class="form-label small font-weight-bold">Full Name *</label>
+                        <input type="text" id="newUserName" class="form-control" required placeholder="e.g. Ramesh Patel">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small font-weight-bold">Email Address *</label>
+                        <input type="email" id="newUserEmail" class="form-control" required placeholder="ramesh@shivayenergy.com">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small font-weight-bold">Mobile *</label>
+                        <input type="tel" id="newUserMobile" class="form-control" required placeholder="98260XXXXX">
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Role *</label>
+                            <select id="newUserRole" class="form-select" required>
+                                <option value="EMPLOYEE">EMPLOYEE</option>
+                                <option value="BRANCH_MANAGER">BRANCH_MANAGER</option>
+                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Employee ID</label>
+                            <input type="text" id="newUserEmpId" class="form-control" placeholder="SES-EMP-XX">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Initial Password (min 8) *</label>
+                        <input type="password" id="newUserPassword" class="form-control" required minlength="8" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 font-weight-bold" style="background: #163563;">
+                        Create User Account
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showToast(msg, isSuccess = true) {
+    const t = document.getElementById('empToast');
+    const m = document.getElementById('empToastMsg');
+    t.className = isSuccess ? 'alert alert-success alert-dismissible fade show' : 'alert alert-danger alert-dismissible fade show';
+    m.innerText = msg;
+    t.classList.remove('d-none');
+    setTimeout(() => t.classList.add('d-none'), 4000);
+}
+
+function updateStatus(userId, status) {
+    if (!confirm(`Are you sure you want to change this user's status to ${status}?`)) return;
+
+    fetch('/api/admin/users/status', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify({ userId, status })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            showToast(res.message);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(res.message || 'Error updating status', false);
+        }
+    })
+    .catch(err => showToast(err.message, false));
+}
+
+function promptResetPassword(userId, name) {
+    const newPass = prompt(`Enter new secure password (minimum 8 characters) for ${name}:`);
+    if (!newPass) return;
+    if (newPass.length < 8) {
+        alert('Password must be at least 8 characters long.');
+        return;
+    }
+
+    fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify({ userId, newPassword: newPass })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert(`Password successfully updated for ${name}!`);
+        } else {
+            alert(res.message || 'Error resetting password');
+        }
+    })
+    .catch(err => alert(err.message));
+}
+
+function submitNewUser(e) {
+    e.preventDefault();
+    const payload = {
+        name: document.getElementById('newUserName').value,
+        email: document.getElementById('newUserEmail').value,
+        mobile: document.getElementById('newUserMobile').value,
+        role: document.getElementById('newUserRole').value,
+        employeeId: document.getElementById('newUserEmpId').value,
+        password: document.getElementById('newUserPassword').value
+    };
+
+    fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert(res.message);
+            location.reload();
+        } else {
+            alert(res.message || 'Error creating user');
+        }
+    })
+    .catch(err => alert(err.message));
+}
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,81 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader -->
+    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/w2.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Recent Solar Projects</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 17px;">Interactive 3D showcase of residential, commercial, and agricultural installations in Madhya Pradesh.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3D Interactive Morph Showcase -->
+    <%- include('partials/projectStack3D') %>
+
+    <!-- All Installations Detailed Grid -->
+    <section class="py-5 bg-white">
+        <div class="container py-4">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Project Archive</span>
+                    <h2 class="font-weight-bold text-dark mt-2 mb-2" style="font-size: 34px;">Verified On-Ground Installations</h2>
+                    <p class="text-muted">High-yield solar plants executed by <%= company.name %> across Raisen, Bhopal, Vidisha, and central MP.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <% data.projects.forEach((project, idx) => { %>
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="<%= 0.1 * (idx + 1) %>s">
+                        <div class="card h-100 border-0 shadow-sm overflow-hidden bg-white" style="border-radius: 18px; transition: transform 0.3s ease;">
+                            <div class="overflow-hidden position-relative" style="height: 220px;">
+                                <img src="<%= project.image %>" class="img-fluid w-100 h-100 object-fit-cover" alt="<%= project.title %>">
+                                <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill" style="background: #163563; color: var(--primary-color); font-weight: 700; font-size: 12px;">
+                                    <%= project.capacity %>
+                                </span>
+                            </div>
+                            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                                <div>
+                                    <span class="badge mb-2 px-3 py-1 rounded-pill" style="background: rgba(22, 53, 99, 0.08); color: #163563;">
+                                        <%= project.category %>
+                                    </span>
+                                    <h5 class="font-weight-bold mb-1 text-dark"><%= project.title %></h5>
+                                    <p class="text-muted small mb-2"><i class="icofont-location-pin text-danger me-1"></i><%= project.location %></p>
+                                    <p class="text-secondary small mb-3"><%= project.description %></p>
+                                </div>
+                                <div class="border-top pt-2 small text-muted d-flex justify-content-between">
+                                    <span>Panels: <strong><%= project.panels.split(' ')[0] %> Mono PERC</strong></span>
+                                    <span>Year: <strong><%= project.year %></strong></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Consultation CTA -->
+    <section class="py-5 text-white" style="background: #0f2647;">
+        <div class="container text-center py-3">
+            <h2 class="text-white font-weight-bold mb-2" style="font-size: 32px;">Ready to Power Your Rooftop with Solar?</h2>
+            <p class="text-white-50 mb-4">Contact Deepak Kushwaha (+91 70005 75496) &amp; Rahul Saini (+91 93997 61750) for a free site assessment.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
+                    <span>Calculate Solar Savings</span>
+                </a>
+                <a href="/contact" class="btn-main btn-line fx-slide hover-white" style="border-radius: 30px; padding: 12px 30px; font-weight: 700;">
+                    <span>Contact Us</span>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<%- include('partials/footer') %>

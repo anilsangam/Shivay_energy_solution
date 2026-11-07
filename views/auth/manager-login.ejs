@@ -1,0 +1,76 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section class="py-5" style="background: linear-gradient(135deg, #163563 0%, #0a2540 100%); min-height: 80vh; display: flex; align-items: center;">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-md-5 col-lg-4">
+                    <div class="card p-4 p-md-5 border-0 shadow-lg rounded-4 bg-white" style="border-top: 6px solid #20c997 !important;">
+                        <div class="text-center mb-4">
+                            <span class="badge px-3 py-2 text-dark font-weight-bold mb-2" style="background: #20c997;">BRANCH MANAGER</span>
+                            <h3 class="font-weight-bold text-dark mb-1">Branch Manager Portal</h3>
+                            <small class="text-muted"><%= company.name %> • Branch Management</small>
+                        </div>
+
+                        <% if (typeof error !== 'undefined' && error) { %>
+                            <div class="alert alert-danger py-2 px-3 small rounded-3" role="alert">
+                                <i class="icofont-warning me-1"></i> <%= error %>
+                            </div>
+                        <% } %>
+
+                        <form action="/manager/login" method="POST" autocomplete="off">
+                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                            <input type="hidden" name="returnUrl" value="<%= typeof returnUrl !== 'undefined' ? returnUrl : '/manager/dashboard' %>">
+
+                            <div class="mb-3">
+                                <label class="form-label small font-weight-bold text-dark">Manager Email *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="icofont-email text-muted"></i></span>
+                                    <input type="email" name="email" class="form-control bg-light border-start-0" placeholder="manager@shivayenergy.com" required autofocus>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small font-weight-bold text-dark">Password *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="icofont-lock text-muted"></i></span>
+                                    <input type="password" id="mgrPassword" name="password" class="form-control bg-light border-start-0 border-end-0" placeholder="••••••••" required>
+                                    <button class="btn btn-light border border-start-0 text-muted" type="button" onclick="togglePass('mgrPassword', this)">
+                                        <i class="icofont-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn w-100 py-3 font-weight-bold text-white rounded-3 shadow-sm" style="background: #163563;">
+                                <i class="icofont-login me-1"></i> Sign In to Branch
+                            </button>
+                        </form>
+
+                        <div class="mt-4 pt-3 border-top text-center small text-muted">
+                            <small>Branch Manager credentials are assigned exclusively by Super Admin.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function togglePass(id, btn) {
+    const el = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (el.type === 'password') {
+        el.type = 'text';
+        icon.className = 'icofont-eye-blocked';
+    } else {
+        el.type = 'password';
+        icon.className = 'icofont-eye';
+    }
+}
+</script>
+
+<%- include('../partials/footer') %>

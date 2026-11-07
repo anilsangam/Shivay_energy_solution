@@ -1,0 +1,238 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: var(--primary-color); color: #000;">SUPER ADMIN & MANAGEMENT</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1"><%= company.name %> Control Panel</h3>
+                    <small class="text-white-50">Branch: Raisen Central (M.P.) • Head: Deepak Kushwaha & Rahul Saini</small>
+                </div>
+                <div class="d-flex gap-2 mt-3 mt-md-0">
+                    <a href="/admin/quotations" class="btn btn-sm btn-outline-light"><i class="icofont-paper"></i> New Quotation</a>
+                    <a href="/admin/invoices" class="btn btn-sm btn-outline-light"><i class="icofont-bill"></i> Invoices</a>
+                    <a href="/employee/attendance" class="btn btn-sm btn-warning font-weight-bold text-dark"><i class="icofont-location-pin"></i> Field Attendance</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <!-- Key Metric Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-lg-3 col-sm-6">
+                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
+                        <small class="text-muted text-uppercase font-weight-bold">Total Enquiries</small>
+                        <h2 class="font-weight-bold text-dark mb-0 mt-1" id="statTotalEnq"><%= stats.totalEnquiries %></h2>
+                        <small class="text-success"><i class="icofont-arrow-up"></i> <%= stats.newEnquiries %> New active</small>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
+                        <small class="text-muted text-uppercase font-weight-bold">Converted Projects</small>
+                        <h2 class="font-weight-bold text-success mb-0 mt-1"><%= stats.convertedEnquiries %></h2>
+                        <small class="text-muted">Installation sanctioned</small>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
+                        <small class="text-muted text-uppercase font-weight-bold">Monthly Revenue</small>
+                        <h2 class="font-weight-bold mb-0 mt-1" style="color: #163563;"><%= stats.monthlyRevenueInr %></h2>
+                        <small class="text-muted">Direct invoices + subsidies</small>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-sm-6">
+                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
+                        <small class="text-muted text-uppercase font-weight-bold">Field Staff Today</small>
+                        <h2 class="font-weight-bold text-primary mb-0 mt-1"><%= stats.todayAttendance %> / <%= stats.totalEmployees %></h2>
+                        <small class="text-success"><i class="icofont-check-circled"></i> GPS Geo-tagged</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toast / Alert Notification Box -->
+            <div id="statusToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+                <span id="statusToastMsg">Status updated successfully.</span>
+                <button type="button" class="btn-close" onclick="document.getElementById('statusToast').classList.add('d-none')"></button>
+            </div>
+
+            <!-- Recent Enquiries Table -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="font-weight-bold text-dark mb-0">Customer Leads & Site Survey CRM</h5>
+                        <small class="text-muted">Manage real-time inquiries from Shivay Energy Solutions website & calculator</small>
+                    </div>
+                    <span class="badge bg-light text-dark border mt-2 mt-sm-0">Real-time Madhya Pradesh Enquiries</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Lead ID</th>
+                                <th>Customer Name</th>
+                                <th>Contact</th>
+                                <th>Location</th>
+                                <th>Requirement</th>
+                                <th>Avg. Bill</th>
+                                <th>Date</th>
+                                <th>CRM Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            <% recentEnquiries.forEach(e => { 
+                                const cleanNum = (e.mobile || '').replace(/\D/g, '').slice(-10);
+                                const loc = e.district || e.location || 'Raisen (M.P.)';
+                                const billDisplay = e.monthlyBill ? ('₹' + Number(e.monthlyBill).toLocaleString('en-IN')) : (e.bill || '-');
+                            %>
+                                <tr id="row-<%= e.id %>">
+                                    <td><strong><%= e.id %></strong></td>
+                                    <td>
+                                        <div class="font-weight-bold text-dark"><%= e.name %></div>
+                                        <% if (e.message) { %>
+                                            <small class="text-muted text-truncate d-inline-block" style="max-width: 180px;" title="<%= e.message %>"><%= e.message %></small>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <a href="tel:<%= cleanNum %>" class="text-dark d-block"><%= e.mobile %></a>
+                                        <a href="https://wa.me/91<%= cleanNum %>?text=Namaste%20<%= encodeURIComponent(e.name) %>,%20greetings%20from%20Shivay%20Energy%20Solutions%20Raisen." target="_blank" class="badge bg-success text-white text-decoration-none">
+                                            <i class="fa-brands fa-whatsapp"></i> Chat
+                                        </a>
+                                    </td>
+                                    <td><i class="icofont-location-pin text-danger"></i> <%= loc %></td>
+                                    <td><span class="badge bg-light text-dark border"><%= e.requirement %></span></td>
+                                    <td><strong class="text-success"><%= billDisplay %></strong></td>
+                                    <td><%= e.date %></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="updateLeadStatus('<%= e.id %>', this.value)">
+                                            <option value="new" <%= e.status === 'new' ? 'selected' : '' %>>🔴 New Lead</option>
+                                            <option value="survey_scheduled" <%= e.status === 'survey_scheduled' ? 'selected' : '' %>>🟡 Survey Scheduled</option>
+                                            <option value="quotation_sent" <%= e.status === 'quotation_sent' ? 'selected' : '' %>>🔵 Quotation Sent</option>
+                                            <option value="converted" <%= e.status === 'converted' ? 'selected' : '' %>>🟢 Converted (Won)</option>
+                                            <option value="lost" <%= e.status === 'lost' ? 'selected' : '' %>>⚪ Lost / Inactive</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/admin/quotations?name=<%= encodeURIComponent(e.name) %>&mobile=<%= encodeURIComponent(e.mobile) %>&address=<%= encodeURIComponent(loc) %>" class="btn btn-sm btn-outline-primary" title="Create Quotation for <%= e.name %>">
+                                            <i class="icofont-paper"></i> Quote
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Today's Field GPS Attendance Table -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="font-weight-bold text-dark mb-0">Today's Field Staff Attendance & GPS Punch Logs</h5>
+                        <small class="text-muted">Live punches with geo-coordinates, time, and site location in Raisen & MP</small>
+                    </div>
+                    <a href="/employee/attendance" class="btn btn-sm btn-primary">
+                        <i class="icofont-plus-circle"></i> Punch Attendance
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Log ID</th>
+                                <th>Employee Name</th>
+                                <th>Designation</th>
+                                <th>Type</th>
+                                <th>Time (IST)</th>
+                                <th>GPS Location</th>
+                                <th>Accuracy</th>
+                                <th>Map Link</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            <% if (todayAttendance && todayAttendance.length > 0) { %>
+                                <% todayAttendance.forEach(att => { %>
+                                    <tr>
+                                        <td><strong><%= att.id %></strong></td>
+                                        <td>
+                                            <div class="font-weight-bold text-dark"><%= att.employeeName %></div>
+                                            <small class="text-muted"><%= att.employeeId %></small>
+                                        </td>
+                                        <td><%= att.role || 'Field Engineer' %></td>
+                                        <td>
+                                            <% if (att.type === 'check_in') { %>
+                                                <span class="badge bg-success">Check-In</span>
+                                            <% } else { %>
+                                                <span class="badge bg-secondary">Check-Out</span>
+                                            <% } %>
+                                        </td>
+                                        <td><strong><%= att.timestamp %></strong></td>
+                                        <td>
+                                            <div><%= att.locationName %></div>
+                                            <small class="text-muted"><%= att.latitude %>, <%= att.longitude %></small>
+                                        </td>
+                                        <td>±<%= att.accuracy %>m</td>
+                                        <td>
+                                            <a href="https://www.google.com/maps?q=<%= att.latitude %>,<%= att.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
+                                                <i class="icofont-google-map"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">No attendance logs recorded yet today.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function updateLeadStatus(id, newStatus) {
+    fetch('/api/admin/enquiries/status', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify({ id: id, status: newStatus })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const toast = document.getElementById('statusToast');
+        const msg = document.getElementById('statusToastMsg');
+        if (data.success) {
+            toast.className = 'alert alert-success alert-dismissible fade show';
+            msg.innerText = `Lead #${id} status updated to "${newStatus.replace('_', ' ').toUpperCase()}".`;
+        } else {
+            toast.className = 'alert alert-danger alert-dismissible fade show';
+            msg.innerText = data.message || 'Error updating status';
+        }
+        toast.classList.remove('d-none');
+        setTimeout(() => {
+            toast.classList.add('d-none');
+        }, 4000);
+    })
+    .catch(err => {
+        alert('Could not update status: ' + err.message);
+    });
+}
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,214 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader -->
+    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/3.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Solar Savings &amp; Subsidy Calculator</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 17px;">Calculate recommended plant capacity, monthly electricity savings in ₹, and PM Surya Ghar Direct Subsidy.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Calculator Section -->
+    <section class="py-5 bg-white">
+        <div class="container py-4">
+            <div class="row g-5">
+                <!-- Calculator Inputs -->
+                <div class="col-lg-5">
+                    <div class="card p-4 border-0 shadow rounded-3 bg-light">
+                        <h4 class="font-weight-bold text-dark mb-4">Enter Electricity Details</h4>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold small">Monthly Electricity Bill (₹):</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">₹</span>
+                                <input type="number" id="calcBill" class="form-control" value="3000" min="500" step="100" oninput="runCalculator()">
+                            </div>
+                            <input type="range" class="form-range mt-2" id="calcBillRange" min="500" max="25000" step="100" value="3000" oninput="syncBillInput(this.value)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold small">Estimated Monthly Units (kWh):</label>
+                            <input type="number" id="calcUnits" class="form-control" value="400" min="50" step="10" oninput="runCalculator(true)">
+                            <small class="text-muted">Auto-calculated based on tariff or enter manually.</small>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label font-weight-bold small">Tariff (₹ / unit):</label>
+                                <input type="number" id="calcTariff" class="form-control" value="7.5" step="0.5" oninput="runCalculator()">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label font-weight-bold small">Property Type:</label>
+                                <select id="calcProperty" class="form-select" onchange="runCalculator()">
+                                    <option value="residential" selected>Residential (Subsidized)</option>
+                                    <option value="commercial">Commercial / Factory</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label font-weight-bold small">State:</label>
+                                <select class="form-select" id="calcState">
+                                    <option value="Madhya Pradesh" selected>Madhya Pradesh</option>
+                                    <option value="Other">Other State</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label font-weight-bold small">District:</label>
+                                <select class="form-select" id="calcDistrict">
+                                    <% data.regions.mpDistricts.forEach(d => { %>
+                                        <option value="<%= d %>" <%= d === 'Raisen' ? 'selected' : '' %>><%= d %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold small">Available Rooftop Area (sq ft):</label>
+                            <input type="number" id="calcArea" class="form-control" value="400" min="50" step="50">
+                            <small class="text-muted">Approx 100 sq ft required per 1 kW.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculator Results Display -->
+                <div class="col-lg-7">
+                    <div class="card p-4 border-0 shadow-lg rounded-3 text-white" style="background: #163563;">
+                        <span class="badge px-3 py-2 rounded-pill mb-3 align-self-start" style="background: rgba(198, 255, 125, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
+                            ☀️ Calculated Estimation for Central India
+                        </span>
+
+                        <div class="row g-3 text-center mb-4">
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                    <small class="text-white-50 d-block">Recommended Capacity</small>
+                                    <h2 class="font-weight-bold mb-0" style="color: var(--primary-color);"><span id="outKw">3.0</span> kW</h2>
+                                    <small class="text-white-50"><span id="outPanels">6</span> Panels (540W)</small>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                    <small class="text-white-50 d-block">Monthly Generation</small>
+                                    <h2 class="font-weight-bold mb-0 text-white"><span id="outGen">360</span></h2>
+                                    <small class="text-white-50">Units (kWh) / Month</small>
+                                </div>
+                            </div>
+
+                            <div class="col-sm-4">
+                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                    <small class="text-white-50 d-block">Monthly Savings</small>
+                                    <h2 class="font-weight-bold mb-0 text-success"><span id="outSavings">₹2,700</span></h2>
+                                    <small class="text-white-50"><span id="outAnnualSavings">₹32,400</span> / Year</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial & Subsidy Breakdown -->
+                        <div class="p-4 rounded-3 mb-4" style="background: rgba(0, 0, 0, 0.25);">
+                            <h5 class="font-weight-bold text-white mb-3 border-bottom pb-2 border-secondary">Investment & Subsidy Breakdown</h5>
+                            
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small">
+                                <span class="text-white-50">Estimated System Cost (Approx):</span>
+                                <strong class="text-white" id="outGrossCost">₹1,74,000</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small">
+                                <span style="color: var(--primary-color); font-weight: bold;">PM Surya Ghar Direct Govt. Subsidy:</span>
+                                <strong style="color: var(--primary-color); font-size: 16px;" id="outSubsidy">- ₹78,000</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
+                                <span class="text-white font-weight-bold">Net Customer Investment:</span>
+                                <strong class="text-white font-weight-bold fs-20" id="outNetCost">₹96,000</strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between py-2 small">
+                                <span class="text-white-50">Estimated Payback Period:</span>
+                                <strong class="text-warning" id="outPayback">~ 3.0 Years</strong>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                            <div>
+                                <small class="text-white-50 d-block">Rooftop Area Required: <strong class="text-white"><span id="outArea">300</span> sq ft</strong></small>
+                                <small class="text-white-50 d-block">CO2 Offset: <strong class="text-success"><span id="outCo2">3.9</span> Tonnes / year</strong></small>
+                            </div>
+
+                            <a href="https://wa.me/917000575496?text=Namaste,%20my%20solar%20calculator%20result%20is%203%20kW.%20Please%20send%20detailed%20quotation." id="calcQuoteBtn" target="_blank" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; padding: 12px 24px; font-weight: bold;">
+                                <span>Get Detailed Quotation on WhatsApp</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light mt-4 p-3 rounded-2 small text-muted border">
+                        <strong>Disclaimer:</strong> <%= data.calculator.disclaimer %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function syncBillInput(val) {
+    document.getElementById('calcBill').value = val;
+    runCalculator();
+}
+
+function runCalculator(manualUnits = false) {
+    const bill = parseFloat(document.getElementById('calcBill').value) || 0;
+    const tariff = parseFloat(document.getElementById('calcTariff').value) || 7.5;
+    const propType = document.getElementById('calcProperty').value;
+    
+    let units = parseFloat(document.getElementById('calcUnits').value) || 0;
+    if (!manualUnits) {
+        units = Math.round(bill / tariff);
+        document.getElementById('calcUnits').value = units;
+    }
+
+    fetch('/api/calculate-solar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthlyBill: bill, tariff: tariff, monthlyUnits: units })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success) return;
+
+        let subsidy = propType === 'residential' ? res.subsidy : 0;
+        let netCost = res.estGrossCost - subsidy;
+        let payback = (netCost / res.estAnnualSavings).toFixed(1);
+
+        document.getElementById('outKw').innerText = res.recommendedKw.toFixed(1);
+        document.getElementById('outPanels').innerText = Math.ceil(res.recommendedKw * 1000 / 540);
+        document.getElementById('outGen').innerText = res.estMonthlyGeneration.toLocaleString('en-IN');
+        document.getElementById('outSavings').innerText = '₹' + res.estMonthlySavings.toLocaleString('en-IN');
+        document.getElementById('outAnnualSavings').innerText = '₹' + res.estAnnualSavings.toLocaleString('en-IN');
+        document.getElementById('outGrossCost').innerText = '₹' + res.estGrossCost.toLocaleString('en-IN');
+        document.getElementById('outSubsidy').innerText = subsidy > 0 ? '- ₹' + subsidy.toLocaleString('en-IN') : '₹0 (Commercial)';
+        document.getElementById('outNetCost').innerText = '₹' + netCost.toLocaleString('en-IN');
+        document.getElementById('outPayback').innerText = '~ ' + payback + ' Years';
+        document.getElementById('outArea').innerText = res.rooftopAreaSqFt;
+        document.getElementById('outCo2').innerText = res.co2SavedTonnes;
+
+        const waText = `Namaste Shivay Energy, I calculated solar requirement on your website:\n- Recommended Plant: ${res.recommendedKw} kW\n- Monthly Bill: ₹${bill}\n- Estimated Net Cost: ₹${netCost.toLocaleString('en-IN')}\nPlease send a formal quote.`;
+        document.getElementById('calcQuoteBtn').href = `https://wa.me/917000575496?text=${encodeURIComponent(waText)}`;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    runCalculator();
+});
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,288 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+        <!-- content begin -->
+        <div class="no-bottom no-top" id="content">
+            <div id="top"></div>
+
+            <!-- Hero Section (Exact Image 1 Centered Layout & Typography) -->
+            <section id="section-intro" class="text-light relative overflow-visible" style="background: linear-gradient(rgba(22, 53, 99, 0.45), rgba(15, 38, 71, 0.75)), url('/images/slider/4.webp') center 100%/cover no-repeat; padding: 160px 0 130px 0;">
+                <div class="container z-2">
+                    <div class="row g-4 align-items-center">
+                        <div class="col-lg-7 col-md-9 text-start">
+                            <h1 class="text-white font-weight-bold mb-3 wow fadeInUp" data-wow-delay=".2s" style="font-size: 52px; line-height: 1.15; letter-spacing: -0.5px;">
+                                Clean Solar Power for a Brighter Tomorrow.
+                            </h1>
+                            <p class="text-white mb-4 wow fadeInUp" data-wow-delay=".4s" style="font-size: 18px; line-height: 1.6; max-width: 620px; opacity: 0.9;">
+                                <%= company.name %> makes reliable solar simple, helping homes and businesses lower electricity bills with clean energy.
+                            </p>
+                            <div class="d-flex justify-content-end gap-3 wow fadeInUp" data-wow-delay=".6s">
+                                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color, #c6ff7d); color: #000; border-radius: 30px; padding: 13px 34px; font-weight: 700; font-size: 15px;">
+                                    <span>Get Started</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container relative z-2" style="margin-top: 35px; margin-bottom: -65px;">
+                    <div class="row g-4 justify-content-center">
+                        <div class="col-xl-6 col-lg-12 wow fadeInUp" data-wow-delay=".2s">
+                            <div class="home-offer-card p-4 p-lg-5 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(15, 38, 71, 0.96); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 15px 35px rgba(0,0,0,0.25); transition: transform 0.3s ease;">
+                                <div>
+                                    <div class="home-offer-card-heading d-flex align-items-center mb-3">
+                                        <div class="me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(22, 53, 99, 0.18); color: #163563; font-size: 24px;">
+                                            <i class="icofont-home"></i>
+                                        </div>
+                                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 24px;">Residential Rooftop Solar</h3>
+                                    </div>
+                                    <p class="text-white-50 mb-4" style="line-height: 1.7;">
+                                        Cut your household electricity bill to ₹0 with turnkey rooftop systems. Avail direct DBT subsidy of up to ₹78,000 under PM Surya Ghar Yojana with complete net-metering support.
+                                    </p>
+                                </div>
+                                <div>
+                                    <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color, #c6ff7d); color: #000; border-radius: 30px; padding: 10px 24px; font-size: 14px; font-weight: 700;">
+                                        <span>Check Subsidy &amp; Savings</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-6 col-lg-12 wow fadeInUp" data-wow-delay=".4s">
+                            <div class="home-offer-card p-4 p-lg-5 text-white h-100 d-flex flex-column justify-content-between" style="background: rgba(22, 53, 99, 0.96); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 15px 35px rgba(0,0,0,0.25); transition: transform 0.3s ease;">
+                                <div>
+                                    <div class="home-offer-card-heading d-flex align-items-center mb-3">
+                                        <div class="me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 50%; background: rgba(22, 53, 99, 0.18); color: #163563; font-size: 24px;">
+                                            <i class="icofont-building-alt"></i>
+                                        </div>
+                                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 24px;">Commercial &amp; Industrial Solar</h3>
+                                    </div>
+                                    <p class="text-white-50 mb-4" style="line-height: 1.7;">
+                                        Optimize operating overheads for factories, hospitals, schools, and commercial establishments with high-capacity on-grid solar plants and accelerated depreciation benefits.
+                                    </p>
+                                </div>
+                                <div>
+                                    <a href="/contact" class="btn-main btn-line fx-slide hover-white" style="border-radius: 30px; padding: 10px 24px; font-size: 14px; font-weight: 700;">
+                                        <span>Request Commercial Survey</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: About Section (Exact Image 2 Layout & Minimalist Content) -->
+            <section class="py-5 bg-white">
+                <div class="container py-4">
+                    <div class="row align-items-center g-5">
+                        <!-- Left: Overlapping Images + 325% Badge -->
+                        <div class="col-lg-6">
+                            <div class="position-relative pe-lg-4">
+                                <div class="overflow-hidden shadow-lg wow fadeInLeft" data-wow-delay=".2s" style="border-radius: 20px;">
+                                    <img src="/images/misc/p1.webp" class="img-fluid w-100 d-block" alt="Clean Solar Energy Family">
+                                </div>
+                                <div class="position-absolute overflow-hidden shadow-lg wow fadeInUp d-none d-sm-block" data-wow-delay=".4s" style="bottom: -30px; right: 0; width: 55%; border-radius: 18px; border: 4px solid #ffffff;">
+                                    <img src="/images/misc/p2.webp" class="img-fluid w-100 d-block" alt="Rooftop Solar Installation">
+                                </div>
+                                <div class="position-absolute wow zoomIn" data-wow-delay=".5s" style="bottom: 20px; left: -15px; background: #0f2647; color: #ffffff; padding: 20px 28px; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.3); z-index: 5;">
+                                    <h2 class="text-white font-weight-bold mb-0" style="font-size: 36px; line-height: 1; letter-spacing: -1px;">325%</h2>
+                                    <span style="color: var(--primary-color); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Clean Energy Growth</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Clean Typography & Story -->
+                        <div class="col-lg-6">
+                            <div class="ps-lg-3 wow fadeInRight" data-wow-delay=".3s">
+                                <span class="text-uppercase font-weight-bold d-block mb-2" style="color: #163563; font-size: 13px; letter-spacing: 2px;">About Us</span>
+                                <h2 class="font-weight-bold mb-3 text-dark" style="font-size: 38px; line-height: 1.25; letter-spacing: -0.5px;">
+                                    Solar Solutions for Maximum Energy Savings
+                                </h2>
+                                <p class="text-muted mb-3" style="font-size: 16px; line-height: 1.8;">
+                                    At <%= company.name %>, we are passionate about harnessing the power of the sun to create a cleaner, more sustainable future. Since our founding in Raisen, Madhya Pradesh, we've been committed to making solar energy accessible and affordable for homeowners and businesses alike. Our team of experts specializes in designing and installing high-efficiency solar systems tailored to each customer's unique energy needs.
+                                </p>
+                                <p class="text-muted mb-4" style="font-size: 16px; line-height: 1.8;">
+                                    We believe that switching to solar shouldn't be complicated. That's why we offer end-to-end solutions, from consultation and financing to installation and ongoing maintenance. By choosing <%= company.name %>, you're not just saving money—you're investing in a greener tomorrow.
+                                </p>
+                                <div>
+                                    <a href="/about" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 28px; font-weight: 700;">
+                                        <span>Learn More</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: PM Surya Ghar: Muft Bijli Yojana (Added 2-3 sections down as instructed!) -->
+            <section class="subsidy-section">
+                <div class="container py-5">
+                    <div class="row justify-content-center text-center mb-5">
+                        <div class="col-lg-8">
+                            <span class="subsidy-eyebrow">Government Subsidy Scheme</span>
+                            <h2 class="subsidy-title">PM Surya Ghar: Muft Bijli Yojana</h2>
+                            <p class="subsidy-intro">
+                                Avail direct bank transfer (DBT) subsidy from the Central Government for residential rooftop solar installations in Madhya Pradesh.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <% data.schemes.pmSuryaGhar.subsidySlabs.forEach(slab => { %>
+                            <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                                <div class="subsidy-card p-4 rounded-4 h-100 text-center d-flex flex-column justify-content-between">
+                                    <div>
+                                        <span class="subsidy-capacity badge px-3 py-2 rounded-pill mb-3">
+                                            Capacity: <%= slab.capacity %>
+                                        </span>
+                                        <h3 class="subsidy-amount"><%= slab.subsidy %></h3>
+                                        <span class="subsidy-label small d-block mb-3">Direct DBT Subsidy</span>
+                                        <hr>
+                                        <p class="subsidy-card-copy small mb-4">
+                                            <%= slab.suitableFor %>. Generates clean solar units every month and cuts your electricity bills.
+                                        </p>
+                                    </div>
+                                    <a href="/calculator" class="subsidy-card-cta btn-main fx-slide">
+                                        <span>Calculate For <%= slab.capacity %></span>
+                                    </a>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <div class="subsidy-footer text-center mt-5">
+                        <a href="https://pmsuryaghar.gov.in/" target="_blank" rel="noopener noreferrer" class="subsidy-portal text-decoration-none small me-4">
+                            <i class="icofont-external-link me-1"></i> Official Portal: pmsuryaghar.gov.in
+                        </a>
+                        <a href="/calculator" class="subsidy-main-cta btn-main fx-slide">
+                            <span>⚡ Open Solar Savings Calculator</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4: Services & Projects Showcase (Clean Cards & Original Images) -->
+            <section class="py-5 bg-light">
+                <div class="container py-4">
+                    <div class="row justify-content-center text-center mb-5">
+                        <div class="col-lg-8">
+                            <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">What We Do</span>
+                            <h2 class="font-weight-bold text-dark mt-2 mb-3" style="font-size: 36px;">Our Solar Services &amp; Projects</h2>
+                            <p class="text-muted">Turnkey solar engineering, procurement, and execution across Madhya Pradesh.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
+                                <div class="overflow-hidden" style="height: 180px;">
+                                    <img src="/images/services/1.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Residential Solar">
+                                </div>
+                                <div class="p-4">
+                                    <h5 class="font-weight-bold mb-2">Residential Rooftop</h5>
+                                    <p class="text-muted small mb-0">High-yield on-grid rooftop solar systems for independent homes and villas.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".3s">
+                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
+                                <div class="overflow-hidden" style="height: 180px;">
+                                    <img src="/images/services/2.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Commercial Solar">
+                                </div>
+                                <div class="p-4">
+                                    <h5 class="font-weight-bold mb-2">Commercial &amp; Industrial</h5>
+                                    <p class="text-muted small mb-0">Rooftop &amp; ground-mount solar plants for factories, hospitals, and schools.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
+                                <div class="overflow-hidden" style="height: 180px;">
+                                    <img src="/images/services/3.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Agricultural Pumps">
+                                </div>
+                                <div class="p-4">
+                                    <h5 class="font-weight-bold mb-2">Solar Water Pumps</h5>
+                                    <p class="text-muted small mb-0">DC &amp; AC solar submersible pumps for agricultural irrigation under PM-KUSUM.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".5s">
+                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
+                                <div class="overflow-hidden" style="height: 180px;">
+                                    <img src="/images/services/4.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Solar Maintenance">
+                                </div>
+                                <div class="p-4">
+                                    <h5 class="font-weight-bold mb-2">Annual Maintenance (AMC)</h5>
+                                    <p class="text-muted small mb-0">Professional panel cleaning, inverter diagnostics, and generation audit.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="/services" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 11px 28px; font-weight: 700; font-size: 14px;">
+                            <span>View All Services &amp; Installations</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 5: Recent Projects 3D Interactive Morph Showcase -->
+            <%- include('partials/projectStack3D') %>
+
+            <!-- Section 6: Testimonials -->
+            <section class="py-5 bg-light">
+                <div class="container py-4">
+                    <div class="row justify-content-center text-center mb-5">
+                        <div class="col-lg-8">
+                            <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Testimonials</span>
+                            <h2 class="font-weight-bold text-dark mt-2 mb-3" style="font-size: 36px;">Trusted by Homeowners &amp; Businesses</h2>
+                            <p class="text-muted">Hear from satisfied clients across Raisen, Bhopal, and Vidisha.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <% data.testimonials.slice(0, 2).forEach(t => { %>
+                            <div class="col-lg-6 wow fadeInUp" data-wow-delay=".2s">
+                                <div class="card h-100 p-4 border-0 shadow-sm bg-white" style="border-radius: 16px; border-left: 4px solid var(--primary-color) !important;">
+                                    <div class="text-warning mb-2">★★★★★</div>
+                                    <p class="text-secondary mb-3" style="font-size: 15px; line-height: 1.7;">"<%= t.review %>"</p>
+                                    <div class="mt-auto">
+                                        <h6 class="mb-0 font-weight-bold text-dark"><%= t.name %></h6>
+                                        <small class="text-muted"><%= t.location %> • <span class="text-primary font-weight-bold"><%= t.system %></span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 7: Quick Consultation / Contact CTA -->
+            <section class="py-5 text-white" style="background: linear-gradient(rgba(22, 53, 99, 0.92), rgba(15, 38, 71, 0.95)), url('/images/background/3.webp') center/cover no-repeat;">
+                <div class="container py-4 text-center">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <h2 class="text-white font-weight-bold mb-3" style="font-size: 38px;">Ready to Switch to Clean Solar Energy?</h2>
+                            <p class="text-white-50 mb-4" style="font-size: 17px;">
+                                Book a free rooftop survey with our expert engineers in Raisen &amp; Madhya Pradesh. Avail up to ₹78,000 Govt subsidy.
+                            </p>
+                            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 13px 32px; font-weight: 700;">
+                                    <span>Calculate Your Savings</span>
+                                </a>
+                                <a href="tel:+917000575496" class="btn-main btn-line fx-slide hover-white" style="border-radius: 30px; padding: 13px 32px; font-weight: 700;">
+                                    <span><i class="icofont-phone me-2"></i> Call: +91 70005 75496</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+<%- include('partials/footer') %>

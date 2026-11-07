@@ -1,0 +1,63 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: #20c997; color: #000;">BRANCH FIELD LOGS</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1">Branch Attendance</h3>
+                    <small class="text-white-50"><%= company.name %> • Live Geo-Punches</small>
+                </div>
+                <a href="/manager/dashboard" class="btn btn-sm btn-outline-light">← Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
+                <h5 class="font-weight-bold text-dark mb-3">Live Staff GPS Logs</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Staff Name</th>
+                                <th>Designation</th>
+                                <th>Type</th>
+                                <th>Time</th>
+                                <th>Coordinates</th>
+                                <th>Map</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (attendance && attendance.length > 0) { %>
+                                <% attendance.forEach(a => { %>
+                                    <tr>
+                                        <td><strong><%= a.employeeName %></strong></td>
+                                        <td><%= a.role || 'Field Engineer' %></td>
+                                        <td><span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>"><%= a.type %></span></td>
+                                        <td><strong><%= a.timestamp %></strong></td>
+                                        <td><%= a.latitude %>, <%= a.longitude %> (±<%= a.accuracy %>m)</td>
+                                        <td>
+                                            <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">View Map</a>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No attendance logs available for today.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<%- include('../partials/footer') %>

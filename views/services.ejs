@@ -1,0 +1,199 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader -->
+    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/3.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Services &amp; Projects</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 17px;">Turnkey solar rooftop solutions, commercial plants &amp; installations in Raisen &amp; MP.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Grid -->
+    <section class="py-5 bg-white">
+        <div class="container py-4">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Our Expertise</span>
+                    <h2 class="font-weight-bold text-dark mt-2 mb-2" style="font-size: 34px;">Solar Energy Services</h2>
+                    <p class="text-muted">High-efficiency solar solutions engineered for residential, commercial, and agricultural needs.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <% data.services.forEach((s, idx) => { %>
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="<%= 0.1 * (idx + 1) %>s">
+                        <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 18px; background: #ffffff; transition: transform 0.3s ease;">
+                            <div class="service-card-image overflow-hidden" style="height: 200px;">
+                                <img src="/<%= s.image %>" class="img-fluid w-100 h-100 object-fit-cover" alt="<%= s.title %>">
+                            </div>
+                            <div class="card-body p-4 d-flex flex-column text-start">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(22, 53, 99, 0.08); color: #163563; font-size: 20px;">
+                                        <i class="<%= s.icon %>"></i>
+                                    </div>
+                                    <h5 class="font-weight-bold mb-0 text-dark" style="font-size: 19px;"><%= s.title %></h5>
+                                </div>
+                                <p class="text-muted small mb-3" style="line-height: 1.6;"><%= s.details %></p>
+                                
+                                <div class="p-3 bg-light rounded-3 mb-4 mt-auto">
+                                    <ul class="list-unstyled mb-0 small text-secondary">
+                                        <% s.highlights.slice(0, 3).forEach(h => { %>
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <i class="icofont-check text-success me-2 font-weight-bold"></i>
+                                                <span><%= h %></span>
+                                            </li>
+                                        <% }); %>
+                                    </ul>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center pt-2">
+                                    <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 8px 20px; font-size: 13px; font-weight: 700;">
+                                        <span>Check Savings</span>
+                                    </a>
+                                    <a href="https://wa.me/917000575496?text=Namaste,%20I%20am%20interested%20in%20<%= encodeURIComponent(s.title) %>." target="_blank" class="btn btn-outline-success btn-sm px-3" style="border-radius: 20px;">
+                                        <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solar Products -->
+    <section id="solar-products" class="py-5 bg-light">
+        <div class="container py-4">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Solar Products</span>
+                    <h2 class="font-weight-bold text-dark mt-2 mb-2" style="font-size: 34px;">Reliable Solar Equipment</h2>
+                    <p class="text-muted">Panels, inverters, batteries and installation components selected for dependable performance.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <% data.products.forEach((p, idx) => { %>
+                    <div class="col-lg-6 col-xl-4 wow fadeInUp" data-wow-delay="<%= 0.08 * (idx + 1) %>s">
+                        <article class="product-card h-100">
+                            <div class="product-card-image">
+                                <img src="<%= p.image || '/images/slider/4.webp' %>" alt="<%= p.name %>" loading="lazy">
+                                <span class="badge px-3 py-2 rounded-pill product-category"><%= p.category %></span>
+                            </div>
+                            <div class="product-card-body">
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <h3 class="font-weight-bold text-dark mb-0" style="font-size: 20px;"><%= p.name %></h3>
+                                    <span class="product-warranty"><i class="icofont-shield-alt me-1"></i><%= p.warranty %></span>
+                                </div>
+                                <p class="text-secondary small mb-3" style="line-height: 1.6;"><%= p.description %></p>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="p-2 bg-white rounded-3 border small h-100">
+                                            <span class="text-muted d-block">Capacity</span>
+                                            <strong class="text-dark"><%= p.capacityRange %></strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 bg-white rounded-3 border small h-100">
+                                            <span class="text-muted d-block">Efficiency</span>
+                                            <strong class="text-success"><%= p.efficiency %></strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <span class="d-block small text-muted font-weight-bold mb-1">Key features</span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <% p.features.slice(0, 3).forEach(f => { %>
+                                            <span class="badge bg-white text-dark border small py-2 px-2"><%= f %></span>
+                                        <% }); %>
+                                    </div>
+                                </div>
+
+                                <div class="p-2 bg-white rounded-3 border small mb-4 mt-auto">
+                                    <span class="text-muted">Best for:</span>
+                                    <strong class="text-dark ms-1"><%= p.bestFor %></strong>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                    <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 8px 18px; font-size: 13px; font-weight: 700;">
+                                        <span>Get a Quote</span>
+                                    </a>
+                                    <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20inquiring%20about%20<%= encodeURIComponent(p.name) %>." target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm px-3" style="border-radius: 20px;">
+                                        <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Portfolio Showcase (Combined into Services & Projects) -->
+    <section id="portfolio" class="py-5 bg-light">
+        <div class="container py-4">
+            <div class="row justify-content-center text-center mb-5">
+                <div class="col-lg-8">
+                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Completed Installations</span>
+                    <h2 class="font-weight-bold text-dark mt-2 mb-2" style="font-size: 34px;">Our Project Portfolio in Madhya Pradesh</h2>
+                    <p class="text-muted">A showcase of successful rooftop and ground-mounted solar plants installed by <%= company.name %>.</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <% data.projects.forEach((project, idx) => { %>
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay="<%= 0.1 * (idx + 1) %>s">
+                        <div class="card border-0 shadow-sm overflow-hidden h-100 bg-white" style="border-radius: 18px; transition: transform 0.3s ease;">
+                            <div class="overflow-hidden position-relative" style="height: 220px;">
+                                <img src="<%= project.image %>" class="img-fluid w-100 h-100 object-fit-cover" alt="<%= project.title %>">
+                                <span class="badge position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill" style="background: #163563; color: var(--primary-color); font-size: 12px; font-weight: 700;">
+                                    <%= project.capacity %>
+                                </span>
+                            </div>
+                            <div class="p-4 d-flex flex-column justify-content-between">
+                                <div>
+                                    <small class="text-muted d-block mb-1"><i class="icofont-location-pin text-danger me-1"></i><%= project.location %></small>
+                                    <h5 class="font-weight-bold mb-2 text-dark"><%= project.title %></h5>
+                                    <p class="text-muted small mb-3"><%= project.impact %></p>
+                                </div>
+                                <div class="pt-2 border-top">
+                                    <span class="badge bg-light text-dark border small"><%= project.type %></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Consultation CTA -->
+    <section class="py-5 text-white" style="background: #0f2647;">
+        <div class="container text-center py-3">
+            <h2 class="text-white font-weight-bold mb-2" style="font-size: 32px;">Need a Custom Solar Project Proposal?</h2>
+            <p class="text-white-50 mb-4">Contact our project engineers Deepak Kushwaha &amp; Rahul Saini for a free site assessment in Raisen, Bhopal &amp; Vidisha.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
+                    <span>Calculate Solar Savings</span>
+                </a>
+                <a href="/contact" class="btn-main btn-line fx-slide hover-white" style="border-radius: 30px; padding: 12px 30px; font-weight: 700;">
+                    <span>Contact Us</span>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<%- include('partials/footer') %>

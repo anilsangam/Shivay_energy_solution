@@ -1,0 +1,146 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: var(--primary-color); color: #000;">FIELD PORTAL</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1">Geo-Tagged Field Attendance</h3>
+                    <small class="text-white-50"><%= company.name %> • Raisen Branch & On-Site Installations</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/employee/dashboard" class="btn btn-sm btn-outline-light">Workspace</a>
+                    <a href="/auth/logout" class="btn btn-sm btn-outline-danger">Sign Out</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card p-4 border-0 shadow rounded-3 bg-white text-center">
+                        <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; background: rgba(22, 53, 99, 0.1); color: #163563; font-size: 32px;">
+                            <i class="icofont-ui-user"></i>
+                        </div>
+
+                        <h4 class="font-weight-bold text-dark mb-1">Mark Today's Attendance</h4>
+                        <p class="text-muted small mb-3">Date: <strong id="currentDate"><%= today %></strong> | Time: <strong id="liveClock">Loading...</strong> (IST)</p>
+
+                        <!-- Authenticated Employee Identity (Read-only session verified) -->
+                        <div class="p-3 bg-light rounded-2 mb-3 text-start border">
+                            <span class="small text-muted font-weight-bold text-uppercase d-block">Authenticated Staff Identity:</span>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <h6 class="font-weight-bold text-dark mb-0"><%= currentUser ? currentUser.name : 'Authorized Staff' %></h6>
+                                <span class="badge bg-dark"><%= currentUser ? currentUser.employeeId : 'SES-EMP' %></span>
+                            </div>
+                            <small class="text-muted d-block mt-1"><i class="icofont-shield-alt text-success"></i> Session Authenticated • Role: <%= currentUser ? currentUser.role : 'EMPLOYEE' %></small>
+                        </div>
+
+                        <!-- GPS Status Indicator -->
+                        <div class="p-3 bg-light rounded-2 mb-4 text-start small border">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="icofont-location-pin text-danger fs-18 me-2"></i>
+                                <span class="font-weight-bold text-dark">Live GPS Coordinates:</span>
+                            </div>
+                            <div class="text-muted" id="geoStatus">Requesting browser location permission...</div>
+                            <div class="text-muted" id="geoCoords">Latitude: --, Longitude: --</div>
+                            <div class="text-muted" id="geoAccuracy">Accuracy: -- meters</div>
+                        </div>
+
+                        <!-- Check In / Check Out Buttons -->
+                        <div class="d-grid gap-3">
+                            <button onclick="recordAttendance('check_in')" id="btnCheckIn" class="btn btn-success py-3 font-weight-bold shadow-sm">
+                                <i class="icofont-login me-1"></i> Check-In (Punch In)
+                            </button>
+                            <button onclick="recordAttendance('check_out')" id="btnCheckOut" class="btn btn-outline-danger py-2">
+                                <i class="icofont-logout me-1"></i> Check-Out (Punch Out)
+                            </button>
+                        </div>
+
+                        <div id="attAlert" class="mt-4" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+let currentLat = null;
+let currentLng = null;
+let currentAcc = null;
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('liveClock').innerText = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function fetchLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+                currentAcc = Math.round(pos.coords.accuracy);
+                document.getElementById('geoStatus').innerHTML = '<span class="text-success"><i class="icofont-check"></i> GPS Location Acquired</span>';
+                document.getElementById('geoCoords').innerText = `Latitude: ${currentLat.toFixed(5)}, Longitude: ${currentLng.toFixed(5)}`;
+                document.getElementById('geoAccuracy').innerText = `Accuracy: ±${currentAcc} meters (Raisen / MP Region)`;
+            },
+            (err) => {
+                document.getElementById('geoStatus').innerHTML = '<span class="text-warning">GPS permission denied. Using central site coordinates.</span>';
+                currentLat = 23.3315;
+                currentLng = 77.7807;
+                currentAcc = 25;
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    } else {
+        document.getElementById('geoStatus').innerText = 'Geolocation not supported by device.';
+    }
+}
+document.addEventListener('DOMContentLoaded', fetchLocation);
+
+function recordAttendance(type) {
+    const alertBox = document.getElementById('attAlert');
+
+    fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify({
+            type: type,
+            latitude: currentLat || 23.3315,
+            longitude: currentLng || 77.7807,
+            accuracy: currentAcc || 15
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        alertBox.style.display = 'block';
+        if (res.success) {
+            alertBox.className = 'alert alert-success p-3 small';
+            alertBox.innerHTML = `<strong>Success!</strong> ${res.message}`;
+        } else {
+            alertBox.className = 'alert alert-danger p-3 small';
+            alertBox.innerHTML = `<strong>Notice:</strong> ${res.message}`;
+        }
+    })
+    .catch(err => {
+        alertBox.style.display = 'block';
+        alertBox.className = 'alert alert-danger p-3 small';
+        alertBox.innerText = 'Network error recording attendance.';
+    });
+}
+</script>
+
+<%- include('../partials/footer') %>

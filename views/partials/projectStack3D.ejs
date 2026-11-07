@@ -1,0 +1,57 @@
+<!-- ==========================================================================
+     SHIVAY ENERGY SOLUTIONS - 3D ISOMETRIC MORPH PROJECT STACK
+     Diagonal Top-Right to Bottom-Left Infinite Scroll with Corner Fade
+     ========================================================================== -->
+<link rel="stylesheet" href="/css/project-stack-3d.css">
+
+<section id="recent-projects-3d" class="morph-showcase-container">
+    <div class="morph-layout">
+        
+        <!-- Left Column: Project heading and click-to-open details -->
+        <div class="morph-info-panel">
+            <div class="morph-project-details" aria-live="polite" hidden>
+                <div class="morph-meta-block">
+                    <h3 class="morph-project-name"><%= data.projects[0].title %></h3>
+                    <div class="morph-project-sub"><%= data.projects[0].location %> &bull; <%= data.projects[0].year %></div>
+                    <div class="morph-specs-strip">
+                        <span>CAPACITY: <strong><%= data.projects[0].capacity %></strong></span>
+                        <span>PANELS: <strong><%= data.projects[0].panels.split(' ')[0] %></strong></span>
+                        <span>TYPE: <strong><%= data.projects[0].type %></strong></span>
+                    </div>
+                    <p class="morph-project-desc"><%= data.projects[0].description %></p>
+                </div>
+            </div>
+            <div class="morph-action-row" hidden>
+                <button type="button" class="morph-btn-close" aria-label="Close Project Showcase">
+                    <i class="icofont-close me-1"></i> Close
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: 3D Isometric Image Deck (Infinite Top-Right to Bottom-Left Scroll) -->
+        <div class="morph-stage-wrapper" title="Scroll wheel or drag to navigate infinite 3D gallery">
+            <div class="morph-deck-stage">
+                <% 
+                   // Render 2 cycles of projects for seamless infinite loop
+                   const loopedProjects = [...data.projects, ...data.projects];
+                   loopedProjects.forEach((proj, idx) => { 
+                %>
+                    <div class="morph-iso-card" 
+                         data-project='<%- JSON.stringify(proj).replace(/'/g, "&#39;") %>'>
+                        <img src="<%= proj.image %>" alt="<%= proj.title %>" loading="lazy">
+                        <span class="morph-card-corner-tag"><%= proj.capacity %></span>
+                    </div>
+                <% }); %>
+            </div>
+
+            <!-- Interactive Hint -->
+            <div class="morph-stage-hint">
+                <i class="icofont-scroll-bubble me-1"></i>
+                <span>Infinite 3D diagonal scroll • Click any card</span>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="/js/project-stack-3d.js"></script>

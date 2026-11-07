@@ -1,0 +1,43 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials.json
+secrets.*
+
+# Dependencies
+node_modules/
+
+# Logs and runtime files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+pids/
+*.pid
+*.pid.lock
+
+# Generated output and test artifacts
+coverage/
+dist/
+build/
+.nyc_output/
+
+# Local uploads and database files
+uploads/
+*.sqlite
+*.sqlite3
+*.db
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

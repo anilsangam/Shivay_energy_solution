@@ -1,0 +1,546 @@
+/* ==========================================================================
+   SHIVAY ENERGY SOLUTIONS - 3D ISOMETRIC MORPH PROJECT STACK
+   Top-Right to Bottom-Left Infinite Diagonal Scroll with Corner Hide
+   ========================================================================== */
+
+.morph-showcase-container {
+    position: relative;
+    width: 100%;
+    min-height: 520px;
+    background: #080d15;
+    background: radial-gradient(circle at 75% 35%, #163563 0%, #0c1829 45%, #060a10 100%);
+    color: #ffffff;
+    overflow: hidden;
+    padding: 16px 0;
+    display: flex;
+    align-items: center;
+    user-select: none;
+}
+
+/* Subtle background grid */
+.morph-showcase-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.morph-layout {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: flex-start; /* Aligned to top to give maximum animation room */
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+    padding: 0;
+    gap: 0;
+    min-height: 500px;
+}
+
+/* ==========================================================================
+   LEFT COLUMN: Information Panel (Shifted Upwards, Compact Few Lines, No CTA)
+   ========================================================================== */
+
+.morph-info-panel {
+    flex: 0 0 27%;
+    max-width: 27%;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 15px 20px 0 0;
+}
+
+.morph-pill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--primary-color, #c6ff7d);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+/* Compact Bold Heading */
+.morph-huge-title {
+    font-family: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: clamp(38px, 4.2vw, 64px);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -1.5px;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin: 0;
+    max-width: 360px;
+}
+
+.morph-project-details[hidden],
+.morph-action-row[hidden] {
+    display: none !important;
+}
+
+.morph-project-details:not([hidden]) {
+    margin-top: 28px;
+}
+
+/* Dynamic Project Info Box */
+.morph-meta-block {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.morph-meta-block.fading {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.morph-project-name {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 6px 0;
+    line-height: 1.25;
+}
+
+.morph-project-sub {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #9cc7ef;
+    margin: 0 0 12px 0;
+}
+
+.morph-specs-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: monospace;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.morph-specs-strip span strong {
+    color: #ffffff;
+}
+
+/* Few clean lines of description */
+.morph-project-desc {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.72);
+    margin: 0 0 20px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Action Controls (Only Close button when expanded) */
+.morph-action-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.morph-btn-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 24px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: transparent;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+}
+
+.morph-btn-close.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.morph-btn-close:hover {
+    border-color: #ffffff;
+    background: #ffffff;
+    color: #080d15;
+}
+
+/* ==========================================================================
+   RIGHT COLUMN: 3D Isometric Image Deck
+   ========================================================================== */
+
+.morph-stage-wrapper {
+    flex: 1 1 73%;
+    position: relative;
+    height: 500px;
+    min-width: 0;
+    perspective: 1400px;
+    perspective-origin: 50% 45%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+}
+
+.morph-stage-wrapper:active {
+    cursor: grabbing;
+}
+
+@media (max-width: 767px) {
+    #recent-projects-3d {
+        display: none !important;
+    }
+}
+
+/* Corner Fade Mask: Smoothly hides cards at the bottom-left corner */
+.morph-stage-wrapper::before {
+    content: none;
+}
+
+.morph-stage-wrapper.expanded::before {
+    opacity: 0;
+}
+
+/* 3D Angled Deck Stage */
+.morph-deck-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateY(-12deg) rotateX(8deg) rotateZ(-2deg);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* When expanded, the stage flattens */
+.morph-stage-wrapper.expanded .morph-deck-stage {
+    transform: rotateY(0deg) rotateX(0deg) rotateZ(0deg) !important;
+}
+
+.morph-stage-wrapper.expanded {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    background: transparent;
+    perspective: none;
+}
+
+.morph-stage-wrapper.expanded .morph-deck-stage {
+    width: 100%;
+    height: 100%;
+}
+
+/* Individual 3D Image Card with Crisp White Frame */
+.morph-iso-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 440px;
+    height: 275px;
+    background: #ffffff;
+    border: 5px solid #ffffff;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: -8px 14px 25px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    transform-style: preserve-3d;
+    transform-origin: center center;
+    will-change: transform, opacity;
+    transition: opacity 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Morph transition only applied when expanding / closing */
+.morph-iso-card.is-morphing {
+    transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                height 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+                border-width 0.4s ease,
+                box-shadow 0.5s ease !important;
+}
+
+.morph-iso-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 9px;
+    transition: transform 0.4s ease;
+    pointer-events: none;
+}
+
+/* Hover Lift in 3D Stack */
+.morph-iso-card:hover:not(.is-active) {
+    box-shadow: -10px 18px 32px rgba(0, 0, 0, 0.4), 0 0 0 2px var(--primary-color, #c6ff7d);
+}
+
+.morph-iso-card:hover:not(.is-active) img {
+    transform: scale(1.05);
+}
+
+/* Corner badge on cards */
+.morph-card-corner-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(8, 13, 21, 0.85);
+    backdrop-filter: blur(6px);
+    color: #9cc7ef;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: opacity 0.3s ease;
+}
+
+/* ==========================================================================
+   EXPANDED STATE (Active Card Takes Center Stage)
+   ========================================================================== */
+
+.morph-iso-card.is-active {
+    position: absolute;
+    width: min(92vw, 1500px) !important;
+    height: 88vh !important;
+    transform: translate3d(0, 0, 100px) rotateY(0deg) rotateX(0deg) rotateZ(0deg) !important;
+    border: 8px solid #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+    z-index: 9999 !important;
+    cursor: default;
+    opacity: 1 !important;
+}
+
+.morph-iso-card.is-active .morph-card-corner-tag {
+    opacity: 0;
+}
+
+/* Other cards slide down and fade away */
+.morph-stage-wrapper.expanded .morph-iso-card:not(.is-active) {
+    opacity: 0 !important;
+    transform: translate3d(0, 350px, -200px) scale(0.8) !important;
+    pointer-events: none !important;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease !important;
+}
+
+.morph-showcase-container.details-open .morph-info-panel {
+    z-index: 10001;
+}
+
+.morph-showcase-container.details-open .morph-layout {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    width: 100vw;
+    height: 100vh;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.morph-showcase-container.details-open .morph-info-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(30vw, 420px);
+    max-width: min(30vw, 420px);
+    padding: 48px 28px;
+    background: #080d15;
+}
+
+.morph-showcase-container.details-open .morph-stage-wrapper {
+    position: absolute;
+    left: min(30vw, 420px);
+    right: 0;
+    top: 0;
+    width: auto;
+    height: 100%;
+}
+
+.morph-showcase-container.details-open .morph-stage-wrapper::before {
+    display: none;
+}
+
+.morph-showcase-container.details-open .morph-iso-card.is-active {
+    left: 0;
+    width: 100% !important;
+    height: 100vh !important;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.morph-showcase-container.details-open .morph-action-row:not([hidden]) {
+    display: flex;
+    margin-top: 20px;
+}
+
+/* Hint Indicator at bottom right */
+.morph-stage-hint {
+    position: absolute;
+    bottom: 12px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    background: rgba(8, 13, 21, 0.6);
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 25;
+}
+
+.morph-stage-wrapper.expanded .morph-stage-hint {
+    opacity: 0;
+}
+
+/* ==========================================================================
+   RESPONSIVE BEHAVIOR
+   ========================================================================== */
+
+@media (max-width: 1400px) {
+    .morph-layout {
+        gap: 20px;
+        padding: 0;
+    }
+    .morph-huge-title {
+        font-size: 56px;
+    }
+    .morph-iso-card {
+        width: 380px;
+        height: 240px;
+    }
+    .morph-info-panel {
+        flex-basis: 30%;
+        max-width: 30%;
+        padding-left: 24px;
+    }
+    .morph-stage-wrapper {
+        flex-basis: 70%;
+    }
+    .morph-iso-card.is-active {
+        width: min(92vw, 1500px) !important;
+        height: 88vh !important;
+    }
+}
+
+@media (max-width: 1199px) {
+    .morph-showcase-container {
+        min-height: auto;
+        padding: 24px 0;
+    }
+    .morph-layout {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0 24px;
+    }
+    .morph-info-panel {
+        flex-basis: auto;
+        padding-left: 0;
+    }
+    .morph-info-panel {
+        flex: none;
+        max-width: 100%;
+        width: 100%;
+        margin-bottom: 20px;
+        padding-top: 0;
+    }
+    .morph-huge-title {
+        font-size: 48px;
+        margin-bottom: 14px;
+    }
+    .morph-stage-wrapper {
+        width: 100%;
+        height: 520px;
+    }
+    .morph-iso-card.is-active {
+        width: 90% !important;
+        max-width: 700px !important;
+        height: 380px !important;
+    }
+    .morph-showcase-container.details-open .morph-info-panel {
+        left: 0;
+        top: 0;
+        bottom: auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 20px 24px;
+        background: #080d15;
+    }
+    .morph-showcase-container.details-open .morph-stage-wrapper {
+        left: 0;
+    }
+    .morph-showcase-container.details-open .morph-iso-card.is-active {
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        height: 100vh !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .morph-layout {
+        padding: 0 18px;
+    }
+}
+
+@media (max-width: 767px) {
+    .morph-huge-title {
+        font-size: 38px;
+    }
+    .morph-deck-stage {
+        transform: rotateY(-18deg) rotateX(10deg);
+    }
+    .morph-iso-card {
+        width: 280px;
+        height: 180px;
+        border-width: 4px;
+    }
+    .morph-stage-wrapper {
+        height: 420px;
+    }
+    .morph-iso-card.is-active {
+        width: 96% !important;
+        height: 280px !important;
+        border-width: 5px;
+    }
+    .morph-stage-hint {
+        display: none;
+    }
+}

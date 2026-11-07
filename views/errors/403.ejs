@@ -1,0 +1,28 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <section class="text-center py-5" style="min-height: 65vh; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+        <div class="container py-5">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 85px; height: 85px; background: rgba(220, 53, 69, 0.1); color: #dc3545; font-size: 38px;">
+                <i class="icofont-shield-alt"></i>
+            </div>
+            <h1 class="display-3 font-weight-bold" style="color: #163563;">403</h1>
+            <h3 class="font-weight-bold text-dark mb-2">Access Denied / Forbidden</h3>
+            <p class="text-muted mb-4 max-w-600 mx-auto" style="max-width: 580px;">
+                <%= typeof message !== 'undefined' ? message : 'You do not have the required administrative clearance to access this department or branch resource.' %>
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="/" class="btn btn-outline-dark px-4 py-2">Home</a>
+                <a href="/employee/attendance" class="btn btn-primary px-4 py-2" style="background: #163563; border-color: #163563;">Employee Portal</a>
+                <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+                    <a href="/auth/logout" class="btn btn-danger px-4 py-2">Sign Out</a>
+                <% } else { %>
+                    <a href="/admin/login" class="btn btn-warning px-4 py-2 font-weight-bold">Admin Login</a>
+                <% } %>
+            </div>
+        </div>
+    </section>
+</div>
+
+<%- include('../partials/footer') %>

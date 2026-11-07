@@ -1,0 +1,205 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: var(--primary-color); color: #000;">BILLING & ACCOUNTS</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1">Tax Invoice & Billing Engine</h3>
+                    <small class="text-white-50"><%= company.name %> • GSTIN: <%= company.gstin %> (Raisen, M.P.)</small>
+                </div>
+                <a href="/admin" class="btn btn-sm btn-outline-light">← Back to Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <!-- Printable Tax Invoice Document -->
+            <div class="card p-5 border-0 shadow rounded-3 bg-white mx-auto mb-5" style="max-width: 920px; border-top: 6px solid #163563 !important;">
+                <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+                    <div>
+                        <h3 class="font-weight-bold mb-0 text-dark"><%= company.name %></h3>
+                        <span class="badge bg-success mb-2">GST Compliant Tax Invoice</span>
+                        <small class="text-muted d-block"><%= company.address.full %></small>
+                        <small class="text-muted d-block">GSTIN: <strong><%= company.gstin %></strong> | State Code: 23 (M.P.)</small>
+                        <small class="text-muted">Contact: +91 70005 75496 | Email: <%= company.email %></small>
+                    </div>
+                    <div class="text-end">
+                        <h4 class="text-dark font-weight-bold mb-1">TAX INVOICE</h4>
+                        <small class="d-block text-muted">Invoice No: <strong id="invNum">SES-INV-2026-118</strong></small>
+                        <small class="d-block text-muted">Date: <strong id="invDate">07-11-2026</strong></small>
+                        <small class="d-block text-muted">Payment: <strong class="badge bg-success" id="invPaymentStatus">PAID (NEFT)</strong></small>
+                    </div>
+                </div>
+
+                <!-- Customer Details -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-2 h-100">
+                            <span class="text-muted small text-uppercase font-weight-bold d-block">Billed To (Customer):</span>
+                            <h6 class="font-weight-bold text-dark mb-1" id="invCustomer">Patel Cold Storage & Agro Pvt. Ltd.</h6>
+                            <small class="text-muted d-block" id="invAddress">Mandideep Industrial Area, Bhopal (M.P.)</small>
+                            <small class="text-muted d-block">GSTIN: <span id="invGstin">23AABCP1234F1Z0</span></small>
+                            <small class="text-muted d-block">Phone: <span id="invMobile">+91 94250 88712</span></small>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-2 h-100">
+                            <span class="text-muted small text-uppercase font-weight-bold d-block">Installation & Site Details:</span>
+                            <small class="d-block">Plant Capacity: <strong id="invKw">25</strong> kW On-Grid Solar Plant</small>
+                            <small class="d-block">Modules: <strong>Tier-1 Mono PERC Half-Cut (ALMM Approved)</strong></small>
+                            <small class="d-block">Inverter: <strong>On-Grid Dual MPPT Industrial Inverter</strong></small>
+                            <small class="d-block">DISCOM: <strong>MPPKVVCL Net Meter Approved</strong></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Item & Description</th>
+                                <th>HSN/SAC</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Rate (₹)</th>
+                                <th class="text-end">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>
+                                    <strong>Supply of Tier-1 Mono PERC Solar Panels (540W)</strong>
+                                    <small class="text-muted d-block">ALMM listed & 25-Year Linear Warranty</small>
+                                </td>
+                                <td>85414011</td>
+                                <td class="text-center">46 Nos</td>
+                                <td class="text-end">11,340.00</td>
+                                <td class="text-end">5,21,640.00</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>
+                                    <strong>25 kW Three-Phase On-Grid Solar Inverter</strong>
+                                    <small class="text-muted d-block">Dual MPPT with Cloud Wi-Fi Monitoring</small>
+                                </td>
+                                <td>85044090</td>
+                                <td class="text-center">1 No</td>
+                                <td class="text-end">1,65,000.00</td>
+                                <td class="text-end">1,65,000.00</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>
+                                    <strong>Turnkey BOS Structures, DC/AC Cables, Protection & Earthing</strong>
+                                </td>
+                                <td>85371000</td>
+                                <td class="text-center">1 Set</td>
+                                <td class="text-end">1,85,000.00</td>
+                                <td class="text-end">1,85,000.00</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>
+                                    <strong>Turnkey Installation, Testing, Commissioning & DISCOM Liaisoning</strong>
+                                </td>
+                                <td>995461</td>
+                                <td class="text-center">1 Job</td>
+                                <td class="text-end">1,25,000.00</td>
+                                <td class="text-end">1,25,000.00</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="5" class="text-end font-weight-bold">Subtotal (Taxable Value):</td>
+                                <td class="text-end font-weight-bold" id="invSubtotal">₹9,96,640.00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="text-end">CGST @ 6%:</td>
+                                <td class="text-end" id="invCgst">₹59,798.40</td>
+                            </tr>
+                            <tr>
+                                <td colspan="5" class="text-end">SGST @ 6%:</td>
+                                <td class="text-end" id="invSgst">₹59,798.40</td>
+                            </tr>
+                            <tr class="table-dark text-white font-weight-bold fs-16">
+                                <td colspan="5" class="text-end">Total Invoice Amount (INR):</td>
+                                <td class="text-end text-success" id="invTotal">₹11,16,236.80</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer & Bank Details -->
+                <div class="row g-3 pt-3 border-top small text-muted">
+                    <div class="col-sm-7">
+                        <h6 class="font-weight-bold text-dark small mb-1">Company Bank Details for RTGS/NEFT:</h6>
+                        <small class="d-block">Beneficiary: <strong>SHIVAY ENERGY SOLUTIONS</strong></small>
+                        <small class="d-block">Bank: State Bank of India (SBI), Raisen Branch</small>
+                        <small class="d-block">Account No: 4098XXXXXXXX</small>
+                        <small class="d-block">IFSC Code: SBIN0000462</small>
+                    </div>
+                    <div class="col-sm-5 text-sm-end">
+                        <small class="d-block font-weight-bold text-dark">For SHIVAY ENERGY SOLUTIONS</small>
+                        <div class="my-2 font-italic text-secondary" style="font-family: cursive; font-size: 16px;">Rahul Saini</div>
+                        <small class="d-block text-muted">Authorized Finance Signatory</small>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 pt-3 border-top no-print">
+                    <button onclick="window.print()" class="btn btn-sm btn-dark me-2"><i class="icofont-print"></i> Print Invoice / PDF</button>
+                    <a href="/admin" class="btn btn-sm btn-outline-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+
+            <!-- Invoices Archive Table -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mx-auto" style="max-width: 920px;">
+                <h5 class="font-weight-bold text-dark mb-3">Issued Tax Invoices Ledger</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Invoice No.</th>
+                                <th>Billed To</th>
+                                <th>Capacity</th>
+                                <th>Taxable (₹)</th>
+                                <th>Total (₹)</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (typeof invoices !== 'undefined' && invoices.length > 0) { %>
+                                <% invoices.forEach(inv => { %>
+                                    <tr>
+                                        <td><strong><%= inv.invoiceNumber %></strong></td>
+                                        <td>
+                                            <div class="font-weight-bold text-dark"><%= inv.customerName %></div>
+                                            <small class="text-muted"><%= inv.customerAddress %></small>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border"><%= inv.plantCapacityKw %> kW</span></td>
+                                        <td>₹<%= Number(inv.subtotal).toLocaleString('en-IN') %></td>
+                                        <td><strong class="text-success">₹<%= Number(inv.totalAmount).toLocaleString('en-IN') %></strong></td>
+                                        <td><span class="badge bg-success"><%= (inv.paymentStatus || 'paid').toUpperCase() %></span></td>
+                                        <td><%= inv.date %></td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="7" class="text-center py-3 text-muted">No invoices found.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,156 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader -->
+    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/w1.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Franchise &amp; Dealership</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 17px;">Partner with <%= company.name %> to deliver high-quality rooftop solar across districts in Madhya Pradesh.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Franchise Application -->
+    <section class="franchise-section py-5">
+        <div class="container py-4">
+            <div class="row g-5">
+                <div class="col-lg-5">
+                    <h3 class="font-weight-bold text-dark mb-3">Why Partner With <%= company.name %>?</h3>
+                    <p class="text-muted" style="line-height: 1.8;">
+                        The rooftop solar revolution under <strong>PM Surya Ghar Muft Bijli Yojana</strong> is booming across Central India. By joining hands with Shivay Energy Solutions as a regional franchise or dealer, you get:
+                    </p>
+
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        <div class="p-3 bg-light rounded-2 border-start border-4 border-success">
+                            <h6 class="font-weight-bold text-dark mb-1">Direct Tier-1 Supply</h6>
+                            <small class="text-muted">Direct manufacturer pricing on DCR panels, on-grid inverters, and lithium battery banks.</small>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-2 border-start border-4 border-primary">
+                            <h6 class="font-weight-bold text-dark mb-1">DISCOM Paperwork Support</h6>
+                            <small class="text-muted">Our central office handles MPMKVVCL / MPPKVVCL net-metering approvals and subsidy paperwork for your clients.</small>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-2 border-start border-4 border-primary">
+                            <h6 class="font-weight-bold text-dark mb-1">Marketing & Technical Training</h6>
+                            <small class="text-muted">Complete training for site survey, 3D shadow analysis, and sales lead generation in your district.</small>
+                        </div>
+                    </div>
+
+                    <div class="p-3 rounded-2 text-white" style="background: #163563;">
+                        <h6 class="font-weight-bold mb-1" style="color: #9cc7ef;">Talk Directly to Founders:</h6>
+                        <small class="text-white-50 d-block mb-2">Deepak Kushwaha: +91 70005 75496<br>Rahul Saini: +91 93997 61750</small>
+                        <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20interested%20in%20taking%20a%20solar%20dealership/franchise." target="_blank" class="btn btn-sm btn-success text-white w-100">
+                            <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp for Dealership Enquiry
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card franchise-form-card p-4 border-0 shadow-sm rounded-3">
+                        <h4 class="font-weight-bold text-dark mb-1">Franchise / Dealer Application Form</h4>
+                        <p class="text-muted small mb-4">Fill out your details to discuss district exclusivity and commercial terms.</p>
+
+                        <form id="franchiseForm" onsubmit="handleFranchiseSubmit(event)">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">Applicant / Business Name *</label>
+                                    <input type="text" name="applicantName" class="form-control" required placeholder="Full Name or Firm Name">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">Mobile Number *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text franchise-input-prefix">+91</span>
+                                        <input type="tel" name="mobile" pattern="[6-9][0-9]{9}" maxlength="10" class="form-control" required placeholder="98XXXXXXXX">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">Email Address</label>
+                                    <input type="email" name="email" class="form-control" placeholder="name@domain.com">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">Target District *</label>
+                                    <select name="district" class="form-select" required>
+                                        <% data.regions.mpDistricts.forEach(d => { %>
+                                            <option value="<%= d %>"><%= d %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">City / Tehsil *</label>
+                                    <input type="text" name="city" class="form-control" required placeholder="e.g. Raisen / Mandideep / Vidisha">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label small font-weight-bold">Investment Capacity *</label>
+                                    <select name="investmentCapacity" class="form-select" required>
+                                        <option value="₹2 - ₹5 Lakhs">₹2 - ₹5 Lakhs (Dealer)</option>
+                                        <option value="₹5 - ₹10 Lakhs">₹5 - ₹10 Lakhs (District Partner)</option>
+                                        <option value="Above ₹10 Lakhs">Above ₹10 Lakhs (Master Franchise)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label small font-weight-bold">Current Business Background & Experience</label>
+                                    <textarea name="message" class="form-control" rows="3" placeholder="Tell us about your current business, electrical/hardware shop, or professional background..."></textarea>
+                                </div>
+
+                                <div class="col-12">
+                                    <button type="submit" id="franchiseBtn" class="btn-main w-100 py-3 font-weight-bold" style="background: var(--primary-color); color: #000; border: none;">
+                                        <span>Submit Dealership Application</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="franchiseMsg" class="mt-3" style="display: none;"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function handleFranchiseSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('franchiseBtn');
+    const msg = document.getElementById('franchiseMsg');
+    btn.disabled = true;
+    btn.innerHTML = '<span>Submitting application...</span>';
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    fetch('/api/franchise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(res => {
+        msg.style.display = 'block';
+        if (res.success) {
+            msg.className = 'alert alert-success p-3 small';
+            msg.innerHTML = `<strong>Dhanyawad!</strong> ${res.message}<br><a href="${res.whatsappRedirect}" target="_blank" class="btn btn-sm btn-success mt-2 text-white"><i class="fa-brands fa-whatsapp me-1"></i> Connect With Deepak Ji Directly</a>`;
+            e.target.reset();
+        } else {
+            msg.className = 'alert alert-danger p-3 small';
+            msg.innerText = res.message || 'Error occurred';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<span>Submit Dealership Application</span>';
+    });
+}
+</script>
+
+<%- include('partials/footer') %>

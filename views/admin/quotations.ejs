@@ -1,0 +1,344 @@
+<%- include('../partials/header') %>
+<%- include('../partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="badge" style="background: var(--primary-color); color: #000;">PROPOSAL ENGINE</span>
+                    <h3 class="text-white font-weight-bold mb-0 mt-1">Solar Quotation Generator</h3>
+                    <small class="text-white-50"><%= company.name %> • Official Proposal System (Raisen, M.P.)</small>
+                </div>
+                <a href="/admin" class="btn btn-sm btn-outline-light">← Back to Dashboard</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-4 bg-light">
+        <div class="container">
+            <div class="row g-4 mb-4">
+                <!-- Quotation Creator Form -->
+                <div class="col-lg-5">
+                    <div class="card p-4 border-0 shadow-sm rounded-3 bg-white">
+                        <h5 class="font-weight-bold text-dark mb-3">Create New Solar Quotation</h5>
+
+                        <form id="quoteForm" onsubmit="generateQuotePreview(event)">
+                            <div class="mb-2">
+                                <label class="form-label small font-weight-bold">Customer Full Name *</label>
+                                <input type="text" id="qCustomer" class="form-control" required value="Suresh Chouksey">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small font-weight-bold">Customer Mobile *</label>
+                                <input type="tel" id="qMobile" class="form-control" required value="+91 98260 12345">
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label small font-weight-bold">Site Address</label>
+                                <input type="text" id="qAddress" class="form-control" value="Near Bus Stand, Raisen (M.P.)">
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small font-weight-bold">Plant Size (kW) *</label>
+                                    <input type="number" id="qKw" class="form-control" value="3" min="1" step="0.5" oninput="autoCalcQuote()">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small font-weight-bold">Rate / kW (₹) *</label>
+                                    <input type="number" id="qRate" class="form-control" value="58000" step="1000" oninput="autoCalcQuote()">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="form-label small font-weight-bold">Gross System Cost</label>
+                                    <input type="text" id="qGross" class="form-control bg-light" readonly value="₹1,74,000">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small font-weight-bold">PM Surya Ghar Subsidy</label>
+                                    <input type="text" id="qSubsidy" class="form-control bg-light text-success font-weight-bold" readonly value="₹78,000">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small font-weight-bold">Net Payable by Customer (₹)</label>
+                                <input type="text" id="qNet" class="form-control font-weight-bold fs-18 text-primary" readonly value="₹96,000">
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary py-2 font-weight-bold" style="background: #163563; border-color: #163563;">
+                                    <i class="icofont-refresh me-1"></i> Update Quotation Preview
+                                </button>
+                                <button type="button" onclick="saveQuotationToDatabase()" class="btn btn-success py-2 font-weight-bold">
+                                    <i class="icofont-save me-1"></i> Save Quotation to CRM
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Live Printable Quotation Letterhead Preview -->
+                <div class="col-lg-7">
+                    <div class="card p-5 border-0 shadow rounded-3 bg-white" id="printableQuote" style="border-top: 6px solid #163563 !important;">
+                        <!-- Header -->
+                        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
+                            <div>
+                                <h4 class="font-weight-bold mb-0 text-dark"><%= company.name %></h4>
+                                <small class="text-success font-weight-bold d-block"><%= company.tagline %></small>
+                                <small class="text-muted d-block mt-1"><%= company.address.full %></small>
+                                <small class="text-muted">Ph: +91 70005 75496 / +91 93997 61750 | Email: <%= company.email %></small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-dark text-white px-3 py-2" style="font-size: 14px;">FORMAL QUOTATION</span>
+                                <small class="d-block text-muted mt-2">Quote No: <strong id="pvQuoteNo">SES-Q2026-402</strong></small>
+                                <small class="d-block text-muted">Date: <strong id="qDate">07-11-2026</strong></small>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details -->
+                        <div class="p-3 bg-light rounded-2 mb-4">
+                            <span class="small text-muted text-uppercase d-block font-weight-bold">Quotation Prepared For:</span>
+                            <h6 class="font-weight-bold text-dark mb-0" id="pvCustomer">Suresh Chouksey</h6>
+                            <small class="text-muted d-block" id="pvMobile">+91 98260 12345</small>
+                            <small class="text-muted d-block" id="pvAddress">Near Bus Stand, Raisen (M.P.)</small>
+                        </div>
+
+                        <!-- Scope Table -->
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered small">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Description of Supply & Installation</th>
+                                        <th class="text-center">Qty / Specs</th>
+                                        <th class="text-end">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <strong>Tier-1 Mono PERC Half-Cut Solar Modules (DCR Compliant)</strong>
+                                            <small class="text-muted d-block">25-Year Generation Performance Warranty. Approved for PM Surya Ghar subsidy.</small>
+                                        </td>
+                                        <td class="text-center"><span id="pvPanels">6</span> Panels (540W)</td>
+                                        <td class="text-end">Included</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>On-Grid Solar Inverter with Dual MPPT & Wi-Fi Monitoring</strong>
+                                            <small class="text-muted d-block">5-Year Manufacturer Warranty. IP65 Weatherproof.</small>
+                                        </td>
+                                        <td class="text-center"><span id="pvKw">3</span> kW Unit</td>
+                                        <td class="text-end">Included</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <strong>Turnkey BOS Structure, ACDB/DCDB, Earthing & Net-Metering</strong>
+                                            <small class="text-muted d-block">Hot-Dip Galvanized structures, Dual SPDs, copper chemical earthing, DISCOM approvals.</small>
+                                        </td>
+                                        <td class="text-center">Complete Kit</td>
+                                        <td class="text-end">Included</td>
+                                    </tr>
+                                    <tr class="table-light font-weight-bold">
+                                        <td colspan="2">Gross System Turnkey Amount (Inclusive of GST & Installation):</td>
+                                        <td class="text-end" id="pvGross">₹1,74,000</td>
+                                    </tr>
+                                    <tr class="table-success text-success font-weight-bold">
+                                        <td colspan="2">Less: PM Surya Ghar Muft Bijli Yojana Central Govt. Direct Subsidy:</td>
+                                        <td class="text-end" id="pvSubsidy">- ₹78,000</td>
+                                    </tr>
+                                    <tr class="table-primary font-weight-bold fs-16 text-dark">
+                                        <td colspan="2">Net Payable by Customer (After Subsidy):</td>
+                                        <td class="text-end font-weight-bold text-primary" id="pvNet">₹96,000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Terms & Signatures -->
+                        <div class="row pt-3 border-top small text-muted">
+                            <div class="col-8">
+                                <h6 class="font-weight-bold text-dark small mb-1">Standard Terms:</h6>
+                                <p class="mb-0" style="font-size: 11px;">1. Net-metering approval is facilitated by Shivay Energy Solutions. 2. Direct subsidy is deposited into consumer's Aadhaar-linked bank account via DBT. 3. Quotation is valid for 15 days.</p>
+                            </div>
+                            <div class="col-4 text-end">
+                                <small class="d-block font-weight-bold text-dark">For SHIVAY ENERGY SOLUTIONS</small>
+                                <div class="my-2 font-italic text-secondary" style="font-family: cursive; font-size: 16px;">Deepak Kushwaha</div>
+                                <small class="d-block text-muted">Authorized Signatory</small>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 text-center border-top no-print">
+                            <button onclick="window.print()" class="btn btn-sm btn-dark me-2"><i class="icofont-print"></i> Print / Save as PDF</button>
+                            <a id="shareWa" href="https://wa.me/919826012345?text=Namaste,%20please%20find%20your%20solar%20quotation%20from%20Shivay%20Energy%20Solutions." target="_blank" class="btn btn-sm btn-success text-white">
+                                <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saved Quotations Archive -->
+            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
+                <h5 class="font-weight-bold text-dark mb-3">Saved Quotations Archive</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Quotation No.</th>
+                                <th>Customer Name</th>
+                                <th>Mobile</th>
+                                <th>Plant Size</th>
+                                <th>Gross Cost</th>
+                                <th>Govt Subsidy</th>
+                                <th>Net Payable</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quotationTableBody">
+                            <% if (typeof quotations !== 'undefined' && quotations.length > 0) { %>
+                                <% quotations.forEach(q => { %>
+                                    <tr>
+                                        <td><strong><%= q.quotationNumber %></strong></td>
+                                        <td><%= q.customerName %></td>
+                                        <td><%= q.customerMobile %></td>
+                                        <td><span class="badge bg-light text-dark border"><%= q.plantCapacityKw %> kW</span></td>
+                                        <td>₹<%= Number(q.grossAmount).toLocaleString('en-IN') %></td>
+                                        <td class="text-success font-weight-bold">₹<%= Number(q.subsidy).toLocaleString('en-IN') %></td>
+                                        <td><strong class="text-primary">₹<%= Number(q.netAmount).toLocaleString('en-IN') %></strong></td>
+                                        <td><%= q.date %></td>
+                                        <td>
+                                            <button onclick="loadQuoteIntoView('<%= q.quotationNumber %>', '<%= q.customerName %>', '<%= q.customerMobile %>', '<%= q.customerAddress %>', <%= q.plantCapacityKw %>, <%= q.ratePerKw %>)" class="btn btn-sm btn-outline-dark py-0 px-2">
+                                                <i class="icofont-eye"></i> View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="9" class="text-center py-3 text-muted">No saved quotations found.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+let currentQuoteNum = 'SES-Q2026-' + Math.floor(400 + Math.random() * 600);
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('name')) document.getElementById('qCustomer').value = params.get('name');
+    if (params.get('mobile')) document.getElementById('qMobile').value = params.get('mobile');
+    if (params.get('address')) document.getElementById('qAddress').value = params.get('address');
+    
+    document.getElementById('pvQuoteNo').innerText = currentQuoteNum;
+    const now = new Date();
+    document.getElementById('qDate').innerText = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+    autoCalcQuote();
+});
+
+function autoCalcQuote() {
+    const kw = parseFloat(document.getElementById('qKw').value) || 1;
+    const rate = parseFloat(document.getElementById('qRate').value) || 58000;
+    const gross = Math.round(kw * rate);
+    
+    let subsidy = 0;
+    if (kw <= 1) {
+        subsidy = 30000;
+    } else if (kw <= 2) {
+        subsidy = 60000;
+    } else {
+        subsidy = 78000; // max cap for PM Surya Ghar
+    }
+    
+    const net = Math.max(gross - subsidy, 0);
+
+    document.getElementById('qGross').value = '₹' + gross.toLocaleString('en-IN');
+    document.getElementById('qSubsidy').value = '₹' + subsidy.toLocaleString('en-IN');
+    document.getElementById('qNet').value = '₹' + net.toLocaleString('en-IN');
+
+    document.getElementById('pvKw').innerText = kw;
+    document.getElementById('pvPanels').innerText = Math.ceil(kw * 1000 / 540);
+    document.getElementById('pvGross').innerText = '₹' + gross.toLocaleString('en-IN');
+    document.getElementById('pvSubsidy').innerText = '- ₹' + subsidy.toLocaleString('en-IN');
+    document.getElementById('pvNet').innerText = '₹' + net.toLocaleString('en-IN');
+
+    // Update WhatsApp Link
+    const cleanMobile = (document.getElementById('qMobile').value || '').replace(/\D/g, '').slice(-10);
+    const custName = document.getElementById('qCustomer').value;
+    const msg = `Namaste ${custName}, Shivay Energy Solutions (Raisen) ki taraf se aapka ${kw} kW Solar System quotation tayar hai. Gross: ₹${gross.toLocaleString('en-IN')}, PM Surya Ghar Subsidy: ₹${subsidy.toLocaleString('en-IN')}, Net Payable: ₹${net.toLocaleString('en-IN')}. Sampark: +91 70005 75496.`;
+    document.getElementById('shareWa').href = `https://wa.me/91${cleanMobile}?text=${encodeURIComponent(msg)}`;
+}
+
+function generateQuotePreview(e) {
+    if (e) e.preventDefault();
+    document.getElementById('pvCustomer').innerText = document.getElementById('qCustomer').value;
+    document.getElementById('pvMobile').innerText = document.getElementById('qMobile').value;
+    document.getElementById('pvAddress').innerText = document.getElementById('qAddress').value;
+    autoCalcQuote();
+}
+
+function saveQuotationToDatabase() {
+    const kw = parseFloat(document.getElementById('qKw').value) || 1;
+    const rate = parseFloat(document.getElementById('qRate').value) || 58000;
+    const gross = Math.round(kw * rate);
+    const subsidy = kw <= 1 ? 30000 : (kw <= 2 ? 60000 : 78000);
+    const net = Math.max(gross - subsidy, 0);
+
+    const payload = {
+        quotationNumber: currentQuoteNum,
+        customerName: document.getElementById('qCustomer').value,
+        customerMobile: document.getElementById('qMobile').value,
+        customerAddress: document.getElementById('qAddress').value,
+        plantCapacityKw: kw,
+        ratePerKw: rate,
+        grossAmount: gross,
+        subsidy: subsidy,
+        netAmount: net
+    };
+
+    fetch('/api/admin/quotations/save', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Quotation ${payload.quotationNumber} saved to CRM!`);
+            location.reload();
+        } else {
+            alert(data.message || 'Error saving quotation');
+        }
+    })
+    .catch(err => {
+        alert('Could not save: ' + err.message);
+    });
+}
+
+function loadQuoteIntoView(qNum, name, mob, addr, kw, rate) {
+    currentQuoteNum = qNum;
+    document.getElementById('pvQuoteNo').innerText = qNum;
+    document.getElementById('qCustomer').value = name;
+    document.getElementById('qMobile').value = mob;
+    document.getElementById('qAddress').value = addr;
+    document.getElementById('qKw').value = kw;
+    document.getElementById('qRate').value = rate || 58000;
+    generateQuotePreview();
+    window.scrollTo({ top: 300, behavior: 'smooth' });
+}
+</script>
+
+<%- include('../partials/footer') %>
