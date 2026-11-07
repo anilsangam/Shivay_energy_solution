@@ -6,7 +6,7 @@
 
     <!-- Subheader -->
     <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/3.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
-        <div class="container">
+        <div class="container" style="margin-top: 20px;">
             <div class="row align-items-center">
                 <div class="col-lg-8">
                     <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Services &amp; Projects</h1>
@@ -39,7 +39,7 @@
                                     <div class="me-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 50%; background: rgba(22, 53, 99, 0.08); color: #163563; font-size: 20px;">
                                         <i class="<%= s.icon %>"></i>
                                     </div>
-                                    <h5 class="font-weight-bold mb-0 text-dark" style="font-size: 19px;"><%= s.title %></h5>
+                                    <h5 class="font-weight-bold mb-0 text-dark" style="flex: 1 1 0; min-width: 0; font-size: 19px; overflow-wrap: anywhere;"><%= s.title %></h5>
                                 </div>
                                 <p class="text-muted small mb-3" style="line-height: 1.6;"><%= s.details %></p>
                                 
@@ -58,7 +58,7 @@
                                     <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 8px 20px; font-size: 13px; font-weight: 700;">
                                         <span>Check Savings</span>
                                     </a>
-                                    <a href="https://wa.me/917000575496?text=Namaste,%20I%20am%20interested%20in%20<%= encodeURIComponent(s.title) %>." target="_blank" class="btn btn-outline-success btn-sm px-3" style="border-radius: 20px;">
+                                    <a href="https://wa.me/917000575496?text=Namaste,%20I%20am%20interested%20in%20<%= encodeURIComponent(s.title) %>." target="_blank" class="btn btn-outline-success px-3" style="min-height: 40px; display: inline-flex; align-items: center; justify-content: center; line-height: 1.2; border-radius: 20px;">
                                         <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
                                     </a>
                                 </div>
@@ -90,9 +90,9 @@
                                 <span class="badge px-3 py-2 rounded-pill product-category"><%= p.category %></span>
                             </div>
                             <div class="product-card-body">
-                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                    <h3 class="font-weight-bold text-dark mb-0" style="font-size: 20px;"><%= p.name %></h3>
-                                    <span class="product-warranty"><i class="icofont-shield-alt me-1"></i><%= p.warranty %></span>
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2" style="flex-wrap: wrap; min-width: 0;">
+                                    <h3 class="font-weight-bold text-dark mb-0" style="flex: 1 1 100%; width: 100%; min-width: 0; font-size: 20px; overflow-wrap: anywhere;"><%= p.name %></h3>
+                                    <span class="product-warranty" style="flex: 1 1 100%; max-width: 100%; white-space: normal;"><i class="icofont-shield-alt me-1"></i><%= p.warranty %></span>
                                 </div>
                                 <p class="text-secondary small mb-3" style="line-height: 1.6;"><%= p.description %></p>
 
@@ -129,7 +129,7 @@
                                     <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 8px 18px; font-size: 13px; font-weight: 700;">
                                         <span>Get a Quote</span>
                                     </a>
-                                    <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20inquiring%20about%20<%= encodeURIComponent(p.name) %>." target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm px-3" style="border-radius: 20px;">
+                                    <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20inquiring%20about%20<%= encodeURIComponent(p.name) %>." target="_blank" rel="noopener noreferrer" class="btn btn-outline-success px-3" style="min-height: 40px; display: inline-flex; align-items: center; justify-content: center; line-height: 1.2; border-radius: 20px;">
                                         <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
                                     </a>
                                 </div>
@@ -184,16 +184,43 @@
         <div class="container text-center py-3">
             <h2 class="text-white font-weight-bold mb-2" style="font-size: 32px;">Need a Custom Solar Project Proposal?</h2>
             <p class="text-white-50 mb-4">Contact our project engineers Deepak Kushwaha &amp; Rahul Saini for a free site assessment in Raisen, Bhopal &amp; Vidisha.</p>
-            <div class="d-flex justify-content-center gap-3">
+            <div class="d-flex flex-wrap justify-content-center gap-3">
                 <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
                     <span>Calculate Solar Savings</span>
                 </a>
-                <a href="/contact" class="btn-main btn-line fx-slide hover-white" style="border-radius: 30px; padding: 12px 30px; font-weight: 700;">
-                    <span>Contact Us</span>
+                <a href="/contact" class="btn-main btn-line fx-slide hover-white" style="color: #fff !important; border: 1px solid rgba(255,255,255,.85); border-radius: 30px; padding: 12px 30px; font-weight: 700;">
+                    <span style="color: #fff !important;">Contact Us</span>
                 </a>
             </div>
         </div>
     </section>
 </div>
 
+<style>
+/* Page-specific responsive rules */
+@media (min-width: 768px) {
+    #content #subheader > .container { margin-top: 36px; }
+}
+@media (max-width: 767.98px) {
+    #content { width: 100%; max-width: 100%; overflow-x: clip; }
+    #content .container, #content .container-fluid { max-width: 100%; }
+    #content .row > [class*="col-"] { min-width: 0; }
+    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    #content h1, #content h2, #content h3, #content h4, #content p,
+    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
+    #content img, #content video, #content iframe { max-width: 100%; }
+    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
+    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #content table { min-width: 620px; }
+    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
+    #content .card-body > .d-flex.align-items-center { align-items: flex-start !important; flex-wrap: wrap; }
+    #content .card-body > .d-flex.align-items-center h5 { flex: 1 1 calc(100% - 56px); min-width: 0; }
+    #content .card-body > .d-flex.justify-content-between.align-items-center { flex-wrap: wrap; gap: 10px; }
+    #content .card-body > .d-flex.justify-content-between.align-items-center > a { min-height: 42px; }
+    #content .product-card-body > .d-flex:first-child { flex-wrap: wrap; }
+    #content .product-card-body > .d-flex:first-child h3 { flex: 1 1 100%; width: 100%; min-width: 0; overflow-wrap: anywhere; }
+    #content .product-card-body > .d-flex:first-child .product-warranty { flex: 1 1 100%; width: 100%; white-space: normal; }
+    #content #subheader .container { margin-top: 14px !important; }
+}
+</style>
 <%- include('partials/footer') %>

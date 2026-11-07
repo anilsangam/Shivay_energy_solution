@@ -90,10 +90,12 @@ async function seedInitialUsers() {
         console.log('--- User Seeding Completed Successfully ---');
     } catch (err) {
         console.error('Seeding error:', err);
+        if (require.main === module) {
+            process.exitCode = 1;
+        }
     } finally {
         if (require.main === module) {
             await mongoose.disconnect();
-            process.exit(0);
         }
     }
 }

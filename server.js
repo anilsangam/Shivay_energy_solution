@@ -40,7 +40,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let sessionStore;
 try {
     sessionStore = MongoStore.create({
-        mongoUrl: process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/shivay_energy_solutions',
+        mongoUrl: process.env.MONGO_URI,
         collectionName: 'sessions',
         ttl: 14 * 24 * 60 * 60, // 14 days
         autoRemove: 'native'

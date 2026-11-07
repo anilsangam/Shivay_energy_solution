@@ -5,9 +5,9 @@
                     <div class="col-lg-4 col-sm-6 mb-4">
                         <div class="d-flex align-items-center mb-3">
                             <img src="/images/logo-icon.webp" alt="Shivay Energy" style="height: 38px; margin-right: 10px;">
-                            <div>
+                            <div style="min-width: 0; max-width: 100%;">
                                 <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><%= company.name %></h4>
-                                <small style="color: var(--primary-color); font-weight: 600; letter-spacing: 1px;"><%= company.tagline %></small>
+                                <small class="d-block" style="max-width: 100%; color: var(--primary-color); font-weight: 600; letter-spacing: 1px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere;"><%= company.tagline %></small>
                             </div>
                         </div>
                         <p class="text-white-50 small mb-4" style="line-height: 1.7;">
@@ -57,7 +57,7 @@
                             <h5>Contact Us</h5>
                             <div class="mb-3">
                                 <span class="d-block text-white font-weight-bold small"><i class="icofont-location-pin me-2 text-warning"></i>Office Address:</span>
-                                <a href="https://maps.google.com/?q=Ward+15+Arjun+Nagar+Raisen+MP" target="_blank" class="text-white-50 small d-block text-decoration-none">
+                                <a href="https://maps.google.com/?q=Ward+15+Arjun+Nagar+Raisen+MP" target="_blank" class="text-white-50 small d-block text-decoration-none" style="max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.55;">
                                     <%= company.address.full %>
                                 </a>
                             </div>
@@ -92,21 +92,11 @@
         </footer>
         <!-- footer end -->
 
-        <!-- Sticky Fixed "Get a Quote" Button on Right Side -->
-        <div id="sticky-quote-widget" style="position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 99999;">
-            <a href="/calculator" style="display: flex; align-items: center; gap: 8px; background: var(--primary-color, #c6ff7d); color: #0a1b33 !important; padding: 12px 18px 12px 14px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-radius: 30px 0 0 30px; box-shadow: -4px 6px 20px rgba(0,0,0,0.35); text-decoration: none; transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);" onmouseover="this.style.background='#ffffff'; this.style.paddingRight='24px';" onmouseout="this.style.background='var(--primary-color, #c6ff7d)'; this.style.paddingRight='18px';" title="Get Free Solar Quotation">
-                <i class="icofont-calculator-alt" style="font-size: 18px;"></i>
-                <span>Get a Quote</span>
-            </a>
-        </div>
-
         <!-- Floating WhatsApp Connect Button -->
-        <a href="https://wa.me/917000575496?text=Namaste,%20I%20want%20to%20enquire%20about%20rooftop%20solar%20from%20Shivay%20Energy%20Solutions." target="_blank" style="position: fixed; bottom: 25px; left: 25px; z-index: 9999; background: #25D366; color: #fff; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-size: 26px; text-decoration: none; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';" title="Chat with Deepak Kushwaha on WhatsApp">
-            <i class="fa-brands fa-whatsapp"></i>
+        <a href="https://wa.me/917000575496?text=Namaste,%20I%20want%20to%20enquire%20about%20rooftop%20solar%20from%20Shivay%20Energy%20Solutions." target="_blank" rel="noopener noreferrer" class="floating-whatsapp" title="Chat with Deepak Kushwaha on WhatsApp" aria-label="Let's Talk on WhatsApp">
+            <span class="floating-whatsapp-label">Let’s Talk</span>
+            <span class="floating-whatsapp-icon"><i class="fa-brands fa-whatsapp"></i></span>
         </a>
-
-        <!-- Theme Switcher Component -->
-        <%- include('themeSwitcher') %>
 
         <!-- Core Scripts -->
         <script src="/js/main.js"></script>

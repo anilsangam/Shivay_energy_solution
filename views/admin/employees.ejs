@@ -264,5 +264,20 @@ function submitNewUser(e) {
     .catch(err => alert(err.message));
 }
 </script>
-
+<style>
+/* Page-specific responsive rules */
+@media (max-width: 767.98px) {
+    #content { width: 100%; max-width: 100%; overflow-x: clip; }
+    #content .container, #content .container-fluid { max-width: 100%; }
+    #content .row > [class*="col-"] { min-width: 0; }
+    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    #content h1, #content h2, #content h3, #content h4, #content p,
+    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
+    #content img, #content video, #content iframe { max-width: 100%; }
+    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
+    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #content table { min-width: 620px; }
+    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
+}
+</style>
 <%- include('../partials/footer') %>

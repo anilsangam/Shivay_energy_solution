@@ -18658,7 +18658,9 @@ header.header-light .h-phone span {
 .menu_side_area .navbar-enquiry-btn:active,
 .menu_side_area .navbar-enquiry-btn:focus,
 .menu_side_area .navbar-enquiry-btn:visited {
-    background: #163563;
+    background: #ffeb3b;
+    border-color: #ffeb3b;
+    color: #000 !important;
 }
 
 .menu_side_area .navbar-quote-btn,
@@ -18687,7 +18689,13 @@ header.header-light .h-phone span {
 .navbar-enquiry-btn:active,
 .navbar-enquiry-btn:focus,
 .navbar-enquiry-btn:visited {
-    color: #fff !important;
+    background: #ffeb3b !important;
+    border-color: #ffeb3b !important;
+    color: #000 !important;
+}
+
+.navbar-enquiry-btn span {
+    color: #000 !important;
 }
 
 /* Give interior page hero banners more height and room above their copy. */
@@ -18735,6 +18743,166 @@ header.header-light .h-phone span {
 
 .home-offer-card {
     min-width: 0;
+}
+
+/* Tighten vertical spacing between home page sections. */
+#content > section:not(#section-intro) {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+}
+
+#content > section:not(#section-intro) > .container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+#content > #section-intro + section {
+    padding-top: 1.5rem !important;
+}
+
+.home-stats-wrap {
+    margin-bottom: -45px !important;
+}
+
+.home-stats-wrap .row > div {
+    min-width: 0;
+}
+
+.home-stat-card {
+    min-height: 150px;
+    padding: 18px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    transition: transform .25s ease;
+}
+
+.home-stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.home-stat-icon {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #c8e2ff;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-size: 30px;
+}
+
+.home-stat-value {
+    display: block;
+    color: #fff;
+    font-size: clamp(36px, 4vw, 54px);
+    font-weight: 750;
+    line-height: 1;
+    letter-spacing: -.04em;
+}
+
+.home-stat-label {
+    color: rgba(238, 245, 253, .82);
+    font-size: 16px;
+    line-height: 1.45;
+}
+
+.home-stat-card-installations {
+    background: transparent;
+}
+
+.home-stat-card-featured {
+    background: transparent;
+}
+
+.home-stats-wrap .row > div + div .home-stat-card {
+    border-left: 1px solid rgba(255, 255, 255, .28);
+}
+
+.home-stat-value {
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .2);
+}
+
+@media (max-width: 575.98px) {
+    #content > section:not(#section-intro) {
+        padding-top: 1.75rem !important;
+        padding-bottom: 1.75rem !important;
+    }
+
+    #content > section:not(#section-intro) > .container {
+        padding-top: .75rem !important;
+        padding-bottom: .75rem !important;
+    }
+
+    #content > #section-intro + section {
+        padding-top: 1rem !important;
+    }
+
+    .subsidy-footer .subsidy-calculator-link {
+        display: none !important;
+    }
+
+    #section-intro {
+        padding: 110px 0 82px !important;
+        background-position: center top !important;
+        background-size: auto 100% !important;
+    }
+
+    #section-intro h1 {
+        font-size: clamp(34px, 9vw, 44px) !important;
+    }
+
+    #section-intro .col-lg-4 {
+        transform: none !important;
+        justify-content: flex-start !important;
+    }
+
+    .home-stats-wrap {
+        margin-top: 18px !important;
+        margin-bottom: -30px !important;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .home-stats-wrap .row {
+        --bs-gutter-x: .25rem;
+    }
+
+    .home-stat-card {
+        min-height: 112px;
+        padding: 8px 3px;
+        gap: 5px;
+    }
+
+    .home-stats-wrap .row > div + div .home-stat-card {
+        border-left: 0;
+    }
+
+    .home-stat-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 20px;
+    }
+
+    .home-stat-value {
+        font-size: clamp(19px, 5vw, 26px);
+    }
+
+    .home-stat-label {
+        font-size: 10px;
+        line-height: 1.2;
+    }
 }
 
 .home-offer-card-heading {
@@ -18822,6 +18990,13 @@ header.header-light .h-phone span {
     border-top: 4px solid #163563;
     box-shadow: 0 12px 30px rgba(22, 53, 99, 0.08);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.subsidy-card > div {
+    width: 100%;
+    min-width: 0;
 }
 
 .subsidy-card:hover {
@@ -18839,8 +19014,10 @@ header.header-light .h-phone span {
 .subsidy-amount {
     margin: 0;
     color: #163563;
-    font-size: 34px;
+    font-size: clamp(25px, 2.4vw, 34px);
     font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
 .subsidy-label {
@@ -18855,10 +19032,19 @@ header.header-light .h-phone span {
 .subsidy-card-copy {
     color: #617286;
     line-height: 1.6;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .subsidy-card-cta,
 .subsidy-main-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
     border-radius: 30px;
     padding: 11px 22px;
     background: #163563;
@@ -18872,23 +19058,23 @@ header.header-light .h-phone span {
     background: #234d7f;
 }
 
-/* Keep the subsidy section's yellow accent only on its action buttons. */
+/* Match both subsidy section actions in the navy blue theme. */
 #content .subsidy-section a.subsidy-card-cta,
 #content .subsidy-section a.subsidy-main-cta,
 #content .subsidy-section a.subsidy-card-cta:visited,
 #content .subsidy-section a.subsidy-main-cta:visited {
-    background: #ffeb62 !important;
-    color: #000 !important;
+    background: #163563 !important;
+    color: #fff !important;
 }
 
 #content .subsidy-section a.subsidy-card-cta span,
 #content .subsidy-section a.subsidy-main-cta span {
-    color: #000 !important;
+    color: #fff !important;
 }
 
 #content .subsidy-section a.subsidy-card-cta:hover,
 #content .subsidy-section a.subsidy-main-cta:hover {
-    background: #f2d943 !important;
+    background: #234d7f !important;
 }
 
 .subsidy-portal {
@@ -18897,6 +19083,33 @@ header.header-light .h-phone span {
 
 .subsidy-portal:hover {
     color: #163563;
+}
+
+#content .subsidy-section a.subsidy-portal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    margin: 0 12px 10px 0;
+    padding: 11px 22px;
+    border: 1px solid #163563;
+    border-radius: 30px;
+    color: #fff !important;
+    background: #163563;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+#content .subsidy-section a.subsidy-portal-btn:hover {
+    color: #fff !important;
+    background: #234d7f;
+    transform: translateY(-2px);
+}
+
+#content .subsidy-section .subsidy-calculator-link {
+    display: none !important;
 }
 
 #mainmenu li ul {
@@ -30834,6 +31047,195 @@ img {
     }
 }
 
+/* Keep the complete site header fixed as one deep-blue navigation bar. */
+header.site-header-fixed {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1200;
+    background: #163563 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 18px rgba(7, 24, 43, 0.18);
+}
+
+header.site-header-fixed #topbar {
+    background: #163563;
+}
+
+@media (max-width: 999px) {
+    header.site-header-fixed {
+        min-height: 68px;
+        overflow: visible !important;
+        background: #163563 !important;
+    }
+
+    header.site-header-fixed > .container {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    header.site-header-fixed .de-flex {
+        min-height: 62px;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    header.site-header-fixed #logo img.logo-main {
+        display: inline-block !important;
+        width: 34px;
+        height: 34px !important;
+        object-fit: contain;
+        margin-right: 5px !important;
+    }
+
+    header.site-header-fixed #logo a {
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: nowrap;
+    }
+
+    header.site-header-fixed #logo span {
+        font-size: 21px !important;
+    }
+
+    header.site-header-fixed .header-col-mid {
+        display: block !important;
+        position: static !important;
+        width: 0;
+        flex: 0 0 0;
+        padding: 0 !important;
+    }
+
+    header.site-header-fixed .menu_side_area {
+        flex: 0 0 auto;
+        gap: 6px;
+        margin-left: auto;
+        padding-right: 0;
+        white-space: nowrap;
+    }
+
+    header.site-header-fixed .menu_side_area .navbar-quote-btn,
+    header.site-header-fixed .menu_side_area .navbar-enquiry-btn {
+        display: none !important;
+    }
+
+    header.site-header-fixed #menu-btn {
+        display: block !important;
+        float: none;
+        flex: 0 0 42px;
+        width: 42px;
+        height: 42px;
+        margin-left: 4px;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, .32);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, .08);
+        color: #fff;
+        position: relative;
+        z-index: 1210;
+    }
+
+    header.site-header-fixed #menu-btn:before {
+        content: "" !important;
+        position: absolute;
+        left: 10px;
+        top: 11px;
+        width: 20px;
+        height: 18px;
+        border-top: 2px solid #fff;
+        border-bottom: 2px solid #fff;
+        background: linear-gradient(#fff, #fff) center / 20px 2px no-repeat;
+    }
+
+    header.site-header-fixed #menu-btn.menu-open:before {
+        height: 2px;
+        top: 19px;
+        border: 0;
+        background: #fff;
+        transform: rotate(45deg);
+    }
+
+    header.site-header-fixed #menu-btn.menu-open:after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 19px;
+        width: 20px;
+        height: 2px;
+        background: #fff;
+        transform: rotate(-45deg);
+    }
+
+    header.site-header-fixed #mainmenu {
+        display: none;
+        position: fixed !important;
+        top: 68px !important;
+        left: 0;
+        width: 100%;
+        max-height: calc(100vh - 68px);
+        margin: 0;
+        padding: 10px 18px 18px !important;
+        overflow-y: auto;
+        background: #163563 !important;
+        box-shadow: 0 14px 22px rgba(4, 20, 40, .28);
+        z-index: 1205;
+    }
+
+    header.site-header-fixed.menu-open #mainmenu {
+        display: block !important;
+    }
+
+    header.site-header-fixed #mainmenu li {
+        border-bottom: 1px solid rgba(255, 255, 255, .14) !important;
+    }
+
+    header.site-header-fixed #mainmenu a.menu-item,
+    header.site-header-fixed #mainmenu li a.menu-item,
+    header.site-header-fixed #mainmenu li ul a.menu-item {
+        color: #fff !important;
+        background: transparent !important;
+    }
+
+    header.site-header-fixed #mainmenu a.menu-item:hover,
+    header.site-header-fixed #mainmenu a.menu-item.active {
+        color: #ffeb3b !important;
+        background: rgba(255, 255, 255, .08) !important;
+    }
+
+    header.site-header-fixed #mainmenu li ul {
+        background: rgba(6, 24, 48, .3) !important;
+        border-color: rgba(255, 255, 255, .12) !important;
+    }
+}
+
+header.site-header-fixed.smaller #topbar {
+    margin-top: 0;
+    overflow: visible;
+}
+
+header.site-header-fixed .navbar-quote-btn,
+header.site-header-fixed .navbar-quote-btn:active,
+header.site-header-fixed .navbar-quote-btn:focus,
+header.site-header-fixed .navbar-quote-btn:visited {
+    color: #fff !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+}
+
+header.site-header-fixed .navbar-quote-btn span {
+    color: #fff !important;
+}
+
+header.site-header-fixed .navbar-quote-btn:hover {
+    color: #163563 !important;
+    background: #fff !important;
+}
+
+header.site-header-fixed .navbar-quote-btn:hover span {
+    color: #163563 !important;
+}
+
 @media (min-width: 1200px) {
     .col-lg-1-5 {
         width: 20%;
@@ -32009,3 +32411,131 @@ img {
         width: auto;
     }
 }
+
+/* Keep the active desktop navigation item in the brand yellow. */
+@media (min-width: 1000px) {
+    header.site-header-fixed #mainmenu > li > a.menu-item.active,
+    header.site-header-fixed #mainmenu > li > a.menu-item.active span {
+        color: #ffeb3b !important;
+    }
+}
+
+.floating-whatsapp {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0;
+    color: #fff !important;
+    background: transparent;
+    border: 0;
+    text-decoration: none !important;
+    transition: transform .2s ease;
+}
+
+.floating-whatsapp:hover {
+    color: #fff !important;
+    transform: translateY(-3px);
+}
+
+/* Keep the back-to-top control clear of the WhatsApp contact bubble. */
+#back-to-top,
+#back-to-top.show,
+#back-to-top.hide {
+    right: 28px;
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: #fff;
+    background: #163563;
+    border: 2px solid rgba(255, 255, 255, .9);
+    border-radius: 50%;
+    box-shadow: 0 6px 20px rgba(4, 20, 40, .28);
+    opacity: 0;
+    transition: bottom .25s ease, opacity .25s ease, transform .2s ease;
+}
+
+#back-to-top.show {
+    bottom: 24px;
+    opacity: 1;
+}
+
+#back-to-top.hide {
+    bottom: -60px;
+}
+
+#back-to-top:hover,
+#back-to-top:focus-visible {
+    color: #fff;
+    background: #214b7e;
+    transform: translateY(-3px);
+    outline: 3px solid rgba(22, 53, 99, .22);
+}
+
+#back-to-top:before {
+    color: #fff;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.floating-whatsapp-label {
+    padding: 9px 14px;
+    color: #111 !important;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, .2);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.floating-whatsapp-icon {
+    width: 76px;
+    height: 76px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: #25d366;
+    border-radius: 50%;
+    box-shadow: 0 0 0 7px rgba(37, 211, 102, .12), 0 7px 22px rgba(0, 0, 0, .2);
+    font-size: 44px;
+}
+
+@media (max-width: 575.98px) {
+    .floating-whatsapp {
+        right: 18px;
+        bottom: 76px;
+        gap: 10px;
+    }
+
+    #back-to-top,
+    #back-to-top.show,
+    #back-to-top.hide {
+        right: 22px;
+        width: 44px;
+        height: 44px;
+    }
+
+    #back-to-top.show { bottom: 20px; }
+
+    .floating-whatsapp-label {
+        padding: 8px 11px;
+        font-size: 13px;
+    }
+
+    .floating-whatsapp-icon {
+        width: 62px;
+        height: 62px;
+        font-size: 36px;
+    }
+}
+

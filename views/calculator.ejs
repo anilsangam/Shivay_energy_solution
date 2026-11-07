@@ -19,7 +19,7 @@
     <!-- Calculator Section -->
     <section class="py-5 bg-white">
         <div class="container py-4">
-            <div class="row g-5">
+            <div class="row g-4 g-lg-5 calculator-layout">
                 <!-- Calculator Inputs -->
                 <div class="col-lg-5">
                     <div class="card p-4 border-0 shadow rounded-3 bg-light">
@@ -82,7 +82,7 @@
 
                 <!-- Calculator Results Display -->
                 <div class="col-lg-7">
-                    <div class="card p-4 border-0 shadow-lg rounded-3 text-white" style="background: #163563;">
+                    <div class="card p-4 border-0 shadow-lg rounded-3 text-white calculator-results-card" style="background: #163563;">
                         <span class="badge px-3 py-2 rounded-pill mb-3 align-self-start" style="background: rgba(198, 255, 125, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
                             ☀️ Calculated Estimation for Central India
                         </span>
@@ -114,26 +114,26 @@
                         </div>
 
                         <!-- Financial & Subsidy Breakdown -->
-                        <div class="p-4 rounded-3 mb-4" style="background: rgba(0, 0, 0, 0.25);">
+                        <div class="p-4 rounded-3 mb-4 calculator-investment-breakdown" style="background: rgba(0, 0, 0, 0.25);">
                             <h5 class="font-weight-bold text-white mb-3 border-bottom pb-2 border-secondary">Investment & Subsidy Breakdown</h5>
                             
-                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small">
-                                <span class="text-white-50">Estimated System Cost (Approx):</span>
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small investment-breakdown-row">
+                                <span class="text-white-50 investment-breakdown-label">Estimated System Cost (Approx):</span>
                                 <strong class="text-white" id="outGrossCost">₹1,74,000</strong>
                             </div>
 
-                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small">
-                                <span style="color: var(--primary-color); font-weight: bold;">PM Surya Ghar Direct Govt. Subsidy:</span>
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary small investment-breakdown-row">
+                                <span class="investment-breakdown-label" style="color: var(--primary-color); font-weight: bold;">PM Surya Ghar Direct Govt. Subsidy:</span>
                                 <strong style="color: var(--primary-color); font-size: 16px;" id="outSubsidy">- ₹78,000</strong>
                             </div>
 
-                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary">
-                                <span class="text-white font-weight-bold">Net Customer Investment:</span>
+                            <div class="d-flex justify-content-between py-2 border-bottom border-secondary investment-breakdown-row">
+                                <span class="text-white font-weight-bold investment-breakdown-label">Net Customer Investment:</span>
                                 <strong class="text-white font-weight-bold fs-20" id="outNetCost">₹96,000</strong>
                             </div>
 
-                            <div class="d-flex justify-content-between py-2 small">
-                                <span class="text-white-50">Estimated Payback Period:</span>
+                            <div class="d-flex justify-content-between py-2 small investment-breakdown-row">
+                                <span class="text-white-50 investment-breakdown-label">Estimated Payback Period:</span>
                                 <strong class="text-warning" id="outPayback">~ 3.0 Years</strong>
                             </div>
                         </div>
@@ -211,4 +211,31 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<style>
+/* Page-specific responsive rules */
+@media (min-width: 768px) {
+    #content #subheader > .container { margin-top: 36px; }
+}
+@media (max-width: 767.98px) {
+    #content { width: 100%; max-width: 100%; overflow-x: clip; }
+    #content .container, #content .container-fluid { max-width: 100%; }
+    #content .row > [class*="col-"] { min-width: 0; }
+    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
+    #content h1, #content h2, #content h3, #content h4, #content p,
+    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
+    #content img, #content video, #content iframe { max-width: 100%; }
+    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
+    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #content table { min-width: 620px; }
+    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
+    #content .calculator-layout { --bs-gutter-x: .75rem; }
+    #content .calculator-results-card { width: 100%; padding: 16px !important; }
+    #content .calculator-investment-breakdown { width: 100%; padding: 16px !important; }
+    #content .investment-breakdown-row { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+    #content .investment-breakdown-label { display: block; width: 100%; max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
+    #content .investment-breakdown-row strong { display: block; max-width: 100%; font-size: 17px; line-height: 1.35; overflow-wrap: anywhere; }
+    #content .investment-breakdown-row #outNetCost { font-size: 21px; }
+    #content #calcQuoteBtn { max-width: 100%; }
+}
+</style>
 <%- include('partials/footer') %>
