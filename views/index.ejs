@@ -24,7 +24,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="container relative z-2 home-stats-wrap" style="margin-top: 35px; margin-bottom: -65px;">
+                <!-- Desktop Stats Cards (Hidden on mobile) -->
+                <div class="container relative z-2 home-stats-wrap d-none d-md-block" style="margin-top: 35px; margin-bottom: -65px;">
                     <div class="row g-3 justify-content-center">
                         <div class="col-4 wow fadeInUp" data-wow-delay=".2s">
                             <div class="home-stat-card home-stat-card-installations h-100">
@@ -45,206 +46,537 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Mobile Stats Ticker Patti (Continuous Right to Left Infinite Scroller) -->
+                <div class="stats-ticker-strip d-block d-md-none">
+                    <div class="stats-ticker-track">
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">100+</strong>
+                            <span class="stats-ticker-txt">Solar installations</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val"><%= new Date().getFullYear() - data.company.establishedYear %>+ Years</strong>
+                            <span class="stats-ticker-txt">Solar experience</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">16+</strong>
+                            <span class="stats-ticker-txt">Districts covered</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">90%</strong>
+                            <span class="stats-ticker-txt">Bill savings</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">100%</strong>
+                            <span class="stats-ticker-txt">Clean green energy</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+
+                        <!-- Duplicate set for seamless infinite loop -->
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">100+</strong>
+                            <span class="stats-ticker-txt">Solar installations</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val"><%= new Date().getFullYear() - data.company.establishedYear %>+ Years</strong>
+                            <span class="stats-ticker-txt">Solar experience</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">16+</strong>
+                            <span class="stats-ticker-txt">Districts covered</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">90%</strong>
+                            <span class="stats-ticker-txt">Bill savings</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                        <div class="stats-ticker-item">
+                            <strong class="stats-ticker-val">100%</strong>
+                            <span class="stats-ticker-txt">Clean green energy</span>
+                        </div>
+                        <div class="stats-ticker-sep">•</div>
+                    </div>
                 </div>            </section>
 
-            <!-- Section 2: About Section (Exact Image 2 Layout & Minimalist Content) -->
-            <section class="py-5 bg-white">
+            <!-- Section 2: About Us - Clean Energy, CO2 Reduction & Pollution-Free India -->
+            <section class="about-video-section py-5 bg-white position-relative overflow-hidden">
                 <div class="container py-4">
-                    <div class="row align-items-center g-5">
-                        <!-- Left: Overlapping Images + 325% Badge -->
-                        <div class="col-lg-6">
-                            <div class="position-relative pe-lg-4">
-                                <div class="overflow-hidden shadow-lg wow fadeInLeft" data-wow-delay=".2s" style="border-radius: 20px;">
-                                    <img src="/images/misc/p1.webp" class="img-fluid w-100 d-block" alt="Clean Solar Energy Family">
+                    <div class="row align-items-center gy-3 gy-lg-5 gx-lg-5">
+                        <!-- Left: Square Video Frame (Plays user's co2video.mp4 with fadeInLeft) -->
+                        <div class="col-lg-6 wow fadeInLeft" data-wow-delay=".2s">
+                            <div class="about-video-card">
+                                <video id="aboutCo2Video" class="about-video-player" autoplay muted loop playsinline preload="auto">
+                                    <source src="https://media.istockphoto.com/id/1130184194/video/sunrise-and-technologic-solar-energy-panels.mp4?s=mp4-640x640-is&k=20&c=PJGGdg3Sm1mWv-FInPDZ6rAdYWPCtb9KXz5BJYKPk58=" type="video/mp4">
+                                    Your browser does not support HTML5 video.
+                                </video>
+                                <div class="about-video-overlay"></div>
+
+                                <!-- Top Pill Badge -->
+                                <div class="about-video-top-badge">
+                                    <span class="live-pulse-dot"></span>
+                                    <span>🌱 Reducing CO₂ Emissions</span>
                                 </div>
-                                <div class="position-absolute overflow-hidden shadow-lg wow fadeInUp d-none d-sm-block" data-wow-delay=".4s" style="bottom: -30px; right: 0; width: 55%; border-radius: 18px; border: 4px solid #ffffff;">
-                                    <img src="/images/misc/p2.webp" class="img-fluid w-100 d-block" alt="Rooftop Solar Installation">
-                                </div>
-                                <div class="position-absolute wow zoomIn" data-wow-delay=".5s" style="bottom: 20px; left: -15px; background: #0f2647; color: #ffffff; padding: 20px 28px; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.3); z-index: 5;">
-                                    <h2 class="text-white font-weight-bold mb-0" style="font-size: 36px; line-height: 1; letter-spacing: -1px;">325%</h2>
-                                    <span style="color: var(--primary-color); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Clean Energy Growth</span>
+
+                                <!-- Bottom Impact Glass Card -->
+                                <div class="about-video-bottom-card">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="about-video-stat-icon">☀️</div>
+                                        <div>
+                                            <h4 class="mb-0 text-white font-weight-bold" style="font-size: 19px;">100% Green Solar Energy</h4>
+                                            <p class="mb-0 text-white-50 small">Zero Pollution • Clean Air for India</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Right: Clean Typography & Story -->
-                        <div class="col-lg-6">
-                            <div class="ps-lg-3 wow fadeInRight" data-wow-delay=".3s">
-                                <span class="text-uppercase font-weight-bold d-block mb-2" style="color: #163563; font-size: 13px; letter-spacing: 2px;">About Us</span>
-                                <h2 class="font-weight-bold mb-3 text-dark" style="font-size: 38px; line-height: 1.25; letter-spacing: -0.5px;">
-                                    Solar Solutions for Maximum Energy Savings
+                        <!-- Right: Simple & Short Content (Working to make India pollution-free with fadeInRight) -->
+                        <div class="col-lg-6 wow fadeInRight" data-wow-delay=".3s">
+                            <div class="about-content-card">
+                                <span class="about-eyebrow-pill mb-3">Green Energy Initiative</span>
+
+                                <h2 class="about-heading mb-3">
+                                    Making India Pollution-Free With Clean Solar Power
                                 </h2>
-                                <p class="text-muted mb-3" style="font-size: 16px; line-height: 1.8;">
-                                    At <%= company.name %>, we are passionate about harnessing the power of the sun to create a cleaner, more sustainable future. Since our founding in Raisen, Madhya Pradesh, we've been committed to making solar energy accessible and affordable for homeowners and businesses alike. Our team of experts specializes in designing and installing high-efficiency solar systems tailored to each customer's unique energy needs.
+
+                                <p class="about-lead mb-3">
+                                    At <strong><%= company.name %></strong>, our mission is to drive India towards a zero-pollution future by replacing dirty fossil fuels with infinite, clean rooftop solar energy.
                                 </p>
-                                <p class="text-muted mb-4" style="font-size: 16px; line-height: 1.8;">
-                                    We believe that switching to solar shouldn't be complicated. That's why we offer end-to-end solutions, from consultation and financing to installation and ongoing maintenance. By choosing <%= company.name %>, you're not just saving money—you're investing in a greener tomorrow.
+
+                                <p class="about-desc mb-4 d-none d-md-block">
+                                    Every rooftop solar installation in Raisen and across Madhya Pradesh significantly reduces harmful CO₂ emissions, cleans the air our families breathe, and slashes electricity bills by up to 90%.
                                 </p>
+
+                                <!-- Quick Highlights (2 per row on mobile & desktop) -->
+                                <div class="about-highlights row g-2 g-sm-3 mb-4">
+                                    <div class="col-6">
+                                        <div class="about-highlight-item">
+                                            <span class="highlight-check">✓</span>
+                                            <span class="highlight-text">Zero Carbon &amp; Air Pollution</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="about-highlight-item">
+                                            <span class="highlight-check">✓</span>
+                                            <span class="highlight-text">Up to 90% Bill Savings</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="about-highlight-item">
+                                            <span class="highlight-check">✓</span>
+                                            <span class="highlight-text">PM Surya Ghar Subsidy</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="about-highlight-item">
+                                            <span class="highlight-check">✓</span>
+                                            <span class="highlight-text">Lifetime Solar AMC Support</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Action Buttons (1 Row on Mobile & Desktop) -->
+                                <div class="about-actions row g-2 g-sm-3 mt-1">
+                                    <div class="col-6 col-sm-auto">
+                                        <a href="/about" class="about-btn-primary">
+                                            <span>Learn More</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-6 col-sm-auto">
+                                        <a href="/calculator" class="about-btn-secondary">
+                                            <span>⚡ Calculate Savings</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Video Autoplay Controller -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var video = document.getElementById('aboutCo2Video');
+                    if (video) {
+                        video.muted = true;
+                        var promise = video.play();
+                        if (promise !== undefined) {
+                            promise.catch(function() {
+                                document.body.addEventListener('click', function() {
+                                    video.play();
+                                }, { once: true });
+                            });
+                        }
+                    }
+                });
+            </script>
+
+            <!-- Section: Why Choose Us (Trusted & Affordable Solar Solutions) -->
+            <section class="why-section">
+                <div class="why-container">
+                    <div class="why-grid">
+                        <!-- LEFT IMAGE AREA (BORDERLESS, POP-UP ZOOM, REFINED SIZE) -->
+                        <div class="why-image-area wow zoomIn" data-wow-delay=".2s">
+                            <div class="why-main-image">
+                                <img src="/images/misc/s4.webp" alt="Solar panel installation - <%= company.name %>">
+                            </div>
+
+                            <div class="why-secondary-image">
+                                <img src="/images/misc/s1.webp" alt="Solar energy system in Raisen MP">
+                            </div>
+
+                            <div class="why-stat-card">
+                                <h2>100+</h2>
+                                <p>Happy Customers &amp; Solar Installations</p>
+                            </div>
+                        </div>
+
+                        <!-- RIGHT CONTENT (USER'S CONTENT & ICONS, COMPACT & BALANCED) -->
+                        <div class="why-content">
+                            <div class="why-subtitle wow fadeInDown" data-wow-delay=".1s">
+                                TRUSTED &amp; AFFORDABLE
+                            </div>
+
+                            <h2 class="why-title wow fadeInUp" data-wow-delay=".2s">
+                                Why Choose Us?
+                                <span>Reliable Solar Energy Solutions</span>
+                            </h2>
+
+                            <div class="why-features">
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".1s">
+                                    <div class="why-icon">☀</div>
+                                    <div class="why-feature-text">
+                                        <h4>Professional Team</h4>
+                                        <p>Experienced solar professionals delivering reliable installation and expert guidance.</p>
+                                    </div>
+                                </div>
+
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".2s">
+                                    <div class="why-icon">⌂</div>
+                                    <div class="why-feature-text">
+                                        <h4>Customized Solutions</h4>
+                                        <p>Solar systems designed according to your electricity consumption and requirements.</p>
+                                    </div>
+                                </div>
+
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".3s">
+                                    <div class="why-icon">₹</div>
+                                    <div class="why-feature-text">
+                                        <h4>Affordable Pricing</h4>
+                                        <p>Cost-effective solar solutions with guidance on eligible government subsidies.</p>
+                                    </div>
+                                </div>
+
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".4s">
+                                    <div class="why-icon">✓</div>
+                                    <div class="why-feature-text">
+                                        <h4>Ongoing Support</h4>
+                                        <p>Dedicated assistance, maintenance and after-sales service whenever you need us.</p>
+                                    </div>
+                                </div>
+
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".5s">
+                                    <div class="why-icon">⚡</div>
+                                    <div class="why-feature-text">
+                                        <h4>Quality Equipment</h4>
+                                        <p>Reliable solar panels, inverters and components for efficient energy generation.</p>
+                                    </div>
+                                </div>
+
+                                <div class="why-feature wow fadeInUp" data-wow-delay=".6s">
+                                    <div class="why-icon">⏱</div>
+                                    <div class="why-feature-text">
+                                        <h4>Timely Installation</h4>
+                                        <p>Professional project execution with attention to safety and installation quality.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Book an Appointment Button -->
+                            <div class="why-action wow fadeInUp" data-wow-delay=".7s">
+                                <a href="/contact#enquiry-form" class="why-btn">
+                                    <span>Book an Appointment</span>
+                                    <i class="icofont-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Govt Solar Scheme (PM Surya Ghar: Saffron Banner with Leaders, Benefits, Required Docs & Subsidy Slabs) -->
+            <section id="govt-scheme-section" class="govt-scheme-section py-5">
+                <div class="container py-3">
+
+                    <!-- 1. TOP ROYAL NAVY BANNER WITH LEADERS & GOLD ACCENTS -->
+                    <div class="govt-scheme-banner wow fadeInUp" data-wow-delay=".2s">
+                        <!-- Mobile Leaders Row (Centered at top on mobile) -->
+                        <div class="govt-leaders-mobile">
+                            <img src="/images/misc/modiji.png" class="govt-leader-img" alt="PM Narendra Modi">
+                            <img src="/images/misc/mohanyadav.png" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
+                        </div>
+
+                        <div class="govt-banner-inner">
+                            <!-- Left: PM Narendra Modi (Desktop) -->
+                            <div class="govt-leader-desktop">
+                                <img src="/images/misc/modiji.png" class="govt-leader-img" alt="Hon. PM Narendra Modi">
+                                <span class="govt-leader-label">PM Narendra Modi</span>
+                            </div>
+
+                            <!-- Center: Scheme Title & Details -->
+                            <div class="govt-banner-content">
+                                <div class="govt-scheme-badge">
+                                    <i class="icofont-badge me-1"></i>GOVERNMENT SUBSIDY SCHEME
+                                </div>
+                                <div class="govt-banner-subtitle">
+                                    HAR GHAR SOLAR, BHARAT UJJWAL
+                                </div>
+                                <h2 class="govt-banner-title">
+                                    पीएम सूर्य घर मुफ्त बिजली योजना
+                                </h2>
+                                <div class="govt-banner-urgency">
+                                    जल्दी करें! योजना सीमित समय के लिए
+                                </div>
                                 <div>
-                                    <a href="/about" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 28px; font-weight: 700;">
-                                        <span>Learn More</span>
-                                    </a>
+                                    <span class="govt-banner-pill">
+                                        आज ही रजिस्ट्रेशन कराएं और पाएं ₹1,08,000/- तक की सब्सिडी
+                                    </span>
                                 </div>
                             </div>
+
+                            <!-- Right: Leadership (Desktop) -->
+                            <div class="govt-leader-desktop">
+                                <img src="/images/misc/mohanyadav.png" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
+                                <span class="govt-leader-label">CM Mohan Yadav</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. TWO INFO CARDS: BENEFITS & REQUIRED DOCUMENTS -->
+                    <div class="row g-4 mb-4">
+                        <!-- Left Card: Benefits -->
+                        <div class="col-md-6 wow fadeInLeft" data-wow-delay=".3s">
+                            <div class="govt-card govt-benefits-card">
+                                <h3 class="govt-card-title">
+                                    घर हो या व्यापार सोलर है सबसे अच्छा विकल्प!
+                                </h3>
+                                <ul class="govt-list">
+                                    <li>
+                                        <span class="govt-check-orange">✓</span>
+                                        <span>100% बिजली बचत</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-orange">✓</span>
+                                        <span>30 वर्ष लम्बी उत्पादन</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-orange">✓</span>
+                                        <span>आज ही अपना सोलर सिस्टम बुक करें</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Right Card: Required Documents -->
+                        <div class="col-md-6 wow fadeInRight" data-wow-delay=".3s">
+                            <div class="govt-card govt-docs-card">
+                                <h3 class="govt-card-title">
+                                    ज़रूरी दस्तावेज
+                                </h3>
+                                <ul class="govt-list">
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>लेटेस्ट लाइट बिल</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>बैंक पासबुक एवं फोटो</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>मोबाइल नम्बर</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>आधार कार्ड</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>पैन कार्ड</span>
+                                    </li>
+                                    <li>
+                                        <span class="govt-check-green">✓</span>
+                                        <span>ईमेल आईडी</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. CAPACITY & SUBSIDY TABLE (IMAGE 2) -->
+                    <div class="govt-table-container wow fadeInUp" data-wow-delay=".4s">
+                        <div class="govt-table-header-info">
+                            <div>
+                                <h4>Capacity &amp; Subsidy Chart</h4>
+                                <small class="text-muted">डीबीटी (Direct Bank Transfer) के माध्यम से बैंक खाते में सीधा अनुदान</small>
+                            </div>
+                        </div>
+
+                        <div class="govt-table-responsive">
+                            <table class="govt-subsidy-table table">
+                                <thead>
+                                    <tr>
+                                        <th>संयंत्र की क्षमता</th>
+                                        <th>केन्द्र सरकार का अनुदान</th>
+                                        <th>राज्य सरकार का अनुदान</th>
+                                        <th>कुल अनुमन्य अनुदान</th>
+                                        <th>छत की आवश्यकता</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2 KW</td>
+                                        <td>60,000</td>
+                                        <td>30,000</td>
+                                        <td>90,000</td>
+                                        <td>150 sqft</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3 KW</td>
+                                        <td>78,000</td>
+                                        <td>30,000</td>
+                                        <td>1,08,000</td>
+                                        <td>200 sqft</td>
+                                    </tr>
+                                    <tr>
+                                        <td>4 KW</td>
+                                        <td>78,000</td>
+                                        <td>30,000</td>
+                                        <td>1,08,000</td>
+                                        <td>250 sqft</td>
+                                    </tr>
+                                    <tr>
+                                        <td>5 KW</td>
+                                        <td>78,000</td>
+                                        <td>30,000</td>
+                                        <td>1,08,000</td>
+                                        <td>350 sqft</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="govt-table-footer">
+                            <a href="https://pmsuryaghar.gov.in/" target="_blank" rel="noopener noreferrer" class="govt-portal-link">
+                                <i class="icofont-external-link"></i>
+                                <span>Scheme Detail:pmsuryaghar.gov.in</span>
+                            </a>
+                            <div class="govt-table-actions">
+                                <a href="/calculator" class="govt-cta-btn govt-btn-calc">
+                                    <span>⚡ Solar Savings<br class="d-sm-none"> Calculator</span>
+                                </a>
+                                <a href="/contact#enquiry-form" class="govt-cta-btn govt-btn-apply">
+                                    <span>📝 Apply for<br class="d-sm-none"> Subsidy</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Services horizontal auto-scroll rail -->
+            <section class="home-services-section" aria-labelledby="homeServicesHeading">
+                <div class="container">
+                    <div class="home-projects-heading">
+                        <h2 id="homeServicesHeading">Our Services</h2>
+                    </div>
+                    <% const homeServiceItems = data.services; %>
+                    <div class="home-service-rail home-auto-rail" role="region" tabindex="0" aria-label="Solar and EV services">
+                        <div class="home-project-track">
+                            <% [false, true].forEach(isClone => { %>
+                                <div class="home-service-group" <%= isClone ? 'aria-hidden="true"' : '' %>>
+                                    <% homeServiceItems.forEach(service => { %>
+                                        <article class="home-service-card" <%= isClone ? 'tabindex="-1"' : '' %>>
+                                            <div class="home-service-image">
+                                                <img src="/<%= service.image %>" alt="<%= isClone ? '' : service.title %>" loading="lazy">
+                                            </div>
+                                            <div class="home-service-card-body">
+                                                <span class="home-service-icon"><i class="<%= service.icon %>" aria-hidden="true"></i></span>
+                                                <h3><%= service.title %></h3>
+                                                <p><%= service.shortDesc %></p>
+                                                <div class="home-service-actions">
+                                                    <a class="home-service-discuss" href="/contact#enquiry-form" <%= isClone ? 'tabindex="-1"' : '' %>>Discuss Service</a>
+                                                    <a class="home-service-quote" href="/calculator" <%= isClone ? 'tabindex="-1"' : '' %>>Get Quote</a>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    <% }); %>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Section 3: PM Surya Ghar: Muft Bijli Yojana (Added 2-3 sections down as instructed!) -->
-            <section class="subsidy-section">
-                <div class="container py-5">
-                    <div class="row justify-content-center text-center mb-5">
-                        <div class="col-lg-8">
-                            <span class="subsidy-eyebrow">Government Subsidy Scheme</span>
-                            <h2 class="subsidy-title">PM Surya Ghar: Muft Bijli Yojana</h2>
-                            <p class="subsidy-intro">
-                                Avail direct bank transfer (DBT) subsidy from the Central Government for residential rooftop solar installations in Madhya Pradesh.
-                            </p>
+            <!-- Recent projects horizontal auto-scroll rail -->
+            <section class="home-projects-section" aria-labelledby="homeProjectsHeading">
+                <div class="container">
+                    <div class="home-projects-heading">
+                        <h2 id="homeProjectsHeading">Recent Projects</h2>
+                    </div>
+                    <% const homeProjectItems = data.projects.slice(0, 8); %>
+                    <div class="home-project-rail home-auto-rail" role="region" tabindex="0" aria-label="Recent solar projects">
+                        <div class="home-project-track">
+                            <% [false, true].forEach(isClone => { %>
+                                <div class="home-project-group" <%= isClone ? 'aria-hidden="true"' : '' %>>
+                                    <% homeProjectItems.forEach((project, index) => { %>
+                                        <article class="home-project-card" <%= isClone ? 'tabindex="-1"' : '' %>>
+                                            <div class="home-project-image">
+                                                <img src="<%= project.image %>" alt="<%= isClone ? '' : project.title %>" loading="lazy">
+                                                <span><%= project.capacity %></span>
+                                            </div>
+                                            <div class="home-project-card-body">
+                                                <div class="home-project-category-row">
+                                                    <small><%= project.category %></small>
+                                                    <span class="home-project-year"><%= project.year %></span>
+                                                </div>
+                                                <h3><%= project.title %></h3>
+                                                <p><i class="icofont-location-pin" aria-hidden="true"></i> <%= project.location %></p>
+                                                <div class="home-project-description"><%= project.description %></div>
+                                                <div class="home-project-meta">
+                                                    <span><b>Panels</b><%= project.panels %></span>
+                                                    <span><b>System</b><%= project.type %></span>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    <% }); %>
+                                </div>
+                            <% }); %>
                         </div>
                     </div>
-
-                    <div class="row g-4">
-                        <% data.schemes.pmSuryaGhar.subsidySlabs.forEach(slab => { %>
-                            <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".2s">
-                                <div class="subsidy-card p-4 rounded-4 h-100 text-center d-flex flex-column justify-content-between">
-                                    <div>
-                                        <span class="subsidy-capacity badge px-3 py-2 rounded-pill mb-3">
-                                            Capacity: <%= slab.capacity %>
-                                        </span>
-                                        <h3 class="subsidy-amount"><%= slab.subsidy %></h3>
-                                        <span class="subsidy-label small d-block mb-3">Direct DBT Subsidy</span>
-                                        <hr>
-                                        <p class="subsidy-card-copy small mb-4">
-                                            <%= slab.suitableFor %>. Generates clean solar units every month and cuts your electricity bills.
-                                        </p>
-                                    </div>
-                                    <a href="/calculator" class="subsidy-card-cta btn-main fx-slide">
-                                        <span>Calculate For <%= slab.capacity %></span>
-                                    </a>
-                                </div>
-                            </div>
-                        <% }); %>
-                    </div>
-
-                    <div class="subsidy-footer text-center mt-5">
-                        <a href="https://pmsuryaghar.gov.in/" target="_blank" rel="noopener noreferrer" class="subsidy-portal-btn text-decoration-none">
-                            <i class="icofont-external-link me-1"></i> Official Portal: pmsuryaghar.gov.in
-                        </a>
-                        <a href="/calculator" class="subsidy-main-cta btn-main fx-slide subsidy-calculator-link">
-                            <span>⚡ Open Solar Savings Calculator</span>
-                        </a>
+                    <div class="home-projects-action">
+                        <a href="/projects" class="home-projects-all-button">View All Projects <i class="icofont-arrow-right" aria-hidden="true"></i></a>
                     </div>
                 </div>
             </section>
 
-            <!-- Section 4: Services & Projects Showcase (Clean Cards & Original Images) -->
-            <section class="py-5 bg-light">
-                <div class="container py-4">
-                    <div class="row justify-content-center text-center mb-5">
-                        <div class="col-lg-8">
-                            <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">What We Do</span>
-                            <h2 class="font-weight-bold text-dark mt-2 mb-3" style="font-size: 36px;">Our Solar Services &amp; Projects</h2>
-                            <p class="text-muted">Turnkey solar engineering, procurement, and execution across Madhya Pradesh.</p>
-                        </div>
-                    </div>
-
-                    <div class="row g-4">
-                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".2s">
-                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
-                                <div class="overflow-hidden" style="height: 180px;">
-                                    <img src="/images/services/1.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Residential Solar">
-                                </div>
-                                <div class="p-4">
-                                    <h5 class="font-weight-bold mb-2">Residential Rooftop</h5>
-                                    <p class="text-muted small mb-0">High-yield on-grid rooftop solar systems for independent homes and villas.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".3s">
-                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
-                                <div class="overflow-hidden" style="height: 180px;">
-                                    <img src="/images/services/2.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Commercial Solar">
-                                </div>
-                                <div class="p-4">
-                                    <h5 class="font-weight-bold mb-2">Commercial &amp; Industrial</h5>
-                                    <p class="text-muted small mb-0">Rooftop &amp; ground-mount solar plants for factories, hospitals, and schools.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".4s">
-                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
-                                <div class="overflow-hidden" style="height: 180px;">
-                                    <img src="/images/services/3.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Agricultural Pumps">
-                                </div>
-                                <div class="p-4">
-                                    <h5 class="font-weight-bold mb-2">Solar Water Pumps</h5>
-                                    <p class="text-muted small mb-0">DC &amp; AC solar submersible pumps for agricultural irrigation under PM-KUSUM.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-3 col-md-6 wow fadeInUp" data-wow-delay=".5s">
-                            <div class="card h-100 border-0 shadow-sm overflow-hidden text-center" style="border-radius: 16px; background: #fff;">
-                                <div class="overflow-hidden" style="height: 180px;">
-                                    <img src="/images/services/4.webp" class="img-fluid w-100 h-100 object-fit-cover" alt="Solar Maintenance">
-                                </div>
-                                <div class="p-4">
-                                    <h5 class="font-weight-bold mb-2">Annual Maintenance (AMC)</h5>
-                                    <p class="text-muted small mb-0">Professional panel cleaning, inverter diagnostics, and generation audit.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center mt-4">
-                        <a href="/services" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 11px 28px; font-weight: 700; font-size: 14px;">
-                            <span>View All Services &amp; Installations</span>
-                        </a>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 5: Recent Projects 3D Interactive Morph Showcase -->
-            <%- include('partials/projectStack3D') %>
-
-            <!-- Section 6: Testimonials -->
-            <section class="py-5 bg-light">
-                <div class="container py-4">
-                    <div class="row justify-content-center text-center mb-5">
-                        <div class="col-lg-8">
-                            <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Testimonials</span>
-                            <h2 class="font-weight-bold text-dark mt-2 mb-3" style="font-size: 36px;">Trusted by Homeowners &amp; Businesses</h2>
-                            <p class="text-muted">Hear from satisfied clients across Raisen, Bhopal, and Vidisha.</p>
-                        </div>
-                    </div>
-
-                    <div class="row g-4">
-                        <% data.testimonials.slice(0, 2).forEach(t => { %>
-                            <div class="col-lg-6 wow fadeInUp" data-wow-delay=".2s">
-                                <div class="card h-100 p-4 border-0 shadow-sm bg-white" style="border-radius: 16px; border-left: 4px solid var(--primary-color) !important;">
-                                    <div class="text-warning mb-2">★★★★★</div>
-                                    <p class="text-secondary mb-3" style="font-size: 15px; line-height: 1.7;">"<%= t.review %>"</p>
-                                    <div class="mt-auto">
-                                        <h6 class="mb-0 font-weight-bold text-dark"><%= t.name %></h6>
-                                        <small class="text-muted"><%= t.location %> • <span class="text-primary font-weight-bold"><%= t.system %></span></small>
-                                    </div>
-                                </div>
-                            </div>
-                        <% }); %>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 7: Quick Consultation / Contact CTA -->
-            <section class="py-5 text-white" style="background: linear-gradient(rgba(22, 53, 99, 0.92), rgba(15, 38, 71, 0.95)), url('/images/background/3.webp') center/cover no-repeat;">
-                <div class="container py-4 text-center">
+            <!-- Quick Consultation / Contact CTA -->
+            <section class="py-5 text-white home-consultation-cta" style="background: linear-gradient(rgba(22, 53, 99, 0.92), rgba(15, 38, 71, 0.95)), url('/images/background/3.webp') center/cover no-repeat;">
+                <div class="container py-4 text-center home-consultation-inner">
                     <div class="row justify-content-center">
                         <div class="col-lg-8">
-                            <h2 class="text-white font-weight-bold mb-3" style="font-size: 38px;">Ready to Switch to Clean Solar Energy?</h2>
-                            <p class="text-white-50 mb-4" style="font-size: 17px;">
+                            <h2 class="text-white font-weight-bold mb-3 home-consultation-title" style="font-size: 38px;">Ready to Switch to Clean Solar Energy?</h2>
+                            <p class="text-white-50 mb-4 home-consultation-copy" style="font-size: 17px;">
                                 Book a free rooftop survey with our expert engineers in Raisen &amp; Madhya Pradesh. Avail up to ₹78,000 Govt subsidy.
                             </p>
                             <div class="d-flex flex-wrap gap-3 justify-content-center">
@@ -263,7 +595,68 @@
 
 <style>
 /* Page-specific responsive rules */
+.home-projects-section { padding: 58px 0 66px; overflow: hidden; background: #f5f8fc; }
+.home-services-section { padding: 52px 0 42px; overflow: hidden; background: #fff; }
+.home-projects-heading { margin-bottom: 24px; }
+.home-projects-heading h2 { margin: 0; color: #102444; font-size: clamp(28px, 3.5vw, 38px); font-weight: 800; line-height: 1.2; }
+.home-project-rail { width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
+.home-project-rail::-webkit-scrollbar { display: none; }
+.home-project-track, .home-project-group { display: flex; width: max-content; }
+.home-project-track { align-items: stretch; }
+.home-project-group { gap: 16px; padding-right: 16px; }
+.home-project-card { flex: 0 0 300px; min-width: 0; overflow: hidden; border: 1px solid #e4eaf1; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(16,36,68,.07); }
+.home-project-image { position: relative; height: 168px; overflow: hidden; background: #eaf0f5; }
+.home-project-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.home-project-image > span { position: absolute; top: 12px; right: 12px; padding: 6px 10px; border-radius: 20px; background: #163563; color: #fbec6b; font-size: 12px; font-weight: 750; }
+.home-project-card-body { min-width: 0; padding: 14px 16px 15px; }
+.home-project-category-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+.home-project-card-body .home-project-category-row small { display: block; min-width: 0; margin: 0; color: #58718f; font-size: 11px; font-weight: 700; }
+.home-project-year { flex: 0 0 auto; color: #728198; font-size: 11px; font-weight: 700; }
+.home-project-card-body h3 { display: -webkit-box; min-height: 44px; margin: 0 0 9px; overflow: hidden; color: #102444; font-size: 17px; font-weight: 750; line-height: 1.3; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.home-project-card-body p { display: -webkit-box; margin: 0; overflow: hidden; color: #68788c; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.home-project-card-body p i { color: #1b3b68; }
+.home-project-description { display: -webkit-box; min-height: 48px; margin-top: 7px; overflow: hidden; color: #536276; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.home-project-meta { display: grid; gap: 5px; margin-top: 10px; padding-top: 9px; border-top: 1px solid #e8edf3; }
+.home-project-meta span { display: grid; grid-template-columns: 53px minmax(0, 1fr); gap: 7px; min-width: 0; color: #506176; font-size: 11px; line-height: 1.35; overflow-wrap: anywhere; }
+.home-project-meta b { color: #18385f; font-size: 10px; }
+.home-projects-action { display: flex; justify-content: center; margin-top: 24px; }
+.home-projects-all-button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 9px; padding: 10px 22px; border-radius: 999px; background: var(--primary-color, #fbec6b); color: #163563; font-size: 14px; font-weight: 750; text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+.home-projects-all-button:hover { color: #163563; transform: translateY(-2px); box-shadow: 0 7px 18px rgba(22,53,99,.14); }
+.home-service-rail { width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
+.home-service-rail::-webkit-scrollbar { display: none; }
+.home-service-group { display: flex; width: max-content; gap: 16px; padding-right: 16px; }
+.home-service-card { position: relative; flex: 0 0 300px; min-width: 0; overflow: hidden; border: 1px solid #e4eaf1; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(16,36,68,.07); }
+.home-service-image { height: 160px; overflow: hidden; background: #eaf0f5; }
+.home-service-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.home-service-card-body { position: relative; min-width: 0; padding: 22px 17px 17px; }
+.home-service-icon { position: absolute; top: -21px; left: 16px; display: grid; width: 42px; height: 42px; place-items: center; border: 3px solid #fff; border-radius: 13px; background: #163563; color: #fbec6b; font-size: 18px; }
+.home-service-card-body h3 { display: -webkit-box; min-height: 44px; margin: 0 0 8px; overflow: hidden; color: #102444; font-size: 16px; font-weight: 750; line-height: 1.35; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.home-service-card-body p { display: -webkit-box; min-height: 54px; margin: 0 0 12px; overflow: hidden; color: #617087; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.home-service-actions { display: flex; gap: 8px; }
+.home-service-actions a { display: inline-flex; min-width: 0; min-height: 38px; flex: 1 1 0; align-items: center; justify-content: center; padding: 8px 9px; border: 1px solid #1b3b68; border-radius: 9px; color: #1b3b68; font-size: 11px; font-weight: 750; line-height: 1.2; text-align: center; text-decoration: none; }
+.home-service-actions a:hover { background: #edf3f9; color: #0d2748; }
+.home-service-actions .home-service-quote { border-color: #fbec6b; background: #fbec6b; color: #163563; }
+.home-service-actions .home-service-quote:hover { background: #f5e456; color: #163563; }
 @media (max-width: 767.98px) {
+    .home-services-section { padding: 38px 0 28px; }
+    #content .govt-scheme-section > .container { max-width: 100%; padding-right: 11px; padding-left: 11px; }
+    .home-projects-section { padding: 38px 0 44px; }
+    .home-projects-heading { margin: 0 12px 18px; }
+    .home-project-rail { width: calc(100% + 24px); margin-left: -12px; padding-left: 12px; }
+    .home-project-group { gap: 12px; padding-right: 12px; }
+    .home-project-card { flex-basis: min(84vw, 340px); border-radius: 14px; }
+    .home-project-image { height: 160px; }
+    .home-project-card-body { padding: 12px 14px 13px; }
+    .home-project-card-body h3 { font-size: 16px; }
+    .home-projects-action { margin-top: 20px; }
+    .home-service-rail { width: calc(100% + 24px); margin-left: -12px; padding-left: 12px; }
+    .home-service-group { gap: 12px; padding-right: 12px; }
+    .home-service-card { flex-basis: min(84vw, 340px); border-radius: 14px; }
+    .home-service-image { height: 150px; }
+    .home-service-card-body { padding: 21px 14px 14px; }
+    .home-service-card-body h3 { font-size: 16px; }
+    .home-service-actions { gap: 7px; }
+    .home-service-actions a { padding: 8px 6px; font-size: 10px; }
     #content { width: 100%; max-width: 100%; overflow-x: clip; }
     #content .container, #content .container-fluid { max-width: 100%; }
     #content .row > [class*="col-"] { min-width: 0; }
@@ -277,4 +670,43 @@
     #content .btn-main, #content .btn { white-space: normal; text-align: center; }
 }
 </style>
+<script>
+(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('.home-auto-rail').forEach(rail => {
+        const track = rail.querySelector('.home-project-track');
+        const firstGroup = track && track.firstElementChild;
+        if (!track || !firstGroup || firstGroup.children.length < 2) return;
+
+        let pauseUntil = 0;
+        let hovered = false;
+        let stepping = false;
+        const cardCount = firstGroup.children.length;
+        rail.addEventListener('pointerenter', () => { hovered = true; });
+        rail.addEventListener('pointerleave', () => { hovered = false; });
+        rail.addEventListener('touchstart', () => { pauseUntil = Date.now() + 3500; }, { passive: true });
+        rail.addEventListener('wheel', () => { pauseUntil = Date.now() + 2500; }, { passive: true });
+
+        const stepRail = () => {
+            if (hovered || Date.now() < pauseUntil || stepping) return;
+            const firstCard = firstGroup.querySelector('article');
+            const gap = parseFloat(getComputedStyle(firstGroup).columnGap) || 0;
+            const step = firstCard.getBoundingClientRect().width + gap;
+            const groupWidth = firstGroup.getBoundingClientRect().width;
+            if (!step || !groupWidth) return;
+
+            const currentIndex = Math.min(cardCount - 1, Math.round((rail.scrollLeft % groupWidth) / step));
+            stepping = true;
+            if (currentIndex >= cardCount - 1) {
+                rail.scrollTo({ left: groupWidth, behavior: 'smooth' });
+                window.setTimeout(() => { rail.scrollLeft = 0; stepping = false; }, 650);
+            } else {
+                rail.scrollTo({ left: (currentIndex + 1) * step, behavior: 'smooth' });
+                window.setTimeout(() => { stepping = false; }, 650);
+            }
+        };
+        window.setInterval(stepRail, 3200);
+    });
+})();
+</script>
 <%- include('partials/footer') %>

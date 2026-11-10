@@ -1,0 +1,357 @@
+/* ==========================================================================
+   Why Choose Us Section - Shivay Energy Solutions
+   Matches Reference Screenshot: Borderless, Dark Translucent Glass Card,
+   Clean Typography, 2-Column Staggered Features & Gold CTA
+   ========================================================================== */
+
+.why-section {
+    background: #132B50; /* Deep rich navy matching Envato screenshot */
+    color: #fff;
+    padding: 48px 0 56px;
+    font-family: 'Manrope', sans-serif;
+    overflow: hidden;
+    position: relative;
+}
+
+.why-container {
+    max-width: 1240px;
+    margin: auto;
+    padding: 0 24px;
+}
+
+.why-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.18fr; /* Balanced image vs content ratio */
+    gap: 48px;
+    align-items: center;
+}
+
+/* ==========================================================================
+   LEFT IMAGE AREA (BORDERLESS, POP-UP ZOOM, DARK GLASS STAT CARD)
+   ========================================================================== */
+.why-image-area {
+    position: relative;
+    padding: 10px 0 25px;
+}
+
+/* Pop-up Zoom Animation */
+@keyframes popZoomIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.why-image-area.wow,
+.why-image-area {
+    animation: popZoomIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Main Top Image: Borderless, Rounded Corners */
+.why-main-image {
+    width: 90%;
+    overflow: hidden;
+    border-radius: 22px;
+    position: relative;
+    z-index: 1;
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.why-main-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: none !important;
+    transform: scale(1);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.why-main-image:hover img {
+    transform: scale(1.04);
+}
+
+/* Secondary Overlapping Image: Borderless, Bottom Right */
+.why-secondary-image {
+    width: 53%;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    border-radius: 20px;
+    overflow: hidden;
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45);
+}
+
+.why-secondary-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border: none !important;
+    transform: scale(1);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.why-secondary-image:hover img {
+    transform: scale(1.04);
+}
+
+/* Floating Dark Glass Stat Card (Matches the 325% card in screenshot!) */
+.why-stat-card {
+    position: absolute;
+    bottom: 22px;
+    left: 16px;
+    z-index: 3;
+    width: 185px;
+    padding: 22px 20px;
+    text-align: left;
+    border-radius: 18px;
+    background: rgba(10, 24, 46, 0.78); /* Dark translucent frosted glass */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.why-stat-card h2 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #ffffff;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.why-stat-card p {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.85);
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   RIGHT CONTENT (CLEAN TYPOGRAPHY, 2-COLUMN FEATURES, GOLD CTA)
+   ========================================================================== */
+.why-content {
+    padding-left: 0;
+}
+
+.why-subtitle {
+    color: #D8A928; /* Original Gold Accent */
+    font-size: 13.5px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'Manrope', sans-serif;
+}
+
+.why-title {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 46px;
+    line-height: 1.15;
+    font-weight: 700;
+    margin-bottom: 26px;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+}
+
+.why-title span {
+    display: block;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.58em;
+    margin-top: 5px;
+    letter-spacing: 0;
+}
+
+/* 2-Column Clean Features Grid */
+.why-features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 28px;
+}
+
+.why-feature {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: transform 0.25s ease;
+}
+
+.why-feature:hover {
+    transform: translateY(-3px);
+}
+
+/* Staggered One-by-One Entrance */
+@keyframes featureFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.why-feature {
+    animation: featureFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.why-feature:nth-child(1) { animation-delay: 0.1s; }
+.why-feature:nth-child(2) { animation-delay: 0.2s; }
+.why-feature:nth-child(3) { animation-delay: 0.3s; }
+.why-feature:nth-child(4) { animation-delay: 0.4s; }
+.why-feature:nth-child(5) { animation-delay: 0.5s; }
+.why-feature:nth-child(6) { animation-delay: 0.6s; }
+
+/* Refined Gold Icon Badge */
+.why-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #D8A928;
+    color: #132B50;
+    border-radius: 9px;
+    font-size: 18px;
+    font-weight: 700;
+    margin-top: 2px;
+    box-shadow: 0 4px 12px rgba(216, 169, 40, 0.28);
+}
+
+.why-feature-text {
+    flex: 1;
+}
+
+.why-feature-text h4 {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 17.5px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #ffffff;
+    line-height: 1.3;
+}
+
+.why-feature-text p {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.74);
+    margin: 0;
+}
+
+/* Book an Appointment Button */
+.why-action {
+    margin-top: 26px;
+}
+
+.why-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #D8A928; /* Original Gold Accent */
+    color: #132B50;
+    font-family: 'Inter Tight', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 12px 30px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 4px 15px rgba(216, 169, 40, 0.35);
+}
+
+.why-btn i {
+    font-size: 15px;
+    transition: transform 0.25s ease;
+}
+
+.why-btn:hover {
+    background: #ffffff;
+    color: #132B50;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.35);
+}
+
+.why-btn:hover i {
+    transform: translateX(4px);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 991px) {
+    .why-section {
+        padding: 45px 0 52px;
+    }
+
+    .why-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+
+    .why-image-area {
+        max-width: 580px;
+        width: 100%;
+        margin: auto;
+    }
+
+    .why-title {
+        font-size: 38px;
+    }
+}
+
+@media (max-width: 576px) {
+    .why-section {
+        padding: 40px 0;
+    }
+
+    .why-grid {
+        gap: 32px;
+    }
+
+    .why-title {
+        font-size: 32px;
+        margin-bottom: 22px;
+    }
+
+    .why-features {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .why-stat-card {
+        width: 150px;
+        padding: 16px 14px;
+        left: 8px;
+        bottom: 12px;
+    }
+
+    .why-stat-card h2 {
+        font-size: 32px;
+    }
+
+    .why-stat-card p {
+        font-size: 11.5px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .why-section * {
+        animation: none !important;
+        transition: none !important;
+    }
+}

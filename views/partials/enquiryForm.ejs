@@ -1,6 +1,6 @@
-<div class="card p-4 shadow-lg border-0 rounded-3 text-dark bg-white">
+<div class="solar-input-card contact-enquiry-card text-dark">
     <div class="text-center mb-3">
-        <h4 class="mb-1 text-dark font-weight-bold">Request a Free Solar Site Survey</h4>
+        <h4 class="solar-input-heading mb-1">Request a Free Solar Site Survey</h4>
         <p class="text-muted small">Avail up to ₹78,000 PM Surya Ghar Govt Subsidy in Madhya Pradesh</p>
     </div>
 
@@ -25,7 +25,7 @@
 
             <div class="col-md-6">
                 <label class="form-label small font-weight-bold">State *</label>
-                <select name="state" class="form-select" required>
+                <select name="state" id="enquiryState" class="form-select" required>
                     <% data.regions.states.forEach(st => { %>
                         <option value="<%= st %>" <%= st === 'Madhya Pradesh' ? 'selected' : '' %>><%= st %></option>
                     <% }); %>
@@ -34,11 +34,15 @@
 
             <div class="col-md-6">
                 <label class="form-label small font-weight-bold">District *</label>
-                <select name="district" class="form-select" required>
+                <select name="district" id="enquiryMpDistrict" class="form-select" required>
                     <% data.regions.mpDistricts.forEach(dst => { %>
                         <option value="<%= dst %>" <%= dst === 'Raisen' ? 'selected' : '' %>><%= dst %></option>
                     <% }); %>
                 </select>
+            </div>
+            <div class="col-md-6" id="enquiryOtherDistrictField" hidden>
+                <label class="form-label small font-weight-bold" for="enquiryOtherDistrict">District *</label>
+                <input type="text" name="district" id="enquiryOtherDistrict" class="form-control" placeholder="Enter your district" disabled>
             </div>
 
             <div class="col-md-6">
@@ -84,6 +88,26 @@
 </div>
 
 <script>
+(() => {
+    const state = document.getElementById('enquiryState');
+    const mpDistrict = document.getElementById('enquiryMpDistrict');
+    const otherField = document.getElementById('enquiryOtherDistrictField');
+    const otherDistrict = document.getElementById('enquiryOtherDistrict');
+    if (!state || !mpDistrict || !otherField || !otherDistrict) return;
+
+    const syncDistrictField = () => {
+        const isMp = state.value === 'Madhya Pradesh';
+        mpDistrict.disabled = !isMp;
+        mpDistrict.required = isMp;
+        mpDistrict.closest('.col-md-6').hidden = !isMp;
+        otherField.hidden = isMp;
+        otherDistrict.disabled = isMp;
+        otherDistrict.required = !isMp;
+    };
+    state.addEventListener('change', syncDistrictField);
+    syncDistrictField();
+})();
+
 function handleEnquirySubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('enquirySubmitBtn');

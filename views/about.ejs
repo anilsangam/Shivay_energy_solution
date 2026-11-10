@@ -5,88 +5,218 @@
     <div id="top"></div>
 
     <!-- Clean Sleek Subheader -->
-    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/2.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+    <section id="subheader" class="bg-dark text-light relative about-hero" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/2.webp') center/cover no-repeat;">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">About Us</h1>
+                    <h1 class="text-white font-weight-bold">About Us</h1>
                     <p class="text-white-50 mb-0" style="font-size: 17px;"><%= company.tagline %> • Raisen, Madhya Pradesh</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- About Section (Exact Image 2 Layout & Animations) -->
-    <section class="py-5 bg-white">
+    <!-- Section: About Us - Clean Energy, CO2 Reduction & Pollution-Free India -->
+    <section class="about-video-section py-5 bg-white position-relative overflow-hidden">
         <div class="container py-4">
-            <div class="row align-items-center g-5">
-                <!-- Left Column: Overlapping Images + Floating Badge -->
-                <div class="col-lg-6">
-                    <div class="position-relative pe-lg-4">
-                        <!-- Main Image: Mother & Child pointing at solar panels -->
-                        <div class="overflow-hidden shadow-lg wow fadeInLeft" data-wow-delay=".2s" style="border-radius: 20px;">
-                            <img src="/images/misc/p1.webp" class="img-fluid w-100 d-block" alt="Clean Solar Energy Family" style="transition: transform 0.5s ease;">
+            <div class="row align-items-center gy-3 gy-lg-5 gx-lg-5">
+                <!-- Left: Square Video Frame (Plays video with fadeInLeft) -->
+                <div class="col-lg-6 wow fadeInLeft" data-wow-delay=".2s">
+                    <div class="about-video-card">
+                        <video id="aboutCo2Video" class="about-video-player" autoplay muted loop playsinline preload="auto">
+                            <source src="https://media.istockphoto.com/id/1130184194/video/sunrise-and-technologic-solar-energy-panels.mp4?s=mp4-640x640-is&k=20&c=PJGGdg3Sm1mWv-FInPDZ6rAdYWPCtb9KXz5BJYKPk58=" type="video/mp4">
+                            Your browser does not support HTML5 video.
+                        </video>
+                        <div class="about-video-overlay"></div>
+
+                        <!-- Top Pill Badge -->
+                        <div class="about-video-top-badge">
+                            <span class="live-pulse-dot"></span>
+                            <span>🌱 Reducing CO₂ Emissions</span>
                         </div>
 
-                        <!-- Secondary Overlapping Image: Solar Roof -->
-                        <div class="position-absolute overflow-hidden shadow-lg wow fadeInUp d-none d-sm-block" data-wow-delay=".4s" style="bottom: -30px; right: 0; width: 55%; border-radius: 18px; border: 4px solid #ffffff;">
-                            <img src="/images/misc/p2.webp" class="img-fluid w-100 d-block" alt="Rooftop Solar Installation">
-                        </div>
-
-                        <!-- Dark Blue Floating Badge (325% Clean Energy Growth) -->
-                        <div class="position-absolute wow zoomIn" data-wow-delay=".5s" style="bottom: 20px; left: -15px; background: #0f2647; color: #ffffff; padding: 20px 28px; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.3); z-index: 5;">
-                            <h2 class="text-white font-weight-bold mb-0" style="font-size: 36px; line-height: 1; letter-spacing: -1px;">325%</h2>
-                            <span style="color: var(--primary-color); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Clean Energy Growth</span>
+                        <!-- Bottom Impact Glass Card -->
+                        <div class="about-video-bottom-card">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="about-video-stat-icon">☀️</div>
+                                <div>
+                                    <h4 class="mb-0 text-white font-weight-bold" style="font-size: 19px;">100% Green Solar Energy</h4>
+                                    <p class="mb-0 text-white-50 small">Zero Pollution • Clean Air for India</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Clean Typography & Content -->
-                <div class="col-lg-6">
-                    <div class="ps-lg-3 wow fadeInRight" data-wow-delay=".3s">
-                        <span class="text-uppercase font-weight-bold d-block mb-2" style="color: #163563; font-size: 13px; letter-spacing: 2px;">About Us</span>
-                        <h2 class="font-weight-bold mb-3 text-dark" style="font-size: 38px; line-height: 1.25; letter-spacing: -0.5px;">
-                            Solar Solutions for Maximum Energy Savings
+                <!-- Right: Simple & Short Content (Working to make India pollution-free with fadeInRight) -->
+                <div class="col-lg-6 wow fadeInRight" data-wow-delay=".3s">
+                    <div class="about-content-card">
+                        <span class="about-eyebrow-pill mb-3">Green Energy Initiative</span>
+
+                        <h2 class="about-heading mb-3">
+                            Making India Pollution-Free With Clean Solar Power
                         </h2>
 
-                        <p class="text-muted mb-3" style="font-size: 16px; line-height: 1.8;">
-                            At <%= company.name %>, we are passionate about harnessing the power of the sun to create a cleaner, more sustainable future. Since our founding in Raisen, Madhya Pradesh, we've been committed to making solar energy accessible and affordable for homeowners and businesses alike. Our team of experts specializes in designing and installing high-efficiency solar systems tailored to each customer's unique energy needs, helping them reduce electricity bills while lowering their carbon footprint.
+                        <p class="about-lead mb-3">
+                            At <strong><%= company.name %></strong>, our mission is to drive India towards a zero-pollution future by replacing dirty fossil fuels with infinite, clean rooftop solar energy.
                         </p>
 
-                        <p class="text-muted mb-4" style="font-size: 16px; line-height: 1.8;">
-                            We believe that switching to solar shouldn't be complicated. That's why we offer end-to-end solutions, from consultation and financing to installation and ongoing maintenance. As an authorized partner, we help families avail up to <strong>₹78,000</strong> direct bank subsidy under <strong>PM Surya Ghar: Muft Bijli Yojana</strong>. By choosing <%= company.name %>, you're not just saving money—you're investing in a greener tomorrow.
+                        <p class="about-desc mb-4 d-none d-md-block">
+                            Every rooftop solar installation in Raisen and across Madhya Pradesh significantly reduces harmful CO₂ emissions, cleans the air our families breathe, and slashes electricity bills by up to 90%.
                         </p>
 
-                        <div class="row g-3 pt-2 mb-4">
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(198, 255, 125, 0.25); color: #163563; font-size: 20px;">
-                                        <i class="icofont-check"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 font-weight-bold text-dark">Tier-1 DCR Panels</h6>
-                                        <small class="text-muted">25-Yr Performance Guarantee</small>
-                                    </div>
+                        <!-- Quick Highlights (2 per row on mobile & desktop) -->
+                        <div class="about-highlights row g-2 g-sm-3 mb-4">
+                            <div class="col-6">
+                                <div class="about-highlight-item">
+                                    <span class="highlight-check">✓</span>
+                                    <span class="highlight-text">Zero Carbon &amp; Air Pollution</span>
                                 </div>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 50%; background: rgba(198, 255, 125, 0.25); color: #163563; font-size: 20px;">
-                                        <i class="icofont-check"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0 font-weight-bold text-dark">Govt DBT Subsidy</h6>
-                                        <small class="text-muted">Fast DISCOM Net-Metering</small>
-                                    </div>
+                            <div class="col-6">
+                                <div class="about-highlight-item">
+                                    <span class="highlight-check">✓</span>
+                                    <span class="highlight-text">Up to 90% Bill Savings</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="about-highlight-item">
+                                    <span class="highlight-check">✓</span>
+                                    <span class="highlight-text">PM Surya Ghar Subsidy</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="about-highlight-item">
+                                    <span class="highlight-check">✓</span>
+                                    <span class="highlight-text">Lifetime Solar AMC Support</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div>
-                            <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
-                                <span>Get a Free Solar Quote</span>
-                            </a>
+                        <!-- Action Buttons (1 Row on Mobile & Desktop) -->
+                        <div class="about-actions row g-2 g-sm-3 mt-1">
+                            <div class="col-6 col-sm-auto">
+                                <a href="/contact#enquiry-form" class="about-btn-primary">
+                                    <span>Get Free Consultation</span>
+                                </a>
+                            </div>
+                            <div class="col-6 col-sm-auto">
+                                <a href="/calculator" class="about-btn-secondary">
+                                    <span>⚡ Calculate Savings</span>
+                                </a>
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Video Autoplay Controller -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var video = document.getElementById('aboutCo2Video');
+            if (video) {
+                video.muted = true;
+                var promise = video.play();
+                if (promise !== undefined) {
+                    promise.catch(function() {
+                        document.body.addEventListener('click', function() {
+                            video.play();
+                        }, { once: true });
+                    });
+                }
+            }
+        });
+    </script>
+
+    <!-- Why Choose Us Section -->
+    <section class="why-section">
+        <div class="why-container">
+            <div class="why-grid">
+                <!-- LEFT IMAGE AREA (BORDERLESS, POP-UP ZOOM, REFINED SIZE) -->
+                <div class="why-image-area wow zoomIn" data-wow-delay=".2s">
+                    <div class="why-main-image">
+                        <img src="/images/misc/s4.webp" alt="Solar panel installation - <%= company.name %>">
+                    </div>
+
+                    <div class="why-secondary-image">
+                        <img src="/images/misc/s1.webp" alt="Solar energy system in Raisen MP">
+                    </div>
+
+                    <div class="why-stat-card">
+                        <h2>100+</h2>
+                        <p>Happy Customers &amp; Solar Installations</p>
+                    </div>
+                </div>
+
+                <!-- RIGHT CONTENT (USER'S CONTENT & ICONS, COMPACT & BALANCED) -->
+                <div class="why-content">
+                    <div class="why-subtitle wow fadeInDown" data-wow-delay=".1s">
+                        TRUSTED &amp; AFFORDABLE
+                    </div>
+
+                    <h2 class="why-title wow fadeInUp" data-wow-delay=".2s">
+                        Why Choose Us?
+                        <span>Reliable Solar Energy Solutions</span>
+                    </h2>
+
+                    <div class="why-features">
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".1s">
+                            <div class="why-icon">☀</div>
+                            <div class="why-feature-text">
+                                <h4>Professional Team</h4>
+                                <p>Experienced solar professionals delivering reliable installation and expert guidance.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".2s">
+                            <div class="why-icon">⌂</div>
+                            <div class="why-feature-text">
+                                <h4>Customized Solutions</h4>
+                                <p>Solar systems designed according to your electricity consumption and requirements.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".3s">
+                            <div class="why-icon">₹</div>
+                            <div class="why-feature-text">
+                                <h4>Affordable Pricing</h4>
+                                <p>Cost-effective solar solutions with guidance on eligible government subsidies.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".4s">
+                            <div class="why-icon">✓</div>
+                            <div class="why-feature-text">
+                                <h4>Ongoing Support</h4>
+                                <p>Dedicated assistance, maintenance and after-sales service whenever you need us.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".5s">
+                            <div class="why-icon">⚡</div>
+                            <div class="why-feature-text">
+                                <h4>Quality Equipment</h4>
+                                <p>Reliable solar panels, inverters and components for efficient energy generation.</p>
+                            </div>
+                        </div>
+
+                        <div class="why-feature wow fadeInUp" data-wow-delay=".6s">
+                            <div class="why-icon">⏱</div>
+                            <div class="why-feature-text">
+                                <h4>Timely Installation</h4>
+                                <p>Professional project execution with attention to safety and installation quality.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Book an Appointment Button -->
+                    <div class="why-action wow fadeInUp" data-wow-delay=".7s">
+                        <a href="/contact#enquiry-form" class="why-btn">
+                            <span>Book an Appointment</span>
+                            <i class="icofont-arrow-right"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -94,37 +224,36 @@
     </section>
 
     <!-- Leadership Section -->
-    <section id="team" class="py-5" style="background: #f8f9fa;">
+    <section id="team" class="about-leadership-section">
         <div class="container py-4">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
-                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Leadership</span>
-                    <h2 class="font-weight-bold mb-2 text-dark" style="font-size: 34px;">Founders & Management Team</h2>
-                    <p class="text-muted">Dedicated hands-on leadership with on-ground technical expertise in Raisen & Madhya Pradesh.</p>
+                    <h2 class="font-weight-bold mb-2 text-dark">Founders &amp; Management Team</h2>
+                    <p class="text-muted">Hands-on solar expertise and customer support across Raisen and Madhya Pradesh.</p>
                 </div>
             </div>
 
             <div class="row justify-content-center g-4">
                 <% company.contacts.forEach((contact, idx) => { %>
                     <div class="col-md-5">
-                        <div class="card h-100 p-4 border-0 shadow-sm text-center bg-white" style="border-radius: 16px; transition: transform 0.3s ease;">
-                            <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 75px; height: 75px; background: #163563; color: #fff; font-size: 28px; font-weight: bold;">
+                        <article class="leadership-card h-100">
+                            <div class="leadership-avatar">
                                 <%= contact.name.charAt(0) %>
                             </div>
-                            <h4 class="font-weight-bold text-dark mb-1"><%= contact.name %></h4>
-                            <span class="badge bg-light text-primary border mb-3 py-2 px-3"><%= contact.role %></span>
-                            <p class="text-muted small mb-4">
-                                Available for direct technical consultation, rooftop feasibility inspection in Raisen and surrounding districts, and project guidance.
+                            <h3><%= contact.name %></h3>
+                            <span class="leadership-designation"><%= contact.designation %></span>
+                            <p class="leadership-description">
+                                Available for technical consultation, rooftop feasibility checks, and project guidance.
                             </p>
-                            <div class="d-flex gap-2 justify-content-center mt-auto">
-                                <a href="tel:<%= contact.mobile %>" class="btn btn-outline-dark btn-sm px-3" style="border-radius: 20px;">
-                                    <i class="icofont-phone me-1"></i> <%= contact.mobile %>
+                            <div class="leadership-actions">
+                                <a href="tel:<%= contact.mobile.replace(/[^0-9+]/g, '') %>" class="leadership-call-button">
+                                    <i class="icofont-phone" aria-hidden="true"></i> <%= contact.mobile %>
                                 </a>
-                                <a href="<%= contact.whatsapp %>" target="_blank" class="btn btn-success btn-sm px-3 text-white" style="border-radius: 20px;">
-                                    <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
+                                <a href="<%= contact.whatsapp %>" target="_blank" rel="noopener noreferrer" class="leadership-whatsapp-button">
+                                    <i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp
                                 </a>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 <% }); %>
             </div>
@@ -132,20 +261,19 @@
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimonials" class="py-5 bg-white">
+    <section id="testimonials" class="about-testimonials-section">
         <div class="container py-4">
             <div class="row justify-content-center text-center mb-4">
                 <div class="col-lg-8">
-                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Testimonials</span>
-                    <h2 class="font-weight-bold mb-2 text-dark" style="font-size: 34px;">What Our Customers Say</h2>
-                    <p class="text-muted">Real experiences from residential and commercial clients across Madhya Pradesh.</p>
+                    <h2 class="font-weight-bold mb-2 text-dark">What Our Customers Say</h2>
+                    <p class="text-muted">Experiences from homeowners and businesses across Madhya Pradesh.</p>
                 </div>
             </div>
 
             <div class="row g-4">
                 <% data.testimonials.forEach(t => { %>
                     <div class="col-lg-6">
-                        <div class="card h-100 p-4 border-0 shadow-sm bg-light" style="border-radius: 14px; border-left: 4px solid var(--primary-color) !important;">
+                        <div class="about-testimonial-card h-100">
                             <div class="text-warning mb-2">★★★★★</div>
                             <p class="text-secondary small mb-3">"<%= t.review %>"</p>
                             <div class="d-flex align-items-center mt-auto">
@@ -164,10 +292,48 @@
 
 <style>
 /* Page-specific responsive rules */
+.about-leadership-section { padding: 60px 0 68px; background: #f5f8fc; }
+.about-leadership-section > .container { max-width: 1120px; }
+.about-leadership-section .row.justify-content-center:first-child { margin-bottom: 28px !important; }
+.about-leadership-section h2 { margin: 0 0 10px !important; color: #102444; font-size: clamp(28px, 3.5vw, 36px); line-height: 1.2; }
+.about-leadership-section .row.justify-content-center:first-child p { margin: 0; color: #65758a; font-size: 15px; }
+.leadership-card { display: flex; min-width: 0; flex-direction: column; align-items: center; padding: 26px 22px 22px; border: 1px solid #e3eaf2; border-top: 4px solid #1b3b68; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(16,36,68,.06); text-align: center; transition: transform .2s ease, box-shadow .2s ease; }
+.leadership-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(16,36,68,.1); }
+.leadership-avatar { display: grid; width: 66px; height: 66px; margin-bottom: 14px; place-items: center; border: 4px solid #edf3f9; border-radius: 50%; background: #163563; color: #fbec6b; font-size: 26px; font-weight: 800; }
+.leadership-card h3 { margin: 0 0 6px; color: #102444; font-size: 19px; font-weight: 800; }
+.leadership-designation { display: inline-block; max-width: 100%; padding: 6px 11px; border-radius: 999px; background: #edf3f9; color: #315982; font-size: 11px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.leadership-description { flex: 1; margin: 15px 0 20px; color: #617087; font-size: 13px; line-height: 1.6; }
+.leadership-actions { display: flex; width: 100%; gap: 9px; margin-top: auto; }
+.leadership-actions a { display: inline-flex; min-width: 0; min-height: 42px; flex: 1 1 0; align-items: center; justify-content: center; gap: 6px; padding: 8px; border: 1px solid #1b3b68; border-radius: 10px; color: #1b3b68; font-size: 11px; font-weight: 750; text-decoration: none; overflow-wrap: anywhere; }
+.leadership-actions .leadership-whatsapp-button { border-color: #16845b; background: #16845b; color: #fff; }
+.leadership-actions .leadership-whatsapp-button:hover { background: #116a49; color: #fff; }
+.about-testimonials-section { padding: 62px 0 70px; background: #f5f8fc; }
+.about-testimonials-section > .container { max-width: 1180px; }
+.about-testimonials-section .row.justify-content-center { margin-bottom: 30px !important; }
+.about-testimonial-eyebrow { display: block; margin-bottom: 8px; color: #526b89; font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
+#testimonials h2 { margin: 0 0 10px !important; color: #102444; font-size: clamp(28px, 3.5vw, 36px); line-height: 1.2; }
+#testimonials .row.justify-content-center p { margin: 0; color: #65758a; font-size: 15px; }
+.about-testimonial-card { display: flex; min-width: 0; flex-direction: column; padding: 23px; border: 1px solid #e3eaf2; border-left: 4px solid #1b3b68; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(16,36,68,.06); transition: transform .2s ease, box-shadow .2s ease; }
+.about-testimonial-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(16,36,68,.1); }
+.about-testimonial-card .text-warning { margin-bottom: 13px !important; color: #d4a900 !important; font-size: 0; letter-spacing: 2px; }
+.about-testimonial-card .text-warning::before { content: "★ ★ ★ ★ ★"; font-size: 15px; }
+.about-testimonial-card > p { margin: 0 0 20px !important; color: #526176 !important; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.about-testimonial-card .d-flex { min-width: 0; margin-top: auto; padding-top: 15px; border-top: 1px solid #edf1f5; }
+.about-testimonial-card h6 { margin-bottom: 4px !important; color: #102444; font-size: 14px; }
+.about-testimonial-card small { display: block; color: #738197; line-height: 1.5; overflow-wrap: anywhere; }
+.about-testimonial-card small .text-primary { color: #315982 !important; }
+#content #subheader.about-hero { min-height: 310px !important; padding: 110px 0 64px !important; }
+#content #subheader.about-hero > .container { margin-top: 0; }
+#content #subheader.about-hero h1 { max-width: 780px; margin: 10px 0 !important; font-size: clamp(34px, 5vw, 54px) !important; font-weight: 800; line-height: 1.1 !important; text-transform: none; }
+#content #subheader.about-hero p { max-width: 620px; margin: 0; font-size: clamp(15px, 2vw, 18px) !important; line-height: 1.55; }
 @media (min-width: 768px) {
-    #content #subheader > .container { margin-top: 36px; }
+    #content #subheader.about-hero > .container { margin-top: 0; }
 }
 @media (max-width: 767.98px) {
+    #content #subheader.about-hero { height: auto !important; min-height: 0 !important; padding: 76px 0 20px !important; }
+    #content #subheader.about-hero > .container { margin-top: 0 !important; }
+    #content #subheader.about-hero .row { align-items: flex-start !important; }
+    #content #subheader.about-hero h1 { margin-top: 0 !important; }
     #content { width: 100%; max-width: 100%; overflow-x: clip; }
     #content .container, #content .container-fluid { max-width: 100%; }
     #content .row > [class*="col-"] { min-width: 0; }
@@ -180,17 +346,27 @@
     #content table { min-width: 620px; }
     #content .btn-main, #content .btn { white-space: normal; text-align: center; }
 }
+@media (max-width: 575.98px) {
+    #content #subheader.about-hero { height: auto !important; min-height: 0 !important; padding: 70px 0 18px !important; }
+}
 </style>
 <style>
 @media (max-width: 767.98px) {
-    #testimonials { padding: 28px 0 !important; }
-    #testimonials > .container { padding: 12px !important; }
+    #team { padding: 38px 0 44px !important; }
+    #team > .container { padding: 0 16px !important; }
+    #team .row.g-4 { --bs-gutter-x: 0; --bs-gutter-y: 14px; margin-left: 0; margin-right: 0; }
+    #team .row.g-4 > [class*="col-"] { width: 100%; padding-left: 0; padding-right: 0; }
+    #team .leadership-card { width: 100%; padding: 20px 17px 17px; }
+    #team .leadership-actions { gap: 8px; }
+    #team .leadership-actions a { padding: 8px 6px; font-size: 10px; }
+    #testimonials { padding: 38px 0 44px !important; }
+    #testimonials > .container { padding: 0 16px !important; }
     #testimonials h2 { font-size: clamp(25px, 7vw, 32px) !important; line-height: 1.2; }
     #testimonials .row.g-4 { --bs-gutter-x: 0; --bs-gutter-y: 14px; margin-left: 0; margin-right: 0; }
     #testimonials .row.g-4 > [class*="col-"] { width: 100%; padding-left: 0; padding-right: 0; }
-    #testimonials .card { display: flex; width: 100%; padding: 18px !important; overflow: hidden; }
-    #testimonials .card p { white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.6; }
-    #testimonials .card small { display: inline-block; max-width: 100%; white-space: normal; }
+    #testimonials .about-testimonial-card { width: 100%; padding: 18px; }
+    #testimonials .about-testimonial-card > p { white-space: normal; overflow-wrap: anywhere; word-break: normal; line-height: 1.6; }
+    #testimonials .about-testimonial-card small { display: block; max-width: 100%; white-space: normal; }
 }
 </style>
 <%- include('partials/footer') %>

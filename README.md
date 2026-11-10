@@ -95,7 +95,7 @@ npm run dev
 ### 3. Open in Browser
 - Website: `http://localhost:3000`
 - Solar Calculator: `http://localhost:3000/calculator`
-- PM Surya Ghar Subsidy: `http://localhost:3000/schemes`
+- PM Surya Ghar Subsidy: `http://localhost:3000/#govt-scheme-section`
 - Admin Dashboard: `http://localhost:3000/admin`
 - Quotation Generator: `http://localhost:3000/admin/quotations`
 - Tax Invoices: `http://localhost:3000/admin/invoices`

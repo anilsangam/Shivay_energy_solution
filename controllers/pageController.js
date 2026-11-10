@@ -24,8 +24,8 @@ exports.getAbout = (req, res) => {
 
 exports.getServices = (req, res) => {
     res.render('services', {
-        title: `Our Solar Services | ${data.company.name} - Rooftop, Commercial & AMC`,
-        metaDescription: `Residential rooftop solar, commercial plants, agricultural solar pumps, and maintenance services across Raisen and Madhya Pradesh.`,
+        title: `Solar & EV Services | ${data.company.name}`,
+        metaDescription: `Residential and commercial solar, agricultural pumps, EV charger installation, and maintenance services across Raisen and Madhya Pradesh.`,
         data,
         activePage: 'services'
     });
@@ -37,6 +37,15 @@ exports.getProducts = (req, res) => {
         metaDescription: `Explore On-Grid, Off-Grid, and Hybrid Solar Inverters, Mono PERC Solar Panels, and Lithium Batteries available at ${data.company.name}.`,
         data,
         activePage: 'products'
+    });
+};
+
+exports.getCareers = (req, res) => {
+    res.render('careers', {
+        title: `Careers & Opportunities | ${data.company.name}`,
+        metaDescription: `Explore job, tender, and freelance opportunities with ${data.company.name} in solar energy and EV charging across Madhya Pradesh.`,
+        data,
+        activePage: 'careers'
     });
 };
 
@@ -52,18 +61,9 @@ exports.getProjects = (req, res) => {
 exports.getCalculator = (req, res) => {
     res.render('calculator', {
         title: `India Solar Savings Calculator | ${data.company.name}`,
-        metaDescription: `Calculate your rooftop solar capacity, estimated monthly units generation, savings in ₹ and PM Surya Ghar subsidy eligibility.`,
+        metaDescription: `Calculate your rooftop solar capacity, estimated monthly units generation, savings in â‚¹ and PM Surya Ghar subsidy eligibility.`,
         data,
         activePage: 'calculator'
-    });
-};
-
-exports.getSchemes = (req, res) => {
-    res.render('schemes', {
-        title: `PM Surya Ghar: Muft Bijli Yojana Subsidy Details | ${data.company.name}`,
-        metaDescription: `Get up to ₹78,000 subsidy under PM Surya Ghar Yojana for residential solar in Raisen & MP. Eligibility, documents & application guide.`,
-        data,
-        activePage: 'schemes'
     });
 };
 

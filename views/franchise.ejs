@@ -5,21 +5,21 @@
     <div id="top"></div>
 
     <!-- Subheader -->
-    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/w1.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+    <section id="subheader" class="bg-dark text-light relative franchise-hero" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/w1.webp') center/cover no-repeat;">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Franchise &amp; Dealership</h1>
-                    <p class="text-white-50 mb-0" style="font-size: 17px;">Partner with <%= company.name %> to deliver high-quality rooftop solar across districts in Madhya Pradesh.</p>
+                    <h1 class="text-white font-weight-bold">Franchise &amp; Dealership</h1>
+                    <p class="text-white-50 mb-0">Partner with <%= company.name %> to deliver high-quality rooftop solar across districts in Madhya Pradesh.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Franchise Application -->
-    <section class="franchise-section py-5">
-        <div class="container py-4">
-            <div class="row g-5">
+    <section class="franchise-section franchise-content">
+        <div class="container">
+            <div class="row g-4 franchise-grid">
                 <div class="col-lg-5">
                     <h3 class="font-weight-bold text-dark mb-3">Why Partner With <%= company.name %>?</h3>
                     <p class="text-muted" style="line-height: 1.8;">
@@ -27,34 +27,34 @@
                     </p>
 
                     <div class="d-flex flex-column gap-3 mb-4">
-                        <div class="p-3 bg-light rounded-2 border-start border-4 border-success">
+                        <div class="franchise-benefit-card">
                             <h6 class="font-weight-bold text-dark mb-1">Direct Tier-1 Supply</h6>
                             <small class="text-muted">Direct manufacturer pricing on DCR panels, on-grid inverters, and lithium battery banks.</small>
                         </div>
 
-                        <div class="p-3 bg-light rounded-2 border-start border-4 border-primary">
+                        <div class="franchise-benefit-card">
                             <h6 class="font-weight-bold text-dark mb-1">DISCOM Paperwork Support</h6>
                             <small class="text-muted">Our central office handles MPMKVVCL / MPPKVVCL net-metering approvals and subsidy paperwork for your clients.</small>
                         </div>
 
-                        <div class="p-3 bg-light rounded-2 border-start border-4 border-primary">
+                        <div class="franchise-benefit-card">
                             <h6 class="font-weight-bold text-dark mb-1">Marketing & Technical Training</h6>
                             <small class="text-muted">Complete training for site survey, 3D shadow analysis, and sales lead generation in your district.</small>
                         </div>
                     </div>
 
-                    <div class="p-3 rounded-2 text-white" style="background: #163563;">
-                        <h6 class="font-weight-bold mb-1" style="color: #9cc7ef;">Talk Directly to Founders:</h6>
-                        <small class="text-white-50 d-block mb-2">Deepak Kushwaha: +91 70005 75496<br>Rahul Saini: +91 93997 61750</small>
-                        <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20interested%20in%20taking%20a%20solar%20dealership/franchise." target="_blank" class="btn btn-sm btn-success text-white w-100">
+                    <div class="franchise-founder-card">
+                        <h6 class="font-weight-bold mb-1">Talk Directly to Founders:</h6>
+                        <small class="d-block mb-2">Deepak Kushwaha: +91 70005 75496<br>Rahul Saini: +91 93997 61750</small>
+                        <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20interested%20in%20taking%20a%20solar%20dealership/franchise." target="_blank" rel="noopener noreferrer" class="franchise-whatsapp-button">
                             <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp for Dealership Enquiry
                         </a>
                     </div>
                 </div>
 
                 <div class="col-lg-7">
-                    <div class="card franchise-form-card p-4 border-0 shadow-sm rounded-3">
-                        <h4 class="font-weight-bold text-dark mb-1">Franchise / Dealer Application Form</h4>
+                    <div class="solar-input-card franchise-form-card">
+                        <h4 class="solar-input-heading mb-1">Franchise / Dealer Application Form</h4>
                         <p class="text-muted small mb-4">Fill out your details to discuss district exclusivity and commercial terms.</p>
 
                         <form id="franchiseForm" onsubmit="handleFranchiseSubmit(event)">
@@ -78,12 +78,26 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">Target District *</label>
-                                    <select name="district" class="form-select" required>
+                                    <label class="form-label small font-weight-bold" for="franchiseState">State *</label>
+                                    <select name="state" id="franchiseState" class="form-select" required onchange="syncFranchiseDistrict()">
+                                        <% data.regions.states.forEach(st => { %>
+                                            <option value="<%= st %>" <%= st === 'Madhya Pradesh' ? 'selected' : '' %>><%= st %></option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6" id="franchiseMpDistrictField">
+                                    <label class="form-label small font-weight-bold" for="franchiseMpDistrict">Target District *</label>
+                                    <select name="district" id="franchiseMpDistrict" class="form-select" required>
                                         <% data.regions.mpDistricts.forEach(d => { %>
                                             <option value="<%= d %>"><%= d %></option>
                                         <% }); %>
                                     </select>
+                                </div>
+
+                                <div class="col-md-6" id="franchiseOtherDistrictField" hidden>
+                                    <label class="form-label small font-weight-bold" for="franchiseOtherDistrict">Target District *</label>
+                                    <input type="text" name="district" id="franchiseOtherDistrict" class="form-control" placeholder="Enter your district" disabled required>
                                 </div>
 
                                 <div class="col-md-6">
@@ -121,6 +135,20 @@
 </div>
 
 <script>
+function syncFranchiseDistrict() {
+    const isMp = document.getElementById('franchiseState').value === 'Madhya Pradesh';
+    const mpField = document.getElementById('franchiseMpDistrictField');
+    const otherField = document.getElementById('franchiseOtherDistrictField');
+    const mpDistrict = document.getElementById('franchiseMpDistrict');
+    const otherDistrict = document.getElementById('franchiseOtherDistrict');
+    mpField.hidden = !isMp;
+    otherField.hidden = isMp;
+    mpDistrict.disabled = !isMp;
+    mpDistrict.required = isMp;
+    otherDistrict.disabled = isMp;
+    otherDistrict.required = !isMp;
+}
+
 function handleFranchiseSubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('franchiseBtn');
@@ -155,10 +183,42 @@ function handleFranchiseSubmit(e) {
 
 <style>
 /* Page-specific responsive rules */
+.franchise-hero { min-height: 310px; padding: 110px 0 64px !important; }
+#content #subheader.franchise-hero > .container { margin-top: 0; }
+#content #subheader.franchise-hero .row { transform: translateY(14px); }
+#content #subheader.franchise-hero h1 { max-width: 780px; margin: 10px 0 !important; font-size: clamp(34px, 5vw, 54px) !important; font-weight: 800; line-height: 1.1 !important; text-transform: none; }
+#content #subheader.franchise-hero p { max-width: 620px; margin: 0; font-size: clamp(15px, 2vw, 18px) !important; line-height: 1.55; }
+.franchise-section { padding: 54px 0 68px; background: #fff; }
+.franchise-section > .container { max-width: 1240px; }
+.franchise-grid { align-items: start; }
+.franchise-section, .franchise-section * { min-width: 0; box-sizing: border-box; }
+.franchise-section h3, .franchise-section h4, .franchise-section h5, .franchise-section h6,
+.franchise-section p, .franchise-section small, .franchise-section label, .franchise-section a,
+.franchise-section strong, .franchise-section span { max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+.franchise-benefit-card { min-width: 0; padding: 17px 18px; border: 1px solid #e3eaf2; border-left: 4px solid #1b3b68; border-radius: 12px; background: #f7f9fc; }
+.franchise-benefit-card h6 { margin: 0 0 5px; color: #102444; }
+.franchise-benefit-card small { display: block; color: #617087; line-height: 1.55; overflow-wrap: anywhere; }
+.franchise-founder-card { padding: 18px; border-radius: 14px; background: #163563; color: #fff; }
+.franchise-founder-card h6 { color: #fbec6b; }
+.franchise-founder-card small { color: rgba(255,255,255,.78); line-height: 1.55; }
+.franchise-whatsapp-button { display: inline-flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: #16845b; color: #fff; font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; }
+.franchise-whatsapp-button:hover { background: #116a49; color: #fff; }
+.franchise-form-card { min-width: 0; height: auto; border-color: #e3eaf2; }
+.franchise-form-card .solar-input-heading { margin-bottom: 8px !important; }
+.franchise-form-card > p { margin-bottom: 20px !important; }
+.franchise-form-card form, .franchise-form-card .row, .franchise-form-card [class*="col-"] { min-width: 0; }
+.franchise-form-card input, .franchise-form-card select, .franchise-form-card textarea, .franchise-form-card button { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.franchise-form-card .form-control, .franchise-form-card .form-select { min-height: 44px; }
+.franchise-form-card .input-group { min-width: 0; flex-wrap: nowrap; }
+.franchise-form-card .input-group > * { min-width: 0; }
+.franchise-form-card .franchise-input-prefix { flex: 0 0 44px; }
+.franchise-form-card textarea { resize: vertical; }
 @media (min-width: 768px) {
-    #content #subheader > .container { margin-top: 36px; }
+    #content #subheader.franchise-hero > .container { margin-top: 0; }
 }
 @media (max-width: 767.98px) {
+    #content #subheader.franchise-hero { height: auto !important; min-height: 0 !important; padding: 72px 0 12px !important; }
+    #content #subheader.franchise-hero .row { transform: none; }
     #content { width: 100%; max-width: 100%; overflow-x: clip; }
     #content .container, #content .container-fluid { max-width: 100%; }
     #content .row > [class*="col-"] { min-width: 0; }
@@ -170,6 +230,20 @@ function handleFranchiseSubmit(e) {
     #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #content table { min-width: 620px; }
     #content .btn-main, #content .btn { white-space: normal; text-align: center; }
+    #content .franchise-section { padding: 30px 0 42px; }
+    #content .franchise-section > .container { padding-left: 16px; padding-right: 16px; }
+    #content .franchise-grid { --bs-gutter-x: 1rem; --bs-gutter-y: 1.5rem; margin-top: 0; }
+    #content .franchise-section h3 { font-size: 22px; line-height: 1.3; }
+    #content .franchise-benefit-card, #content .franchise-founder-card { padding: 15px; }
+    #content .franchise-form-card { padding: 18px; border-radius: 14px; box-shadow: 0 8px 24px rgba(22,53,99,.08); }
+    #content .franchise-form-card .solar-input-heading { font-size: 19px; line-height: 1.3; }
+    #content .franchise-form-card .row { --bs-gutter-x: .75rem; --bs-gutter-y: .85rem; }
+    #content .franchise-form-card .input-group-text { padding: .375rem .55rem; }
+    #content .franchise-form-card .form-control, #content .franchise-form-card .form-select { font-size: 14px; }
+    #content .franchise-whatsapp-button { font-size: 12px; }
+}
+@media (max-width: 575.98px) {
+    #content #subheader.franchise-hero { height: auto !important; min-height: 0 !important; padding: 68px 0 10px !important; }
 }
 </style>
 <%- include('partials/footer') %>

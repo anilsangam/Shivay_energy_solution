@@ -183,6 +183,32 @@ module.exports = {
             features: ["Wind Speed Certified up to 150 km/h", "IP65 Weatherproof Enclosures", "Surge Protection Devices (SPD)", "Chemical Earthing Electrodes"],
             bestFor: "Safeguarding your complete solar investment against lightning, surges, and harsh weather.",
             startingPrice: "Package based"
+        },
+        {
+            id: "home-ev-charger",
+            name: "Home EV AC Charger",
+            image: "/images/services/5.webp",
+            category: "EV Chargers",
+            capacityRange: "3.3 kW - 7.4 kW",
+            efficiency: "Smart AC charging",
+            warranty: "Manufacturer warranty varies by model",
+            description: "Compact AC charging equipment for compatible electric cars at homes and small workplaces.",
+            features: ["Wall-mounted options", "Site and load assessment", "Safety protection features"],
+            bestFor: "Home parking and private charging points.",
+            startingPrice: "Ask for a quote"
+        },
+        {
+            id: "commercial-ev-charger",
+            name: "Workplace & Commercial EV Charger",
+            image: "/images/services/6.webp",
+            category: "EV Chargers",
+            capacityRange: "7.4 kW - 22 kW AC",
+            efficiency: "Smart AC charging",
+            warranty: "Manufacturer warranty varies by model",
+            description: "AC charging options for offices, shops, housing societies, and customer parking areas.",
+            features: ["Single or three-phase options", "Installation support", "Electrical safety checks"],
+            bestFor: "Workplaces and commercial parking.",
+            startingPrice: "Ask for a quote"
         }
     ],
 
@@ -241,6 +267,24 @@ module.exports = {
             shortDesc: "Retrofit battery storage systems to existing on-grid plants or design off-grid backup systems for critical commercial loads.",
             highlights: ["Lithium Iron Phosphate (LiFePO4) Packs", "Smart Micro-Grid Configuration", "Uninterrupted Power for Critical Machinery", "Zero Diesel Dependency"],
             details: "Ensure zero downtime during power cuts with modular lithium battery banks capable of high surge currents for air conditioners, machinery, and lighting loads."
+        },
+        {
+            id: "ev-charging-installation",
+            title: "EV Charging Station Installation",
+            icon: "icofont-electricity",
+            image: "images/services/5.webp",
+            shortDesc: "EV charger supply, site assessment, electrical work, installation, and commissioning for homes and businesses.",
+            highlights: ["Home & workplace chargers", "Load and safety assessment", "Installation & commissioning"],
+            details: "Set up a safe, convenient EV charging point with charger selection, electrical preparation, installation, and commissioning."
+        },
+        {
+            id: "ev-charger-service",
+            title: "EV Charger Service & Maintenance",
+            icon: "icofont-tools-alt-2",
+            image: "images/services/6.webp",
+            shortDesc: "Inspection, troubleshooting, and routine maintenance for residential and commercial EV charging points.",
+            highlights: ["Charger diagnostics", "Electrical safety checks", "Repair & preventive maintenance"],
+            details: "Keep EV charging equipment reliable with fault checks, electrical safety inspections, and scheduled maintenance."
         }
     ],
 
@@ -450,7 +494,12 @@ module.exports = {
             "Madhya Pradesh", "Uttar Pradesh", "Rajasthan", "Maharashtra", "Gujarat", "Chhattisgarh", "Delhi NCR", "Haryana", "Punjab", "Bihar"
         ],
         mpDistricts: [
-            "Raisen", "Bhopal", "Vidisha", "Sehore", "Hoshangabad (Narmadapuram)", "Sagar", "Damoh", "Jabalpur", "Indore", "Ujjain", "Gwalior", "Rewa", "Satna", "Chhindwara", "Dewas", "Ratlam"
+            "Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur",
+            "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda",
+            "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Maihar", "Mandla", "Mandsaur", "Mauganj",
+            "Morena", "Narmadapuram", "Narsinghpur", "Neemuch", "Niwari", "Pandhurna", "Panna", "Raisen", "Rajgarh", "Ratlam",
+            "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi",
+            "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"
         ]
     }
 };

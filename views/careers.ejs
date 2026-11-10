@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<main class="catalog-page careers-page" id="content">
+    <section class="catalog-hero" style="--hero-image: url('/images/background/2.webp')">
+        <div class="container">
+            <h1>Careers &amp; Opportunities</h1>
+            <p>Jobs, tenders and freelance work with Shivay Energy.</p>
+        </div>
+    </section>
+
+    <section class="catalog-section">
+        <div class="container">
+            <div class="catalog-grid careers-grid">
+                <article class="catalog-card opportunity-card">
+                    <div class="opportunity-image"><img src="/images/projects/1.webp" alt="Solar installation team at work" loading="lazy"></div>
+                    <div class="catalog-card-top"><span class="catalog-icon"><i class="icofont-hard-hat"></i></span><span class="opportunity-tag">Jobs</span></div>
+                    <h3>Careers at Shivay Energy</h3>
+                    <p>Share your profile for future roles in solar installation, electrical work, site supervision, sales, and customer support.</p>
+                    <ul class="catalog-points"><li><i class="icofont-check-circled"></i><span>Field and office opportunities</span></li><li><i class="icofont-check-circled"></i><span>Raisen and nearby districts</span></li></ul>
+                    <a class="catalog-link" href="mailto:<%= company.email %>?subject=Career%20Enquiry">Send your profile <i class="icofont-arrow-right"></i></a>
+                </article>
+                <article class="catalog-card opportunity-card">
+                    <div class="opportunity-image"><img src="/images/projects/3.webp" alt="Solar project site for tender opportunities" loading="lazy"></div>
+                    <div class="catalog-card-top"><span class="catalog-icon"><i class="icofont-paper"></i></span><span class="opportunity-tag">Tenders</span></div>
+                    <h3>Tenders &amp; Project Bids</h3>
+                    <p>Connect with us about solar EPC tenders, institutional projects, supply requirements, and local implementation partnerships.</p>
+                    <ul class="catalog-points"><li><i class="icofont-check-circled"></i><span>Share tender details and timelines</span></li><li><i class="icofont-check-circled"></i><span>Include scope and location</span></li></ul>
+                    <a class="catalog-link" href="mailto:<%= company.email %>?subject=Tender%20or%20Project%20Enquiry">Discuss a tender <i class="icofont-arrow-right"></i></a>
+                </article>
+                <article class="catalog-card opportunity-card">
+                    <div class="opportunity-image"><img src="/images/team/2.webp" alt="Energy professional for freelance collaboration" loading="lazy"></div>
+                    <div class="catalog-card-top"><span class="catalog-icon"><i class="icofont-tools"></i></span><span class="opportunity-tag">Freelance</span></div>
+                    <h3>Freelance &amp; Contract Work</h3>
+                    <p>We are open to project-based collaboration with solar designers, electricians, surveyors, installers, and content specialists.</p>
+                    <ul class="catalog-points"><li><i class="icofont-check-circled"></i><span>Project or location based work</span></li><li><i class="icofont-check-circled"></i><span>Tell us your skills and availability</span></li></ul>
+                    <a class="catalog-link" href="mailto:<%= company.email %>?subject=Freelance%20Collaboration">Propose a collaboration <i class="icofont-arrow-right"></i></a>
+                </article>
+            </div>
+            <p class="careers-note">Please note: opportunities are shared based on current project requirements. Sending an enquiry does not guarantee an active vacancy or contract.</p>
+        </div>
+    </section>
+</main>
+
+<%- include('partials/footer') %>

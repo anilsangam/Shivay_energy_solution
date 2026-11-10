@@ -47,8 +47,7 @@
                                 <!-- logo begin -->
                                 <div id="logo">
                                     <a href="/" class="d-flex align-items-center text-decoration-none">
-                                        <img class="logo-main" src="/images/logo-icon.webp" alt="Shivay Energy" style="height: 38px; margin-right: 8px;">
-                                        <span style="font-weight: 700; font-size: 24px; letter-spacing: -0.3px; color: #ffffff;">Shivay Energy</span>
+                                        <img class="logo-main" src="/images/brandlogo2.png" alt="Shivay Energy Solutions" style="display: inline-block !important; width: auto !important; max-width: min(230px, 58vw) !important; height: 54px !important; object-fit: contain;">
                                     </a>
                                 </div>
                                 <!-- logo end -->
@@ -57,17 +56,31 @@
                                 <!-- mainmenu begin -->
                                 <ul id="mainmenu">
                                     <li><a class="menu-item <%= navActivePage === 'home' ? 'active' : '' %>" href="/">Home</a></li>
-                                    <li><a class="menu-item <%= navActivePage === 'services' ? 'active' : '' %>" href="/services">Services</a></li>
+                                    <li class="menu-item-has-children nav-services-menu">
+                                        <span class="menu-item nav-services-label <%= ['services', 'products', 'careers'].includes(navActivePage) ? 'active' : '' %>">Services</span>
+                                        <ul>
+                                            <li><a class="menu-item <%= navActivePage === 'services' ? 'active' : '' %>" href="/services">Services</a></li>
+                                            <li><a class="menu-item <%= navActivePage === 'products' ? 'active' : '' %>" href="/products">Products</a></li>
+                                            <li><a class="menu-item <%= navActivePage === 'careers' ? 'active' : '' %>" href="/careers">Careers &amp; Opportunities</a></li>
+                                        </ul>
+                                    </li>
+                                    <li class="nav-mobile-only"><a class="menu-item <%= navActivePage === 'services' ? 'active' : '' %>" href="/services">Services</a></li>
+                                    <li class="nav-mobile-only"><a class="menu-item <%= navActivePage === 'products' ? 'active' : '' %>" href="/products">Products</a></li>
                                     <li><a class="menu-item <%= navActivePage === 'projects' ? 'active' : '' %>" href="/projects">Recent Projects</a></li>
                                     <li><a class="menu-item <%= navActivePage === 'about' ? 'active' : '' %>" href="/about">About Us</a></li>
                                     <li><a class="menu-item <%= navActivePage === 'contact' ? 'active' : '' %>" href="/contact">Contact</a></li>
                                     <li><a class="menu-item <%= navActivePage === 'franchise' ? 'active' : '' %>" href="/franchise">Channel Partner</a></li>
+                                    <li class="nav-mobile-only"><a class="menu-item <%= navActivePage === 'careers' ? 'active' : '' %>" href="/careers">Careers &amp; Opportunities</a></li>
+                                    <li class="nav-mobile-only nav-mobile-actions">
+                                        <a class="mobile-nav-cta mobile-nav-cta-primary" href="/calculator#solar-calculator">Solar Calculator</a>
+                                        <a class="mobile-nav-cta mobile-nav-cta-outline" href="/contact#enquiry-form">Enquiry</a>
+                                    </li>
                                 </ul>
                                 <!-- mainmenu end -->
                             </div>
                             <div class="de-flex-col">
                                 <div class="menu_side_area d-flex align-items-center">
-                                    <a href="/calculator" class="btn-main btn-line fx-slide hover-white navbar-quote-btn"><span>Get a Quote</span></a>
+                                    <a href="/calculator#solar-calculator" class="btn-main btn-line fx-slide hover-white navbar-quote-btn"><span>Solar Calculator</span></a>
                                     <a href="/contact#enquiry-form" class="btn-main btn-line fx-slide hover-white ms-2 navbar-enquiry-btn"><span>Enquiry</span></a>
                                     <% if (typeof currentUser !== 'undefined' && currentUser) { %>
                                         <a href="<%= currentUser.role === 'SUPER_ADMIN' ? '/admin' : (currentUser.role === 'BRANCH_MANAGER' ? '/manager/dashboard' : '/employee/dashboard') %>" class="btn btn-sm btn-outline-light ms-2 d-none d-lg-inline-flex align-items-center" title="Go to <%= currentUser.role %> Portal">
@@ -85,4 +98,53 @@
                 </div>
             </div>
         </header>
+        <a href="/calculator#solar-calculator" class="mobile-floating-calculator" aria-label="Open Solar Calculator">
+            <i class="icofont-sun" aria-hidden="true"></i><span>Solar Calculator</span>
+        </a>
+        <style>
+            header.site-header-fixed > .container {
+                width: 100% !important;
+                max-width: 1300px !important;
+                margin-right: auto !important;
+                margin-left: auto !important;
+            }
+            @media (min-width: 1000px) and (max-width: 1279px) {
+                header.site-header-fixed .de-flex {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    row-gap: 0;
+                }
+                header.site-header-fixed .de-flex > .de-flex-col:first-child {
+                    flex: 0 0 auto;
+                }
+                header.site-header-fixed .de-flex > .header-col-mid {
+                    order: 3;
+                    flex: 0 0 100%;
+                    width: 100%;
+                    justify-content: center;
+                    padding: 0 !important;
+                }
+                header.site-header-fixed .de-flex > .de-flex-col:last-child {
+                    flex: 0 0 auto;
+                    margin-left: auto;
+                }
+                header.site-header-fixed #mainmenu {
+                    display: flex !important;
+                    justify-content: center;
+                    width: 100%;
+                    margin: 0;
+                }
+                header.site-header-fixed #logo img.logo-main {
+                    max-width: min(210px, 28vw) !important;
+                }
+            }
+            @media (max-width: 999px) {
+                header.site-header-fixed #logo img.logo-main {
+                    width: auto !important;
+                    max-width: min(250px, 64vw) !important;
+                    height: 60px !important;
+                    transform: translateY(3px);
+                }
+            }
+        </style>
         <!-- header end -->

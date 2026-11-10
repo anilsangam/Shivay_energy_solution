@@ -9,21 +9,38 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Solar Savings &amp; Subsidy Calculator</h1>
-                    <p class="text-white-50 mb-0" style="font-size: 17px;">Calculate recommended plant capacity, monthly electricity savings in ₹, and PM Surya Ghar Direct Subsidy.</p>
+                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Energy Calculators</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 17px;">Estimate solar savings or calculate your home backup load.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Calculator Section -->
-    <section class="py-5 bg-white">
+    <div id="connectedCalculator" class="calculator-connected-shell">
+    <svg class="calculator-connected-outline" aria-hidden="true" focusable="false">
+        <path id="calculatorOutlinePath"></path>
+    </svg>
+    <section class="calculator-picker-section" aria-label="Choose a calculator">
+        <div class="container">
+            <div class="calculator-switcher" role="group" aria-label="Choose a calculator">
+                <button type="button" class="calculator-picker active" data-calculator-target="solar-calculator" aria-controls="solar-calculator" aria-pressed="true">
+                    <i class="icofont-sun"></i><span>Solar Calculator</span>
+                </button>
+                <button type="button" class="calculator-picker" data-calculator-target="load-calculator" aria-controls="load-calculator" aria-pressed="false">
+                    <i class="icofont-light-bulb"></i><span>Load Calculator</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solar Calculator -->
+    <section id="solar-calculator" class="calculator-content-panel calculator-workspace">
         <div class="container py-4">
             <div class="row g-4 g-lg-5 calculator-layout">
                 <!-- Calculator Inputs -->
                 <div class="col-lg-5">
-                    <div class="card p-4 border-0 shadow rounded-3 bg-light">
-                        <h4 class="font-weight-bold text-dark mb-4">Enter Electricity Details</h4>
+                    <div class="solar-input-card">
+                        <h4 class="solar-input-heading">Enter Electricity Details</h4>
 
                         <div class="mb-3">
                             <label class="form-label font-weight-bold small">Monthly Electricity Bill (₹):</label>
@@ -57,18 +74,23 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <label class="form-label font-weight-bold small">State:</label>
-                                <select class="form-select" id="calcState">
-                                    <option value="Madhya Pradesh" selected>Madhya Pradesh</option>
-                                    <option value="Other">Other State</option>
+                                <select class="form-select" id="calcState" onchange="syncCalculatorDistrict()">
+                                    <% data.regions.states.forEach(st => { %>
+                                        <option value="<%= st %>" <%= st === 'Madhya Pradesh' ? 'selected' : '' %>><%= st %></option>
+                                    <% }); %>
                                 </select>
                             </div>
-                            <div class="col-6">
+                            <div class="col-6" id="calcMpDistrictField">
                                 <label class="form-label font-weight-bold small">District:</label>
                                 <select class="form-select" id="calcDistrict">
                                     <% data.regions.mpDistricts.forEach(d => { %>
                                         <option value="<%= d %>" <%= d === 'Raisen' ? 'selected' : '' %>><%= d %></option>
                                     <% }); %>
                                 </select>
+                            </div>
+                            <div class="col-6" id="calcOtherDistrictField" hidden>
+                                <label class="form-label font-weight-bold small" for="calcOtherDistrict">District:</label>
+                                <input class="form-control" id="calcOtherDistrict" type="text" placeholder="Enter your district" disabled>
                             </div>
                         </div>
 
@@ -82,22 +104,22 @@
 
                 <!-- Calculator Results Display -->
                 <div class="col-lg-7">
-                    <div class="card p-4 border-0 shadow-lg rounded-3 text-white calculator-results-card" style="background: #163563;">
-                        <span class="badge px-3 py-2 rounded-pill mb-3 align-self-start" style="background: rgba(198, 255, 125, 0.2); color: var(--primary-color); border: 1px solid var(--primary-color);">
+                    <div class="solar-results-card calculator-results-card">
+                        <span class="solar-results-badge">
                             ☀️ Calculated Estimation for Central India
                         </span>
 
                         <div class="row g-3 text-center mb-4">
                             <div class="col-sm-4">
-                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                <div class="solar-metric-card">
                                     <small class="text-white-50 d-block">Recommended Capacity</small>
-                                    <h2 class="font-weight-bold mb-0" style="color: var(--primary-color);"><span id="outKw">3.0</span> kW</h2>
+                                    <h2 class="font-weight-bold mb-0 solar-capacity-value"><span id="outKw">3.0</span> kW</h2>
                                     <small class="text-white-50"><span id="outPanels">6</span> Panels (540W)</small>
                                 </div>
                             </div>
 
                             <div class="col-sm-4">
-                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                <div class="solar-metric-card">
                                     <small class="text-white-50 d-block">Monthly Generation</small>
                                     <h2 class="font-weight-bold mb-0 text-white"><span id="outGen">360</span></h2>
                                     <small class="text-white-50">Units (kWh) / Month</small>
@@ -105,16 +127,16 @@
                             </div>
 
                             <div class="col-sm-4">
-                                <div class="p-3 rounded-2" style="background: rgba(255, 255, 255, 0.08);">
+                                <div class="solar-metric-card">
                                     <small class="text-white-50 d-block">Monthly Savings</small>
-                                    <h2 class="font-weight-bold mb-0 text-success"><span id="outSavings">₹2,700</span></h2>
+                                    <h2 class="font-weight-bold mb-0 solar-savings-value"><span id="outSavings">₹2,700</span></h2>
                                     <small class="text-white-50"><span id="outAnnualSavings">₹32,400</span> / Year</small>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Financial & Subsidy Breakdown -->
-                        <div class="p-4 rounded-3 mb-4 calculator-investment-breakdown" style="background: rgba(0, 0, 0, 0.25);">
+                        <div class="solar-investment-breakdown calculator-investment-breakdown">
                             <h5 class="font-weight-bold text-white mb-3 border-bottom pb-2 border-secondary">Investment & Subsidy Breakdown</h5>
                             
                             <div class="d-flex justify-content-between py-2 border-bottom border-secondary small investment-breakdown-row">
@@ -123,8 +145,8 @@
                             </div>
 
                             <div class="d-flex justify-content-between py-2 border-bottom border-secondary small investment-breakdown-row">
-                                <span class="investment-breakdown-label" style="color: var(--primary-color); font-weight: bold;">PM Surya Ghar Direct Govt. Subsidy:</span>
-                                <strong style="color: var(--primary-color); font-size: 16px;" id="outSubsidy">- ₹78,000</strong>
+                                <span class="investment-breakdown-label solar-subsidy-label">PM Surya Ghar Direct Govt. Subsidy:</span>
+                                <strong class="solar-subsidy-value" id="outSubsidy">- ₹78,000</strong>
                             </div>
 
                             <div class="d-flex justify-content-between py-2 border-bottom border-secondary investment-breakdown-row">
@@ -134,35 +156,100 @@
 
                             <div class="d-flex justify-content-between py-2 small investment-breakdown-row">
                                 <span class="text-white-50 investment-breakdown-label">Estimated Payback Period:</span>
-                                <strong class="text-warning" id="outPayback">~ 3.0 Years</strong>
+                                <strong class="solar-payback-value" id="outPayback">~ 3.0 Years</strong>
                             </div>
                         </div>
 
                         <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
                             <div>
                                 <small class="text-white-50 d-block">Rooftop Area Required: <strong class="text-white"><span id="outArea">300</span> sq ft</strong></small>
-                                <small class="text-white-50 d-block">CO2 Offset: <strong class="text-success"><span id="outCo2">3.9</span> Tonnes / year</strong></small>
+                                <small class="text-white-50 d-block">CO2 Offset: <strong class="solar-savings-value"><span id="outCo2">3.9</span> Tonnes / year</strong></small>
                             </div>
 
-                            <a href="https://wa.me/917000575496?text=Namaste,%20my%20solar%20calculator%20result%20is%203%20kW.%20Please%20send%20detailed%20quotation." id="calcQuoteBtn" target="_blank" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; padding: 12px 24px; font-weight: bold;">
+                            <a href="https://wa.me/917000575496?text=Namaste,%20my%20solar%20calculator%20result%20is%203%20kW.%20Please%20send%20detailed%20quotation." id="calcQuoteBtn" target="_blank" class="solar-quote-button">
                                 <span>Get Detailed Quotation on WhatsApp</span>
                             </a>
                         </div>
                     </div>
 
-                    <div class="alert alert-light mt-4 p-3 rounded-2 small text-muted border">
+                    <div class="solar-disclaimer">
                         <strong>Disclaimer:</strong> <%= data.calculator.disclaimer %>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    <section id="load-calculator" class="load-calculator-section calculator-content-panel calculator-workspace" hidden>
+        <div class="load-calculator-shell">
+            <div class="load-calculator-main">
+                <div class="load-calculator-heading">
+                    <div><h2>Load Calculator</h2></div>
+                </div>
+                <div class="property-selection">
+                    <span>Choose Your Property Type</span>
+                    <div class="property-presets" role="group" aria-label="Choose property size">
+                        <button type="button" data-preset="2">2 BHK</button><button type="button" data-preset="3">3 BHK</button><button type="button" data-preset="4">4 BHK</button><button type="button" class="selected" data-preset="custom">Custom</button>
+                    </div>
+                </div>
+                <div class="load-filter-row">
+                    <div class="load-type-tabs" role="tablist" aria-label="Filter appliance type">
+                        <button class="selected" type="button" data-load-filter="all">All devices</button><button type="button" data-load-filter="essential">Essential load</button><button type="button" data-load-filter="heavy">Heavy load</button>
+                    </div>
+                    <div class="appliance-category-tabs" role="tablist" aria-label="Appliance categories">
+                        <button class="selected" type="button" data-appliance-category="all"><i class="icofont-listine-dots"></i><span>All</span></button>
+                        <button type="button" data-appliance-category="lights"><i class="icofont-light-bulb"></i><span>Lights</span><small data-category-total="lights">0 W</small></button>
+                        <button type="button" data-appliance-category="home"><i class="icofont-home"></i><span>Home Appliances</span><small data-category-total="home">0 W</small></button>
+                        <button type="button" data-appliance-category="kitchen"><i class="icofont-spoon-and-fork"></i><span>Kitchen</span><small data-category-total="kitchen">0 W</small></button>
+                        <button type="button" data-appliance-category="heavy"><i class="icofont-air-conditioner"></i><span>Heavy Load</span><small data-category-total="heavy">0 W</small></button>
+                        <button type="button" data-appliance-category="accessories"><i class="icofont-plug"></i><span>Accessories</span><small data-category-total="accessories">0 W</small></button>
+                    </div>
+                </div>
+                <div id="applianceGrid" class="appliance-grid" data-lenis-prevent-wheel></div>
+                <p class="load-disclaimer">*Wattage is approximate. Check appliance labels before choosing an inverter or battery.</p>
+            </div>
+            <aside class="load-calculator-summary">
+                <span class="load-eyebrow">Your estimate</span>
+                <h3>Your Total Running Load</h3>
+                <div class="load-total"><strong id="totalRunningLoad">0</strong><span>Watts</span></div>
+                <p>Choose appliances and quantities to see inverter, battery and solar sizing suggestions.</p>
+                <label class="backup-hours-label" for="backupHours"><span>Average Daily Backup (Hrs)</span><strong><span id="backupHoursValue">5</span> hr</strong></label>
+                <input id="backupHours" type="range" min="1" max="10" value="5">
+                <div class="range-labels"><span>1 hr</span><span>10 hr</span></div>
+                <button type="button" id="findLoadSolution" class="load-solution-button">Find Solution</button>
+                <div id="loadSolution" class="load-solution" aria-live="polite" hidden>
+                    <h4>Recommended energy solution</h4>
+                    <div class="load-recommendation-grid">
+                        <article class="load-recommendation-card"><span class="recommendation-icon"><i class="icofont-flash"></i></span><div><span>Inverter recommendation</span><strong id="suggestedInverter">—</strong><small>Pure sine wave, sized with surge headroom</small></div></article>
+                        <article class="load-recommendation-card"><span class="recommendation-icon"><i class="icofont-battery-full"></i></span><div><span>Battery bank</span><strong id="suggestedBatteries">—</strong><small id="suggestedBatteryEnergy">Sized for selected backup time</small></div></article>
+                        <article class="load-recommendation-card solar-recommendation"><span class="recommendation-icon"><i class="icofont-sun"></i></span><div><span>Grid-connected solar PV</span><strong id="suggestedSolarKw">—</strong><small><span id="suggestedSolarEnergy">—</span> estimated units per day</small></div></article>
+                    </div>
+                    <small class="load-sizing-note">Estimates assume selected backup hours equal daily use, 4.5 peak-sun-hours and 80% PV yield. Actual selection depends on starting surge, phase, roof conditions and product availability. Have an installer confirm the design before purchase.</small>
+                    <a href="/contact#enquiry-form" class="load-products-link">Ask us to size this system <i class="icofont-arrow-right"></i></a>
+                    <button type="button" id="editLoadDetails" class="edit-load-details">Edit appliance selection</button>
+                </div>
+            </aside>
+        </div>
+    </section>
+    </div>
 </div>
 
 <script>
 function syncBillInput(val) {
     document.getElementById('calcBill').value = val;
     runCalculator();
+}
+
+function syncCalculatorDistrict() {
+    const isMp = document.getElementById('calcState').value === 'Madhya Pradesh';
+    const mpField = document.getElementById('calcMpDistrictField');
+    const otherField = document.getElementById('calcOtherDistrictField');
+    const mpDistrict = document.getElementById('calcDistrict');
+    const otherDistrict = document.getElementById('calcOtherDistrict');
+    mpField.hidden = !isMp;
+    otherField.hidden = isMp;
+    mpDistrict.disabled = !isMp;
+    otherDistrict.disabled = isMp;
 }
 
 function runCalculator(manualUnits = false) {
@@ -211,12 +298,240 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<script>
+const loadAppliances = [
+    { id: 'bulb5', name: 'LED bulb', watts: 5, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'bulb10', name: 'LED bulb', watts: 10, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'bulb15', name: 'LED bulb', watts: 15, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'tubelight', name: 'Tube light', watts: 45, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'incandescent', name: 'Incandescent bulb', watts: 30, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'tableLamp', name: 'Table lamp', watts: 60, category: 'lights', type: 'essential', icon: 'icofont-lamp' },
+    { id: 'panelLight', name: 'Panel light', watts: 14, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+    { id: 'tv', name: 'LED TV', watts: 65, category: 'home', type: 'essential', icon: 'icofont-television' },
+    { id: 'iron', name: 'Electric iron', watts: 1200, category: 'home', type: 'heavy', icon: 'icofont-flash' },
+    { id: 'hairAppliances', name: 'Hair appliances', watts: 1600, category: 'home', type: 'heavy', icon: 'icofont-hair-dryer' },
+    { id: 'fan', name: 'Ceiling fan', watts: 80, category: 'home', type: 'essential', icon: 'icofont-spinner-alt-5' },
+    { id: 'printer', name: 'Printer - laser', watts: 200, category: 'home', type: 'heavy', icon: 'icofont-print' },
+    { id: 'desktop', name: 'Computer', watts: 200, category: 'home', type: 'essential', icon: 'icofont-computer' },
+    { id: 'setTopBox', name: 'Set top box', watts: 50, category: 'home', type: 'essential', icon: 'icofont-computer' },
+    { id: 'router', name: 'Wi-Fi router', watts: 20, category: 'home', type: 'essential', icon: 'icofont-wifi' },
+    { id: 'airPurifier', name: 'Air purifier', watts: 215, category: 'home', type: 'essential', icon: 'icofont-wind' },
+    { id: 'gameConsole', name: 'Game console', watts: 75, category: 'home', type: 'essential', icon: 'icofont-game' },
+    { id: 'vacuum', name: 'Vacuum cleaner', watts: 1400, category: 'home', type: 'heavy', icon: 'icofont-spinner' },
+    { id: 'fridgeSmall', name: 'Fridge (up to 200L)', watts: 200, category: 'kitchen', type: 'essential', icon: 'icofont-fridge' },
+    { id: 'fridgeLarge', name: 'Fridge (up to 500L)', watts: 335, category: 'kitchen', type: 'essential', icon: 'icofont-fridge' },
+    { id: 'microwave', name: 'Microwave oven', watts: 900, category: 'kitchen', type: 'heavy', icon: 'icofont-fire-burn' },
+    { id: 'mixer', name: 'Mixer / grinder', watts: 800, category: 'kitchen', type: 'heavy', icon: 'icofont-blender' },
+    { id: 'blender', name: 'Blender', watts: 420, category: 'kitchen', type: 'heavy', icon: 'icofont-blender' },
+    { id: 'purifier', name: 'Water purifier', watts: 90, category: 'kitchen', type: 'essential', icon: 'icofont-water' },
+    { id: 'exhaust', name: 'Exhaust fan', watts: 40, category: 'kitchen', type: 'essential', icon: 'icofont-fan' },
+    { id: 'coffee', name: 'Coffee maker', watts: 1300, category: 'kitchen', type: 'heavy', icon: 'icofont-coffee-cup' },
+    { id: 'kettle', name: 'Electric kettle', watts: 1500, category: 'kitchen', type: 'heavy', icon: 'icofont-tea' },
+    { id: 'induction', name: 'Induction cooktop', watts: 1800, category: 'kitchen', type: 'heavy', icon: 'icofont-fire-burn' },
+    { id: 'ac1', name: 'Air conditioner (1 ton)', watts: 1000, category: 'heavy', type: 'heavy', icon: 'icofont-air-conditioner' },
+    { id: 'ac15', name: 'Air conditioner (1.5 ton)', watts: 1500, category: 'heavy', type: 'heavy', icon: 'icofont-air-conditioner' },
+    { id: 'washing', name: 'Washing machine', watts: 520, category: 'heavy', type: 'heavy', icon: 'icofont-refresh' },
+    { id: 'cooler', name: 'Room cooler (BLDC)', watts: 120, category: 'heavy', type: 'heavy', icon: 'icofont-wind' },
+    { id: 'geyser', name: 'Geyser', watts: 2000, category: 'heavy', type: 'heavy', icon: 'icofont-water' },
+    { id: 'pump', name: 'Water pump', watts: 750, category: 'heavy', type: 'heavy', icon: 'icofont-water' },
+    { id: 'charger', name: 'Phone charger', watts: 40, category: 'accessories', type: 'essential', icon: 'icofont-charging' },
+    { id: 'cctv', name: 'CCTV camera', watts: 100, category: 'accessories', type: 'essential', icon: 'icofont-video' },
+    { id: 'laptop', name: 'Laptop', watts: 45, category: 'accessories', type: 'essential', icon: 'icofont-laptop' }
+];
+const applianceCounts = Object.fromEntries(loadAppliances.map(item => [item.id, 0]));
+const presetCounts = {
+    2: { bulb10: 5, fan: 2, tv: 1, router: 1, fridgeSmall: 1, laptop: 1, charger: 2 },
+    3: { bulb10: 7, fan: 3, tv: 1, router: 1, fridgeLarge: 1, laptop: 1, charger: 3, washing: 1 },
+    4: { bulb10: 9, fan: 4, tv: 2, router: 1, fridgeLarge: 1, laptop: 2, charger: 4, washing: 1, ac1: 1 }
+};
+let activeApplianceCategory = 'all';
+let activeLoadFilter = 'all';
+
+function renderAppliances() {
+    const grid = document.getElementById('applianceGrid');
+    if (!grid) return;
+    const items = loadAppliances.filter(item =>
+        (activeApplianceCategory === 'all' || item.category === activeApplianceCategory) &&
+        (activeLoadFilter === 'all' || item.type === activeLoadFilter)
+    );
+    grid.innerHTML = items.map(item => `
+        <article class="appliance-card ${applianceCounts[item.id] ? 'has-load' : ''}">
+            <i class="${item.icon.trim()} appliance-icon" aria-hidden="true"></i>
+            <h3>${item.name}</h3>
+            <div class="appliance-spec-row"><span class="appliance-watts">${item.watts} W</span><strong class="appliance-subtotal">${applianceCounts[item.id] ? `${(item.watts * applianceCounts[item.id]).toLocaleString('en-IN')} W` : ''}</strong></div>
+            <div class="appliance-card-footer">
+            <div class="quantity-control" aria-label="${item.name} quantity">
+                <button type="button" data-quantity-change="-1" data-appliance="${item.id}" aria-label="Remove one ${item.name}">−</button>
+                <strong>${applianceCounts[item.id]}</strong>
+                <button type="button" data-quantity-change="1" data-appliance="${item.id}" aria-label="Add one ${item.name}">+</button>
+            </div></div>
+        </article>`).join('');
+    updateLoadEstimate();
+}
+
+function updateLoadEstimate() {
+    const watts = loadAppliances.reduce((sum, item) => sum + item.watts * applianceCounts[item.id], 0);
+    document.getElementById('totalRunningLoad').textContent = watts.toLocaleString('en-IN');
+    ['lights', 'home', 'kitchen', 'heavy', 'accessories'].forEach(category => {
+        const categoryLoad = loadAppliances.filter(item => item.category === category).reduce((sum, item) => sum + item.watts * applianceCounts[item.id], 0);
+        document.querySelector(`[data-category-total="${category}"]`).textContent = `${categoryLoad.toLocaleString('en-IN')} W`;
+    });
+    const hours = Number(document.getElementById('backupHours').value);
+    document.getElementById('backupHoursValue').textContent = hours;
+    const solution = document.getElementById('loadSolution');
+    if (!solution.hidden) updateLoadSuggestions(watts, hours);
+}
+
+function updateLoadSuggestions(watts, hours) {
+    const dailyEnergyKwh = (watts * hours) / 1000;
+    const inverterKva = watts ? Math.max(0.5, Math.ceil((watts * 1.25) / 500) * 0.5) : 0;
+    const batteryUnits = watts ? Math.max(1, Math.ceil(dailyEnergyKwh / 11.52)) : 0;
+    const solarKw = dailyEnergyKwh ? Math.ceil((dailyEnergyKwh / (4.5 * 0.8)) * 10) / 10 : 0;
+    document.getElementById('suggestedInverter').textContent = watts ? `${inverterKva.toFixed(1)} kVA · 48V hybrid/off-grid` : 'Add appliances';
+    document.getElementById('suggestedBatteries').textContent = watts ? `${batteryUnits} × 48V 300Ah battery unit${batteryUnits > 1 ? 's' : ''}` : '—';
+    document.getElementById('suggestedBatteryEnergy').textContent = watts ? `Approx. ${(batteryUnits * 11.52).toFixed(1)} kWh usable storage` : 'Sized for selected backup time';
+    document.getElementById('suggestedSolarKw').textContent = watts ? `${solarKw.toFixed(1)} kWp grid-connected array` : 'Add appliances';
+    document.getElementById('suggestedSolarEnergy').textContent = dailyEnergyKwh.toFixed(1);
+}
+
+function updateCalculatorOutline() {
+    const shell = document.getElementById('connectedCalculator');
+    const svg = shell?.querySelector('.calculator-connected-outline');
+    const path = document.getElementById('calculatorOutlinePath');
+    const activeTab = shell?.querySelector('.calculator-picker.active');
+    const tabStrip = shell?.querySelector('.calculator-picker-section');
+    if (!shell || !svg || !path || !activeTab || !tabStrip || shell.clientWidth === 0 || shell.clientHeight === 0) return;
+
+    const bounds = shell.getBoundingClientRect();
+    const tabBounds = activeTab.getBoundingClientRect();
+    const stripBounds = tabStrip.getBoundingClientRect();
+    const width = shell.clientWidth;
+    const height = shell.clientHeight;
+    const panelY = stripBounds.bottom - bounds.top;
+    const activeIsSolar = activeTab.dataset.calculatorTarget === 'solar-calculator';
+    const tabLeft = activeIsSolar ? 0 : width / 2;
+    const tabRight = activeIsSolar ? width / 2 : width;
+    const tabTop = tabBounds.top - bounds.top;
+    const tabRadius = Math.min(24, (tabRight - tabLeft) / 4, panelY / 2);
+    const panelRadius = Math.min(26, width / 8, (height - panelY) / 3);
+    const joinCurve = Math.min(38, Math.max(24, panelY * 0.4));
+    const n = value => Number(value.toFixed(2));
+
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    const pathParts = activeIsSolar ? [
+        `M ${n(tabLeft)} ${n(tabTop + tabRadius)}`,
+        `Q ${n(tabLeft)} ${n(tabTop)} ${n(tabLeft + tabRadius)} ${n(tabTop)}`,
+        `H ${n(tabRight - tabRadius)}`,
+        `Q ${n(tabRight)} ${n(tabTop)} ${n(tabRight)} ${n(tabTop + tabRadius)}`,
+        `V ${n(panelY - joinCurve)}`,
+        `C ${n(tabRight)} ${n(panelY - joinCurve * 0.25)}, ${n(tabRight + joinCurve * 0.25)} ${n(panelY)}, ${n(tabRight + joinCurve)} ${n(panelY)}`,
+        `H ${n(width - panelRadius)}`,
+        `Q ${n(width)} ${n(panelY)} ${n(width)} ${n(panelY + panelRadius)}`,
+        `V ${n(height - panelRadius)}`,
+        `Q ${n(width)} ${n(height)} ${n(width - panelRadius)} ${n(height)}`,
+        `H ${n(panelRadius)}`,
+        `Q 0 ${n(height)} 0 ${n(height - panelRadius)}`,
+        `V ${n(tabTop + tabRadius)}`,
+        'Z'
+    ] : [
+        `M ${n(tabRight)} ${n(tabTop + tabRadius)}`,
+        `Q ${n(tabRight)} ${n(tabTop)} ${n(tabRight - tabRadius)} ${n(tabTop)}`,
+        `H ${n(tabLeft + tabRadius)}`,
+        `Q ${n(tabLeft)} ${n(tabTop)} ${n(tabLeft)} ${n(tabTop + tabRadius)}`,
+        `V ${n(panelY - joinCurve)}`,
+        `C ${n(tabLeft)} ${n(panelY - joinCurve * 0.25)}, ${n(tabLeft - joinCurve * 0.25)} ${n(panelY)}, ${n(tabLeft - joinCurve)} ${n(panelY)}`,
+        `H ${n(panelRadius)}`,
+        `Q 0 ${n(panelY)} 0 ${n(panelY + panelRadius)}`,
+        `V ${n(height - panelRadius)}`,
+        `Q 0 ${n(height)} ${n(panelRadius)} ${n(height)}`,
+        `H ${n(width - panelRadius)}`,
+        `Q ${n(width)} ${n(height)} ${n(width)} ${n(height - panelRadius)}`,
+        `V ${n(tabTop + tabRadius)}`,
+        'Z'
+    ];
+    path.setAttribute('d', pathParts.join(' '));
+}
+
+function selectCalculator(target, updateUrl = true) {
+    document.querySelectorAll('[data-calculator-target]').forEach(button => {
+        const selected = button.dataset.calculatorTarget === target;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
+    document.querySelectorAll('.calculator-workspace').forEach(section => {
+        section.hidden = section.id !== target;
+    });
+    const selectedSection = document.getElementById(target);
+    selectedSection.classList.remove('calculator-reveal');
+    void selectedSection.offsetWidth;
+    selectedSection.classList.add('calculator-reveal');
+    requestAnimationFrame(updateCalculatorOutline);
+    if (updateUrl) {
+        history.replaceState(null, '', `#${target}`);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const connectedCalculator = document.getElementById('connectedCalculator');
+    if (connectedCalculator) {
+        if ('ResizeObserver' in window) {
+            const outlineObserver = new ResizeObserver(updateCalculatorOutline);
+            outlineObserver.observe(connectedCalculator);
+            connectedCalculator.querySelectorAll('.calculator-picker').forEach(tab => outlineObserver.observe(tab));
+        }
+        window.addEventListener('resize', updateCalculatorOutline, { passive: true });
+        if (document.fonts?.ready) document.fonts.ready.then(updateCalculatorOutline);
+    }
+    renderAppliances();
+    document.querySelectorAll('[data-calculator-target]').forEach(button => button.addEventListener('click', () => selectCalculator(button.dataset.calculatorTarget)));
+    document.querySelectorAll('[data-appliance-category]').forEach(button => button.addEventListener('click', () => {
+        activeApplianceCategory = button.dataset.applianceCategory;
+        document.querySelectorAll('[data-appliance-category]').forEach(tab => tab.classList.toggle('selected', tab === button));
+        renderAppliances();
+    }));
+    document.querySelectorAll('[data-load-filter]').forEach(button => button.addEventListener('click', () => {
+        activeLoadFilter = button.dataset.loadFilter;
+        document.querySelectorAll('[data-load-filter]').forEach(tab => tab.classList.toggle('selected', tab === button));
+        renderAppliances();
+    }));
+    document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => {
+        Object.keys(applianceCounts).forEach(id => applianceCounts[id] = 0);
+        if (button.dataset.preset !== 'custom') Object.assign(applianceCounts, presetCounts[button.dataset.preset]);
+        document.querySelectorAll('[data-preset]').forEach(preset => preset.classList.toggle('selected', preset === button));
+        renderAppliances();
+    }));
+    document.getElementById('applianceGrid').addEventListener('click', event => {
+        const button = event.target.closest('[data-quantity-change]');
+        if (!button) return;
+        const id = button.dataset.appliance;
+        applianceCounts[id] = Math.max(0, applianceCounts[id] + Number(button.dataset.quantityChange));
+        document.querySelector('[data-preset="custom"]').classList.add('selected');
+        document.querySelectorAll('[data-preset]:not([data-preset="custom"])').forEach(preset => preset.classList.remove('selected'));
+        renderAppliances();
+    });
+    document.getElementById('backupHours').addEventListener('input', updateLoadEstimate);
+    document.getElementById('findLoadSolution').addEventListener('click', () => {
+        document.getElementById('loadSolution').hidden = false;
+        updateLoadEstimate();
+    });
+    document.getElementById('editLoadDetails').addEventListener('click', () => {
+        document.getElementById('loadSolution').hidden = true;
+        document.getElementById('applianceGrid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    const initialCalculator = location.hash === '#load-calculator' ? 'load-calculator' : 'solar-calculator';
+    selectCalculator(initialCalculator, false);
+});
+</script>
+
 <style>
 /* Page-specific responsive rules */
 @media (min-width: 768px) {
     #content #subheader > .container { margin-top: 36px; }
 }
 @media (max-width: 767.98px) {
+    #content #subheader { min-height: 0; padding-top: 82px !important; padding-bottom: 36px !important; }
     #content { width: 100%; max-width: 100%; overflow-x: clip; }
     #content .container, #content .container-fluid { max-width: 100%; }
     #content .row > [class*="col-"] { min-width: 0; }

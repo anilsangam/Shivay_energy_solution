@@ -1,0 +1,457 @@
+/* ==========================================================================
+   About Video & Green Energy Section - Shivay Energy Solutions
+   Pollution-Free India & CO2 Reduction Mission
+   Square Video Frame, 2-per-row Highlights & 1-row Mobile Buttons
+   ========================================================================== */
+
+.about-video-section {
+    padding: 65px 0 70px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   LEFT SIDE: SQUARE VIDEO FRAME
+   ========================================================================== */
+.about-video-card {
+    position: relative;
+    width: 100%;
+    max-width: 580px; /* Increased width to fill the column prominently */
+    aspect-ratio: 1 / 1; /* PERFECT SQUARE FRAME */
+    margin: 0 auto;
+    border-radius: 26px;
+    overflow: hidden;
+    background: #0b1a30;
+    box-shadow: 0 24px 55px rgba(19, 43, 80, 0.24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    border: none;
+}
+
+.about-video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 28px 60px rgba(19, 43, 80, 0.28);
+}
+
+.about-video-player {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+    border-radius: 24px;
+    background: #0b1a30;
+}
+
+/* Subtle Gradient Overlay for badge contrast */
+.about-video-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(11, 26, 48, 0.5) 0%, rgba(11, 26, 48, 0) 35%, rgba(11, 26, 48, 0.8) 100%);
+    border-radius: 24px;
+}
+
+/* Top Pill Badge: Reducing CO2 Emission */
+.about-video-top-badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 4;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(11, 26, 48, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Pulsating green live indicator dot */
+.live-pulse-dot {
+    width: 9px;
+    height: 9px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: pulseGreen 1.8s infinite;
+}
+
+@keyframes pulseGreen {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+/* Sound / Mute Toggle Button */
+.about-video-audio-toggle {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 5;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(11, 26, 48, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.about-video-audio-toggle:hover {
+    background: #ffffff;
+    color: #11294d;
+    transform: scale(1.08);
+}
+
+/* Bottom Glass Impact Card */
+.about-video-bottom-card {
+    position: absolute;
+    bottom: 18px;
+    left: 18px;
+    right: 18px;
+    z-index: 4;
+    background: rgba(11, 26, 48, 0.86);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    padding: 13px 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.about-video-stat-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 12px;
+    background: rgba(216, 169, 40, 0.2);
+    color: #D8A928;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+/* ==========================================================================
+   RIGHT SIDE: CONTENT CARD
+   ========================================================================== */
+.about-content-card {
+    padding-left: 15px;
+}
+
+.about-eyebrow-pill {
+    display: inline-block;
+    background: rgba(22, 53, 99, 0.08);
+    color: #163563;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(22, 53, 99, 0.12);
+}
+
+.about-heading {
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 38px;
+    line-height: 1.22;
+    font-weight: 700;
+    color: #163563;
+    letter-spacing: -0.5px;
+}
+
+.about-lead {
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #334155;
+    font-weight: 500;
+}
+
+.about-desc {
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: #64748b;
+}
+
+/* ==========================================================================
+   HIGHLIGHTS (2 PER ROW IN MOBILE & DESKTOP)
+   ========================================================================== */
+.about-highlights {
+    margin-top: 18px;
+    margin-bottom: 24px;
+}
+
+.about-highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    height: 100%;
+    transition: all 0.25s ease;
+}
+
+.about-highlight-item:hover {
+    background: #f1f5f9;
+    transform: translateY(-2px);
+    border-color: #cbd5e1;
+}
+
+.highlight-check {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    background: #dcfce7;
+    color: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.highlight-text {
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.25;
+}
+
+/* ==========================================================================
+   ACTION BUTTONS (1 ROW IN MOBILE & DESKTOP)
+   ========================================================================== */
+.about-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.about-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color, #c6ff7d);
+    color: #000000;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    border: none;
+}
+
+.about-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    color: #000000;
+}
+
+.about-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: #163563;
+    border: 2px solid #163563;
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 30px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+
+.about-btn-secondary:hover {
+    background: #163563;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(22, 53, 99, 0.25);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (MOBILE PERFECTION)
+   ========================================================================== */
+@media (max-width: 991px) {
+    .about-video-section {
+        padding: 50px 0;
+    }
+
+    .about-video-card {
+        max-width: 540px;
+        margin-bottom: 12px;
+    }
+
+    .about-content-card {
+        padding-left: 0;
+    }
+
+    .about-heading {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 576px) {
+    .about-video-section {
+        padding: 34px 0;
+    }
+
+    .about-video-card {
+        max-width: 100%;
+        margin-bottom: 6px;
+        border-radius: 18px;
+    }
+
+    .about-eyebrow-pill {
+        margin-bottom: 8px !important;
+        font-size: 11px;
+        padding: 4px 12px;
+    }
+
+    .about-video-player,
+    .about-video-overlay {
+        border-radius: 18px;
+    }
+
+    .about-heading {
+        font-size: 26px;
+        line-height: 1.25;
+    }
+
+    .about-lead {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .about-desc {
+        display: none !important; /* Hidden on mobile as requested */
+    }
+
+    .about-video-top-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+        top: 10px;
+        left: 10px;
+    }
+
+    .about-video-audio-toggle {
+        top: 10px;
+        right: 10px;
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .about-video-bottom-card {
+        padding: 9px 12px;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+    }
+
+    .about-video-bottom-card h4 {
+        font-size: 15px !important;
+    }
+
+    .about-video-stat-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 17px;
+    }
+
+    /* 2 PER ROW HIGHLIGHTS ON MOBILE */
+    .about-highlights {
+        margin-top: 14px;
+        margin-bottom: 20px;
+    }
+
+    .about-highlight-item {
+        padding: 8px 8px;
+        gap: 6px;
+        border-radius: 10px;
+    }
+
+    .highlight-check {
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        font-size: 10px;
+    }
+
+    .highlight-text {
+        font-size: 11px;
+        line-height: 1.25;
+    }
+
+    /* 1 ROW BUTTONS IN MOBILE */
+    .about-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .about-actions > div {
+        flex: 1 1 50% !important;
+        max-width: 50% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .about-btn-primary,
+    .about-btn-secondary {
+        width: 100% !important;
+        display: flex !important;
+        padding: 10px 4px !important;
+        font-size: 12px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        border-radius: 24px !important;
+        letter-spacing: -0.2px;
+    }
+}

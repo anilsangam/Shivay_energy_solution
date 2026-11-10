@@ -9,8 +9,8 @@
 @import url("../fonts/icofont/icofont.min.css");
 
 :root, body, [data-theme="scheme-2"] {
-    --primary-color: #c6ff7d;
-    --primary-color-rgb: 198, 255, 125;
+    --primary-color: #FBEC6B;
+    --primary-color-rgb: 251, 236, 107;
     --btn-color: #000;
     --bg-dark-1: #163563;
     --bg-dark-2: #0f2647;
@@ -28,12 +28,12 @@
 }
 
 [data-theme="scheme-3"] {
-    --primary-color: #93d6fd;
-    --primary-color-rgb: 147, 214, 253;
-    --bg-dark-1: #101010;
-    --bg-dark-2: #050505;
+    --primary-color: #FBEC6B;
+    --primary-color-rgb: 251, 236, 107;
+    --bg-dark-1: #163563;
+    --bg-dark-2: #0f2647;
     --bg-dark-3: #1e1e1e;
-    --bg-dark-1-rgb: 16, 16, 16;
+    --bg-dark-1-rgb: 22, 53, 99;
 }
 @charset "UTF-8";
 /*!
@@ -18905,6 +18905,14 @@ header.header-light .h-phone span {
     }
 }
 
+@media (max-width: 767.98px) {
+    .home-consultation-cta { padding-top: 22px !important; padding-bottom: 22px !important; }
+    .home-consultation-inner { padding-top: 0 !important; padding-bottom: 0 !important; }
+    .home-consultation-title { margin-bottom: 10px !important; font-size: 25px !important; line-height: 1.2; }
+    .home-consultation-copy { margin-bottom: 16px !important; font-size: 14px !important; line-height: 1.5; }
+    .home-consultation-cta .btn-main { padding: 10px 18px !important; font-size: 13px; }
+}
+
 .home-offer-card-heading {
     flex-wrap: wrap;
 }
@@ -32423,7 +32431,7 @@ header.site-header-fixed .navbar-quote-btn:hover span {
 .floating-whatsapp {
     position: fixed;
     right: 24px;
-    bottom: 24px;
+    bottom: 100px;
     z-index: 9999;
     display: inline-flex;
     align-items: center;
@@ -32446,7 +32454,6 @@ header.site-header-fixed .navbar-quote-btn:hover span {
 #back-to-top.show,
 #back-to-top.hide {
     right: 28px;
-    bottom: 24px;
     width: 48px;
     height: 48px;
     display: flex;
@@ -32460,6 +32467,11 @@ header.site-header-fixed .navbar-quote-btn:hover span {
     box-shadow: 0 6px 20px rgba(4, 20, 40, .28);
     opacity: 0;
     transition: bottom .25s ease, opacity .25s ease, transform .2s ease;
+}
+
+#back-to-top {
+    bottom: -60px;
+    opacity: 0;
 }
 
 #back-to-top.show {
@@ -32510,6 +32522,9 @@ header.site-header-fixed .navbar-quote-btn:hover span {
     font-size: 44px;
 }
 
+#back-to-top:before { content: none !important; }
+#back-to-top .back-to-top-arrow { display: block; color: #fff; font-family: Arial, sans-serif; font-size: 27px; font-weight: 700; line-height: 1; transform: translateY(-1px); }
+
 @media (max-width: 575.98px) {
     .floating-whatsapp {
         right: 18px;
@@ -32524,6 +32539,8 @@ header.site-header-fixed .navbar-quote-btn:hover span {
         width: 44px;
         height: 44px;
     }
+
+    #back-to-top { bottom: -60px; opacity: 0; }
 
     #back-to-top.show { bottom: 20px; }
 

@@ -5,25 +5,25 @@
     <div id="top"></div>
 
     <!-- Subheader -->
-    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/3.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+    <section id="subheader" class="bg-dark text-light relative complaint-hero" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/3.webp') center/cover no-repeat;">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Register &amp; Track Complaints</h1>
-                    <p class="text-white-50 mb-0" style="font-size: 17px;">Prompt on-site technical resolution within 24 to 48 hours across Raisen and Madhya Pradesh.</p>
+                    <h1 class="text-white font-weight-bold">Register &amp; Track Complaints</h1>
+                    <p class="text-white-50 mb-0">Prompt on-site technical resolution within 24 to 48 hours across Raisen and Madhya Pradesh.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Support Content -->
-    <section class="py-5 bg-white">
-        <div class="container py-4">
-            <div class="row g-5">
+    <section class="complaint-content bg-white">
+        <div class="container">
+            <div class="row g-4 complaint-grid">
                 <!-- Register Complaint Form -->
-                <div class="col-lg-7">
-                    <div class="card p-4 border-0 shadow-sm rounded-3 bg-light">
-                        <h4 class="font-weight-bold text-dark mb-1">File a Service / Breakdown Request</h4>
+                <div class="col-lg-7 complaint-form-column">
+                    <div class="solar-input-card complaint-form-card">
+                        <h4 class="solar-input-heading mb-1">File a Service / Breakdown Request</h4>
                         <p class="text-muted small mb-4">Please provide accurate details so our local service engineer can assist you promptly.</p>
 
                         <form id="complaintForm" onsubmit="handleComplaintSubmit(event)">
@@ -74,44 +74,44 @@
                 </div>
 
                 <!-- Track Complaint & Emergency Contacts -->
-                <div class="col-lg-5">
+                <div class="col-lg-5 complaint-support-column">
                     <!-- Ticket Tracking Widget -->
-                    <div class="card p-4 border-0 shadow rounded-3 text-white mb-4" style="background: #163563;">
-                        <h5 class="font-weight-bold mb-3" style="color: var(--primary-color);"><i class="icofont-search-job me-2"></i> Track Complaint Status</h5>
+                    <div class="solar-results-card complaint-track-card mb-4">
+                        <h5 class="font-weight-bold mb-3"><i class="icofont-search-job me-2"></i> Track Complaint Status</h5>
                         
                         <div class="mb-3">
                             <label class="form-label small text-white-50">Ticket ID *</label>
-                            <input type="text" id="trackTicket" class="form-control bg-dark text-white border-secondary" placeholder="e.g. SHIVAY-10492">
+                            <input type="text" id="trackTicket" class="form-control" placeholder="e.g. SHIVAY-10492">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label small text-white-50">Registered Mobile *</label>
-                            <input type="tel" id="trackMobile" class="form-control bg-dark text-white border-secondary" placeholder="10-digit Mobile">
+                            <input type="tel" id="trackMobile" class="form-control" placeholder="10-digit Mobile">
                         </div>
 
                         <button onclick="trackTicket()" class="btn-main w-100 py-2" style="background: var(--primary-color); color: #000; font-weight: bold;">
                             <span>Track Live Status</span>
                         </button>
 
-                        <div id="trackResult" class="mt-3 p-3 rounded-2 bg-dark text-white small" style="display: none;"></div>
+                        <div id="trackResult" class="complaint-track-result small" style="display: none;"></div>
                     </div>
 
                     <!-- Direct Technical Helpline -->
-                    <div class="card p-4 border-0 bg-light rounded-3">
+                    <div class="complaint-helpline-card">
                         <h6 class="font-weight-bold text-dark mb-2">Emergency Breakdown Helpline</h6>
                         <p class="text-muted small mb-3">For urgent grid failure or inverter sparking, call our technical director directly:</p>
                         
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="icofont-phone text-danger fs-20 me-2"></i>
-                            <div>
+                        <div class="complaint-contact-row mb-3">
+                            <i class="icofont-phone" aria-hidden="true"></i>
+                            <div class="complaint-contact-copy">
                                 <strong class="d-block text-dark">Deepak Kushwaha (Technical Head)</strong>
                                 <a href="tel:+917000575496" class="text-dark small">+91 70005 75496</a>
                             </div>
                         </div>
 
-                        <div class="d-flex align-items-center">
-                            <i class="icofont-phone text-warning fs-20 me-2"></i>
-                            <div>
+                        <div class="complaint-contact-row">
+                            <i class="icofont-phone" aria-hidden="true"></i>
+                            <div class="complaint-contact-copy">
                                 <strong class="d-block text-dark">Rahul Saini (Operations Head)</strong>
                                 <a href="tel:+919399761750" class="text-dark small">+91 93997 61750</a>
                             </div>
@@ -152,6 +152,13 @@ function handleComplaintSubmit(e) {
         }
         btn.disabled = false;
         btn.innerHTML = '<span>Submit Complaint Ticket</span>';
+    })
+    .catch(() => {
+        msg.style.display = 'block';
+        msg.className = 'alert alert-danger p-3 small';
+        msg.innerText = 'Could not submit the request. Please check your connection and try again.';
+        btn.disabled = false;
+        btn.innerHTML = '<span>Submit Complaint Ticket</span>';
     });
 }
 
@@ -182,16 +189,50 @@ function trackTicket() {
         } else {
             resultBox.innerHTML = '<span class="text-danger">Ticket nahi mila. Kripya Ticket ID aur Mobile number check karein.</span>';
         }
+    })
+    .catch(() => {
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = '<span>Could not check the ticket right now. Please try again.</span>';
     });
 }
 </script>
 
 <style>
 /* Page-specific responsive rules */
+#content #subheader.complaint-hero { min-height: 310px !important; padding: 112px 0 64px !important; }
+#content #subheader.complaint-hero > .container { margin-top: 0; }
+#content #subheader.complaint-hero h1 { max-width: 780px; margin: 10px 0 !important; font-size: clamp(34px, 5vw, 54px) !important; font-weight: 800; line-height: 1.1 !important; text-transform: none; }
+#content #subheader.complaint-hero p { max-width: 620px; margin: 0; font-size: clamp(15px, 2vw, 18px) !important; line-height: 1.55; }
+.complaint-content { padding: 52px 0 66px; }
+.complaint-content > .container { max-width: 1240px; }
+.complaint-grid { align-items: start; }
+.complaint-form-column, .complaint-support-column, .complaint-form-card, .complaint-form-card form, .complaint-form-card [class*="col-"] { min-width: 0; }
+.complaint-form-card { height: auto; padding: 24px; border-radius: 16px; }
+.complaint-form-card .solar-input-heading { margin-bottom: 8px !important; }
+.complaint-form-card > p { margin-bottom: 20px !important; }
+.complaint-form-card input, .complaint-form-card select, .complaint-form-card textarea, .complaint-form-card button { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.complaint-form-card .row { min-width: 0; }
+.complaint-form-card textarea { resize: vertical; }
+.complaint-track-card { height: auto; padding: 22px; border-radius: 16px; }
+.complaint-track-card h5 { color: #fbec6b; line-height: 1.35; }
+.complaint-track-card .form-control { min-width: 0; min-height: 44px; border: 1px solid rgba(255,255,255,.24); border-radius: 9px; background: rgba(255,255,255,.1); color: #fff; }
+.complaint-track-card .form-control::placeholder { color: rgba(255,255,255,.55); }
+.complaint-track-card .form-control:focus { border-color: #fbec6b; box-shadow: 0 0 0 3px rgba(251,236,107,.14); }
+.complaint-track-card .form-label { color: rgba(255,255,255,.78); }
+.complaint-track-result { margin-top: 14px; padding: 13px; border-radius: 10px; background: rgba(255,255,255,.1); color: #fff; overflow-wrap: anywhere; }
+.complaint-helpline-card { min-width: 0; padding: 22px; border: 1px solid #e3eaf2; border-radius: 16px; background: #f7f9fc; }
+.complaint-helpline-card h6 { color: #102444; font-size: 16px; }
+.complaint-helpline-card > p { line-height: 1.55; }
+.complaint-contact-row { display: flex; min-width: 0; align-items: flex-start; gap: 12px; }
+.complaint-contact-row > i { display: grid; flex: 0 0 38px; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: #eaf1fb; color: #163563; font-size: 18px; }
+.complaint-contact-copy { min-width: 0; overflow-wrap: anywhere; }
+.complaint-contact-copy strong, .complaint-contact-copy a { display: block; max-width: 100%; overflow-wrap: anywhere; }
+.complaint-contact-copy a { color: #1b3b68; text-decoration: underline; text-underline-offset: 2px; }
 @media (min-width: 768px) {
-    #content #subheader > .container { margin-top: 36px; }
+    #content #subheader.complaint-hero > .container { margin-top: 0; }
 }
 @media (max-width: 767.98px) {
+    #content #subheader.complaint-hero { height: auto !important; min-height: 0 !important; padding: 104px 0 34px !important; }
     #content { width: 100%; max-width: 100%; overflow-x: clip; }
     #content .container, #content .container-fluid { max-width: 100%; }
     #content .row > [class*="col-"] { min-width: 0; }
@@ -203,6 +244,17 @@ function trackTicket() {
     #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     #content table { min-width: 620px; }
     #content .btn-main, #content .btn { white-space: normal; text-align: center; }
+    #content .complaint-content { padding: 28px 0 40px; }
+    #content .complaint-content > .container { padding: 0 16px; }
+    #content .complaint-grid { --bs-gutter-x: 1rem; --bs-gutter-y: 1.25rem; margin-top: 0; }
+    #content .complaint-form-card { padding: 17px; border-radius: 13px; }
+    #content .complaint-form-card .solar-input-heading { font-size: 18px; line-height: 1.3; }
+    #content .complaint-form-card .row { --bs-gutter-x: .75rem; --bs-gutter-y: .8rem; }
+    #content .complaint-form-card .form-control, #content .complaint-form-card .form-select { min-height: 44px; font-size: 14px; }
+    #content .complaint-form-card .input-group { min-width: 0; flex-wrap: nowrap; }
+    #content .complaint-form-card .input-group > * { min-width: 0; }
+    #content .complaint-track-card, #content .complaint-helpline-card { padding: 17px; border-radius: 13px; }
+    #content .complaint-track-card .btn-main { min-height: 44px; }
 }
 </style>
 <%- include('partials/footer') %>

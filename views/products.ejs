@@ -1,120 +1,48 @@
 <%- include('partials/header') %>
 <%- include('partials/navbar') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <!-- Subheader -->
-    <section id="subheader" class="bg-dark text-light relative" style="background: linear-gradient(rgba(22, 53, 99, 0.85), rgba(15, 38, 71, 0.9)), url('/images/background/w1.webp') center/cover no-repeat; padding: 110px 0 60px 0;">
+<main class="catalog-page" id="content">
+    <section class="catalog-hero" style="--hero-image: url('/images/background/w1.webp')">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <h1 class="text-white font-weight-bold mt-2 mb-2" style="font-size: 44px; line-height: 1.2;">Solar Products &amp; Inverters</h1>
-                    <p class="text-white-50 mb-0" style="font-size: 17px;">Tier-1 DCR solar panels, grid-tied inverters &amp; lithium energy storage systems.</p>
-                </div>
-            </div>
+            <h1>Solar Products</h1>
+            <p>Panels, inverters, batteries and EV chargers.</p>
         </div>
     </section>
 
-    <!-- Products Catalog -->
-    <section class="py-5 bg-white">
-        <div class="container py-4">
-            <div class="row justify-content-center text-center mb-5">
-                <div class="col-lg-8">
-                    <span class="text-uppercase font-weight-bold" style="color: #163563; font-size: 13px; letter-spacing: 2px;">Certified Hardware</span>
-                    <h2 class="font-weight-bold text-dark mt-2 mb-2" style="font-size: 34px;">High-Efficiency Solar Hardware</h2>
-                    <p class="text-muted">BIS, MNRE, and ALMM approved solar components with industry-leading manufacturer warranties.</p>
-                </div>
-            </div>
-
-            <div class="row g-4">
-                <% data.products.forEach((p, idx) => { %>
-                    <div class="col-lg-6 wow fadeInUp" data-wow-delay="<%= 0.1 * (idx + 1) %>s">
-                        <article class="product-card h-100">
-                            <div class="product-card-image">
-                                <img src="<%= p.image || '/images/slider/4.webp' %>" alt="<%= p.name %>" loading="lazy">
-                                <span class="badge px-3 py-2 rounded-pill product-category"><%= p.category %></span>
+    <section class="catalog-section">
+        <div class="container">
+            <div class="catalog-grid products-grid">
+                <% data.products.forEach((product, index) => { %>
+                    <article class="catalog-card product-tile" style="--card-delay: <%= index * 45 %>ms">
+                        <div class="product-tile-image">
+                            <img src="<%= product.image || '/images/slider/4.webp' %>" alt="<%= product.name %>" loading="lazy">
+                            <span><%= product.category %></span>
+                        </div>
+                        <div class="product-tile-body">
+                            <div class="product-tile-meta"><span><i class="icofont-shield-alt"></i> <%= product.warranty %></span></div>
+                            <h3><%= product.name %></h3>
+                            <p><%= product.description %></p>
+                            <div class="product-specs"><span><small>Capacity</small><strong><%= product.capacityRange %></strong></span><span><small>Efficiency</small><strong><%= product.efficiency %></strong></span></div>
+                            <div class="product-features">
+                                <% product.features.slice(0, 2).forEach(feature => { %><span><i class="icofont-check"></i> <%= feature %></span><% }); %>
                             </div>
-                            <div class="product-card-body">
-                                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
-                                    <h4 class="font-weight-bold text-dark mb-0" style="font-size: 22px;"><%= p.name %></h4>
-                                    <span class="product-warranty"><i class="icofont-shield-alt me-1"></i><%= p.warranty %></span>
-                                </div>
-                                <p class="text-secondary small mb-3" style="line-height: 1.6;"><%= p.description %></p>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-sm-6">
-                                    <div class="p-2 bg-white rounded-3 border small">
-                                        <span class="text-muted d-block">Capacity Range:</span>
-                                        <strong class="text-dark"><%= p.capacityRange %></strong>
-                                    </div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="p-2 bg-white rounded-3 border small">
-                                        <span class="text-muted d-block">Efficiency:</span>
-                                        <strong class="text-success"><%= p.efficiency %></strong>
-                                    </div>
-                                </div>
+                            <div class="catalog-actions">
+                                <a class="catalog-action-button catalog-action-outline" href="/contact#enquiry-form">Ask about product <i class="icofont-arrow-right"></i></a>
+                                <a class="catalog-action-button catalog-action-primary" href="/calculator#solar-calculator">Get Quote</a>
                             </div>
-
-                            <div class="mb-3">
-                                <span class="d-block small text-muted font-weight-bold mb-1">Key Features:</span>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <% p.features.forEach(f => { %>
-                                        <span class="badge bg-white text-dark border small py-2 px-2"><%= f %></span>
-                                    <% }); %>
-                                </div>
-                            </div>
-
-                            <div class="p-2 bg-white rounded-3 border small mb-4 mt-auto">
-                                <span class="text-muted">Application:</span>
-                                <strong class="text-dark ms-1"><%= p.bestFor %></strong>
-                            </div>
-
-                            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
-                                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 8px 22px; font-size: 13px; font-weight: 700;">
-                                    <span>Get Pricing Quote</span>
-                                </a>
-                                <a href="https://wa.me/917000575496?text=Namaste%20Deepak%20ji,%20I%20am%20inquiring%20about%20<%= encodeURIComponent(p.name) %>." target="_blank" class="btn btn-outline-success btn-sm px-3" style="border-radius: 20px;">
-                                    <i class="fa-brands fa-whatsapp me-1"></i> WhatsApp
-                                </a>
-                            </div>
-                        </article>
-                    </div>
+                        </div>
+                    </article>
                 <% }); %>
             </div>
         </div>
     </section>
 
-    <!-- Scheme CTA -->
-    <section class="py-5 text-white" style="background: #0f2647;">
-        <div class="container text-center py-3">
-            <h2 class="text-white font-weight-bold mb-2" style="font-size: 32px;">Looking for DCR Modules for PM Surya Ghar Subsidy?</h2>
-            <p class="text-white-50 mb-4">We supply only domestic content requirement (DCR) verified solar panels eligible for direct DBT subsidies up to ₹78,000.</p>
-            <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
-                <span>Calculate Your Solar Subsidy</span>
-            </a>
+    <section class="catalog-cta">
+        <div class="container catalog-cta-inner">
+            <div><span class="catalog-eyebrow">Need help choosing?</span><h2>We can help size your system.</h2><p>Share your requirements and get a product recommendation.</p></div>
+            <a href="/calculator#solar-calculator" class="catalog-button">Calculate your system <i class="icofont-arrow-right"></i></a>
         </div>
     </section>
-</div>
+</main>
 
-<style>
-/* Page-specific responsive rules */
-@media (min-width: 768px) {
-    #content #subheader > .container { margin-top: 36px; }
-}
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
 <%- include('partials/footer') %>

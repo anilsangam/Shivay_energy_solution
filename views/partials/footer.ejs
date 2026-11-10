@@ -1,13 +1,12 @@
         <!-- footer begin -->
-        <footer id="contact" class="section-dark">
+        <footer id="contact" class="section-dark site-footer">
             <div class="container relative z-2">
                 <div class="row gx-5">
-                    <div class="col-lg-4 col-sm-6 mb-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <img src="/images/logo-icon.webp" alt="Shivay Energy" style="height: 38px; margin-right: 10px;">
-                            <div style="min-width: 0; max-width: 100%;">
-                                <h4 class="mb-0 text-white font-weight-bold" style="font-size: 20px;"><%= company.name %></h4>
-                                <small class="d-block" style="max-width: 100%; color: var(--primary-color); font-weight: 600; letter-spacing: 1px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere;"><%= company.tagline %></small>
+                    <div class="col-lg-4 col-sm-6 mb-4 footer-company-column">
+                        <div class="footer-brand-lockup mb-3">
+                            <span class="footer-brand-mark"><img src="/images/brandlogo2.png" alt="Shivay Energy logo"></span>
+                            <div class="footer-brand-copy">
+                                <small class="d-block"><%= company.tagline %></small>
                             </div>
                         </div>
                         <p class="text-white-50 small mb-4" style="line-height: 1.7;">
@@ -22,24 +21,25 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-2 col-sm-6 mb-4">
-                        <div class="widget">
+                    <div class="col-lg-2 col-sm-6 mb-4 footer-navigation-column">
+                        <div class="widget footer-nav-widget">
                             <h5>Navigation</h5>
                             <ul>
                                 <li><a href="/">Home</a></li>
-                                <li><a href="/services">Services &amp; Projects</a></li>
+                                <li><a href="/services">Services</a></li>
                                 <li><a href="/products">Products &amp; Inverters</a></li>
+                                <li><a href="/careers">Careers &amp; Opportunities</a></li>
                                 <li><a href="/about">About Us</a></li>
                                 <li><a href="/contact">Contact</a></li>
-                                <li><a href="/schemes">PM Surya Ghar</a></li>
+                                <li><a href="/#govt-scheme-section">PM Surya Ghar</a></li>
                                 <li><a href="/calculator">Calculator</a></li>
                                 <li><a href="/complaints">Complaints Support</a></li>
                             </ul>
                         </div>
                     </div>
 
-                    <div class="col-lg-3 col-sm-6 mb-4">
-                        <div class="widget">
+                    <div class="col-lg-3 col-sm-6 mb-4 footer-contact-column">
+                        <div class="widget footer-services-widget">
                             <h5>Our Solar Services</h5>
                             <ul>
                                 <li><a href="/services">Residential Rooftop Solar</a></li>
@@ -47,13 +47,15 @@
                                 <li><a href="/services">Agricultural Solar Pumps (KUSUM)</a></li>
                                 <li><a href="/services">On-Grid Net Metering Approval</a></li>
                                 <li><a href="/services">Solar AMC &amp; Panel Cleaning</a></li>
+                                <li><a href="/services#ev-charging-installation">EV Charging Installation</a></li>
+                                <li><a href="/services#ev-charger-service">EV Charger Service</a></li>
                                 <li><a href="/products">Hybrid &amp; Off-Grid Systems</a></li>
                             </ul>
                         </div>
                     </div>
 
                     <div class="col-lg-3 col-sm-6 mb-4">
-                        <div class="widget">
+                        <div class="widget footer-contact-widget">
                             <h5>Contact Us</h5>
                             <div class="mb-3">
                                 <span class="d-block text-white font-weight-bold small"><i class="icofont-location-pin me-2 text-warning"></i>Office Address:</span>
@@ -90,6 +92,57 @@
                 </div>
             </div>
         </footer>
+        <style>
+            .site-footer { overflow: hidden; padding-top: 0 !important; background: linear-gradient(135deg, #0b1d35, #163563 72%, #1c477c); color: #fff; }
+            .site-footer > .container { max-width: 1320px; padding-top: 12px; padding-bottom: 16px; }
+            .site-footer .footer-contact-column { margin-bottom: 0 !important; }
+            .site-footer .footer-contact-widget > div:last-child { margin-bottom: 0 !important; }
+            .footer-brand-lockup { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 9px; }
+            .footer-brand-mark { display: block; flex: 0 1 auto; width: min(100%, 250px); height: auto; overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+            .footer-brand-mark img { display: block; width: 100%; height: auto; object-fit: contain; }
+            .footer-brand-copy { min-width: 0; }
+            .footer-brand-copy h4 { margin-bottom: 4px !important; font-size: 18px; line-height: 1.2; overflow-wrap: anywhere; }
+            .footer-brand-copy small { color: #fbec6b; font-size: 11px; font-weight: 650; letter-spacing: .25px; line-height: 1.45; overflow-wrap: anywhere; }
+            .site-footer .footer-company-column > p { max-width: 440px; color: rgba(255,255,255,.72) !important; font-size: 13px; line-height: 1.7 !important; }
+            .site-footer .widget h5 { margin-bottom: 16px; padding-bottom: 9px; border-bottom: 2px solid rgba(251,236,107,.7); color: #fff; font-size: 15px; font-weight: 750; }
+            .site-footer .widget ul { margin: 0; padding: 0; list-style: none; }
+            .site-footer .widget ul li { min-width: 0; margin: 0 0 8px; }
+            .site-footer .widget ul li a { color: rgba(255,255,255,.76); font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+            .site-footer .widget ul li a:hover { color: #fbec6b; }
+            .site-footer .social-icons { display: flex; flex-wrap: wrap; gap: 9px; }
+            .site-footer .social-icons a { display: inline-flex; width: 48px; height: 48px; align-items: center; justify-content: center; margin: 0; padding: 0; color: rgba(255,255,255,.74); background: transparent; border: 1px solid rgba(255,255,255,.2); border-radius: 13px; box-shadow: none; }
+            .site-footer .social-icons a:hover { color: #fbec6b; background: transparent; border-color: rgba(251,236,107,.65); }
+            .site-footer .footer-contact-widget a { color: rgba(255,255,255,.78); overflow-wrap: anywhere; }
+            .site-footer .footer-contact-widget a:hover { color: #fbec6b; }
+            .site-footer .footer-contact-widget > div { max-width: 100%; }
+            .site-footer .footer-contact-widget .text-warning { color: #fbec6b !important; }
+            .site-footer .subfooter { margin-top: 0 !important; border-color: rgba(255,255,255,.15) !important; background: rgba(4,14,28,.24); }
+            .site-footer .subfooter .container { padding-top: 0; padding-bottom: 0; }
+            .site-footer .subfooter .row { row-gap: 7px; }
+            @media (max-width: 767.98px) {
+                .site-footer > .container { padding: 10px 16px 12px; }
+                .site-footer > .container > .row { --bs-gutter-x: 1rem; --bs-gutter-y: 0; row-gap: 0 !important; }
+                .site-footer .footer-company-column { margin-bottom: 0 !important; }
+                .site-footer .footer-brand-mark { width: min(100%, 220px); }
+                .site-footer .footer-brand-copy h4 { font-size: 17px; }
+                .site-footer .footer-company-column > p { margin-bottom: 16px !important; }
+                .site-footer .footer-navigation-column,
+                .site-footer .footer-company-column,
+                .site-footer .footer-contact-column,
+                .site-footer > .container > .row > [class*="col-"] { width: 100%; margin-top: 0 !important; margin-bottom: 0 !important; padding-top: 0 !important; }
+                .site-footer .footer-nav-widget ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; row-gap: 5px; }
+                .site-footer .footer-nav-widget ul li { display: flex; min-width: 0; margin: 0; }
+                .site-footer .footer-nav-widget ul li a { display: block; width: 100%; min-height: 0; padding: 5px 0; border: 0; border-radius: 0; background: transparent; font-size: 12px; }
+                .site-footer .footer-nav-widget ul li a:hover { background: transparent; }
+                .site-footer .footer-services-widget ul li a, .site-footer .footer-contact-widget a { font-size: 13px; }
+                .site-footer .footer-services-widget h5,
+                .site-footer .footer-contact-widget h5,
+                .site-footer .footer-nav-widget h5 { margin-top: 0 !important; margin-bottom: 6px !important; padding-bottom: 5px; }
+                .site-footer .footer-services-widget, .site-footer .footer-contact-widget { margin-bottom: 0; }
+                .site-footer .subfooter .container { padding: 0 16px; }
+                .site-footer .subfooter .row > div { text-align: left !important; }
+            }
+        </style>
         <!-- footer end -->
 
         <!-- Floating WhatsApp Connect Button -->

@@ -34,19 +34,25 @@ app.use('/css', express.static(path.join(__dirname, 'css')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/fonts', express.static(path.join(__dirname, 'fonts')));
+app.use('/videos', express.static(path.join(__dirname, 'videos')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure Session Store (MongoDB backed)
 let sessionStore;
-try {
-    sessionStore = MongoStore.create({
-        mongoUrl: process.env.MONGO_URI,
-        collectionName: 'sessions',
-        ttl: 14 * 24 * 60 * 60, // 14 days
-        autoRemove: 'native'
-    });
-} catch (err) {
-    console.warn('⚠️ Warning: Using in-memory session store (Development mode only).');
+const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
+if (mongoURI) {
+    try {
+        sessionStore = MongoStore.create({
+            mongoUrl: mongoURI,
+            collectionName: 'sessions',
+            ttl: 14 * 24 * 60 * 60, // 14 days
+            autoRemove: 'native'
+        });
+    } catch (err) {
+        console.warn('⚠️ Warning: Using in-memory session store (Development mode only).');
+    }
+} else {
+    console.warn('⚠️ Note: Using in-memory session store (MONGO_URI / MONGODB_URI not provided).');
 }
 
 app.use(session({
