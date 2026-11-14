@@ -1,74 +1,76 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('../admin/partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: #20c997; color: #000;">BRANCH STAFF</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Branch Staff Management</h3>
-                    <small class="text-white-50"><%= company.name %> • Branch Personnel</small>
-                </div>
-                <a href="/manager/dashboard" class="btn btn-sm btn-outline-light">← Dashboard</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
-                <h5 class="font-weight-bold text-dark mb-3">Assigned Staff Members</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th>
-                                <th>Employee ID</th>
-                                <th>Email</th>
-                                <th>Mobile</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (employees && employees.length > 0) { %>
-                                <% employees.forEach(e => { %>
-                                    <tr>
-                                        <td><strong><%= e.name %></strong></td>
-                                        <td><code><%= e.employeeId || 'N/A' %></code></td>
-                                        <td><%= e.email %></td>
-                                        <td><%= e.mobile %></td>
-                                        <td><span class="badge bg-success"><%= e.status %></span></td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">No employees registered under this branch yet.</td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Assigned Branch Personnel
+        </h2>
+        <p class="text-muted small mb-0">
+            Employees supervised by <strong><%= currentUser ? currentUser.name : 'Branch Manager' %></strong>
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/manager/attendance" class="btn btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-location-pin me-1"></i> Attendance Logs
+        </a>
+    </div>
 </div>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Staff Members (<%= employees ? employees.length : 0 %>)</h5>
+            <div class="admin-card-subtitle">Technicians and site survey specialists assigned to this branch</div>
+        </div>
+        <span class="badge bg-light text-dark border">Raisen Operations</span>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Employee ID</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Designation</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (employees && employees.length > 0) { %>
+                    <% employees.forEach(e => { %>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="admin-avatar-circle" style="width: 32px; height: 32px; font-size: 11px;">
+                                        <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark"><%= e.name %></strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code><%= e.employeeId || 'N/A' %></code></td>
+                            <td><%= e.email %></td>
+                            <td><strong><%= e.mobile %></strong></td>
+                            <td><%= e.designation || 'Technical Personnel' %></td>
+                            <td>
+                                <span class="badge-status <%= e.status === 'ACTIVE' ? 'badge-status-active' : 'badge-status-inactive' %>">
+                                    <%= e.status %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No employees registered under this branch yet.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../admin/partials/admin-footer') %>

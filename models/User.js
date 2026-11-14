@@ -33,17 +33,33 @@ const userSchema = new mongoose.Schema({
     },
     role: { 
         type: String, 
-        enum: ['SUPER_ADMIN', 'BRANCH_MANAGER', 'EMPLOYEE'], 
+        enum: ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER', 'EMPLOYEE'], 
         default: 'EMPLOYEE' 
     },
     branchId: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Branch' 
     },
+    managerId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User' 
+    },
     status: { 
         type: String, 
-        enum: ['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED'], 
+        enum: ['PENDING', 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'REJECTED'], 
         default: 'PENDING' 
+    },
+    designation: {
+        type: String,
+        trim: true
+    },
+    department: {
+        type: String,
+        trim: true
+    },
+    address: {
+        type: String,
+        trim: true
     },
     failedLoginAttempts: { 
         type: Number, 
@@ -72,6 +88,19 @@ userSchema.virtual('branch').get(function() {
 }).set(function(b) {
     this.branchId = b;
 });
+
+// Alias managerId as manager
+userSchema.virtual('manager').get(function() {
+    return this.managerId;
+}).set(function(m) {
+    this.managerId = m;
+});
+
+// Indexes for query performance
+userSchema.index({ role: 1 });
+userSchema.index({ status: 1 });
+userSchema.index({ managerId: 1 });
+userSchema.index({ branchId: 1 });
 
 // Pre-save hook to hash password with bcrypt
 userSchema.pre('save', async function() {

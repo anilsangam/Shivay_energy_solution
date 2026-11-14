@@ -1,0 +1,22 @@
+<%
+    const crumbs = typeof breadcrumbs !== 'undefined' ? breadcrumbs : [];
+    const rootUrl = (typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin' : ((typeof currentUser !== 'undefined' && currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) ? '/manager/dashboard' : '/employee/dashboard');
+%>
+
+<nav class="breadcrumb-container" aria-label="breadcrumb">
+    <ul class="breadcrumb-list">
+        <li>
+            <a href="<%= rootUrl %>"><i class="icofont-home me-1"></i> Dashboard</a>
+        </li>
+        <% if (crumbs && crumbs.length > 0) { %>
+            <% crumbs.forEach((crumb, idx) => { %>
+                <li class="separator">/</li>
+                <% if (idx === crumbs.length - 1 || !crumb.url) { %>
+                    <li class="current" aria-current="page"><%= crumb.label %></li>
+                <% } else { %>
+                    <li><a href="<%= crumb.url %>"><%= crumb.label %></a></li>
+                <% } %>
+            <% }); %>
+        <% } %>
+    </ul>
+</nav>

@@ -1,24 +1,6 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: var(--primary-color); color: #000;">BILLING & ACCOUNTS</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Tax Invoice & Billing Engine</h3>
-                    <small class="text-white-50"><%= company.name %> • GSTIN: <%= company.gstin %> (Raisen, M.P.)</small>
-                </div>
-                <a href="/admin" class="btn btn-sm btn-outline-light">← Back to Dashboard</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
+<div class="row g-4 mb-4">
             <!-- Printable Tax Invoice Document -->
             <div class="card p-5 border-0 shadow rounded-3 bg-white mx-auto mb-5" style="max-width: 920px; border-top: 6px solid #163563 !important;">
                 <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
@@ -198,23 +180,6 @@
                     </table>
                 </div>
             </div>
-        </div>
-    </section>
 </div>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<%- include('partials/admin-footer') %>

@@ -82,14 +82,7 @@
                                 <div class="menu_side_area d-flex align-items-center">
                                     <a href="/calculator#solar-calculator" class="btn-main btn-line fx-slide hover-white navbar-quote-btn"><span>Solar Calculator</span></a>
                                     <a href="/contact#enquiry-form" class="btn-main btn-line fx-slide hover-white ms-2 navbar-enquiry-btn"><span>Enquiry</span></a>
-                                    <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-                                        <a href="<%= currentUser.role === 'SUPER_ADMIN' ? '/admin' : (currentUser.role === 'BRANCH_MANAGER' ? '/manager/dashboard' : '/employee/dashboard') %>" class="btn btn-sm btn-outline-light ms-2 d-none d-lg-inline-flex align-items-center" title="Go to <%= currentUser.role %> Portal">
-                                            <i class="icofont-ui-user me-1 text-warning"></i> <%= currentUser.name.split(' ')[0] %>
-                                        </a>
-                                        <a href="/auth/logout" class="btn btn-sm btn-outline-danger ms-1 d-none d-lg-inline-flex" title="Sign Out">
-                                            <i class="icofont-logout"></i>
-                                        </a>
-                                    <% } %>
+
                                     <span id="menu-btn"></span>
                                 </div>
                             </div>

@@ -1,0 +1,115 @@
+            </main>
+            <footer class="admin-footer">
+        <div>
+            &copy; <%= typeof currentYear !== 'undefined' ? currentYear : new Date().getFullYear() %> <strong><%= typeof company !== 'undefined' ? company.name : 'Shivay Energy Solutions' %></strong>. All Rights Reserved.
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span><i class="icofont-location-pin text-warning"></i> Raisen Central (M.P.)</span>
+            <span class="text-muted">•</span>
+            <span><i class="icofont-shield-alt text-success"></i> RBAC Security Active</span>
+            <span class="text-muted">•</span>
+            <span>Phase 1 Enterprise Edition</span>
+        </div>
+    </footer>
+    </div><!-- /.admin-main -->
+    </div><!-- /.admin-layout -->
+
+    <!-- Admin Panel Core Interactions Script (Zero external theme dependencies, zero ripple) -->
+    <script>
+        (function() {
+            // 1. Mobile Sidebar Drawer Toggle
+            const toggleBtn = document.getElementById('adminSidebarToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const backdrop = document.getElementById('adminBackdrop');
+
+            if (toggleBtn && sidebar && backdrop) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    sidebar.classList.toggle('show');
+                    backdrop.classList.toggle('show');
+                });
+
+                backdrop.addEventListener('click', function() {
+                    sidebar.classList.remove('show');
+                    backdrop.classList.remove('show');
+                });
+            }
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar && sidebar.classList.contains('show')) {
+                    sidebar.classList.remove('show');
+                    if (backdrop) backdrop.classList.remove('show');
+                }
+            });
+
+            // 2. Native Bootstrap-Compatible Dropdowns (Profile & Notifications)
+            document.addEventListener('click', function(e) {
+                const toggle = e.target.closest('[data-bs-toggle="dropdown"]');
+                const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
+
+                if (toggle) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const container = toggle.closest('.dropdown');
+                    const menu = container ? container.querySelector('.dropdown-menu') : null;
+
+                    // Close any other open dropdowns
+                    openDropdowns.forEach(function(d) {
+                        if (d !== menu) d.classList.remove('show');
+                    });
+
+                    if (menu) {
+                        menu.classList.toggle('show');
+                    }
+                } else if (!e.target.closest('.dropdown-menu')) {
+                    // Clicked outside - close all dropdown menus
+                    openDropdowns.forEach(function(d) {
+                        d.classList.remove('show');
+                    });
+                }
+            });
+
+            // 3. Native Bootstrap-Compatible Modals
+            document.addEventListener('click', function(e) {
+                const modalToggle = e.target.closest('[data-bs-toggle="modal"]');
+                if (modalToggle) {
+                    e.preventDefault();
+                    const targetSelector = modalToggle.getAttribute('data-bs-target');
+                    const targetModal = targetSelector ? document.querySelector(targetSelector) : null;
+                    if (targetModal) {
+                        targetModal.classList.add('show');
+                        targetModal.style.display = 'block';
+                        targetModal.removeAttribute('aria-hidden');
+                        targetModal.setAttribute('aria-modal', 'true');
+                        document.body.classList.add('modal-open');
+
+                        // Ensure modal backdrop exists
+                        if (!document.querySelector('.modal-backdrop')) {
+                            const backdropEl = document.createElement('div');
+                            backdropEl.className = 'modal-backdrop fade show';
+                            document.body.appendChild(backdropEl);
+                        }
+                    }
+                }
+
+                const dismissBtn = e.target.closest('[data-bs-dismiss="modal"]');
+                if (dismissBtn) {
+                    e.preventDefault();
+                    const modal = dismissBtn.closest('.modal');
+                    if (modal) {
+                        modal.classList.remove('show');
+                        modal.style.display = 'none';
+                        modal.setAttribute('aria-hidden', 'true');
+                        modal.removeAttribute('aria-modal');
+                        document.body.classList.remove('modal-open');
+
+                        const backdropEl = document.querySelector('.modal-backdrop');
+                        if (backdropEl) backdropEl.remove();
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

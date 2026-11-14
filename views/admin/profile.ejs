@@ -1,0 +1,176 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const pUser = typeof profileUser !== 'undefined' ? profileUser : (typeof user !== 'undefined' ? user : {});
+    const initials = (pUser.name || 'User').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    
+    let roleBadgeClass = 'badge-role-employee';
+    let roleLabel = 'Employee (Field Staff)';
+    if (pUser.role === 'SUPER_ADMIN') {
+        roleBadgeClass = 'badge-role-superadmin';
+        roleLabel = 'Super Administrator';
+    } else if (pUser.role === 'MANAGER' || pUser.role === 'BRANCH_MANAGER') {
+        roleBadgeClass = 'badge-role-manager';
+        roleLabel = 'Branch Operations Manager';
+    }
+
+    const assignedMgr = (pUser.managerId && pUser.managerId.name) ? pUser.managerId : ((pUser.manager && pUser.manager.name) ? pUser.manager : null);
+%>
+
+<div class="row g-4 justify-content-center">
+    <!-- User Profile Overview Card -->
+    <div class="col-lg-5">
+        <div class="admin-card text-center mb-4">
+            <div class="admin-avatar-circle mx-auto mb-3" style="width: 80px; height: 80px; font-size: 28px; border: 4px solid var(--admin-solar-light);">
+                <%= initials %>
+            </div>
+
+            <h4 class="font-weight-bold text-dark mb-1"><%= pUser.name %></h4>
+            <div class="mb-2">
+                <span class="badge-role <%= roleBadgeClass %>"><%= roleLabel %></span>
+                <span class="badge-status badge-status-active ms-1"><%= pUser.status || 'ACTIVE' %></span>
+            </div>
+            <p class="text-muted small mb-3">
+                <%= pUser.designation || 'Technical Personnel' %> • <%= pUser.department || 'Shivay Energy Solutions' %>
+            </p>
+
+            <div class="p-3 bg-light rounded-3 text-start border small">
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Employee ID:</span>
+                    <code><%= pUser.employeeId || 'N/A' %></code>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Email:</span>
+                    <strong><%= pUser.email %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Mobile:</span>
+                    <strong><%= pUser.mobile %></strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom">
+                    <span class="text-muted">Branch:</span>
+                    <span><%= (pUser.branchId && pUser.branchId.name) ? pUser.branchId.name : 'Raisen Central Branch' %></span>
+                </div>
+                <div class="d-flex justify-content-between py-1">
+                    <span class="text-muted">Assigned Manager:</span>
+                    <strong class="text-dark">
+                        <% if (assignedMgr) { %>
+                            <i class="icofont-business-man text-warning me-1"></i><%= assignedMgr.name %> (<%= assignedMgr.email %>)
+                        <% } else if (pUser.role === 'SUPER_ADMIN') { %>
+                            Executive Authority (Self)
+                        <% } else { %>
+                            <span class="text-muted">Unassigned / Direct Office</span>
+                        <% } %>
+                    </strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change & Security Settings -->
+    <div class="col-lg-7" id="passwordSection">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Security & Account Password</h5>
+                    <div class="admin-card-subtitle">Update your password securely using 256-bit bcrypt encryption</div>
+                </div>
+                <i class="icofont-key fs-24 text-warning"></i>
+            </div>
+
+            <!-- Feedback Alert -->
+            <div id="pwdAlert" class="alert d-none small"></div>
+
+            <form onsubmit="handlePasswordChange(event)">
+                <div class="mb-3">
+                    <label class="form-label small font-weight-bold">Current Password *</label>
+                    <input type="password" id="curPass" class="form-control" required placeholder="Enter current password">
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small font-weight-bold">New Password (min 8 chars) *</label>
+                        <input type="password" id="newPass" class="form-control" required minlength="8" placeholder="••••••••">
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small font-weight-bold">Confirm New Password *</label>
+                        <input type="password" id="confPass" class="form-control" required minlength="8" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mb-3 small text-muted border">
+                    <i class="icofont-shield-alt text-success me-1"></i>
+                    <strong>Password Requirements:</strong> Minimum 8 characters. Must contain letters and numbers. Never share your password with anyone.
+                </div>
+
+                <button type="submit" class="btn btn-primary font-weight-bold px-4" style="background: var(--admin-navy-primary); border-radius: 8px;">
+                    <i class="icofont-refresh me-1"></i> Update Password Securely
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+async function handlePasswordChange(e) {
+    e.preventDefault();
+    const cur = document.getElementById('curPass').value;
+    const np = document.getElementById('newPass').value;
+    const cp = document.getElementById('confPass').value;
+    const box = document.getElementById('pwdAlert');
+
+    box.className = 'alert d-none small';
+
+    if (np !== cp) {
+        box.className = 'alert alert-danger small';
+        box.innerText = 'New password and confirm password do not match.';
+        box.classList.remove('d-none');
+        return;
+    }
+
+    if (np.length < 8) {
+        box.className = 'alert alert-danger small';
+        box.innerText = 'Password must be at least 8 characters long.';
+        box.classList.remove('d-none');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/auth/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({
+                currentPassword: cur,
+                newPassword: np,
+                confirmPassword: cp,
+                _csrf: CSRF_TOKEN
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            box.className = 'alert alert-success small';
+            box.innerText = data.message || 'Password updated successfully.';
+            box.classList.remove('d-none');
+            document.getElementById('curPass').value = '';
+            document.getElementById('newPass').value = '';
+            document.getElementById('confPass').value = '';
+        } else {
+            box.className = 'alert alert-danger small';
+            box.innerText = data.message || 'Error updating password.';
+            box.classList.remove('d-none');
+        }
+    } catch (err) {
+        box.className = 'alert alert-danger small';
+        box.innerText = 'Server communication error. Please try again.';
+        box.classList.remove('d-none');
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

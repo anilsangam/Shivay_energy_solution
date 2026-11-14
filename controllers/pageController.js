@@ -63,6 +63,7 @@ exports.getCalculator = (req, res) => {
         title: `India Solar Savings Calculator | ${data.company.name}`,
         metaDescription: `Calculate your rooftop solar capacity, estimated monthly units generation, savings in â‚¹ and PM Surya Ghar subsidy eligibility.`,
         data,
+        calculatorConfig: data.calculator,
         activePage: 'calculator'
     });
 };
@@ -74,63 +75,6 @@ exports.getContact = (req, res) => {
         data,
         activePage: 'contact'
     });
-};
-
-// API endpoint for dynamic Solar Calculator
-exports.calculateSolar = (req, res) => {
-    try {
-        const monthlyBill = parseFloat(req.body.monthlyBill) || 0;
-        const tariff = parseFloat(req.body.tariff) || data.calculator.avgTariffPerUnit;
-        
-        let monthlyUnits = parseFloat(req.body.monthlyUnits) || 0;
-        if (!monthlyUnits && monthlyBill > 0) {
-            monthlyUnits = monthlyBill / tariff;
-        }
-
-        const unitsPerKwPerMonth = data.calculator.unitsPerKwPerMonth;
-        let recommendedKw = Math.ceil((monthlyUnits / unitsPerKwPerMonth) * 10) / 10;
-        if (recommendedKw < 1) recommendedKw = 1;
-
-        const estMonthlyGeneration = Math.round(recommendedKw * unitsPerKwPerMonth);
-        const estAnnualGeneration = estMonthlyGeneration * 12;
-        const estMonthlySavings = Math.round(estMonthlyGeneration * tariff);
-        const estAnnualSavings = estMonthlySavings * 12;
-
-        const estGrossCost = Math.round(recommendedKw * data.calculator.costPerKwApprox);
-        
-        // PM Surya Ghar Subsidy calculation
-        let subsidy = 0;
-        if (recommendedKw <= 1) {
-            subsidy = 30000;
-        } else if (recommendedKw <= 2) {
-            subsidy = 60000;
-        } else {
-            subsidy = 78000; // max cap
-        }
-
-        const netCost = Math.max(estGrossCost - subsidy, 0);
-        const paybackYears = (netCost / estAnnualSavings).toFixed(1);
-        const rooftopAreaSqFt = Math.round(recommendedKw * data.calculator.sqFtPerKw);
-        const co2SavedTonnes = ((recommendedKw * data.calculator.co2SavedPerKwYearKg) / 1000).toFixed(1);
-
-        return res.json({
-            success: true,
-            recommendedKw,
-            rooftopAreaSqFt,
-            estMonthlyGeneration,
-            estAnnualGeneration,
-            estMonthlySavings,
-            estAnnualSavings,
-            estGrossCost,
-            subsidy,
-            netCost,
-            paybackYears,
-            co2SavedTonnes,
-            disclaimer: data.calculator.disclaimer
-        });
-    } catch (err) {
-        return res.status(500).json({ success: false, message: "Error in calculation" });
-    }
 };
 
 // Handle Customer Enquiry submission

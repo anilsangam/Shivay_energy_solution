@@ -12,9 +12,11 @@ const authController = require('../controllers/authController');
 const {
     requireAuth,
     requireSuperAdmin,
+    requireManager,
     requireBranchManager,
     requireEmployee,
-    verifyCsrf
+    verifyCsrf,
+    validateObjectId
 } = require('../middleware/authMiddleware');
 
 const {
@@ -68,14 +70,21 @@ router.post('/auth/logout', authController.logout);
 // 3. SUPER ADMIN MANAGEMENT ROUTES (SUPER_ADMIN ONLY)
 // ==========================================
 router.get('/admin', requireAuth, requireSuperAdmin, adminController.getDashboard);
-router.get('/admin/quotations', requireAuth, requireSuperAdmin, adminController.getQuotations);
-router.get('/admin/invoices', requireAuth, requireSuperAdmin, adminController.getInvoices);
 router.get('/admin/employees', requireAuth, requireSuperAdmin, adminController.getEmployees);
-router.get('/admin/branches', requireAuth, requireSuperAdmin, adminController.getDashboard);
+router.get('/admin/managers', requireAuth, requireSuperAdmin, adminController.getManagers);
+router.get('/admin/customers', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('customers'));
+router.get('/admin/quotations', requireAuth, requireSuperAdmin, adminController.getQuotations);
+router.get('/admin/projects', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('projects'));
+router.get('/admin/invoices', requireAuth, requireSuperAdmin, adminController.getInvoices);
+router.get('/admin/reports', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('reports'));
+router.get('/admin/activity-logs', requireAuth, requireSuperAdmin, adminController.getActivityLogs);
+router.get('/admin/settings', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('settings'));
+router.get('/admin/profile', requireAuth, requireSuperAdmin, adminController.getProfile);
+
+// Legacy admin aliases
+router.get('/admin/branches', requireAuth, requireSuperAdmin, adminController.getManagers);
 router.get('/admin/enquiries', requireAuth, requireSuperAdmin, adminController.getDashboard);
 router.get('/admin/complaints', requireAuth, requireSuperAdmin, adminController.getDashboard);
-router.get('/admin/settings', requireAuth, requireSuperAdmin, adminController.getDashboard);
-router.get('/admin/reports', requireAuth, requireSuperAdmin, adminController.getDashboard);
 
 // ==========================================
 // 4. BRANCH MANAGER ROUTES (BRANCH_MANAGER & SUPER_ADMIN)
@@ -83,9 +92,11 @@ router.get('/admin/reports', requireAuth, requireSuperAdmin, adminController.get
 router.get('/manager/dashboard', requireAuth, requireBranchManager, managerController.getDashboard);
 router.get('/manager/employees', requireAuth, requireBranchManager, managerController.getEmployees);
 router.get('/manager/attendance', requireAuth, requireBranchManager, managerController.getAttendance);
-router.get('/manager/enquiries', requireAuth, requireBranchManager, managerController.getDashboard);
 router.get('/manager/quotations', requireAuth, requireBranchManager, managerController.getQuotations);
+router.get('/manager/projects', requireAuth, requireBranchManager, managerController.getProjects);
 router.get('/manager/invoices', requireAuth, requireBranchManager, managerController.getInvoices);
+router.get('/manager/profile', requireAuth, requireBranchManager, managerController.getProfile);
+router.get('/manager/enquiries', requireAuth, requireBranchManager, managerController.getDashboard);
 router.get('/manager/complaints', requireAuth, requireBranchManager, managerController.getDashboard);
 router.get('/manager/reports', requireAuth, requireBranchManager, managerController.getDashboard);
 
@@ -95,12 +106,12 @@ router.get('/manager/reports', requireAuth, requireBranchManager, managerControl
 router.get('/employee/dashboard', requireAuth, requireEmployee, employeeController.getDashboard);
 router.get('/employee/attendance', requireAuth, requireEmployee, employeeController.getAttendancePage);
 router.get('/employee/quotations', requireAuth, requireEmployee, employeeController.getQuotations);
+router.get('/employee/projects', requireAuth, requireEmployee, employeeController.getProjects);
 router.get('/employee/profile', requireAuth, requireEmployee, employeeController.getProfile);
 
 // ==========================================
 // 6. PUBLIC APIs (Rate-limited, Input Validated)
 // ==========================================
-router.post('/api/calculate-solar', pageController.calculateSolar);
 router.post('/api/enquiry', enquiryLimiter, pageController.submitEnquiry);
 router.post('/api/complaints', complaintController.submitComplaint);
 router.get('/api/complaints/track', complaintController.trackComplaint);
@@ -123,8 +134,9 @@ router.post('/api/admin/invoices/save', requireAuth, requireBranchManager, verif
 
 // User & Access Management (Super Admin & Managers with branch limits)
 router.post('/api/admin/users/create', requireAuth, requireSuperAdmin, verifyCsrf, adminController.createUser);
-router.post('/api/admin/users/status', requireAuth, requireBranchManager, verifyCsrf, adminController.updateUserStatus);
-router.post('/api/admin/users/reset-password', requireAuth, requireSuperAdmin, verifyCsrf, adminController.resetUserPassword);
+router.post('/api/admin/users/status', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('userId'), adminController.updateUserStatus);
+router.post('/api/admin/users/reset-password', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('userId'), adminController.resetUserPassword);
+router.post('/api/admin/employees/assign-manager', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('employeeId'), adminController.assignManager);
 
 // Password Change for Authenticated User
 router.post('/api/auth/change-password', requireAuth, verifyCsrf, authController.changePassword);

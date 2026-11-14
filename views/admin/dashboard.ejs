@@ -1,253 +1,285 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
+<!-- Quick Action Alert / Status Toast -->
+<div id="statusToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="statusToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('statusToast').classList.add('d-none')"></button>
+</div>
 
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: var(--primary-color); color: #000;">SUPER ADMIN & MANAGEMENT</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1"><%= company.name %> Control Panel</h3>
-                    <small class="text-white-50">Branch: Raisen Central (M.P.) • Head: Deepak Kushwaha & Rahul Saini</small>
+<!-- Header Welcome Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Shivay Energy Solutions Enterprise Command Center
+        </h2>
+        <p class="text-muted small mb-0">
+            Authorized Turnkey Solar EPC • Raisen Central (M.P.) • Headed by Deepak Kushwaha & Rahul Saini
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/admin/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> Manage Staff
+        </a>
+        <a href="/admin/quotations" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-calculator-alt-2 me-1"></i> New Quotation
+        </a>
+        <a href="/admin/activity-logs" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
+            <i class="icofont-history me-1"></i> Audit Logs
+        </a>
+    </div>
+</div>
+
+<!-- Key Metric KPI Cards (REAL DATA ONLY - NO STATIC NUMBERS) -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Field Employees</small>
+                <h3><%= stats.totalEmployees %></h3>
+                <div class="admin-metric-subtext text-success">
+                    <i class="icofont-check-circled"></i> Active installation staff
                 </div>
-                <div class="d-flex gap-2 mt-3 mt-md-0">
-                    <a href="/admin/quotations" class="btn btn-sm btn-outline-light"><i class="icofont-paper"></i> New Quotation</a>
-                    <a href="/admin/invoices" class="btn btn-sm btn-outline-light"><i class="icofont-bill"></i> Invoices</a>
-                    <a href="/employee/attendance" class="btn btn-sm btn-warning font-weight-bold text-dark"><i class="icofont-location-pin"></i> Field Attendance</a>
-                </div>
+            </div>
+            <div class="admin-metric-icon icon-navy">
+                <i class="icofont-users-alt-4"></i>
             </div>
         </div>
-    </section>
+    </div>
 
-    <section class="py-4 bg-light">
-        <div class="container">
-            <!-- Key Metric Cards -->
-            <div class="row g-3 mb-4">
-                <div class="col-lg-3 col-sm-6">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Total Enquiries</small>
-                        <h2 class="font-weight-bold text-dark mb-0 mt-1" id="statTotalEnq"><%= stats.totalEnquiries %></h2>
-                        <small class="text-success"><i class="icofont-arrow-up"></i> <%= stats.newEnquiries %> New active</small>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-sm-6">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Converted Projects</small>
-                        <h2 class="font-weight-bold text-success mb-0 mt-1"><%= stats.convertedEnquiries %></h2>
-                        <small class="text-muted">Installation sanctioned</small>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-sm-6">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Monthly Revenue</small>
-                        <h2 class="font-weight-bold mb-0 mt-1" style="color: #163563;"><%= stats.monthlyRevenueInr %></h2>
-                        <small class="text-muted">Direct invoices + subsidies</small>
-                    </div>
-                </div>
-
-                <div class="col-lg-3 col-sm-6">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Field Staff Today</small>
-                        <h2 class="font-weight-bold text-primary mb-0 mt-1"><%= stats.todayAttendance %> / <%= stats.totalEmployees %></h2>
-                        <small class="text-success"><i class="icofont-check-circled"></i> GPS Geo-tagged</small>
-                    </div>
+    <div class="col-xl-3 col-sm-6">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Branch Managers</small>
+                <h3><%= stats.totalManagers %></h3>
+                <div class="admin-metric-subtext text-primary">
+                    <i class="icofont-business-man-alt-1"></i> Operations leadership
                 </div>
             </div>
+            <div class="admin-metric-icon icon-amber">
+                <i class="icofont-business-man"></i>
+            </div>
+        </div>
+    </div>
 
-            <!-- Toast / Alert Notification Box -->
-            <div id="statusToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
-                <span id="statusToastMsg">Status updated successfully.</span>
-                <button type="button" class="btn-close" onclick="document.getElementById('statusToast').classList.add('d-none')"></button>
+    <div class="col-xl-3 col-sm-6">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Active Accounts</small>
+                <h3 class="text-success"><%= stats.activeUsers %></h3>
+                <div class="admin-metric-subtext text-muted">
+                    <i class="icofont-shield-alt text-success"></i> RBAC authenticated
+                </div>
+            </div>
+            <div class="admin-metric-icon icon-green">
+                <i class="icofont-badge"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Pending / Inactive</small>
+                <h3 class="text-warning"><%= stats.inactiveUsers %></h3>
+                <div class="admin-metric-subtext text-muted">
+                    <i class="icofont-clock-time"></i> Verification queue
+                </div>
+            </div>
+            <div class="admin-metric-icon icon-blue">
+                <i class="icofont-sand-clock"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee-Manager Overview Table (Requirement: Step 8) -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Employee - Manager Organization Overview</h5>
+            <div class="admin-card-subtitle">Real-time organizational hierarchy, role assignments, and active reporting lines</div>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/employees" class="btn btn-sm btn-outline-primary" style="font-size: 12px; border-radius: 6px;">
+                <i class="icofont-gear"></i> Manage Assignments
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Employee ID</th>
+                    <th>Role</th>
+                    <th>Assigned Manager</th>
+                    <th>Department / Designation</th>
+                    <th>Status</th>
+                    <th>Branch</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (users && users.length > 0) { %>
+                    <% users.forEach(u => { 
+                        let roleClass = 'badge-role-employee';
+                        let roleName = 'Employee';
+                        if (u.role === 'SUPER_ADMIN') {
+                            roleClass = 'badge-role-superadmin';
+                            roleName = 'Super Admin';
+                        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
+                            roleClass = 'badge-role-manager';
+                            roleName = 'Manager';
+                        }
+
+                        let statusClass = 'badge-status-active';
+                        if (u.status === 'PENDING') statusClass = 'badge-status-pending';
+                        else if (u.status === 'SUSPENDED') statusClass = 'badge-status-suspended';
+                        else if (u.status === 'INACTIVE') statusClass = 'badge-status-inactive';
+
+                        const mgrName = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : (u.role === 'SUPER_ADMIN' ? 'Self / Executive Board' : (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER' ? 'Deepak Kushwaha (MD)' : 'Unassigned')));
+                    %>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="admin-avatar-circle" style="width: 30px; height: 30px; font-size: 11px;">
+                                        <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark"><%= u.name %></strong>
+                                        <small class="text-muted d-block" style="font-size: 11px;"><%= u.email %></small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code><%= u.employeeId || 'N/A' %></code></td>
+                            <td><span class="badge-role <%= roleClass %>"><%= roleName %></span></td>
+                            <td>
+                                <span class="d-inline-flex align-items-center gap-1 font-weight-bold" style="font-size: 12px; color: var(--admin-navy-primary);">
+                                    <i class="icofont-business-man text-warning"></i> <%= mgrName %>
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-size: 12px;"><%= u.designation || 'Technical Staff' %></div>
+                                <small class="text-muted" style="font-size: 10px;"><%= u.department || 'Operations' %></small>
+                            </td>
+                            <td><span class="badge-status <%= statusClass %>"><%= u.status %></span></td>
+                            <td>
+                                <span class="small text-muted">
+                                    <%= (u.branchId && u.branchId.name) ? u.branchId.name : 'Raisen Central' %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No personnel records found.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Two Columns: Recent System Activities & Live CRM Leads -->
+<div class="row g-4 mb-4">
+    <!-- Live System Activity Audit Overview -->
+    <div class="col-lg-5">
+        <div class="admin-card h-100 mb-0">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">System Activity Overview</h5>
+                    <div class="admin-card-subtitle">Verified audit logs & security access events</div>
+                </div>
+                <a href="/admin/activity-logs" class="small text-decoration-none text-primary font-weight-bold">View All</a>
             </div>
 
-            <!-- Recent Enquiries Table -->
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="font-weight-bold text-dark mb-0">Customer Leads & Site Survey CRM</h5>
-                        <small class="text-muted">Manage real-time inquiries from Shivay Energy Solutions website & calculator</small>
-                    </div>
-                    <span class="badge bg-light text-dark border mt-2 mt-sm-0">Real-time Madhya Pradesh Enquiries</span>
-                </div>
+            <div class="admin-activity-list" style="max-height: 440px; overflow-y: auto;">
+                <% if (recentActivities && recentActivities.length > 0) { %>
+                    <% recentActivities.forEach(act => { 
+                        let actColor = '#163563';
+                        let actIcon = 'icofont-info-circle';
+                        if (act.action.includes('LOGIN')) { actIcon = 'icofont-login'; actColor = '#10b981'; }
+                        else if (act.action.includes('UNAUTHORIZED')) { actIcon = 'icofont-warning'; actColor = '#ef4444'; }
+                        else if (act.action.includes('ROLE')) { actIcon = 'icofont-shield-alt'; actColor = '#f59e0b'; }
+                        else if (act.action.includes('ATTENDANCE')) { actIcon = 'icofont-location-pin'; actColor = '#3b82f6'; }
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light small">
-                            <tr>
-                                <th>Lead ID</th>
-                                <th>Customer Name</th>
-                                <th>Contact</th>
-                                <th>Location</th>
-                                <th>Requirement</th>
-                                <th>Avg. Bill</th>
-                                <th>Date</th>
-                                <th>CRM Status</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="small">
-                            <% recentEnquiries.forEach(e => { 
-                                const cleanNum = (e.mobile || '').replace(/\D/g, '').slice(-10);
-                                const loc = e.district || e.location || 'Raisen (M.P.)';
-                                const billDisplay = e.monthlyBill ? ('₹' + Number(e.monthlyBill).toLocaleString('en-IN')) : (e.bill || '-');
-                            %>
-                                <tr id="row-<%= e.id %>">
+                        const actorName = (act.user && act.user.name) ? act.user.name : (act.role || 'System');
+                        const timeStr = act.createdAt ? new Date(act.createdAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+                    %>
+                        <div class="d-flex align-items-start gap-3 p-2 mb-2 border-bottom">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: <%= actColor %>20; color: <%= actColor %>; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                <i class="<%= actIcon %>"></i>
+                            </div>
+                            <div class="flex-grow-1" style="line-height: 1.3;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong class="text-dark" style="font-size: 12px;"><%= act.action.replace(/_/g, ' ') %></strong>
+                                    <small class="text-muted" style="font-size: 10px;"><%= timeStr %></small>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 11px;">
+                                    By: <strong><%= actorName %></strong> <%= act.ipAddress ? `• IP: ${act.ipAddress}` : '' %>
+                                </small>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <p class="text-center py-4 text-muted small">No recent activity events.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Leads CRM Table -->
+    <div class="col-lg-7">
+        <div class="admin-card h-100 mb-0">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Live Madhya Pradesh Solar Enquiries</h5>
+                    <div class="admin-card-subtitle">Real-time enquiries from website & solar calculator</div>
+                </div>
+                <span class="badge bg-light text-dark border">Raisen & Regional Leads</span>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Lead ID</th>
+                            <th>Customer</th>
+                            <th>Requirement</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (recentEnquiries && recentEnquiries.length > 0) { %>
+                            <% recentEnquiries.slice(0, 6).forEach(e => { %>
+                                <tr>
                                     <td><strong><%= e.id %></strong></td>
                                     <td>
                                         <div class="font-weight-bold text-dark"><%= e.name %></div>
-                                        <% if (e.message) { %>
-                                            <small class="text-muted text-truncate d-inline-block" style="max-width: 180px;" title="<%= e.message %>"><%= e.message %></small>
-                                        <% } %>
+                                        <small class="text-muted"><%= e.mobile %></small>
                                     </td>
                                     <td>
-                                        <a href="tel:<%= cleanNum %>" class="text-dark d-block"><%= e.mobile %></a>
-                                        <a href="https://wa.me/91<%= cleanNum %>?text=Namaste%20<%= encodeURIComponent(e.name) %>,%20greetings%20from%20Shivay%20Energy%20Solutions%20Raisen." target="_blank" class="badge bg-success text-white text-decoration-none">
-                                            <i class="fa-brands fa-whatsapp"></i> Chat
-                                        </a>
+                                        <span class="small font-weight-bold text-primary"><%= e.requirement %></span>
                                     </td>
-                                    <td><i class="icofont-location-pin text-danger"></i> <%= loc %></td>
-                                    <td><span class="badge bg-light text-dark border"><%= e.requirement %></span></td>
-                                    <td><strong class="text-success"><%= billDisplay %></strong></td>
-                                    <td><%= e.date %></td>
+                                    <td><small class="text-muted"><%= e.district || 'Raisen (M.P.)' %></small></td>
                                     <td>
-                                        <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="updateLeadStatus('<%= e.id %>', this.value)">
-                                            <option value="new" <%= e.status === 'new' ? 'selected' : '' %>>🔴 New Lead</option>
-                                            <option value="survey_scheduled" <%= e.status === 'survey_scheduled' ? 'selected' : '' %>>🟡 Survey Scheduled</option>
-                                            <option value="quotation_sent" <%= e.status === 'quotation_sent' ? 'selected' : '' %>>🔵 Quotation Sent</option>
-                                            <option value="converted" <%= e.status === 'converted' ? 'selected' : '' %>>🟢 Converted (Won)</option>
-                                            <option value="lost" <%= e.status === 'lost' ? 'selected' : '' %>>⚪ Lost / Inactive</option>
-                                        </select>
-                                    </td>
-                                    <td class="text-end">
-                                        <a href="/admin/quotations?name=<%= encodeURIComponent(e.name) %>&mobile=<%= encodeURIComponent(e.mobile) %>&address=<%= encodeURIComponent(loc) %>" class="btn btn-sm btn-outline-primary" title="Create Quotation for <%= e.name %>">
-                                            <i class="icofont-paper"></i> Quote
-                                        </a>
+                                        <span class="badge bg-warning text-dark text-uppercase" style="font-size: 10px;">
+                                            <%= e.status.replace(/_/g, ' ') %>
+                                        </span>
                                     </td>
                                 </tr>
                             <% }); %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Today's Field GPS Attendance Table -->
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="font-weight-bold text-dark mb-0">Today's Field Staff Attendance & GPS Punch Logs</h5>
-                        <small class="text-muted">Live punches with geo-coordinates, time, and site location in Raisen & MP</small>
-                    </div>
-                    <a href="/employee/attendance" class="btn btn-sm btn-primary">
-                        <i class="icofont-plus-circle"></i> Punch Attendance
-                    </a>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light small">
+                        <% } else { %>
                             <tr>
-                                <th>Log ID</th>
-                                <th>Employee Name</th>
-                                <th>Designation</th>
-                                <th>Type</th>
-                                <th>Time (IST)</th>
-                                <th>GPS Location</th>
-                                <th>Accuracy</th>
-                                <th>Map Link</th>
+                                <td colspan="5" class="text-center py-4 text-muted">No customer inquiries found.</td>
                             </tr>
-                        </thead>
-                        <tbody class="small">
-                            <% if (todayAttendance && todayAttendance.length > 0) { %>
-                                <% todayAttendance.forEach(att => { %>
-                                    <tr>
-                                        <td><strong><%= att.id %></strong></td>
-                                        <td>
-                                            <div class="font-weight-bold text-dark"><%= att.employeeName %></div>
-                                            <small class="text-muted"><%= att.employeeId %></small>
-                                        </td>
-                                        <td><%= att.role || 'Field Engineer' %></td>
-                                        <td>
-                                            <% if (att.type === 'check_in') { %>
-                                                <span class="badge bg-success">Check-In</span>
-                                            <% } else { %>
-                                                <span class="badge bg-secondary">Check-Out</span>
-                                            <% } %>
-                                        </td>
-                                        <td><strong><%= att.timestamp %></strong></td>
-                                        <td>
-                                            <div><%= att.locationName %></div>
-                                            <small class="text-muted"><%= att.latitude %>, <%= att.longitude %></small>
-                                        </td>
-                                        <td>±<%= att.accuracy %>m</td>
-                                        <td>
-                                            <a href="https://www.google.com/maps?q=<%= att.latitude %>,<%= att.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">
-                                                <i class="icofont-google-map"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">No attendance logs recorded yet today.</td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
+                        <% } %>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </section>
+    </div>
 </div>
 
-<script>
-function updateLeadStatus(id, newStatus) {
-    fetch('/api/admin/enquiries/status', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
-        },
-        body: JSON.stringify({ id: id, status: newStatus })
-    })
-    .then(r => r.json())
-    .then(data => {
-        const toast = document.getElementById('statusToast');
-        const msg = document.getElementById('statusToastMsg');
-        if (data.success) {
-            toast.className = 'alert alert-success alert-dismissible fade show';
-            msg.innerText = `Lead #${id} status updated to "${newStatus.replace('_', ' ').toUpperCase()}".`;
-        } else {
-            toast.className = 'alert alert-danger alert-dismissible fade show';
-            msg.innerText = data.message || 'Error updating status';
-        }
-        toast.classList.remove('d-none');
-        setTimeout(() => {
-            toast.classList.add('d-none');
-        }, 4000);
-    })
-    .catch(err => {
-        alert('Could not update status: ' + err.message);
-    });
-}
-</script>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+<%- include('partials/admin-footer') %>

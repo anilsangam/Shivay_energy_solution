@@ -171,7 +171,7 @@ class AuthController {
     // BRANCH MANAGER LOGIN
     // -------------------------------------------------------------
     static getManagerLogin(req, res) {
-        if (req.session && req.session.user && ['BRANCH_MANAGER', 'SUPER_ADMIN'].includes(req.session.user.role)) {
+        if (req.session && req.session.user && ['MANAGER', 'BRANCH_MANAGER', 'SUPER_ADMIN'].includes(req.session.user.role)) {
             return res.redirect('/manager/dashboard');
         }
         res.render('auth/manager-login', {
@@ -223,7 +223,7 @@ class AuthController {
                 });
             }
 
-            if (!['BRANCH_MANAGER', 'SUPER_ADMIN'].includes(user.role)) {
+            if (!['MANAGER', 'BRANCH_MANAGER', 'SUPER_ADMIN'].includes(user.role)) {
                 return res.render('auth/manager-login', {
                     title: `Branch Manager Sign In | ${companyData.company.name}`,
                     data: companyData,

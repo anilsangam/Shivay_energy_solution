@@ -1,106 +1,182 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('../admin/partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: #20c997; color: #000;">BRANCH OPERATIONS</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1"><%= stats.branchName %> (<%= stats.branchCode %>)</h3>
-                    <small class="text-white-50"><%= company.name %> • Manager: <%= currentUser ? currentUser.name : 'Branch Manager' %></small>
-                </div>
-                <div class="d-flex gap-2 mt-3 mt-md-0">
-                    <a href="/manager/employees" class="btn btn-sm btn-outline-light"><i class="icofont-users-alt-2"></i> Staff</a>
-                    <a href="/manager/quotations" class="btn btn-sm btn-outline-light"><i class="icofont-paper"></i> Quotations</a>
-                    <a href="/manager/invoices" class="btn btn-sm btn-outline-light"><i class="icofont-bill"></i> Invoices</a>
-                    <a href="/auth/logout" class="btn btn-sm btn-danger"><i class="icofont-logout"></i> Sign Out</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Branch Field Staff</small>
-                        <h2 class="font-weight-bold text-dark mb-0 mt-1"><%= stats.activeStaff %></h2>
-                        <small class="text-success"><i class="icofont-check"></i> Assigned to this branch</small>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Active Branch Enquiries</small>
-                        <h2 class="font-weight-bold text-dark mb-0 mt-1"><%= stats.pendingEnquiries %></h2>
-                        <small class="text-muted">Under local site survey</small>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card p-3 border-0 shadow-sm rounded-3 bg-white">
-                        <small class="text-muted text-uppercase font-weight-bold">Branch Sanctioned Revenue</small>
-                        <h2 class="font-weight-bold text-success mb-0 mt-1"><%= stats.branchRevenue %></h2>
-                        <small class="text-muted">Local invoice receipts</small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Attendance logs card -->
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
-                <h5 class="font-weight-bold text-dark mb-3">Branch Field Attendance Logs</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Staff Name</th>
-                                <th>Type</th>
-                                <th>Time</th>
-                                <th>GPS Location</th>
-                                <th>Map Link</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (attendance && attendance.length > 0) { %>
-                                <% attendance.forEach(a => { %>
-                                    <tr>
-                                        <td><strong><%= a.employeeName %></strong> (<%= a.employeeId %>)</td>
-                                        <td><span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>"><%= a.type %></span></td>
-                                        <td><%= a.timestamp %></td>
-                                        <td><%= a.latitude %>, <%= a.longitude %></td>
-                                        <td>
-                                            <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">Map</a>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr><td colspan="5" class="text-center py-3 text-muted">No attendance punches recorded yet today.</td></tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Header Welcome Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <%= stats.branchName %> (<%= stats.branchCode %>)
+        </h2>
+        <p class="text-muted small mb-0">
+            Manager: <strong><%= currentUser ? currentUser.name : 'Branch Manager' %></strong> • <%= company.name %> Operations & Field Coordination
+        </p>
+    </div>
+    <div class="d-flex align-items-center flex-wrap gap-2 mt-3 mt-md-0">
+        <a href="/manager/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> My Team (<%= stats.totalAssigned %>)
+        </a>
+        <a href="/manager/attendance" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-location-pin me-1"></i> Staff GPS Logs
+        </a>
+        <a href="/manager/quotations" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
+            <i class="icofont-paper me-1"></i> Quotation Requests
+        </a>
+    </div>
 </div>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<!-- Manager KPI Metrics Cards (REAL DATA) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Assigned Team Members</small>
+                <h3><%= stats.totalAssigned %></h3>
+                <div class="admin-metric-subtext text-success">
+                    <i class="icofont-check-circled"></i> <%= stats.activeStaff %> active in field
+                </div>
+            </div>
+            <div class="admin-metric-icon icon-navy">
+                <i class="icofont-users-alt-5"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Today's GPS Attendance</small>
+                <h3 class="text-primary"><%= stats.todayPunches %></h3>
+                <div class="admin-metric-subtext text-muted">
+                    <i class="icofont-location-pin text-primary"></i> Geo-tagged field check-ins
+                </div>
+            </div>
+            <div class="admin-metric-icon icon-green">
+                <i class="icofont-map-pins"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="admin-metric-card">
+            <div class="admin-metric-info">
+                <small>Pending Customer Inquiries</small>
+                <h3 class="text-warning"><%= stats.pendingEnquiries %></h3>
+                <div class="admin-metric-subtext text-muted">
+                    <i class="icofont-clock-time"></i> Under local site survey
+                </div>
+            </div>
+            <div class="admin-metric-icon icon-amber">
+                <i class="icofont-headphone-alt-1"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Employees List Table -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Assigned Field Team Members (<%= employees ? employees.length : 0 %>)</h5>
+            <div class="admin-card-subtitle">Personnel reporting directly to your branch management</div>
+        </div>
+        <a href="/manager/employees" class="btn btn-sm btn-outline-primary" style="font-size: 12px; border-radius: 6px;">
+            View Detailed Directory
+        </a>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Employee ID</th>
+                    <th>Designation</th>
+                    <th>Mobile</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (employees && employees.length > 0) { %>
+                    <% employees.forEach(e => { %>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="admin-avatar-circle" style="width: 32px; height: 32px; font-size: 11px;">
+                                        <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark"><%= e.name %></strong>
+                                        <div class="text-muted small" style="font-size: 11px;"><%= e.email %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code><%= e.employeeId || 'N/A' %></code></td>
+                            <td><%= e.designation || 'Solar Installation Technician' %></td>
+                            <td><strong><%= e.mobile %></strong></td>
+                            <td>
+                                <span class="badge-status <%= e.status === 'ACTIVE' ? 'badge-status-active' : 'badge-status-inactive' %>">
+                                    <%= e.status %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No employees assigned to this branch yet.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Today's Attendance Logs Summary -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Recent Field Attendance GPS Punches</h5>
+            <div class="admin-card-subtitle">Verified on-site GPS check-ins from installation sites</div>
+        </div>
+        <a href="/manager/attendance" class="small text-decoration-none text-primary font-weight-bold">View Full Logs</a>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Member</th>
+                    <th>Punch Type</th>
+                    <th>Time</th>
+                    <th>Coordinates</th>
+                    <th>Map Verification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (attendance && attendance.length > 0) { %>
+                    <% attendance.slice(0, 5).forEach(a => { %>
+                        <tr>
+                            <td><strong><%= a.employeeName %></strong> (<%= a.employeeId %>)</td>
+                            <td>
+                                <span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= a.type.replace('_', ' ').toUpperCase() %>
+                                </span>
+                            </td>
+                            <td><%= a.timestamp %></td>
+                            <td><small class="text-muted"><%= a.latitude %>, <%= a.longitude %> (±<%= a.accuracy %>m)</small></td>
+                            <td>
+                                <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;">
+                                    <i class="icofont-google-map"></i> View Map
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No attendance punches recorded today.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../admin/partials/admin-footer') %>

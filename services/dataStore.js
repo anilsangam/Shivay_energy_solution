@@ -7,6 +7,93 @@ const Quotation = require('../models/Quotation');
 const Invoice = require('../models/Invoice');
 const Attendance = require('../models/Attendance');
 const Complaint = require('../models/Complaint');
+const mongoose = require('mongoose');
+
+// Seed In-Memory User Directory (With real team and manager relationships)
+const managerSeedId = new mongoose.Types.ObjectId('655000000000000000000002');
+const adminSeedId = new mongoose.Types.ObjectId('655000000000000000000001');
+
+let inMemoryUsers = [
+    {
+        _id: adminSeedId,
+        name: 'Deepak Kushwaha',
+        email: 'admin@shivayenergy.com',
+        mobile: '+91 70005 75496',
+        employeeId: 'SES-ADMIN-01',
+        role: 'SUPER_ADMIN',
+        status: 'ACTIVE',
+        designation: 'Managing Director & Founder',
+        department: 'Executive Leadership',
+        branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
+        managerId: null,
+        lastLogin: new Date(),
+        createdAt: new Date('2026-01-01')
+    },
+    {
+        _id: managerSeedId,
+        name: 'Rahul Saini',
+        email: 'rahul@shivayenergy.com',
+        mobile: '+91 93997 61750',
+        employeeId: 'SES-MGR-01',
+        role: 'BRANCH_MANAGER',
+        status: 'ACTIVE',
+        designation: 'General Operations Manager',
+        department: 'Operations & DISCOM Approvals',
+        branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
+        managerId: adminSeedId,
+        manager: { _id: adminSeedId, name: 'Deepak Kushwaha', email: 'admin@shivayenergy.com', mobile: '+91 70005 75496' },
+        lastLogin: new Date(),
+        createdAt: new Date('2026-01-10')
+    },
+    {
+        _id: new mongoose.Types.ObjectId('655000000000000000000003'),
+        name: 'Anil Sharma',
+        email: 'anil@shivayenergy.com',
+        mobile: '+91 98261 44521',
+        employeeId: 'SES-EMP-03',
+        role: 'EMPLOYEE',
+        status: 'ACTIVE',
+        designation: 'Senior Solar Installation Technician',
+        department: 'EPC Installation & Maintenance',
+        branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
+        managerId: managerSeedId,
+        manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        lastLogin: new Date(),
+        createdAt: new Date('2026-02-01')
+    },
+    {
+        _id: new mongoose.Types.ObjectId('655000000000000000000004'),
+        name: 'Pooja Patel',
+        email: 'pooja@shivayenergy.com',
+        mobile: '+91 94250 88712',
+        employeeId: 'SES-EMP-99',
+        role: 'EMPLOYEE',
+        status: 'ACTIVE',
+        designation: 'Solar Site Survey Specialist',
+        department: 'Field Surveys & Feasibility',
+        branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
+        managerId: managerSeedId,
+        manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        lastLogin: new Date(),
+        createdAt: new Date('2026-02-15')
+    },
+    {
+        _id: new mongoose.Types.ObjectId('655000000000000000000005'),
+        name: 'Vikram Solanki',
+        email: 'vikram@shivayenergy.com',
+        mobile: '+91 99933 11204',
+        employeeId: 'SES-EMP-04',
+        role: 'EMPLOYEE',
+        status: 'ACTIVE',
+        designation: 'Electrical & Net-Meter Testing Engineer',
+        department: 'Grid Integration & Net-Metering',
+        branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
+        managerId: managerSeedId,
+        manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        lastLogin: new Date(),
+        createdAt: new Date('2026-03-01')
+    }
+];
 
 // Initial seed enquiries for Raisen & MP
 let enquiries = [
@@ -409,6 +496,76 @@ class DataStore {
             totalInvoices: invoices.length + 20,
             monthlyRevenueInr: '₹18,45,000'
         };
+    }
+
+    // USER & TEAM MANAGEMENT HELPERS (With DB & In-Memory fallback)
+    static async getUsers() {
+        const User = require('../models/User');
+        if (mongoose.connection.readyState === 1) {
+            try {
+                const list = await User.find({})
+                    .sort({ createdAt: -1 })
+                    .populate('managerId', 'name email mobile role employeeId')
+                    .populate('branchId', 'name code')
+                    .select('-password');
+                if (list && list.length > 0) return list;
+            } catch (err) {}
+        }
+        return inMemoryUsers;
+    }
+
+    static async getUserById(id) {
+        if (!id) return null;
+        const idStr = id.toString();
+        const User = require('../models/User');
+        if (mongoose.connection.readyState === 1) {
+            try {
+                const found = await User.findById(id)
+                    .populate('managerId', 'name email mobile role employeeId')
+                    .populate('branchId', 'name code')
+                    .select('-password');
+                if (found) return found;
+            } catch (err) {}
+        }
+        const mem = inMemoryUsers.find(u => u._id && u._id.toString() === idStr);
+        return mem || null;
+    }
+
+    static async getEmployeesByManager(managerId) {
+        if (!managerId) return [];
+        const mStr = managerId.toString();
+        const User = require('../models/User');
+        if (mongoose.connection.readyState === 1) {
+            try {
+                const found = await User.find({
+                    role: 'EMPLOYEE',
+                    $or: [{ managerId: managerId }, { manager: managerId }]
+                }).populate('branchId', 'name code').select('-password');
+                if (found && found.length > 0) return found;
+            } catch (err) {}
+        }
+        return inMemoryUsers.filter(u => u.role === 'EMPLOYEE' && u.managerId && u.managerId.toString() === mStr);
+    }
+
+    static async getRealCounts() {
+        const users = await this.getUsers();
+        const employeeCount = users.filter(u => u.role === 'EMPLOYEE').length;
+        const managerCount = users.filter(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER').length;
+        const activeCount = users.filter(u => u.status === 'ACTIVE').length;
+        const inactiveCount = users.filter(u => u.status !== 'ACTIVE').length;
+
+        return {
+            totalUsers: users.length,
+            employeeCount,
+            managerCount,
+            activeCount,
+            inactiveCount
+        };
+    }
+
+    static addInMemoryUser(userObj) {
+        inMemoryUsers.unshift(userObj);
+        return userObj;
     }
 }
 

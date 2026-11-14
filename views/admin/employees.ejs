@@ -1,283 +1,427 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: var(--primary-color); color: #000;">USER ACCESS & SECURITY</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Staff & User Management</h3>
-                    <small class="text-white-50"><%= company.name %> • Role-Based Access Control (RBAC)</small>
-                </div>
-                <div class="d-flex gap-2 mt-3 mt-md-0">
-                    <button class="btn btn-sm btn-warning text-dark font-weight-bold" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                        <i class="icofont-plus-circle"></i> Add Staff / Manager
-                    </button>
-                    <a href="/admin" class="btn btn-sm btn-outline-light">← Dashboard</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
-            <!-- Toast notification -->
-            <div id="empToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
-                <span id="empToastMsg">User updated successfully.</span>
-                <button type="button" class="btn-close" onclick="document.getElementById('empToast').classList.add('d-none')"></button>
-            </div>
-
-            <!-- Users Table Card -->
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4 mb-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="font-weight-bold text-dark mb-0">System Users & Field Personnel</h5>
-                        <small class="text-muted">Total accounts: <%= users.length %></small>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Staff Name</th>
-                                <th>Employee ID</th>
-                                <th>Email</th>
-                                <th>Mobile</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Last Login</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (users && users.length > 0) { %>
-                                <% users.forEach(u => { %>
-                                    <tr>
-                                        <td>
-                                            <div class="font-weight-bold text-dark"><%= u.name %></div>
-                                        </td>
-                                        <td><code><%= u.employeeId || 'N/A' %></code></td>
-                                        <td><%= u.email %></td>
-                                        <td><%= u.mobile %></td>
-                                        <td>
-                                            <% if (u.role === 'SUPER_ADMIN') { %>
-                                                <span class="badge bg-dark">SUPER ADMIN</span>
-                                            <% } else if (u.role === 'BRANCH_MANAGER') { %>
-                                                <span class="badge bg-info text-dark">BRANCH MANAGER</span>
-                                            <% } else { %>
-                                                <span class="badge bg-secondary">EMPLOYEE</span>
-                                            <% } %>
-                                        </td>
-                                        <td>
-                                            <% if (u.status === 'ACTIVE') { %>
-                                                <span class="badge bg-success">ACTIVE</span>
-                                            <% } else if (u.status === 'PENDING') { %>
-                                                <span class="badge bg-warning text-dark">PENDING APPROVAL</span>
-                                            <% } else if (u.status === 'SUSPENDED') { %>
-                                                <span class="badge bg-danger">SUSPENDED</span>
-                                            <% } else { %>
-                                                <span class="badge bg-secondary"><%= u.status %></span>
-                                            <% } %>
-                                        </td>
-                                        <td>
-                                            <%= u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN') : 'Never' %>
-                                        </td>
-                                        <td class="text-end">
-                                            <% if (u.status === 'PENDING') { %>
-                                                <button onclick="updateStatus('<%= u._id %>', 'ACTIVE')" class="btn btn-sm btn-success py-0 px-2 me-1" title="Approve Employee">
-                                                    Approve
-                                                </button>
-                                                <button onclick="updateStatus('<%= u._id %>', 'REJECTED')" class="btn btn-sm btn-outline-danger py-0 px-2 me-1" title="Reject Registration">
-                                                    Reject
-                                                </button>
-                                            <% } else if (u.status === 'ACTIVE') { %>
-                                                <% if (u.role !== 'SUPER_ADMIN') { %>
-                                                    <button onclick="updateStatus('<%= u._id %>', 'SUSPENDED')" class="btn btn-sm btn-outline-danger py-0 px-2 me-1" title="Suspend Account">
-                                                        Suspend
-                                                    </button>
-                                                <% } %>
-                                            <% } else if (u.status === 'SUSPENDED') { %>
-                                                <button onclick="updateStatus('<%= u._id %>', 'ACTIVE')" class="btn btn-sm btn-outline-success py-0 px-2 me-1" title="Reactivate Account">
-                                                    Activate
-                                                </button>
-                                            <% } %>
-                                            <button onclick="promptResetPassword('<%= u._id %>', '<%= u.name %>')" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Reset Password">
-                                                <i class="icofont-key"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">No staff records found in database.</td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Action Feedback Notification -->
+<div id="empToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="empToastMsg">User updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('empToast').classList.add('d-none')"></button>
 </div>
 
-<!-- Modal: Create User -->
-<div class="modal fade" id="createUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h6 class="modal-title font-weight-bold">Add Staff / Branch Manager</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Staff & Personnel Management
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage employees, branch managers, reporting lines, and security permissions for Shivay Energy Solutions
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <button class="btn btn-warning font-weight-bold text-dark" data-bs-toggle="modal" data-bs-target="#createUserModal" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Add New Staff Member
+        </button>
+        <a href="/admin/managers" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-business-man me-1"></i> View Managers (<%= managers ? managers.length : 0 %>)
+        </a>
+    </div>
+</div>
+
+<!-- Users Table Card -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">All Registered Personnel (<%= users ? users.length : 0 %>)</h5>
+            <div class="admin-card-subtitle">Verified users with role-based access control</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border">Raisen Central Operations</span>
+        </div>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Employee ID</th>
+                    <th>Contact</th>
+                    <th>Role</th>
+                    <th>Assigned Manager</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (users && users.length > 0) { %>
+                    <% users.forEach(u => { 
+                        let roleClass = 'badge-role-employee';
+                        let roleName = 'Employee';
+                        if (u.role === 'SUPER_ADMIN') {
+                            roleClass = 'badge-role-superadmin';
+                            roleName = 'Super Admin';
+                        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
+                            roleClass = 'badge-role-manager';
+                            roleName = 'Branch Manager';
+                        }
+
+                        let statusClass = 'badge-status-active';
+                        if (u.status === 'PENDING') statusClass = 'badge-status-pending';
+                        else if (u.status === 'SUSPENDED') statusClass = 'badge-status-suspended';
+                        else if (u.status === 'INACTIVE') statusClass = 'badge-status-inactive';
+
+                        const mgrName = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : (u.role === 'SUPER_ADMIN' ? 'Self / Executive Board' : (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER' ? 'Deepak Kushwaha (MD)' : 'None (Unassigned)')));
+                    %>
+                        <tr id="user-row-<%= u._id %>">
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="admin-avatar-circle" style="width: 34px; height: 34px; font-size: 12px;">
+                                        <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <strong class="text-dark"><%= u.name %></strong>
+                                        <div class="text-muted" style="font-size: 11px;"><%= u.designation || 'Staff' %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><code><%= u.employeeId || 'N/A' %></code></td>
+                            <td>
+                                <div style="font-size: 12px;"><i class="icofont-envelope text-muted me-1"></i><%= u.email %></div>
+                                <div style="font-size: 12px;"><i class="icofont-phone text-muted me-1"></i><%= u.mobile %></div>
+                            </td>
+                            <td><span class="badge-role <%= roleClass %>"><%= roleName %></span></td>
+                            <td>
+                                <span class="d-inline-flex align-items-center gap-1 font-weight-bold" style="font-size: 12px; color: var(--admin-navy-primary);">
+                                    <i class="icofont-business-man text-warning"></i> <%= mgrName %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-status <%= statusClass %>" id="status-badge-<%= u._id %>">
+                                    <%= u.status %>
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <% if (u.role !== 'SUPER_ADMIN') { %>
+                                        <!-- Assign Manager Button -->
+                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
+                                            <i class="icofont-business-man"></i>
+                                        </button>
+
+                                        <!-- Status Toggle Button -->
+                                        <% if (u.status === 'ACTIVE') { %>
+                                            <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate/Suspend Account" onclick="updateStatus('<%= u._id %>', 'SUSPENDED')">
+                                                <i class="icofont-ban"></i>
+                                            </button>
+                                        <% } else { %>
+                                            <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Account" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
+                                                <i class="icofont-check"></i>
+                                            </button>
+                                        <% } %>
+
+                                        <!-- Password Reset Button -->
+                                        <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
+                                            <i class="icofont-key"></i>
+                                        </button>
+                                    <% } else { %>
+                                        <span class="badge bg-light text-muted border">Super Admin Protected</span>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No personnel records found.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Add New Staff Member -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary); border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h5 class="modal-title font-weight-bold" id="createUserModalLabel">
+                    <i class="icofont-plus-circle me-1 text-warning"></i> Add New Staff Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form id="createStaffForm" onsubmit="submitNewUser(event)">
-                    <div class="mb-2">
+            <form onsubmit="handleCreateUser(event)">
+                <div class="modal-body p-4">
+                    <div id="createErrAlert" class="alert alert-danger d-none small"></div>
+
+                    <div class="mb-3">
                         <label class="form-label small font-weight-bold">Full Name *</label>
-                        <input type="text" id="newUserName" class="form-control" required placeholder="e.g. Ramesh Patel">
+                        <input type="text" id="newName" class="form-control" required placeholder="e.g. Vikram Solanki">
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label small font-weight-bold">Email Address *</label>
-                        <input type="email" id="newUserEmail" class="form-control" required placeholder="ramesh@shivayenergy.com">
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small font-weight-bold">Mobile *</label>
-                        <input type="tel" id="newUserMobile" class="form-control" required placeholder="98260XXXXX">
-                    </div>
-                    <div class="row g-2 mb-2">
+
+                    <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label small font-weight-bold">Role *</label>
-                            <select id="newUserRole" class="form-select" required>
-                                <option value="EMPLOYEE">EMPLOYEE</option>
-                                <option value="BRANCH_MANAGER">BRANCH_MANAGER</option>
-                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                            <label class="form-label small font-weight-bold">Official Email *</label>
+                            <input type="email" id="newEmail" class="form-control" required placeholder="vikram@shivayenergy.com">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Mobile Phone *</label>
+                            <input type="tel" id="newMobile" class="form-control" required placeholder="+91 98260 00000">
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Initial Password *</label>
+                            <input type="password" id="newPass" class="form-control" required minlength="8" placeholder="••••••••">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Role Assignment *</label>
+                            <select id="newRole" class="form-select" required onchange="handleRoleChange(this.value)">
+                                <option value="EMPLOYEE" selected>Employee (Field Staff)</option>
+                                <option value="BRANCH_MANAGER">Branch Manager</option>
+                                <option value="SUPER_ADMIN">Super Admin</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="mb-3" id="managerSelectWrap">
+                        <label class="form-label small font-weight-bold">Assigned Manager</label>
+                        <select id="newManagerId" class="form-select">
+                            <option value="">-- Select Reporting Manager --</option>
+                            <% if (managers && managers.length > 0) { %>
+                                <% managers.forEach(m => { %>
+                                    <option value="<%= m._id %>"><%= m.name %> (<%= m.role %>)</option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label class="form-label small font-weight-bold">Employee ID</label>
-                            <input type="text" id="newUserEmpId" class="form-control" placeholder="SES-EMP-XX">
+                            <label class="form-label small font-weight-bold">Designation</label>
+                            <input type="text" id="newDesig" class="form-control" placeholder="e.g. Site Engineer">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small font-weight-bold">Department</label>
+                            <input type="text" id="newDept" class="form-control" placeholder="e.g. EPC Installations">
                         </div>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label small font-weight-bold">Initial Password (min 8) *</label>
-                        <input type="password" id="newUserPassword" class="form-control" required minlength="8" placeholder="••••••••">
+                        <label class="form-label small font-weight-bold">Employee ID (Optional)</label>
+                        <input type="text" id="newEmpId" class="form-control" placeholder="Leave blank to auto-generate (e.g. SES-EMP-...)">
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 font-weight-bold" style="background: #163563;">
-                        Create User Account
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3" style="background: var(--admin-navy-primary);">
+                        Create Staff Account
                     </button>
-                </form>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Assign Manager -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-light">
+                <h6 class="modal-title font-weight-bold text-dark">Assign Manager</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            <form onsubmit="handleAssignManager(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="assignEmpId">
+                    <p class="small text-muted mb-2">Assign reporting manager for: <strong class="text-dark" id="assignEmpName"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Select Manager</label>
+                        <select id="assignMgrSelect" class="form-select">
+                            <option value="">-- No Manager (Unassigned) --</option>
+                            <% if (managers && managers.length > 0) { %>
+                                <% managers.forEach(m => { %>
+                                    <option value="<%= m._id %>"><%= m.name %> (<%= m.role %>)</option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary" style="background: var(--admin-navy-primary);">Save Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reset Password -->
+<div class="modal fade" id="resetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header bg-light">
+                <h6 class="modal-title font-weight-bold text-dark">Reset Password</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="handleResetPassword(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="resetUserId">
+                    <p class="small text-muted mb-2">Reset password for: <strong class="text-dark" id="resetUserName"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">New Password (min 8 chars) *</label>
+                        <input type="password" id="resetNewPass" class="form-control" required minlength="8" placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger font-weight-bold">Reset Password</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
-function showToast(msg, isSuccess = true) {
-    const t = document.getElementById('empToast');
-    const m = document.getElementById('empToastMsg');
-    t.className = isSuccess ? 'alert alert-success alert-dismissible fade show' : 'alert alert-danger alert-dismissible fade show';
-    m.innerText = msg;
-    t.classList.remove('d-none');
-    setTimeout(() => t.classList.add('d-none'), 4000);
-}
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
 
-function updateStatus(userId, status) {
-    if (!confirm(`Are you sure you want to change this user's status to ${status}?`)) return;
-
-    fetch('/api/admin/users/status', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
-        },
-        body: JSON.stringify({ userId, status })
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            showToast(res.message);
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showToast(res.message || 'Error updating status', false);
-        }
-    })
-    .catch(err => showToast(err.message, false));
-}
-
-function promptResetPassword(userId, name) {
-    const newPass = prompt(`Enter new secure password (minimum 8 characters) for ${name}:`);
-    if (!newPass) return;
-    if (newPass.length < 8) {
-        alert('Password must be at least 8 characters long.');
-        return;
+function showToast(msg) {
+    const toast = document.getElementById('empToast');
+    const toastMsg = document.getElementById('empToastMsg');
+    if (toast && toastMsg) {
+        toastMsg.innerText = msg;
+        toast.classList.remove('d-none');
+        setTimeout(() => toast.classList.add('d-none'), 5000);
     }
-
-    fetch('/api/admin/users/reset-password', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
-        },
-        body: JSON.stringify({ userId, newPassword: newPass })
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            alert(`Password successfully updated for ${name}!`);
-        } else {
-            alert(res.message || 'Error resetting password');
-        }
-    })
-    .catch(err => alert(err.message));
 }
 
-function submitNewUser(e) {
+function handleRoleChange(role) {
+    const wrap = document.getElementById('managerSelectWrap');
+    if (wrap) {
+        wrap.style.display = (role === 'SUPER_ADMIN' || role === 'BRANCH_MANAGER') ? 'none' : 'block';
+    }
+}
+
+async function handleCreateUser(e) {
     e.preventDefault();
-    const payload = {
-        name: document.getElementById('newUserName').value,
-        email: document.getElementById('newUserEmail').value,
-        mobile: document.getElementById('newUserMobile').value,
-        role: document.getElementById('newUserRole').value,
-        employeeId: document.getElementById('newUserEmpId').value,
-        password: document.getElementById('newUserPassword').value
+    const errBox = document.getElementById('createErrAlert');
+    errBox.classList.add('d-none');
+
+    const body = {
+        name: document.getElementById('newName').value,
+        email: document.getElementById('newEmail').value,
+        mobile: document.getElementById('newMobile').value,
+        password: document.getElementById('newPass').value,
+        role: document.getElementById('newRole').value,
+        managerId: document.getElementById('newManagerId').value || null,
+        designation: document.getElementById('newDesig').value,
+        department: document.getElementById('newDept').value,
+        employeeId: document.getElementById('newEmpId').value,
+        _csrf: CSRF_TOKEN
     };
 
-    fetch('/api/admin/users/create', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
-        },
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
-            alert(res.message);
-            location.reload();
+    try {
+        const res = await fetch('/api/admin/users/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createUserModal')).hide();
+            showToast(data.message || 'Staff member created successfully.');
+            setTimeout(() => location.reload(), 800);
         } else {
-            alert(res.message || 'Error creating user');
+            errBox.innerText = data.message || 'Error creating user.';
+            errBox.classList.remove('d-none');
         }
-    })
-    .catch(err => alert(err.message));
+    } catch (err) {
+        errBox.innerText = 'Server error creating user.';
+        errBox.classList.remove('d-none');
+    }
+}
+
+async function updateStatus(userId, status) {
+    if (!confirm(`Are you sure you want to change this user status to ${status}?`)) return;
+
+    try {
+        const res = await fetch('/api/admin/users/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+            body: JSON.stringify({ userId, status, _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            setTimeout(() => location.reload(), 800);
+        } else {
+            alert(data.message || 'Error updating status.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+function openAssignModal(empId, name, currentMgrId) {
+    document.getElementById('assignEmpId').value = empId;
+    document.getElementById('assignEmpName').innerText = name;
+    document.getElementById('assignMgrSelect').value = currentMgrId || '';
+    new bootstrap.Modal(document.getElementById('assignModal')).show();
+}
+
+async function handleAssignManager(e) {
+    e.preventDefault();
+    const employeeId = document.getElementById('assignEmpId').value;
+    const managerId = document.getElementById('assignMgrSelect').value;
+
+    try {
+        const res = await fetch('/api/admin/employees/assign-manager', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+            body: JSON.stringify({ employeeId, managerId, _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide();
+            showToast(data.message);
+            setTimeout(() => location.reload(), 800);
+        } else {
+            alert(data.message || 'Error assigning manager.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+function openResetModal(userId, name) {
+    document.getElementById('resetUserId').value = userId;
+    document.getElementById('resetUserName').innerText = name;
+    document.getElementById('resetNewPass').value = '';
+    new bootstrap.Modal(document.getElementById('resetModal')).show();
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const userId = document.getElementById('resetUserId').value;
+    const newPassword = document.getElementById('resetNewPass').value;
+
+    try {
+        const res = await fetch('/api/admin/users/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+            body: JSON.stringify({ userId, newPassword, _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('resetModal')).hide();
+            showToast(data.message);
+        } else {
+            alert(data.message || 'Error resetting password.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
 }
 </script>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<%- include('partials/admin-footer') %>

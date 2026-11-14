@@ -290,11 +290,70 @@ module.exports = {
 
     // Indian Solar Calculator Configuration
     calculator: {
-        avgTariffPerUnit: 7.5, // Indian residential average tariff ₹7.50 / unit
-        unitsPerKwPerMonth: 120, // Approx 4 units/kW/day * 30 days = 120 units/month in MP
-        sqFtPerKw: 100, // Approx 100 sq ft shadow-free area per 1 kW
-        costPerKwApprox: 58000, // Average cost in ₹ per kW before subsidy
-        co2SavedPerKwYearKg: 1300, // ~1.3 tonnes CO2 offset per kW annually
+        avgTariffPerUnit: 7.5, // Existing residential average tariff \u20b97.50 / unit
+        unitsPerKwPerMonth: 120, // Existing estimate: 4 units/kW/day * 30 days in MP
+        sqFtPerKw: 100,
+        costPerKwApprox: 58000,
+        co2SavedPerKwYearKg: 1300,
+        panelWattage: 540,
+        peakSunHours: 4.5,
+        solarSystemEfficiency: 0.80,
+        minimumSystemKw: 1, // Preserves the prior solar calculator minimum
+        maxEstimateInput: 1000000000,
+        subsidy: {
+            // Existing indicative amounts; verify against current PM Surya Ghar rules.
+            tiers: [{ maxKw: 1, amount: 30000 }, { maxKw: 2, amount: 60000 }, { maxKw: Infinity, amount: 78000 }],
+            maximum: 78000,
+            label: "Indicative only; subject to current government rules and eligibility."
+        },
+        loadCalculator: {
+            battery: { nominalVoltage: 48, capacityAh: 300, usableEnergyKwh: 11.52 },
+            inverter: { safetyMargin: 1.25, minimumKva: 0.5, kvaStep: 0.5 },
+            appliances: [
+                { id: 'bulb5', name: 'LED bulb', watts: 5, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'bulb10', name: 'LED bulb', watts: 10, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'bulb15', name: 'LED bulb', watts: 15, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'tubelight', name: 'Tube light', watts: 45, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'incandescent', name: 'Incandescent bulb', watts: 30, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'tableLamp', name: 'Table lamp', watts: 60, category: 'lights', type: 'essential', icon: 'icofont-lamp' },
+                { id: 'panelLight', name: 'Panel light', watts: 14, category: 'lights', type: 'essential', icon: 'icofont-light-bulb' },
+                { id: 'tv', name: 'LED TV', watts: 65, category: 'home', type: 'essential', icon: 'icofont-television' },
+                { id: 'iron', name: 'Electric iron', watts: 1200, category: 'home', type: 'heavy', icon: 'icofont-flash' },
+                { id: 'hairAppliances', name: 'Hair appliances', watts: 1600, category: 'home', type: 'heavy', icon: 'icofont-hair-dryer' },
+                { id: 'fan', name: 'Ceiling fan', watts: 80, category: 'home', type: 'essential', icon: 'icofont-spinner-alt-5' },
+                { id: 'printer', name: 'Printer - laser', watts: 200, category: 'home', type: 'heavy', icon: 'icofont-print' },
+                { id: 'desktop', name: 'Computer', watts: 200, category: 'home', type: 'essential', icon: 'icofont-computer' },
+                { id: 'setTopBox', name: 'Set top box', watts: 50, category: 'home', type: 'essential', icon: 'icofont-computer' },
+                { id: 'router', name: 'Wi-Fi router', watts: 20, category: 'home', type: 'essential', icon: 'icofont-wifi' },
+                { id: 'airPurifier', name: 'Air purifier', watts: 215, category: 'home', type: 'essential', icon: 'icofont-wind' },
+                { id: 'gameConsole', name: 'Game console', watts: 75, category: 'home', type: 'essential', icon: 'icofont-game' },
+                { id: 'vacuum', name: 'Vacuum cleaner', watts: 1400, category: 'home', type: 'heavy', icon: 'icofont-spinner' },
+                { id: 'fridgeSmall', name: 'Fridge (up to 200L)', watts: 200, category: 'kitchen', type: 'essential', icon: 'icofont-fridge' },
+                { id: 'fridgeLarge', name: 'Fridge (up to 500L)', watts: 335, category: 'kitchen', type: 'essential', icon: 'icofont-fridge' },
+                { id: 'microwave', name: 'Microwave oven', watts: 900, category: 'kitchen', type: 'heavy', icon: 'icofont-fire-burn' },
+                { id: 'mixer', name: 'Mixer / grinder', watts: 800, category: 'kitchen', type: 'heavy', icon: 'icofont-blender' },
+                { id: 'blender', name: 'Blender', watts: 420, category: 'kitchen', type: 'heavy', icon: 'icofont-blender' },
+                { id: 'purifier', name: 'Water purifier', watts: 90, category: 'kitchen', type: 'essential', icon: 'icofont-water' },
+                { id: 'exhaust', name: 'Exhaust fan', watts: 40, category: 'kitchen', type: 'essential', icon: 'icofont-fan' },
+                { id: 'coffee', name: 'Coffee maker', watts: 1300, category: 'kitchen', type: 'heavy', icon: 'icofont-coffee-cup' },
+                { id: 'kettle', name: 'Electric kettle', watts: 1500, category: 'kitchen', type: 'heavy', icon: 'icofont-tea' },
+                { id: 'induction', name: 'Induction cooktop', watts: 1800, category: 'kitchen', type: 'heavy', icon: 'icofont-fire-burn' },
+                { id: 'ac1', name: 'Air conditioner (1 ton)', watts: 1000, category: 'heavy', type: 'heavy', icon: 'icofont-air-conditioner' },
+                { id: 'ac15', name: 'Air conditioner (1.5 ton)', watts: 1500, category: 'heavy', type: 'heavy', icon: 'icofont-air-conditioner' },
+                { id: 'washing', name: 'Washing machine', watts: 520, category: 'heavy', type: 'heavy', icon: 'icofont-refresh' },
+                { id: 'cooler', name: 'Room cooler (BLDC)', watts: 120, category: 'heavy', type: 'heavy', icon: 'icofont-wind' },
+                { id: 'geyser', name: 'Geyser', watts: 2000, category: 'heavy', type: 'heavy', icon: 'icofont-water' },
+                { id: 'pump', name: 'Water pump', watts: 750, category: 'heavy', type: 'heavy', icon: 'icofont-water' },
+                { id: 'charger', name: 'Phone charger', watts: 40, category: 'accessories', type: 'essential', icon: 'icofont-charging' },
+                { id: 'cctv', name: 'CCTV camera', watts: 100, category: 'accessories', type: 'essential', icon: 'icofont-video' },
+                { id: 'laptop', name: 'Laptop', watts: 45, category: 'accessories', type: 'essential', icon: 'icofont-laptop' }
+            ],
+            presets: {
+                2: { bulb10: 5, fan: 2, tv: 1, router: 1, fridgeSmall: 1, laptop: 1, charger: 2 },
+                3: { bulb10: 7, fan: 3, tv: 1, router: 1, fridgeLarge: 1, laptop: 1, charger: 3, washing: 1 },
+                4: { bulb10: 9, fan: 4, tv: 2, router: 1, fridgeLarge: 1, laptop: 2, charger: 4, washing: 1, ac1: 1 }
+            }
+        },
         disclaimer: "Calculations are indicative estimates based on typical Central Indian solar irradiance (Madhya Pradesh). Actual savings and generation depend on rooftop orientation, shade, equipment efficiency, and applicable DISCOM tariff slabs."
     },
 

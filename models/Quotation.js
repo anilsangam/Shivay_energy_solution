@@ -18,11 +18,19 @@ const quotationSchema = new mongoose.Schema({
     validUntil: { type: Date },
     preparedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    quotationRequestId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuotationRequest' },
     status: { 
         type: String, 
         enum: ['draft', 'sent', 'viewed', 'accepted', 'rejected', 'expired'], 
         default: 'sent' 
     }
 }, { timestamps: true });
+
+quotationSchema.index({ preparedBy: 1 });
+quotationSchema.index({ branch: 1 });
+quotationSchema.index({ customerId: 1 });
+quotationSchema.index({ status: 1 });
+quotationSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.models.Quotation || mongoose.model('Quotation', quotationSchema);

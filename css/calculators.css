@@ -129,7 +129,9 @@ a.btn-main.fx-slide:not(.btn-line) span { color: #132a49 !important; }
 .load-recommendation-card.solar-recommendation { border-color: #f0dc8b; background: #fffdf4; }
 .load-recommendation-card.solar-recommendation strong { color: #163563; }
 .load-solution > small { color: #7b899b; font-size: 10px; line-height: 1.5; }
-.load-products-link { color: #163563; font-size: 12px; font-weight: 750; text-decoration: none; }
+.load-products-link { display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; min-height: 48px; margin-top: 16px; padding: 11px 16px; border: 2px solid #163563; border-bottom: 4px solid #163563; border-radius: 9px; background: #fbec6b; color: #163563; font-size: 13px; font-weight: 750; line-height: 1.4; text-align: center; text-decoration: none; transition: background-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease; }
+.load-products-link:hover, .load-products-link:focus-visible { background: #f5df35; color: #163563; box-shadow: 0 5px 14px rgba(22, 53, 99, .18); text-decoration: none; }
+.load-products-link:active { transform: translateY(1px); }
 .edit-load-details { justify-self: start; padding: 0; border: 0; background: transparent; color: #163563; font-size: 11px; font-weight: 700; text-decoration: underline; }
 
 @media (max-width: 999px) {

@@ -1,0 +1,146 @@
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const userName = authUser ? authUser.name : 'Authorized User';
+    const userRole = authUser ? authUser.role : 'EMPLOYEE';
+    const isSuperAdmin = userRole === 'SUPER_ADMIN';
+    const isManager = userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER';
+    const isEmployee = userRole === 'EMPLOYEE';
+    const userEmail = authUser ? authUser.email : '';
+    const userEmployeeId = authUser ? (authUser.employeeId || 'N/A') : 'N/A';
+    
+    // Generate initials (e.g. Deepak Kushwaha -> DK)
+    const initials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SE';
+
+    let roleBadgeClass = 'badge-role-employee';
+    let roleLabel = 'Employee';
+    if (userRole === 'SUPER_ADMIN') {
+        roleBadgeClass = 'badge-role-superadmin';
+        roleLabel = 'Super Admin';
+    } else if (userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER') {
+        roleBadgeClass = 'badge-role-manager';
+        roleLabel = 'Branch Manager';
+    }
+
+    const titleStr = typeof pageTitle !== 'undefined' ? pageTitle : (typeof title !== 'undefined' ? title.split('|')[0].trim() : 'Dashboard');
+    const profileUrl = userRole === 'SUPER_ADMIN' ? '/admin/profile' : (userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER' ? '/manager/profile' : '/employee/profile');
+%>
+
+<header class="admin-header">
+    <div class="admin-header-left">
+        <!-- Sidebar Toggle for Mobile -->
+        <button class="admin-sidebar-toggle" id="adminSidebarToggle" aria-label="Toggle navigation menu">
+            <i class="icofont-navigation-menu"></i>
+        </button>
+
+        <!-- Company Logo & Name for Header (Mobile or Top Context) -->
+        <div class="d-flex align-items-center gap-2 me-2 d-none d-sm-flex">
+            <img src="/images/brandlogo2.png" alt="Shivay Energy" style="height: 32px; width: auto;" onerror="this.src='/images/brandlogo.jpeg'">
+            <span class="d-none d-md-inline font-weight-bold text-dark" style="font-size: 14px; color: var(--admin-navy-primary);">
+                <%= typeof company !== 'undefined' ? company.name : 'Shivay Energy Solutions' %>
+            </span>
+        </div>
+
+        <span class="text-muted d-none d-md-inline" style="opacity: 0.4;">|</span>
+
+        <!-- Current Page Title -->
+        <div class="admin-page-title-wrap">
+            <h1><%= titleStr %></h1>
+        </div>
+    </div>
+
+    <div class="admin-header-right">
+        <!-- Notification Dropdown -->
+        <div class="dropdown">
+            <button class="admin-notif-btn" type="button" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Notifications">
+                <i class="icofont-notification"></i>
+                <span class="admin-notif-badge"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end admin-dropdown-menu shadow" aria-labelledby="notifDropdown" style="width: 320px;">
+                <div class="d-flex align-items-center justify-content-between p-2 border-bottom">
+                    <strong class="text-dark font-weight-bold" style="font-size: 13px;">Notifications</strong>
+                    <span class="badge bg-warning text-dark" style="font-size: 10px;">System Live</span>
+                </div>
+                <div class="p-2" style="max-height: 280px; overflow-y: auto;">
+                    <div class="p-2 border-bottom rounded bg-light mb-1">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="badge bg-success" style="font-size: 9px;">RBAC Security</span>
+                            <small class="text-muted" style="font-size: 10px;">Just Now</small>
+                        </div>
+                        <p class="mb-0 mt-1 small text-dark font-weight-bold" style="font-size: 12px;">Active Session Protected</p>
+                        <small class="text-muted d-block" style="font-size: 11px;">Identity verified for <%= userName %> (<%= roleLabel %>).</small>
+                    </div>
+                    <div class="p-2 rounded mb-1">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="badge bg-primary" style="font-size: 9px;">Raisen HQ</span>
+                            <small class="text-muted" style="font-size: 10px;">Operational</small>
+                        </div>
+                        <p class="mb-0 mt-1 small text-dark font-weight-bold" style="font-size: 12px;">PM Surya Ghar Muft Bijli Yojana</p>
+                        <small class="text-muted d-block" style="font-size: 11px;">MPPKVVCL fast-track portal active.</small>
+                    </div>
+                </div>
+                <div class="p-2 border-top text-center">
+                    <a href="<%= profileUrl %>" class="small text-decoration-none text-primary font-weight-bold" style="font-size: 12px;">View Activity Log</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Profile Dropdown Pill -->
+        <div class="dropdown">
+            <div class="admin-user-pill" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                <!-- User Profile Photo or Initials -->
+                <div class="admin-avatar-circle" title="<%= userName %>">
+                    <%= initials %>
+                </div>
+
+                <!-- Full Name and Role Badge -->
+                <div class="admin-user-meta">
+                    <span class="user-name"><%= userName %></span>
+                    <span class="user-role-badge">
+                        <span class="badge-role <%= roleBadgeClass %>"><%= roleLabel %></span>
+                    </span>
+                </div>
+
+                <i class="icofont-rounded-down text-muted" style="font-size: 14px;"></i>
+            </div>
+
+            <!-- Profile Dropdown Menu -->
+            <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu shadow" aria-labelledby="userProfileDropdown">
+                <li class="px-3 py-2 border-bottom">
+                    <div class="font-weight-bold text-dark" style="font-size: 14px;"><%= userName %></div>
+                    <div class="text-muted small" style="font-size: 11px;"><%= userEmail %></div>
+                    <div class="mt-1">
+                        <span class="badge-role <%= roleBadgeClass %>"><%= roleLabel %></span>
+                        <span class="badge bg-light text-dark border ms-1" style="font-size: 10px;">ID: <%= userEmployeeId %></span>
+                    </div>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="<%= profileUrl %>">
+                        <i class="icofont-ui-user text-primary"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="<%= profileUrl %>#passwordSection">
+                        <i class="icofont-key text-warning"></i>
+                        <span>Security & Password</span>
+                    </a>
+                </li>
+                <% if (isSuperAdmin) { %>
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/activity-logs">
+                            <i class="icofont-history text-info"></i>
+                            <span>Activity Logs</span>
+                        </a>
+                    </li>
+                <% } %>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger small font-weight-bold" href="/auth/logout">
+                        <i class="icofont-logout"></i>
+                        <span>Sign Out (Logout)</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

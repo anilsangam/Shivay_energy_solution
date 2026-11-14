@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 const AuditService = require('../services/auditService');
 
 /**
@@ -26,7 +27,6 @@ const verifyCsrf = (req, res, next) => {
     // Exempt specific public forms where external users don't have a prior session
     const publicExemptions = [
         '/api/enquiry',
-        '/api/calculate-solar',
         '/api/complaints',
         '/api/franchise',
         '/admin/login',
@@ -72,14 +72,14 @@ const requireAuth = (req, res, next) => {
     }
 
     // Verify account status
-    if (req.session.user.status === 'SUSPENDED') {
+    if (req.session.user.status === 'SUSPENDED' || req.session.user.status === 'INACTIVE') {
         req.session.destroy(() => {});
         if (req.xhr || req.path.startsWith('/api/')) {
-            return res.status(403).json({ success: false, message: 'Your account is suspended. Contact Super Admin.' });
+            return res.status(403).json({ success: false, message: 'Your account is inactive or suspended. Contact Super Admin.' });
         }
         return res.status(403).render('errors/403', {
-            title: 'Account Suspended | Shivay Energy Solutions',
-            message: 'Your account has been suspended by management. Please contact Deepak Kushwaha / Rahul Saini.'
+            title: 'Account Inactive | Shivay Energy Solutions',
+            message: 'Your account has been deactivated or suspended by management. Please contact Deepak Kushwaha / Rahul Saini.'
         });
     }
 
@@ -105,7 +105,15 @@ const requireRole = (...roles) => {
         }
 
         const userRole = req.session.user.role;
-        if (!roles.includes(userRole)) {
+        // Normalize role matching (e.g., MANAGER matches both MANAGER and BRANCH_MANAGER if either requested)
+        const matched = roles.some(r => {
+            if (r === userRole) return true;
+            if (r === 'BRANCH_MANAGER' && userRole === 'MANAGER') return true;
+            if (r === 'MANAGER' && userRole === 'BRANCH_MANAGER') return true;
+            return false;
+        });
+
+        if (!matched) {
             // Log security incident
             AuditService.log({
                 action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
@@ -117,7 +125,7 @@ const requireRole = (...roles) => {
                 details: { requiredRoles: roles, userRole }
             });
 
-            if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+            if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
                 return res.status(403).json({
                     success: false,
                     message: 'Access Denied: You do not possess the required permissions.'
@@ -137,8 +145,32 @@ const requireRole = (...roles) => {
 
 // Shorthand helpers
 const requireSuperAdmin = requireRole('SUPER_ADMIN');
-const requireBranchManager = requireRole('SUPER_ADMIN', 'BRANCH_MANAGER');
-const requireEmployee = requireRole('SUPER_ADMIN', 'BRANCH_MANAGER', 'EMPLOYEE');
+const requireManager = requireRole('SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER');
+const requireBranchManager = requireRole('SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER');
+const requireEmployee = requireRole('SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER', 'EMPLOYEE');
+
+// Validate MongoDB ObjectIds to prevent IDOR and CastErrors
+const validateObjectId = (...paramNames) => {
+    return (req, res, next) => {
+        for (const name of paramNames) {
+            const val = req.params[name] || req.body[name] || req.query[name];
+            if (val && !mongoose.isValidObjectId(val)) {
+                if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Invalid identifier format: ${name}`
+                    });
+                }
+                return res.status(400).render('errors/403', {
+                    title: 'Invalid Request | Shivay Energy Solutions',
+                    message: `Invalid format for identifier parameter '${name}'.`,
+                    user: req.session ? req.session.user : null
+                });
+            }
+        }
+        next();
+    };
+};
 
 // Validate branch access for Branch Managers
 const requireBranchAccess = (branchParamName = 'branchId') => {
@@ -189,7 +221,9 @@ module.exports = {
     requireAuth,
     requireRole,
     requireSuperAdmin,
+    requireManager,
     requireBranchManager,
     requireEmployee,
-    requireBranchAccess
+    requireBranchAccess,
+    validateObjectId
 };

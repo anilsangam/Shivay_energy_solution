@@ -1,0 +1,79 @@
+<%- include('partials/admin-head') %>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            System Security Audit & Activity Logs
+        </h2>
+        <p class="text-muted small mb-0">
+            Immutable log of system logins, role modifications, access validations, and financial events
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <span class="badge bg-success py-2 px-3 d-flex align-items-center gap-1">
+            <i class="icofont-shield-alt"></i> Tamper-Evident Security Log
+        </span>
+    </div>
+</div>
+
+<!-- Logs Table Card -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Recent Administrative Events (<%= logs ? logs.length : 0 %>)</h5>
+            <div class="admin-card-subtitle">Real-time audit entries recorded across all sessions</div>
+        </div>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Timestamp (IST)</th>
+                    <th>Action</th>
+                    <th>Actor / User</th>
+                    <th>Role</th>
+                    <th>Target Resource / User</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (logs && logs.length > 0) { %>
+                    <% logs.forEach(log => { 
+                        let actColor = 'badge bg-secondary';
+                        if (log.action.includes('SUCCESS')) actColor = 'badge bg-success';
+                        else if (log.action.includes('FAILED') || log.action.includes('UNAUTHORIZED') || log.action.includes('SUSPENDED')) actColor = 'badge bg-danger';
+                        else if (log.action.includes('ROLE') || log.action.includes('CHANGE')) actColor = 'badge bg-warning text-dark';
+                        else if (log.action.includes('INVOICE') || log.action.includes('QUOTATION')) actColor = 'badge bg-primary';
+
+                        const userName = (log.user && log.user.name) ? log.user.name : (log.role || 'System');
+                        const targetInfo = (log.targetUser && log.targetUser.name) ? log.targetUser.name : (log.targetResource || '-');
+                        const timeStr = log.createdAt ? new Date(log.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A';
+                    %>
+                        <tr>
+                            <td class="text-nowrap"><small><strong><%= timeStr %></strong></small></td>
+                            <td><span class="<%= actColor %>"><%= log.action %></span></td>
+                            <td><strong><%= userName %></strong></td>
+                            <td><span class="badge-role badge-role-employee" style="font-size: 10px;"><%= log.role || 'GUEST' %></span></td>
+                            <td><code><%= targetInfo %></code></td>
+                            <td><small class="text-muted"><%= log.ipAddress || '127.0.0.1' %></small></td>
+                            <td>
+                                <small class="text-muted font-monospace" style="font-size: 11px;">
+                                    <%= log.details ? JSON.stringify(log.details) : '-' %>
+                                </small>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No audit logs recorded yet.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('partials/admin-footer') %>

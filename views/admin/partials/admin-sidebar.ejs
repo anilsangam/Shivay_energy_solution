@@ -1,0 +1,210 @@
+<%
+    const userRole = (typeof currentUser !== 'undefined' && currentUser && currentUser.role) ? currentUser.role : ((typeof user !== 'undefined' && user && user.role) ? user.role : 'EMPLOYEE');
+    const isSuperAdmin = userRole === 'SUPER_ADMIN';
+    const isManager = userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER';
+    const isEmployee = userRole === 'EMPLOYEE';
+    const currentActive = typeof activePage !== 'undefined' ? activePage : '';
+%>
+
+<aside class="admin-sidebar" id="adminSidebar">
+    <!-- Brand / Logo Header -->
+    <div class="admin-sidebar-brand">
+        <a href="<%= isSuperAdmin ? '/admin' : (isManager ? '/manager/dashboard' : '/employee/dashboard') %>" class="d-flex align-items-center gap-2 text-decoration-none">
+            <img src="/images/brandlogo2.png" alt="Shivay Energy Logo" onerror="this.src='/images/brandlogo.jpeg'">
+            <div>
+                <h4 class="brand-title">Shivay Energy</h4>
+                <div class="brand-subtitle"><%= isSuperAdmin ? 'Super Admin' : (isManager ? 'Manager Panel' : 'Staff Portal') %></div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Navigation Menu -->
+    <ul class="admin-sidebar-menu">
+        <% if (isSuperAdmin) { %>
+            <!-- SUPER ADMIN NAVIGATION -->
+            <li class="admin-sidebar-heading">Core</li>
+            <li class="admin-nav-item">
+                <a href="/admin" class="admin-nav-link <%= currentActive === 'admin' ? 'active' : '' %>">
+                    <i class="icofont-speed-meter"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">User & Team Management</li>
+            <li class="admin-nav-item">
+                <a href="/admin/employees" class="admin-nav-link <%= currentActive === 'admin-employees' ? 'active' : '' %>">
+                    <i class="icofont-users-alt-2"></i>
+                    <span>Employees</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/managers" class="admin-nav-link <%= currentActive === 'admin-managers' ? 'active' : '' %>">
+                    <i class="icofont-business-man"></i>
+                    <span>Managers</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">Operations (Future Modules)</li>
+            <li class="admin-nav-item">
+                <a href="/admin/customers" class="admin-nav-link <%= currentActive === 'admin-customers' ? 'active' : '' %>">
+                    <i class="icofont-address-book"></i>
+                    <span>Customers</span>
+                    <span class="admin-nav-badge badge bg-secondary">Phase 2</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/quotations" class="admin-nav-link <%= currentActive === 'quotations' ? 'active' : '' %>">
+                    <i class="icofont-calculator-alt-2"></i>
+                    <span>Quotations</span>
+                    <span class="admin-nav-badge badge bg-warning text-dark">Active</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/projects" class="admin-nav-link <%= currentActive === 'admin-projects' ? 'active' : '' %>">
+                    <i class="icofont-solar-panel"></i>
+                    <span>Projects</span>
+                    <span class="admin-nav-badge badge bg-secondary">Phase 3</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/invoices" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
+                    <i class="icofont-bill"></i>
+                    <span>Tax Invoices</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/reports" class="admin-nav-link <%= currentActive === 'admin-reports' ? 'active' : '' %>">
+                    <i class="icofont-chart-growth"></i>
+                    <span>Reports</span>
+                    <span class="admin-nav-badge badge bg-secondary">Future</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">System & Security</li>
+            <li class="admin-nav-item">
+                <a href="/admin/activity-logs" class="admin-nav-link <%= currentActive === 'admin-logs' ? 'active' : '' %>">
+                    <i class="icofont-history"></i>
+                    <span>Activity Logs</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/settings" class="admin-nav-link <%= currentActive === 'admin-settings' ? 'active' : '' %>">
+                    <i class="icofont-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/profile" class="admin-nav-link <%= currentActive === 'admin-profile' ? 'active' : '' %>">
+                    <i class="icofont-ui-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+
+        <% } else if (isManager) { %>
+            <!-- MANAGER NAVIGATION -->
+            <li class="admin-sidebar-heading">Management</li>
+            <li class="admin-nav-item">
+                <a href="/manager/dashboard" class="admin-nav-link <%= currentActive === 'manager-dashboard' ? 'active' : '' %>">
+                    <i class="icofont-speed-meter"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/manager/employees" class="admin-nav-link <%= currentActive === 'manager-employees' ? 'active' : '' %>">
+                    <i class="icofont-users-alt-2"></i>
+                    <span>Employees</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/manager/attendance" class="admin-nav-link <%= currentActive === 'manager-attendance' ? 'active' : '' %>">
+                    <i class="icofont-location-pin"></i>
+                    <span>Attendance Logs</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">Operations</li>
+            <li class="admin-nav-item">
+                <a href="/manager/quotations" class="admin-nav-link <%= currentActive === 'manager-quotations' ? 'active' : '' %>">
+                    <i class="icofont-paper"></i>
+                    <span>Quotation Requests</span>
+                    <span class="admin-nav-badge badge bg-warning text-dark">Phase 2</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/manager/projects" class="admin-nav-link <%= currentActive === 'manager-projects' ? 'active' : '' %>">
+                    <i class="icofont-solar-panel"></i>
+                    <span>Projects</span>
+                    <span class="admin-nav-badge badge bg-secondary">Phase 3</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/manager/invoices" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
+                    <i class="icofont-bill"></i>
+                    <span>Branch Invoices</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">Account</li>
+            <li class="admin-nav-item">
+                <a href="/manager/profile" class="admin-nav-link <%= currentActive === 'manager-profile' ? 'active' : '' %>">
+                    <i class="icofont-ui-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+
+        <% } else { %>
+            <!-- EMPLOYEE NAVIGATION -->
+            <li class="admin-sidebar-heading">Staff Workspace</li>
+            <li class="admin-nav-item">
+                <a href="/employee/dashboard" class="admin-nav-link <%= currentActive === 'emp-dashboard' ? 'active' : '' %>">
+                    <i class="icofont-speed-meter"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/employee/attendance" class="admin-nav-link <%= currentActive === 'employee' ? 'active' : '' %>">
+                    <i class="icofont-location-pin"></i>
+                    <span>GPS Attendance</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/employee/profile" class="admin-nav-link <%= currentActive === 'employee-profile' ? 'active' : '' %>">
+                    <i class="icofont-ui-user"></i>
+                    <span>My Profile</span>
+                </a>
+            </li>
+
+            <li class="admin-sidebar-heading">My Work (Future Modules)</li>
+            <li class="admin-nav-item">
+                <a href="/employee/quotations" class="admin-nav-link <%= currentActive === 'employee-quotations' ? 'active' : '' %>">
+                    <i class="icofont-paper"></i>
+                    <span>My Quotations</span>
+                    <span class="admin-nav-badge badge bg-warning text-dark">Phase 2</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/employee/projects" class="admin-nav-link <%= currentActive === 'employee-projects' ? 'active' : '' %>">
+                    <i class="icofont-solar-panel"></i>
+                    <span>My Projects</span>
+                    <span class="admin-nav-badge badge bg-secondary">Phase 3</span>
+                </a>
+            </li>
+        <% } %>
+    </ul>
+
+    <!-- Sidebar Quick Info / Footer -->
+    <div class="admin-sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="small text-white-50">
+                <div>Shivay Energy Solutions</div>
+                <div style="font-size: 10px; color: var(--admin-solar-gold);">Raisen, Madhya Pradesh</div>
+            </div>
+            <a href="/auth/logout" class="btn btn-sm btn-outline-danger p-1" title="Sign Out" aria-label="Sign Out">
+                <i class="icofont-logout"></i>
+            </a>
+        </div>
+    </div>
+</aside>
+
+<!-- Backdrop overlay for mobile drawer -->
+<div class="admin-backdrop" id="adminBackdrop"></div>

@@ -1,74 +1,202 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('../admin/partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
+<%
+    const pUser = typeof profileUser !== 'undefined' ? profileUser : (typeof user !== 'undefined' ? user : {});
+    const mgr = typeof manager !== 'undefined' ? manager : null;
+    const hasPunchedToday = userAttendance && userAttendance.length > 0;
+%>
 
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: var(--primary-color); color: #000;">STAFF WORKSPACE</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Welcome, <%= user ? user.name : 'Staff Member' %></h3>
-                    <small class="text-white-50"><%= company.name %> • Role: <%= user ? user.role : 'EMPLOYEE' %> | ID: <%= user ? user.employeeId : 'N/A' %></small>
-                </div>
-                <div class="d-flex gap-2 mt-3 mt-md-0">
-                    <a href="/employee/attendance" class="btn btn-sm btn-warning font-weight-bold text-dark"><i class="icofont-location-pin"></i> Field Attendance</a>
-                    <a href="/employee/quotations" class="btn btn-sm btn-outline-light"><i class="icofont-paper"></i> Create Quote</a>
-                    <a href="/employee/profile" class="btn btn-sm btn-outline-light"><i class="icofont-ui-user"></i> Profile</a>
-                    <a href="/auth/logout" class="btn btn-sm btn-danger"><i class="icofont-logout"></i> Sign Out</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="card p-4 border-0 shadow-sm rounded-3 bg-white text-center">
-                        <i class="icofont-check-circled text-success fs-36 mb-2"></i>
-                        <h6 class="font-weight-bold text-dark mb-1">Today's Attendance</h6>
-                        <p class="text-muted small mb-3">Status: <%= userAttendance && userAttendance.length > 0 ? 'Punched In' : 'Not Punched' %></p>
-                        <a href="/employee/attendance" class="btn btn-sm btn-outline-primary">Punch Now</a>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card p-4 border-0 shadow-sm rounded-3 bg-white text-center">
-                        <i class="icofont-calculator-alt-2 text-primary fs-36 mb-2"></i>
-                        <h6 class="font-weight-bold text-dark mb-1">Quotation Engine</h6>
-                        <p class="text-muted small mb-3">Generate proposals for prospective rooftop clients</p>
-                        <a href="/employee/quotations" class="btn btn-sm btn-outline-primary">New Quotation</a>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card p-4 border-0 shadow-sm rounded-3 bg-white text-center">
-                        <i class="icofont-shield-alt text-dark fs-36 mb-2"></i>
-                        <h6 class="font-weight-bold text-dark mb-1">Account & Security</h6>
-                        <p class="text-muted small mb-3">Update your password & contact details</p>
-                        <a href="/employee/profile" class="btn btn-sm btn-outline-dark">Manage Profile</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Header Welcome Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Welcome, <%= pUser.name || 'Staff Member' %>!
+        </h2>
+        <p class="text-muted small mb-0">
+            Staff Workspace • <%= company.name %> • Role: <strong><%= pUser.role || 'EMPLOYEE' %></strong> | ID: <code><%= pUser.employeeId || 'N/A' %></code>
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/employee/attendance" class="btn btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-location-pin me-1"></i> <%= hasPunchedToday ? "Today's Punch Log" : "Punch Field Attendance" %>
+        </a>
+        <a href="/employee/profile" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-ui-user me-1"></i> Manage Profile
+        </a>
+    </div>
 </div>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<div class="row g-4 mb-4">
+    <!-- Profile & Assigned Manager Summary Card (Requirement: Step 8) -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">My Employee Profile Details</h5>
+                    <div class="admin-card-subtitle">Verified identity credentials and reporting authority</div>
+                </div>
+                <span class="badge-status badge-status-active"><%= pUser.status || 'ACTIVE' %></span>
+            </div>
+
+            <table class="table table-bordered small mb-3">
+                <tbody>
+                    <tr>
+                        <th class="bg-light w-40 text-muted">Full Name</th>
+                        <td><strong class="text-dark"><%= pUser.name %></strong></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Employee ID</th>
+                        <td><code><%= pUser.employeeId || 'N/A' %></code></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Email</th>
+                        <td><%= pUser.email %></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Mobile</th>
+                        <td><%= pUser.mobile %></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Designation</th>
+                        <td><%= pUser.designation || 'Solar Field Technician' %></td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Assigned Manager</th>
+                        <td>
+                            <% if (mgr && mgr.name) { %>
+                                <span class="text-primary font-weight-bold">
+                                    <i class="icofont-business-man text-warning me-1"></i><%= mgr.name %>
+                                </span>
+                                <% if (mgr.email || mgr.mobile) { %>
+                                    <small class="text-muted d-block"><%= mgr.email || mgr.mobile %></small>
+                                <% } %>
+                            <% } else { %>
+                                <span class="text-muted">Direct Reporting (Deepak Kushwaha / Rahul Saini)</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="bg-light text-muted">Account Status</th>
+                        <td>
+                            <span class="badge bg-success">
+                                <i class="icofont-check-circled me-1"></i> Verified & Active
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-end">
+                <a href="/employee/profile" class="small text-decoration-none text-primary font-weight-bold">
+                    View & Edit Complete Profile →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Status Card -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="admin-card-header">
+                    <div>
+                        <h5 class="admin-card-title">Today's Geo-Tagged Attendance</h5>
+                        <div class="admin-card-subtitle">Field installation site check-in status for <%= today %></div>
+                    </div>
+                    <i class="icofont-location-pin fs-22 text-danger"></i>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 text-center mb-3 border">
+                    <% if (hasPunchedToday) { %>
+                        <div class="text-success mb-2">
+                            <i class="icofont-check-circled fs-36"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-dark mb-1">Attendance Punched for Today</h6>
+                        <p class="text-muted small mb-0">
+                            Check-in verified via GPS coordinates in Raisen / Madhya Pradesh.
+                        </p>
+                    <% } else { %>
+                        <div class="text-warning mb-2">
+                            <i class="icofont-clock-time fs-36"></i>
+                        </div>
+                        <h6 class="font-weight-bold text-dark mb-1">Not Yet Punched Today</h6>
+                        <p class="text-muted small mb-0">
+                            Please record your field check-in with live GPS coordinates.
+                        </p>
+                    <% } %>
+                </div>
+
+                <% if (userAttendance && userAttendance.length > 0) { %>
+                    <div class="small">
+                        <span class="text-muted font-weight-bold text-uppercase d-block mb-1" style="font-size: 11px;">Today's Punches:</span>
+                        <ul class="list-unstyled mb-0">
+                            <% userAttendance.forEach(a => { %>
+                                <li class="d-flex justify-content-between py-1 border-bottom">
+                                    <span><span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>"><%= a.type %></span> at <%= a.timestamp %></span>
+                                    <small class="text-muted">Lat: <%= a.latitude.toFixed(2) %>, Lng: <%= a.longitude.toFixed(2) %></small>
+                                </li>
+                            <% }); %>
+                        </ul>
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="mt-3">
+                <a href="/employee/attendance" class="btn btn-primary w-100 font-weight-bold py-2" style="background: var(--admin-navy-primary); border-radius: 8px;">
+                    <i class="icofont-location-pin me-1"></i> Open GPS Attendance Puncher
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Future Module Placeholders (Step 8 Requirement) -->
+<div class="row g-4">
+    <!-- Future Quotations Module Placeholder -->
+    <div class="col-md-6">
+        <div class="admin-card mb-0">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="admin-placeholder-icon mb-0" style="width: 44px; height: 44px; font-size: 20px;">
+                    <i class="icofont-calculator-alt-2"></i>
+                </div>
+                <div>
+                    <h6 class="font-weight-bold text-dark mb-0">My Quotations & Proposals Engine</h6>
+                    <span class="admin-phase-tag mb-0" style="font-size: 10px; padding: 2px 8px;">Phase 2 Architecture</span>
+                </div>
+            </div>
+            <p class="text-muted small mb-3">
+                Prepare customized solar rooftop proposals, estimate PM Surya Ghar DBT subsidies up to ₹78,000, and generate official customer quotation PDFs.
+            </p>
+            <div class="d-flex gap-2">
+                <a href="/employee/quotations" class="btn btn-sm btn-outline-warning text-dark font-weight-bold">
+                    <i class="icofont-paper me-1"></i> Open Proposal Creator
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Future Projects Module Placeholder -->
+    <div class="col-md-6">
+        <div class="admin-card mb-0">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="admin-placeholder-icon mb-0" style="width: 44px; height: 44px; font-size: 20px; background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                    <i class="icofont-solar-panel"></i>
+                </div>
+                <div>
+                    <h6 class="font-weight-bold text-dark mb-0">My Rooftop Installation Projects</h6>
+                    <span class="admin-phase-tag mb-0" style="font-size: 10px; padding: 2px 8px; background: #dcfce7; color: #15803d; border-color: #bbf7d0;">Phase 3 Architecture</span>
+                </div>
+            </div>
+            <p class="text-muted small mb-3">
+                Track assigned site work orders, ALMM Tier-1 panel installation steps, MPPKVVCL bi-directional net-meter inspections, and final commissioning certificates.
+            </p>
+            <div class="d-flex gap-2">
+                <a href="/employee/projects" class="btn btn-sm btn-outline-secondary">
+                    <i class="icofont-eye me-1"></i> Preview Project Workflow
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../admin/partials/admin-footer') %>

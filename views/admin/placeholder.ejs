@@ -1,0 +1,44 @@
+<%- include('partials/admin-head') %>
+
+<div class="row justify-content-center py-4">
+    <div class="col-lg-8">
+        <div class="admin-placeholder-box">
+            <span class="admin-phase-tag">
+                <i class="icofont-calendar me-1"></i> <%= module.phase %>
+            </span>
+
+            <div class="admin-placeholder-icon">
+                <i class="<%= module.icon %>"></i>
+            </div>
+
+            <h3 class="admin-placeholder-title"><%= module.title %></h3>
+            <p class="admin-placeholder-desc">
+                <%= module.desc %>
+            </p>
+
+            <% if (module.plannedFeatures && module.plannedFeatures.length > 0) { %>
+                <div class="p-4 bg-light rounded-3 text-start mx-auto mb-4 border" style="max-width: 540px;">
+                    <h6 class="font-weight-bold text-dark mb-3" style="font-size: 13px;">
+                        <i class="icofont-check-circled text-success me-1"></i> Planned Capabilities in this Module:
+                    </h6>
+                    <ul class="mb-0 small text-muted ps-3">
+                        <% module.plannedFeatures.forEach(feat => { %>
+                            <li class="mb-2"><%= feat %></li>
+                        <% }); %>
+                    </ul>
+                </div>
+            <% } %>
+
+            <div class="d-flex justify-content-center gap-2">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm px-4" style="border-radius: 8px;">
+                    <i class="icofont-arrow-left me-1"></i> Return Back
+                </a>
+                <a href="<%= (currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin' : ((currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) ? '/manager/dashboard' : '/employee/dashboard') %>" class="btn btn-primary btn-sm px-4" style="background: var(--admin-navy-primary); border-radius: 8px;">
+                    <i class="icofont-home me-1"></i> Dashboard Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/admin-footer') %>

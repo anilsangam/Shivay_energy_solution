@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Admin Panel | Shivay Energy Solutions' %></title>
+    <link rel="icon" href="/images/brandlogo2.png" type="image/png" sizes="16x16">
+    <meta name="description" content="Shivay Energy Solutions Enterprise Control Panel">
+
+    <!-- Fonts & Core Icons -->
+    <link href="/fonts/icofont/icofont.min.css" rel="stylesheet" type="text/css">
+    
+    <!-- Base Bootstrap & Theme CSS -->
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+
+    <!-- Admin Panel Modern Stylesheet -->
+    <link href="/css/admin.css" rel="stylesheet" type="text/css">
+</head>
+<body class="admin-body">
+    <div class="admin-layout">
+        <!-- Reusable Role-Based Sidebar -->
+        <%- include('admin-sidebar') %>
+
+        <div class="admin-main">
+            <!-- Reusable Top Header -->
+            <%- include('admin-header') %>
+
+            <!-- Reusable Breadcrumb -->
+            <%- include('admin-breadcrumb') %>
+
+            <!-- Main Content Area -->
+            <main class="admin-content">

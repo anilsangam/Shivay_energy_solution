@@ -1,0 +1,98 @@
+<%- include('partials/admin-head') %>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Branch Managers & Operational Leadership
+        </h2>
+        <p class="text-muted small mb-0">
+            Overview of branch managers, supervision hierarchy, and assigned staff members for Shivay Energy Solutions
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/admin/employees" class="btn btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> All Employees
+        </a>
+    </div>
+</div>
+
+<!-- Manager Cards Grid -->
+<div class="row g-4 mb-4">
+    <% if (managers && managers.length > 0) { %>
+        <% managers.forEach(m => { %>
+            <div class="col-lg-6">
+                <div class="admin-card h-100">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="admin-avatar-circle" style="width: 48px; height: 48px; font-size: 16px;">
+                                <%= (m.name || 'M').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                            </div>
+                            <div>
+                                <h5 class="font-weight-bold text-dark mb-0"><%= m.name %></h5>
+                                <div class="text-muted small"><%= m.designation || 'Operations Manager' %> • <%= m.email %></div>
+                            </div>
+                        </div>
+                        <span class="badge-role badge-role-manager"><%= m.role %></span>
+                    </div>
+
+                    <div class="row g-2 mb-3 small">
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block">Employee ID:</span>
+                            <code><%= m.employeeId || 'N/A' %></code>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block">Mobile Contact:</span>
+                            <strong><%= m.mobile %></strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block">Branch:</span>
+                            <span><%= (m.branchId && m.branchId.name) ? m.branchId.name : 'Raisen Central Branch' %></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block">Account Status:</span>
+                            <span class="badge-status badge-status-active"><%= m.status %></span>
+                        </div>
+                    </div>
+
+                    <!-- Assigned Employees Subsection -->
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="font-weight-bold text-dark small">
+                                <i class="icofont-users-alt-5 text-warning me-1"></i> Assigned Field Employees:
+                            </span>
+                            <span class="badge bg-primary rounded-pill"><%= m.assignedCount || (m.assignedEmployees ? m.assignedEmployees.length : 0) %> Staff</span>
+                        </div>
+
+                        <% if (m.assignedEmployees && m.assignedEmployees.length > 0) { %>
+                            <ul class="list-unstyled mb-0 small">
+                                <% m.assignedEmployees.forEach(emp => { %>
+                                    <li class="d-flex justify-content-between align-items-center py-1 border-bottom border-white">
+                                        <div>
+                                            <strong class="text-dark"><%= emp.name %></strong>
+                                            <span class="text-muted" style="font-size: 11px;">(<%= emp.employeeId %>)</span>
+                                        </div>
+                                        <span class="badge bg-light text-dark border"><%= emp.designation || 'Field Staff' %></span>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } else { %>
+                            <p class="text-muted small mb-0 fst-italic">No employees currently assigned to this manager.</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="col-12">
+            <div class="admin-card text-center py-5">
+                <i class="icofont-business-man fs-48 text-muted mb-3 d-block"></i>
+                <h5 class="text-dark font-weight-bold">No Managers Found</h5>
+                <p class="text-muted small mb-3">Add a Branch Manager account from the Staff Management console.</p>
+                <a href="/admin/employees" class="btn btn-sm btn-primary">Go to Staff Management</a>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

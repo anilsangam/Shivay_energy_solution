@@ -1,29 +1,7 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('../admin/partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: var(--primary-color); color: #000;">FIELD PORTAL</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Geo-Tagged Field Attendance</h3>
-                    <small class="text-white-50"><%= company.name %> • Raisen Branch & On-Site Installations</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="/employee/dashboard" class="btn btn-sm btn-outline-light">Workspace</a>
-                    <a href="/auth/logout" class="btn btn-sm btn-outline-danger">Sign Out</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-5 bg-light">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-6 col-lg-5">
+<div class="row justify-content-center py-2">
+    <div class="col-md-7 col-lg-6">
                     <div class="card p-4 border-0 shadow rounded-3 bg-white text-center">
                         <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; background: rgba(22, 53, 99, 0.1); color: #163563; font-size: 32px;">
                             <i class="icofont-ui-user"></i>
@@ -142,20 +120,5 @@ function recordAttendance(type) {
     });
 }
 </script>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<%- include('../admin/partials/admin-footer') %>

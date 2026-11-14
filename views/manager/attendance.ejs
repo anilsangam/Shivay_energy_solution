@@ -1,78 +1,73 @@
-<%- include('../partials/header') %>
-<%- include('../partials/navbar') %>
+<%- include('../admin/partials/admin-head') %>
 
-<div class="no-bottom no-top" id="content">
-    <div id="top"></div>
-
-    <section id="subheader" class="bg-dark text-light relative py-4" style="background: #163563;">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="badge" style="background: #20c997; color: #000;">BRANCH FIELD LOGS</span>
-                    <h3 class="text-white font-weight-bold mb-0 mt-1">Branch Attendance</h3>
-                    <small class="text-white-50"><%= company.name %> • Live Geo-Punches</small>
-                </div>
-                <a href="/manager/dashboard" class="btn btn-sm btn-outline-light">← Dashboard</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-4 bg-light">
-        <div class="container">
-            <div class="card border-0 shadow-sm rounded-3 bg-white p-4">
-                <h5 class="font-weight-bold text-dark mb-3">Live Staff GPS Logs</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 small">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Staff Name</th>
-                                <th>Designation</th>
-                                <th>Type</th>
-                                <th>Time</th>
-                                <th>Coordinates</th>
-                                <th>Map</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% if (attendance && attendance.length > 0) { %>
-                                <% attendance.forEach(a => { %>
-                                    <tr>
-                                        <td><strong><%= a.employeeName %></strong></td>
-                                        <td><%= a.role || 'Field Engineer' %></td>
-                                        <td><span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>"><%= a.type %></span></td>
-                                        <td><strong><%= a.timestamp %></strong></td>
-                                        <td><%= a.latitude %>, <%= a.longitude %> (±<%= a.accuracy %>m)</td>
-                                        <td>
-                                            <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2">View Map</a>
-                                        </td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">No attendance logs available for today.</td>
-                                </tr>
-                            <% } %>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Branch Field Attendance & GPS Logs
+        </h2>
+        <p class="text-muted small mb-0">
+            Real-time verified GPS check-in logs for rooftop installation and survey personnel
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <a href="/manager/employees" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> Staff Directory
+        </a>
+    </div>
 </div>
-<style>
-/* Page-specific responsive rules */
-@media (max-width: 767.98px) {
-    #content { width: 100%; max-width: 100%; overflow-x: clip; }
-    #content .container, #content .container-fluid { max-width: 100%; }
-    #content .row > [class*="col-"] { min-width: 0; }
-    #content .card, #content .card-body { min-width: 0; max-width: 100%; box-sizing: border-box; }
-    #content h1, #content h2, #content h3, #content h4, #content p,
-    #content small, #content strong, #content a, #content label { overflow-wrap: anywhere; }
-    #content img, #content video, #content iframe { max-width: 100%; }
-    #content input, #content select, #content textarea, #content button { max-width: 100%; min-width: 0; }
-    #content .table-responsive { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    #content table { min-width: 620px; }
-    #content .btn-main, #content .btn { white-space: normal; text-align: center; }
-}
-</style>
-<%- include('../partials/footer') %>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <h5 class="admin-card-title">Today's Geo-Tagged Records (<%= attendance ? attendance.length : 0 %>)</h5>
+            <div class="admin-card-subtitle">Session-verified attendance entries</div>
+        </div>
+        <span class="badge bg-success text-white">Live System</span>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Staff Name</th>
+                    <th>Employee ID</th>
+                    <th>Punch Type</th>
+                    <th>Time (IST)</th>
+                    <th>GPS Coordinates</th>
+                    <th>Accuracy</th>
+                    <th>Map Verification</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (attendance && attendance.length > 0) { %>
+                    <% attendance.forEach(a => { %>
+                        <tr>
+                            <td><strong><%= a.employeeName %></strong></td>
+                            <td><code><%= a.employeeId %></code></td>
+                            <td>
+                                <span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= a.type.replace('_', ' ').toUpperCase() %>
+                                </span>
+                            </td>
+                            <td><strong><%= a.timestamp %></strong></td>
+                            <td><small class="text-muted"><%= a.latitude %>, <%= a.longitude %></small></td>
+                            <td><small class="text-muted">±<%= a.accuracy %>m</small></td>
+                            <td>
+                                <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;">
+                                    <i class="icofont-google-map"></i> View Map
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No attendance logs available for today.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('../admin/partials/admin-footer') %>
