@@ -1,0 +1,27 @@
+<%- include('../admin/partials/admin-head') %>
+
+<section class="admin-card admin-error-card" role="alert">
+    <div class="admin-error-icon" aria-hidden="true"><i class="icofont-shield-alt"></i></div>
+    <p class="admin-error-code">403</p>
+    <h2>Access denied</h2>
+    <p class="admin-error-message"><%= typeof message !== 'undefined' ? message : 'You do not have permission to access this dashboard resource.' %></p>
+    <div class="admin-error-actions">
+        <a href="/" class="btn btn-outline-secondary">Public website</a>
+        <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+            <a href="/auth/logout" class="btn btn-danger">Sign out</a>
+        <% } else { %>
+            <a href="/admin/login" class="btn btn-primary">Portal sign in</a>
+        <% } %>
+    </div>
+</section>
+
+<style>
+    .admin-error-card { max-width: 760px; margin: 36px auto; padding: clamp(24px, 5vw, 48px); text-align: center; }
+    .admin-error-icon { display: grid; width: 72px; height: 72px; margin: 0 auto 14px; place-items: center; border-radius: 50%; background: rgba(220, 53, 69, .1); color: #dc3545; font-size: 32px; }
+    .admin-error-code { margin: 0; color: var(--admin-navy-primary, #163563); font-size: clamp(48px, 8vw, 72px); font-weight: 800; line-height: 1; }
+    .admin-error-card h2 { margin: 10px 0; color: #172b4d; font-size: clamp(22px, 4vw, 30px); }
+    .admin-error-message { max-width: 580px; margin: 0 auto 24px; color: #64748b; overflow-wrap: anywhere; }
+    .admin-error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    @media (max-width: 575.98px) { .admin-error-card { margin: 16px auto; } }
+</style>
+<%- include('../admin/partials/admin-footer') %>

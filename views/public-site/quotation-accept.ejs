@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= quotation.quotationNumber %> - Solar Proposal | <%= company.name %></title>
+    <link rel="icon" href="/images/brandlogo2.png" type="image/png">
+    
+    <!-- Fonts & Icons -->
+    <link href="/fonts/icofont/icofont.min.css" rel="stylesheet" type="text/css">
+    <link href="/css/main.css" rel="stylesheet" type="text/css">
+
+    <style>
+        :root {
+            --solar-navy: #163563;
+            --solar-gold: #f59e0b;
+            --solar-bg: #f8fafc;
+        }
+        body {
+            background-color: var(--solar-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+        }
+        .portal-header {
+            background: #ffffff;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 16px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .hero-card {
+            background: linear-gradient(135deg, #163563 0%, #0f2a4a 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(22, 53, 99, 0.3);
+        }
+        .content-card {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .badge-subsidy {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            font-weight: 700;
+        }
+        .btn-accept {
+            background: #10b981;
+            color: #ffffff;
+            font-weight: 700;
+            border: none;
+        }
+        .btn-accept:hover {
+            background: #059669;
+            color: #ffffff;
+        }
+        .btn-decline {
+            background: #ef4444;
+            color: #ffffff;
+            font-weight: 600;
+            border: none;
+        }
+        .btn-decline:hover {
+            background: #dc2626;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="portal-header">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <img src="/images/brandlogo2.png" alt="Shivay Energy Solutions" height="42" onerror="this.style.display='none'">
+                <div>
+                    <h5 class="mb-0 fw-bold" style="color: var(--solar-navy);"><%= company.name %></h5>
+                    <small class="text-muted">Rooftop Solar EPC • Raisen, Madhya Pradesh</small>
+                </div>
+            </div>
+            <div>
+                <a href="tel:<%= (company.contact && company.contact.phone) || (company.contacts && company.contacts[0] && company.contacts[0].mobile) || '+917000575496' %>" class="btn btn-sm btn-outline-primary d-none d-sm-inline-flex align-items-center gap-1">
+                    <i class="icofont-phone"></i> <%= (company.contact && company.contact.phone) || (company.contacts && company.contacts[0] && company.contacts[0].mobile) || '+91 70005 75496' %>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-4 my-2">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Proposal Hero Card -->
+                <div class="hero-card mb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                        <div>
+                            <span class="badge bg-warning text-dark font-monospace mb-2"><%= quotation.quotationNumber %></span>
+                            <h2 class="h3 fw-bold mb-1">Commercial Solar Rooftop Proposal</h2>
+                            <p class="mb-0 opacity-75 small">
+                                Prepared for <strong><%= quotation.customerName %></strong> • <%= quotation.city %>, MP
+                            </p>
+                        </div>
+                        <div>
+                            <a href="/manager/quotations/<%= quotation._id %>/document" target="_blank" class="btn btn-sm btn-light text-dark fw-bold">
+                                <i class="icofont-print me-1"></i> View Full Official PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr style="opacity: 0.2;">
+
+                    <div class="row g-3 text-center mt-2">
+                        <div class="col-sm-3 col-6">
+                            <small class="opacity-75 d-block">System Capacity</small>
+                            <h4 class="fw-bold mb-0 text-warning"><%= quotation.plantCapacityKw %> kW</h4>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="opacity-75 d-block">Architecture</small>
+                            <h5 class="fw-bold mb-0"><%= quotation.systemType %></h5>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="opacity-75 d-block">PM Surya Ghar Subsidy</small>
+                            <h5 class="fw-bold mb-0 text-success">₹ <%= Number(quotation.estimatedSubsidy).toLocaleString('en-IN') %></h5>
+                        </div>
+                        <div class="col-sm-3 col-6">
+                            <small class="opacity-75 d-block">Net Customer Cost</small>
+                            <h4 class="fw-bold mb-0 text-white">₹ <%= Number(quotation.netPayableAfterSubsidy).toLocaleString('en-IN') %></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Existing Decision State Banner -->
+                <% if (quotation.status === 'CUSTOMER_ACCEPTED') { %>
+                    <div class="content-card p-4 mb-4 border-success bg-white text-center">
+                        <i class="icofont-check-circled fs-1 text-success d-block mb-2"></i>
+                        <h4 class="fw-bold text-success mb-2">Proposal Accepted!</h4>
+                        <p class="text-muted small mb-3">
+                            Thank you, <%= quotation.customerName %>! Your acceptance has been securely confirmed. Our branch engineering team in Raisen has been notified and will proceed with net metering documentation and installation scheduling.
+                        </p>
+                        <a href="/manager/quotations/<%= quotation._id %>/document" target="_blank" class="btn btn-sm btn-outline-success">
+                            <i class="icofont-file-pdf me-1"></i> Download Approved Agreement Document
+                        </a>
+                    </div>
+                <% } else if (quotation.status === 'CUSTOMER_REJECTED') { %>
+                    <div class="content-card p-4 mb-4 border-danger bg-white text-center">
+                        <i class="icofont-close-circled fs-1 text-danger d-block mb-2"></i>
+                        <h4 class="fw-bold text-danger mb-2">Proposal Declined</h4>
+                        <p class="text-muted small mb-0">
+                            You have recorded your decision to decline this proposal. If you have questions or would like to request alternative system configurations, please call our Raisen office at <%= company.contact.phone %>.
+                        </p>
+                    </div>
+                <% } else if (isExpired) { %>
+                    <div class="content-card p-4 mb-4 border-warning bg-white text-center">
+                        <i class="icofont-warning-alt fs-1 text-warning d-block mb-2"></i>
+                        <h4 class="fw-bold text-dark mb-2">Proposal Validity Expired</h4>
+                        <p class="text-muted small mb-0">
+                            This quotation validity has lapsed. Please contact <%= company.name %> to receive an updated quote reflecting current DISCOM tariffs and component prices.
+                        </p>
+                    </div>
+                <% } else { %>
+                    <!-- Customer Decision Submission Form -->
+                    <div class="content-card p-4 mb-4">
+                        <h5 class="fw-bold mb-1 text-dark">Confirm Your Decision</h5>
+                        <p class="text-muted small mb-4">
+                            Please review the financial terms below and choose an option to confirm your decision online.
+                        </p>
+
+                        <!-- Financial Summary Breakdown Table -->
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-sm small mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted" style="width: 50%;">Gross Project Cost (Equipment, Taxes & Installation):</td>
+                                        <td class="text-end fw-bold">₹ <%= Number(quotation.grandTotal).toLocaleString('en-IN') %></td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td class="fw-bold text-success">
+                                            <i class="icofont-sun-alt me-1"></i> Less: PM Surya Ghar Central Govt Subsidy:
+                                        </td>
+                                        <td class="text-end fw-bold text-success">- ₹ <%= Number(quotation.estimatedSubsidy).toLocaleString('en-IN') %></td>
+                                    </tr>
+                                    <tr class="table-primary">
+                                        <td class="fw-bold text-primary">Estimated Net Customer Investment:</td>
+                                        <td class="text-end fw-bold text-primary fs-6">₹ <%= Number(quotation.netPayableAfterSubsidy).toLocaleString('en-IN') %></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Advance Payment Required with Work Order (20%):</td>
+                                        <td class="text-end">₹ <%= Number(quotation.advanceAmount).toLocaleString('en-IN') %></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Decision Form -->
+                        <form id="publicAcceptForm">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-dark">Select Your Response *</label>
+                                <div class="form-check mb-2 p-3 border rounded bg-light">
+                                    <input class="form-check-input" type="radio" name="response" id="respAccept" value="ACCEPTED" checked>
+                                    <label class="form-check-label fw-bold text-success ms-2" for="respAccept">
+                                        <i class="icofont-check-circled me-1"></i> I Accept this Solar Proposal
+                                        <div class="small fw-normal text-muted">Proceed with MPPKVVCL net metering registration and rooftop installation.</div>
+                                    </label>
+                                </div>
+                                <div class="form-check p-3 border rounded bg-light">
+                                    <input class="form-check-input" type="radio" name="response" id="respReject" value="REJECTED">
+                                    <label class="form-check-label fw-bold text-danger ms-2" for="respReject">
+                                        <i class="icofont-close-circled me-1"></i> I Decline / Request Changes
+                                        <div class="small fw-normal text-muted">Not ready to proceed or would like adjustments to capacity or commercial terms.</div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold">Comments or Questions (Optional)</label>
+                                <textarea class="form-control" name="remarks" rows="2" placeholder="e.g. Please call me on Saturday afternoon to finalize contract..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold" id="btnSubmitDecision" style="background: var(--solar-navy);">
+                                Submit My Response
+                            </button>
+                        </form>
+                    </div>
+                <% } %>
+
+                <!-- Trust Badges & Contact -->
+                <div class="text-center text-muted small py-3">
+                    <p class="mb-1">
+                        <strong><%= company.name %></strong> • Regd Office: <%= (company.location && company.location.address) || (company.address && company.address.line1) || 'Ward No. 15, Arjun Nagar' %>, <%= (company.location && company.location.city) || (company.address && company.address.city) || 'Raisen' %>, MP
+                    </p>
+                    <p class="mb-0">
+                        MNRE Approved Rooftop Solar EPC Partner • Direct Helpdesk: <a href="tel:<%= (company.contact && company.contact.phone) || '+917000575496' %>" class="text-decoration-none fw-bold"><%= (company.contact && company.contact.phone) || '+91 70005 75496' %></a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    document.getElementById('publicAcceptForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitDecision');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+
+        const formData = new FormData(this);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/quotation/accept/<%= token %>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error recording response.');
+                btn.disabled = false;
+                btn.innerHTML = 'Submit My Response';
+            }
+        } catch (err) {
+            alert('Connection or server error.');
+            btn.disabled = false;
+            btn.innerHTML = 'Submit My Response';
+        }
+    });
+    </script>
+</body>
+</html>

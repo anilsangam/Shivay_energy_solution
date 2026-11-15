@@ -1,0 +1,335 @@
+<%- include('partials/admin-head') %>
+
+<style>
+/* =========================================================================
+   EXECUTIVE CUSTOMER MANAGEMENT (CRM) - BLUISH STYLING & ZERO-SCROLL
+   ========================================================================= */
+.customer-filter-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 1px 3px rgba(15, 42, 74, 0.04);
+}
+.customer-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+}
+.customer-card-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Mobile-Friendly Table Wrap */
+.customer-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+.customer-table {
+    width: 100%;
+    margin-bottom: 0;
+    vertical-align: middle;
+    min-width: 820px;
+}
+.customer-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #3b5577;
+    background: #f7faff;
+    padding: 11px 14px !important;
+    border-bottom: 1.5px solid #dce5f1 !important;
+    white-space: nowrap;
+}
+.customer-table tbody td {
+    padding: 12px 14px !important;
+    font-size: 13px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e7eff8 !important;
+}
+.customer-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+.customer-table tbody tr:hover td {
+    background-color: #f5f9ff;
+}
+
+@media (max-width: 767.98px) {
+    .customer-filter-card {
+        padding: 10px 12px;
+    }
+}
+</style>
+
+<!-- Top Header & Action Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 23px;">
+            Customer Directory & CRM
+        </h2>
+        <p class="text-muted small mb-0">
+            Maintain customer records, DISCOM consumer numbers, and solar rooftop installation sites.
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+        <button class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#newCustomerModal" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 7px 14px;">
+            <i class="icofont-plus-circle fs-6"></i> Add New Customer
+        </button>
+    </div>
+</div>
+
+<!-- Standardized Compact Search & Filter Bar -->
+<div class="customer-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/customers" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-9 p-0 pe-md-2">
+            <div class="input-group" style="height: 38px;">
+                <input type="text" name="search" class="form-control" placeholder="Search customer by name, 10-digit mobile, consumer number, or city..." value="<%= search %>" style="height: 38px; font-size: 13px; border-radius: 8px 0 0 8px; border: 1px solid #cbd5e1;">
+                <button class="btn px-3 d-flex align-items-center justify-content-center" type="submit" title="Search" style="height: 38px; width: 44px; border-radius: 0 8px 8px 0; background: var(--admin-navy-primary); border-color: var(--admin-navy-primary); color: #fff;">
+                    <i class="icofont-search" style="font-size: 15px;"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-12 col-md-3 p-0 d-flex gap-2 justify-content-end mt-2 mt-md-0">
+            <button type="submit" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center" style="height: 38px; font-size: 13px; border-radius: 8px; background: var(--admin-navy-primary); border-color: var(--admin-navy-primary);">
+                Search Records
+            </button>
+            <a href="/admin/customers" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" title="Reset Search" style="height: 38px; width: 42px; border-radius: 8px; border: 1px solid #cbd5e1; flex-shrink: 0;">
+                <i class="icofont-close" style="font-size: 15px;"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Customers Table Card -->
+<div class="customer-card mb-4 shadow-sm">
+    <div class="customer-card-header">
+        <div>
+            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 15px; color: #0f2a4a;">
+                <i class="icofont-address-book text-primary fs-5"></i>
+                Customer Directory
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11.5px;">
+                    <%= pagination.total %> Clients
+                </span>
+            </h5>
+        </div>
+        <div class="small text-muted font-monospace" style="font-size: 12px;">
+            Page <%= pagination.page %> of <%= pagination.totalPages || 1 %>
+        </div>
+    </div>
+
+    <div class="customer-table-wrap">
+        <table class="customer-table table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">CUSTOMER NAME</th>
+                    <th style="width: 12%;">TYPE</th>
+                    <th style="width: 14%;">MOBILE</th>
+                    <th style="width: 15%;">DISCOM / CONSUMER #</th>
+                    <th style="width: 18%;">SITE ADDRESS</th>
+                    <th style="width: 11%;">ASSIGNED STAFF</th>
+                    <th style="width: 8%;" class="text-center">STATUS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (customers && customers.length > 0) { %>
+                    <% customers.forEach(c => { %>
+                        <tr>
+                            <td>
+                                <strong class="text-dark d-block" style="font-size: 13.5px;"><%= c.name %></strong>
+                                <% if (c.email) { %>
+                                    <div class="text-muted text-truncate" style="font-size: 11.5px; max-width: 190px;">
+                                        <i class="icofont-ui-email text-muted"></i> <%= c.email %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border border-primary-subtle fw-semibold" style="font-size: 11px; padding: 3px 7px;">
+                                    <%= c.customerType ? c.customerType.replace('_', ' ') : 'RESIDENTIAL' %>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="tel:<%= c.mobile %>" class="fw-bold text-dark text-decoration-none font-monospace" style="font-size: 12.5px;">
+                                    <i class="icofont-phone text-success me-1"></i><%= c.mobile %>
+                                </a>
+                                <% if (c.alternateMobile) { %>
+                                    <div class="text-muted font-monospace" style="font-size: 11px;">Alt: <%= c.alternateMobile %></div>
+                                <% } %>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block" style="font-size: 12.5px;"><%= c.discom || 'MPPKVVCL' %></strong>
+                                <div class="font-monospace text-muted" style="font-size: 11.5px;"><%= c.consumerNumber || 'Pending Bill' %></div>
+                            </td>
+                            <td>
+                                <div class="text-dark fw-semibold text-truncate" style="max-width: 180px; font-size: 12.5px;"><%= c.city || 'Raisen' %>, <%= c.district || 'Raisen' %></div>
+                                <div class="text-muted text-truncate" style="max-width: 180px; font-size: 11.5px;"><i class="icofont-location-pin text-muted"></i> <%= c.address || 'Raisen Central' %></div>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark text-truncate d-block" style="max-width: 130px; font-size: 12px;">
+                                    <%= c.assignedEmployee ? c.assignedEmployee.name : 'Unassigned' %>
+                                </span>
+                                <small class="text-muted font-monospace" style="font-size: 10.5px;">
+                                    <%= c.assignedEmployee ? c.assignedEmployee.employeeId : '' %>
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge <%= c.status === 'ACTIVE' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary text-white' %> px-2 py-1" style="font-size: 10px;">
+                                    <%= c.status || 'ACTIVE' %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="icofont-users-alt-2 fs-1 d-block mb-2 text-muted" style="font-size: 38px !important;"></i>
+                            <p class="mb-1 fw-bold fs-6">No customer records found.</p>
+                            <small class="text-muted">Register a new client using the "Add New Customer" button above.</small>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <% if (pagination.totalPages > 1) { %>
+        <div class="p-3 px-4 border-top d-flex flex-wrap align-items-center justify-content-between bg-light gap-2">
+            <small class="text-muted" style="font-size: 12px;">
+                Showing <%= ((pagination.page - 1) * pagination.limit) + 1 %> to <%= Math.min(pagination.page * pagination.limit, pagination.total) %> of <%= pagination.total %> customers
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <% for(let p = 1; p <= pagination.totalPages; p++) { %>
+                        <li class="page-item <%= p === pagination.page ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= p %>&search=<%= search %>" style="font-size: 12px; padding: 4px 10px;"><%= p %></a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Add New Customer -->
+<div class="modal fade" id="newCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header" style="background: var(--admin-navy-primary); color: white;">
+                <h5 class="modal-title fs-6 fw-bold d-flex align-items-center gap-2">
+                    <i class="icofont-user-alt-7"></i> Register New Customer Profile
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="newCustomerForm">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Customer Full Name *</label>
+                            <input type="text" class="form-control" name="name" required placeholder="e.g. Ramesh Patel" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Primary Mobile (10 digits) *</label>
+                            <input type="tel" class="form-control" name="mobile" required placeholder="e.g. 9826012345" maxlength="10" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Alternate Mobile</label>
+                            <input type="tel" class="form-control" name="alternateMobile" placeholder="Optional" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email Address</label>
+                            <input type="email" class="form-control" name="email" placeholder="Optional" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Customer Type *</label>
+                            <select class="form-select" name="customerType" style="height: 38px; border-radius: 8px;">
+                                <option value="RESIDENTIAL">Residential (PM Surya Ghar)</option>
+                                <option value="COMMERCIAL">Commercial</option>
+                                <option value="INDUSTRIAL">Industrial</option>
+                                <option value="AGRICULTURAL">Agricultural</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Electricity DISCOM</label>
+                            <select class="form-select" name="discom" style="height: 38px; border-radius: 8px;">
+                                <option value="MPPKVVCL">MPPKVVCL (Madhya Kshetra Bhopal/Raisen)</option>
+                                <option value="MPPoKVVCL">MPPoKVVCL (Poorv Kshetra Jabalpur)</option>
+                                <option value="MPPaKVVCL">MPPaKVVCL (Paschim Kshetra Indore)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Electricity Consumer No (IVRS)</label>
+                            <input type="text" class="form-control" name="consumerNumber" placeholder="e.g. 1002345678" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Installation Site Address</label>
+                            <input type="text" class="form-control" name="address" placeholder="House/Plot No., Street, Landmark" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">City / Tehsil</label>
+                            <input type="text" class="form-control" name="city" value="Raisen" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">District</label>
+                            <input type="text" class="form-control" name="district" value="Raisen" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">PIN Code</label>
+                            <input type="text" class="form-control" name="pincode" value="464551" style="height: 38px; border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius: 6px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold px-3" id="btnSaveCustomer" style="background: var(--admin-navy-primary); border-radius: 6px;">
+                        Register Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('newCustomerForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveCustomer');
+    btn.disabled = true;
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/api/customers/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': payload._csrf
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Customer saved successfully!');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving customer.');
+            btn.disabled = false;
+        }
+    } catch (err) {
+        alert('Server or network connection error.');
+        btn.disabled = false;
+    }
+});
+</script>
+
+<%- include('partials/admin-footer') %>

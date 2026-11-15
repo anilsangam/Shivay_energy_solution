@@ -1,0 +1,1004 @@
+<%- include('../admin/partials/admin-head') %>
+
+<style>
+/* =========================================================================
+   SOLAR QUOTATION REQUEST FORM - UNIFIED EXECUTIVE UI
+   ========================================================================= */
+.req-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    margin-bottom: 22px;
+    transition: box-shadow 0.2s ease;
+}
+.req-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 42, 74, 0.08);
+}
+.req-card-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.req-card-body {
+    padding: 20px 22px;
+}
+.req-card-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f2a4a;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.req-card-subtitle {
+    font-size: 11.5px;
+    color: #5a738e;
+}
+
+/* Form Controls & Sizing Calibration */
+.req-form .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #243b53;
+    margin-bottom: 4px;
+}
+.req-form .form-control,
+.req-form .form-select {
+    height: 38px;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    background-color: #ffffff;
+    padding: 6px 12px;
+    box-shadow: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.req-form .form-control:focus,
+.req-form .form-select:focus {
+    border-color: #163563;
+    box-shadow: 0 0 0 3px rgba(22, 53, 99, 0.1);
+    outline: none;
+}
+.req-form textarea.form-control {
+    height: auto;
+    min-height: 72px;
+    padding: 8px 12px;
+}
+
+/* Input Groups & Text/Icon Height Standardization (Strict 38px) */
+.req-form .input-group {
+    height: 38px;
+    border-radius: 8px;
+}
+.req-form .input-group .form-control {
+    height: 38px;
+}
+.req-form .input-group-text {
+    height: 38px;
+    min-width: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    line-height: 1;
+}
+.req-form .input-group-text i {
+    font-size: 15px;
+    line-height: 1;
+    height: 15px;
+    width: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.req-form .input-group .btn {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0 16px;
+    border-radius: 0 8px 8px 0 !important;
+    white-space: nowrap;
+}
+.req-form .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+.req-form .input-group > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Optional field pill badge */
+.badge-optional {
+    font-size: 10px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.2px;
+}
+.req-field-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Header & Footer Cards with Guaranteed Zero-Overflow */
+.req-header-banner {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    padding: 16px 20px;
+    margin-bottom: 22px;
+}
+.req-header-content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.req-header-step-text {
+    display: block;
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+.req-footer-box {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    padding: 16px 20px;
+    margin-bottom: 35px;
+}
+.req-footer-notice {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.req-footer-text {
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
+    line-height: 1.5;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .req-header-banner,
+    .req-footer-box {
+        padding: 14px 12px !important;
+    }
+    .req-header-actions {
+        width: 100%;
+    }
+    .req-header-actions .btn {
+        width: 100%;
+        justify-content: center;
+        height: 40px;
+    }
+    .req-card-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+    .req-card-body {
+        padding: 14px 12px !important;
+    }
+    .search-mobile-group {
+        flex-direction: row !important;
+    }
+    .search-mobile-group .btn {
+        padding: 0 10px !important;
+        font-size: 12px !important;
+    }
+    .req-footer-btn-wrap {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .req-footer-btn-wrap .btn {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        font-size: 13px;
+    }
+    #equipmentTable {
+        min-width: 620px;
+    }
+}
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <!-- Page Title & Header Banner (Responsive for Super Admin, Manager & Employee) -->
+        <div class="req-header-banner">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="req-header-content">
+                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                        <h3 class="font-weight-bold mb-0 text-dark" style="color: var(--admin-navy-primary); font-size: 20px;">
+                            <i class="icofont-paper-plane me-1 text-warning"></i> New Solar Quotation Request
+                        </h3>
+                        <% if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 11px;">Super Admin Desk</span>
+                        <% } else if (currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) { %>
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle font-monospace" style="font-size: 11px;">Branch Management</span>
+                        <% } else { %>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle font-monospace" style="font-size: 11px;">Field Officer Desk</span>
+                        <% } %>
+                    </div>
+                    <p class="text-muted small mb-0 req-header-step-text">
+                    Enter customer premises, electrical requirements & technical specifications to create an authoritative quotation.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <form id="quotationRequestForm" class="req-form" onsubmit="handleRequestSubmit(event)">
+            <input type="hidden" name="_csrf" id="csrfTokenInput" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            
+            <!-- ==========================================
+                 SECTION 1: CUSTOMER INFORMATION & SEARCH
+                 ========================================== -->
+            <div class="req-card">
+                <div class="req-card-header">
+                    <div>
+                        <h5 class="req-card-title">
+                            <i class="icofont-user text-primary"></i> 1. Customer Information & Verification
+                        </h5>
+                        <div class="req-card-subtitle">Search by 10-digit mobile number to link existing client or create a new profile</div>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 11px;">Customer CRM</span>
+                </div>
+
+                <div class="req-card-body">
+                    <!-- Customer Search Bar with Standardized 38px Height -->
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <label class="form-label small fw-bold text-dark mb-1">
+                            <i class="icofont-search-user text-primary me-1"></i> Quick Mobile Search (Auto-Fill Existing Client)
+                        </label>
+                        <div class="input-group search-mobile-group">
+                            <span class="input-group-text bg-white border-end-0"><i class="icofont-search-user text-muted"></i></span>
+                            <input type="tel" id="searchMobileInput" class="form-control border-start-0 ps-1" placeholder="Enter 10-digit customer mobile..." maxlength="10">
+                            <button type="button" class="btn btn-primary fw-bold" onclick="searchCustomerByMobile()" style="background: var(--admin-navy-primary); border-color: var(--admin-navy-primary);">
+                                <i class="icofont-search me-1"></i> <span class="d-none d-sm-inline">Check Existing</span><span class="d-inline d-sm-none">Search</span>
+                            </button>
+                        </div>
+                        <div id="customerSearchFeedback" class="small mt-2 d-none"></div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Full Name <span class="text-danger fw-bold">*</span></label>
+                            <input type="text" id="custName" name="customerName" class="form-control" required placeholder="e.g. Ramesh Patel">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Primary Mobile Number <span class="text-danger fw-bold">*</span></label>
+                            <input type="tel" id="custMobile" name="customerMobile" class="form-control" required placeholder="10-digit mobile number" maxlength="10">
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Alternate Mobile Number</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="tel" id="custAltMobile" name="customerAlternateMobile" class="form-control" placeholder="Alternate contact number">
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Email Address</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="email" id="custEmail" name="customerEmail" class="form-control" placeholder="client@gmail.com">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Complete Site / Premises Address <span class="text-danger fw-bold">*</span></label>
+                            <textarea id="siteAddress" name="siteAddress" class="form-control" rows="2" required placeholder="House/Plot No., Street, Landmark, Village/Ward"></textarea>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">City / Tehsil <span class="text-danger fw-bold">*</span></label>
+                            <input type="text" id="siteCity" name="city" class="form-control" value="Raisen" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">District <span class="text-danger fw-bold">*</span></label>
+                            <input type="text" id="siteDistrict" name="district" class="form-control" value="Raisen" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">PIN Code <span class="text-danger fw-bold">*</span></label>
+                            <input type="text" id="sitePincode" name="pincode" class="form-control" placeholder="464551" maxlength="6" required>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Customer Category <span class="text-danger fw-bold">*</span></label>
+                            <select id="custType" name="customerType" class="form-select" onchange="handleCustomerTypeChange()">
+                                <option value="RESIDENTIAL" selected>Residential (PM Surya Ghar Eligible)</option>
+                                <option value="COMMERCIAL">Commercial / Retail</option>
+                                <option value="INDUSTRIAL">Industrial / Factory</option>
+                                <option value="AGRICULTURAL">Agricultural / Solar Pump</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">DISCOM Power Board</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="text" id="custDiscom" name="discom" class="form-control" value="MPPKVVCL (Madhya Kshetra)">
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Electricity Consumer (IVRS) No.</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="text" id="consumerNumber" name="consumerNumber" class="form-control" placeholder="e.g. N123456789">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SECTION 2: SOLAR SYSTEM REQUIREMENTS
+                 ========================================== -->
+            <div class="req-card">
+                <div class="req-card-header">
+                    <div>
+                        <h5 class="req-card-title">
+                            <i class="icofont-solar-panel text-warning"></i> 2. Solar Technical Requirements
+                        </h5>
+                        <div class="req-card-subtitle">Proposed plant capacity, system configuration and existing electrical load</div>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle font-monospace" style="font-size: 11px;">Technical Specs</span>
+                </div>
+
+                <div class="req-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label text-primary">Required Solar Plant Capacity (kW) <span class="text-danger fw-bold">*</span></label>
+                            <div class="input-group">
+                                <input type="number" id="proposedKw" name="proposedCapacityKw" class="form-control fw-bold font-monospace" min="1" max="100" step="0.5" value="3" required oninput="updateSubsidyIndicator()">
+                                <span class="input-group-text bg-light fw-bold font-monospace">kW</span>
+                            </div>
+                            <!-- Subsidy Display Container: Strictly displayed ONLY for residential rooftop eligible quotes -->
+                            <div id="subsidyContainer" class="mt-2" style="display: block;">
+                                <div id="subsidyHint" class="d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-2 bg-success-subtle text-success border border-success-subtle small fw-bold" style="font-size: 11.5px; padding: 4px 10px;">
+                                    <i class="icofont-check-circled fs-6"></i>
+                                    <span>Estimated PM Surya Ghar Subsidy: ₹78,000</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Solar System Type <span class="text-danger fw-bold">*</span></label>
+                            <select name="systemType" class="form-select" onchange="updateSubsidyIndicator()">
+                                <option value="ON_GRID" selected>On-Grid (Grid-Tied with Net Metering)</option>
+                                <option value="HYBRID">Hybrid (Grid-Tied with Battery Storage)</option>
+                                <option value="OFF_GRID">Off-Grid (Standalone Battery Bank)</option>
+                                <option value="SOLAR_PUMP">Solar Agricultural Pump</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Roof Type <span class="text-danger fw-bold">*</span></label>
+                            <select name="roofType" class="form-select">
+                                <option value="RCC_FLAT" selected>RCC Flat Concrete Roof</option>
+                                <option value="TIN_SHED">Industrial Metal / Tin Shed</option>
+                                <option value="TILED">Slanted Tile Roof</option>
+                                <option value="GROUND_MOUNT">Ground Mounted Installation</option>
+                                <option value="OTHER">Other / Mixed Structure</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Shadow-Free Area (Sq. Ft.)</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="number" name="roofAreaSqFt" class="form-control" placeholder="e.g. 350" min="50">
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Monthly Electricity Bill (₹)</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" name="monthlyElectricityBill" class="form-control" placeholder="e.g. 4500" min="0">
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Monthly Units (kWh)</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="number" name="monthlyUnitsKwh" class="form-control" placeholder="e.g. 400" min="0">
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Expected Budget (₹)</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" name="expectedBudget" class="form-control" placeholder="Target budget" min="0">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Existing Solar System Already Installed?</label>
+                            <div class="d-flex align-items-center gap-4 mt-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="existingSolar" id="solarNo" value="false" checked>
+                                    <label class="form-check-label small" for="solarNo">No (Fresh Installation)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="existingSolar" id="solarYes" value="true">
+                                    <label class="form-check-label small" for="solarYes">Yes (Capacity Enhancement)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Installation Location / Floor</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <input type="text" name="installationLocation" class="form-control" placeholder="e.g. 2nd Floor Terrace / Main Factory Shed">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SECTION 3: REQUESTED EQUIPMENT & LINE ITEMS
+                 ========================================== -->
+            <div class="req-card">
+                <div class="req-card-header">
+                    <div>
+                        <h5 class="req-card-title">
+                            <i class="icofont-tools-alt-2 text-info"></i> 3. Requested Equipment & BoS Requirements
+                        </h5>
+                        <div class="req-card-subtitle">Specify equipment modules or leave default recommendations for pricing review</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="addEquipmentRow()" style="border-radius: 8px;">
+                        <i class="icofont-plus-circle me-1"></i> Add Equipment Item
+                    </button>
+                </div>
+
+                <div class="req-card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle small mb-3" id="equipmentTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 32%;">Item / Component Name <span class="text-danger">*</span></th>
+                                    <th style="width: 15%;">Quantity</th>
+                                    <th style="width: 25%;">Required Specifications</th>
+                                    <th style="width: 20%;">Remarks / Special Brand</th>
+                                    <th style="width: 8%; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipmentBody">
+                                <tr>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[0][itemName]" value="Solar PV Modules (Mono PERC DCR)" required style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" name="equipment[0][quantity]" value="6" min="1" style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[0][specs]" value="540W Tier-1 DCR ALMM Compliant" style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[0][remarks]" value="Adani / Waaree / Vikram" style="height: 34px;">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="icofont-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[1][itemName]" value="On-Grid Solar Inverter" required style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control form-control-sm" name="equipment[1][quantity]" value="1" min="1" style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[1][specs]" value="3.3 kW Dual MPPT, IP65, Wi-Fi Monitoring" style="height: 34px;">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="equipment[1][remarks]" value="Growatt / Havells / Solis" style="height: 34px;">
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="icofont-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Additional Technical Requirements</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <textarea name="additionalRequirements" class="form-control" rows="2" placeholder="e.g. Elevated structure required (8 ft clearance for terrace walkability); Earthing pits needed."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="req-field-label">
+                                <label class="form-label mb-0">Internal Staff Notes (For Pricing Review)</label>
+                                <span class="badge-optional">Optional</span>
+                            </div>
+                            <textarea name="employeeNotes" class="form-control" rows="2" placeholder="e.g. Client is ready to pay 50% advance; wants net-meter liaison within 15 days."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==========================================
+                 SECTION 4: SUPPORTING ATTACHMENTS
+                 ========================================== -->
+            <div class="req-card">
+                <div class="req-card-header">
+                    <div>
+                        <h5 class="req-card-title">
+                            <i class="icofont-attachment text-secondary"></i> 4. Site Photographs & Electricity Bill Attachments
+                        </h5>
+                        <div class="req-card-subtitle">Attach electricity bill, roof photos, or site survey sheets (Max 5 files, 5 MB each: JPG, PNG, PDF)</div>
+                    </div>
+                    <span class="badge-optional">Optional Files</span>
+                </div>
+
+                <div class="req-card-body">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <input type="file" id="fileAttachmentInput" class="form-control" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" onchange="handleFileSelection(event)">
+                        <small class="text-muted mt-2 d-block">
+                            <i class="icofont-shield-alt text-success"></i> Server-side magic-byte inspection enabled. Files stored in secure vault.
+                        </small>
+
+                        <!-- Preview of Selected Files -->
+                        <div id="fileListContainer" class="mt-3 d-none">
+                            <h6 class="font-weight-bold text-dark small mb-2">Files Selected for Upload:</h6>
+                            <ul class="list-group small" id="fileListUl"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button Error / Success Alert Box -->
+            <div id="submitBtnAlert" class="alert d-none py-3 px-3 rounded-3 mb-3 border shadow-sm" role="alert">
+                <div class="d-flex align-items-start gap-2">
+                    <i id="submitBtnAlertIcon" class="icofont-warning fs-5 mt-1"></i>
+                    <div class="flex-grow-1">
+                        <div id="submitBtnAlertTitle" class="fw-bold mb-1"></div>
+                        <div id="submitBtnAlertMsg" class="small"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Action Footer (Responsive Full Width Card) -->
+            <div class="req-footer-box mb-5">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                    <div class="req-footer-notice d-flex align-items-start gap-2">
+                        <i class="icofont-info-circle text-primary fs-5 mt-0.5 flex-shrink-0"></i> 
+                        <div class="small text-muted req-footer-text">
+                            <% if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
+                                Quotation request will be logged under your administrator account and immediately available for pricing & approval.
+                            <% } else if (currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) { %>
+                                Quotation request will be logged under your branch account and immediately available for pricing review.
+                            <% } else { %>
+                                Quotation request will be routed directly to your branch manager for review and pricing approval.
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="req-footer-btn-wrap d-flex gap-2 align-items-center flex-shrink-0">
+                        <a href="<%= (typeof parentUrl !== 'undefined') ? parentUrl : ((currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations' : ((currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) ? '/manager/quotations' : '/employee/quotations')) %>" class="btn btn-outline-secondary px-4 py-2 font-weight-bold" style="border-radius: 8px;">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm" id="submitBtn" style="background: var(--admin-navy-primary); border-color: var(--admin-navy-primary); border-radius: 8px;">
+                            <i class="icofont-paper-plane me-1"></i> Submit Quotation Request
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let uploadedFilesPayload = [];
+let equipmentIndex = 2;
+
+// Auto-update PM Surya Ghar subsidy estimate
+// STRICT RULE: Subsidy line is ONLY visible for eligible residential rooftop quotes. Industrial, Commercial & Agricultural are hidden.
+function updateSubsidyIndicator() {
+    const kwInput = document.getElementById('proposedKw');
+    const custTypeSelect = document.getElementById('custType');
+    const systemTypeSelect = document.querySelector('select[name="systemType"]');
+    const container = document.getElementById('subsidyContainer');
+    const hint = document.getElementById('subsidyHint');
+    
+    if (!kwInput || !custTypeSelect || !container || !hint) return;
+
+    const custType = custTypeSelect.value;
+    const systemType = systemTypeSelect ? systemTypeSelect.value : 'ON_GRID';
+    const kw = parseFloat(kwInput.value) || 0;
+
+    // PM Surya Ghar Muft Bijli Yojana is strictly for RESIDENTIAL rooftop consumers with Grid-Tied systems
+    const isResidential = (custType === 'RESIDENTIAL');
+    const isEligibleSystem = (systemType === 'ON_GRID' || systemType === 'HYBRID');
+
+    if (!isResidential || !isEligibleSystem) {
+        // Completely hide the subsidy line for Industrial, Commercial, Agricultural, Off-Grid
+        container.style.display = 'none';
+        container.classList.add('d-none');
+        return;
+    }
+
+    // Eligible: Show subsidy estimate
+    container.style.display = 'block';
+    container.classList.remove('d-none');
+
+    let subsidy = 0;
+    if (kw <= 0) subsidy = 0;
+    else if (kw < 1.5) subsidy = 30000;
+    else if (kw < 2.5) subsidy = 60000;
+    else subsidy = 78000;
+
+    hint.innerHTML = `<i class="icofont-check-circled fs-6"></i> <span>Estimated PM Surya Ghar Subsidy: ₹${subsidy.toLocaleString('en-IN')}</span>`;
+}
+
+function handleCustomerTypeChange() {
+    updateSubsidyIndicator();
+}
+
+// Live Search Customer by Mobile
+async function searchCustomerByMobile() {
+    const mobile = document.getElementById('searchMobileInput').value.trim();
+    const feedback = document.getElementById('customerSearchFeedback');
+
+    if (!mobile || mobile.length < 10) {
+        feedback.className = 'small mt-2 text-danger';
+        feedback.innerHTML = '<i class="icofont-warning"></i> Please enter a valid 10-digit mobile number.';
+        feedback.classList.remove('d-none');
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/customers/search?mobile=${encodeURIComponent(mobile)}`);
+        const data = await res.json();
+
+        if (data.found && data.customer) {
+            const c = data.customer;
+            feedback.className = 'small mt-2 text-success font-weight-bold';
+            feedback.innerHTML = `<i class="icofont-check-circled"></i> Existing customer found: <strong>${c.name}</strong> (${c.city || 'Raisen'}). Fields auto-filled.`;
+            feedback.classList.remove('d-none');
+
+            document.getElementById('custName').value = c.name || '';
+            document.getElementById('custMobile').value = (c.mobile || '').replace(/[^0-9]/g, '').slice(-10);
+            if (c.alternateMobile) document.getElementById('custAltMobile').value = c.alternateMobile;
+            if (c.email) document.getElementById('custEmail').value = c.email;
+            if (c.address) document.getElementById('siteAddress').value = c.address;
+            if (c.city) document.getElementById('siteCity').value = c.city;
+            if (c.district) document.getElementById('siteDistrict').value = c.district;
+            if (c.pincode) document.getElementById('sitePincode').value = c.pincode;
+            if (c.consumerNumber) document.getElementById('consumerNumber').value = c.consumerNumber;
+            if (c.discom) document.getElementById('custDiscom').value = c.discom;
+            if (c.customerType) {
+                document.getElementById('custType').value = c.customerType;
+                updateSubsidyIndicator();
+            }
+        } else {
+            feedback.className = 'small mt-2 text-primary';
+            feedback.innerHTML = `<i class="icofont-plus-circle"></i> No existing customer with this mobile. New profile will be registered automatically upon submission.`;
+            feedback.classList.remove('d-none');
+            document.getElementById('custMobile').value = mobile;
+        }
+    } catch (err) {
+        console.error('Search error:', err);
+    }
+}
+
+// Add Dynamic Equipment Row
+function addEquipmentRow() {
+    const tbody = document.getElementById('equipmentBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][itemName]" placeholder="e.g. ACDB / DCDB Box" required style="height: 34px;"></td>
+        <td><input type="number" class="form-control form-control-sm" name="equipment[${equipmentIndex}][quantity]" value="1" min="1" style="height: 34px;"></td>
+        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][specs]" placeholder="e.g. 1000V DC SPD + MCB" style="height: 34px;"></td>
+        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][remarks]" placeholder="Remarks" style="height: 34px;"></td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
+                <i class="icofont-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    equipmentIndex++;
+}
+
+function removeEquipmentRow(btn) {
+    const row = btn.closest('tr');
+    if (document.querySelectorAll('#equipmentBody tr').length > 1) {
+        row.remove();
+    } else {
+        alert('At least one equipment item is recommended.');
+    }
+}
+
+// Handle Attachments via FileReader (Base64)
+function handleFileSelection(event) {
+    const files = event.target.files;
+    const container = document.getElementById('fileListContainer');
+    const list = document.getElementById('fileListUl');
+    list.innerHTML = '';
+    uploadedFilesPayload = [];
+
+    if (!files || files.length === 0) {
+        container.classList.add('d-none');
+        return;
+    }
+
+    if (files.length > 5) {
+        alert('Maximum 5 files allowed.');
+        event.target.value = '';
+        container.classList.add('d-none');
+        return;
+    }
+
+    container.classList.remove('d-none');
+
+    Array.from(files).forEach((file, idx) => {
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`File "${file.name}" exceeds 5 MB limit.`);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedFilesPayload.push({
+                name: file.name,
+                type: file.type || 'application/octet-stream',
+                data: e.target.result,
+                category: file.name.toLowerCase().includes('bill') ? 'ELECTRICITY_BILL' : 'SITE_PHOTO'
+            });
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-2';
+            li.innerHTML = `
+                <div>
+                    <i class="icofont-file-document text-primary me-2"></i>
+                    <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)
+                </div>
+                <span class="badge bg-success">Ready</span>
+            `;
+            list.appendChild(li);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Error & Success Feedback Display Helpers
+function showSubmissionError(msg, title = 'Validation Error', focusElementId = null) {
+    const bottomAlert = document.getElementById('submitBtnAlert');
+    const bottomTitle = document.getElementById('submitBtnAlertTitle');
+    const bottomMsg = document.getElementById('submitBtnAlertMsg');
+    const bottomIcon = document.getElementById('submitBtnAlertIcon');
+    const btn = document.getElementById('submitBtn');
+
+    if (bottomAlert) {
+        bottomAlert.className = 'alert alert-danger py-3 px-3 rounded-3 mb-3 border-danger shadow-sm d-block';
+        if (bottomTitle) bottomTitle.textContent = title;
+        if (bottomMsg) bottomMsg.textContent = msg;
+        if (bottomIcon) bottomIcon.className = 'icofont-warning fs-5 text-danger mt-1';
+        bottomAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-paper-plane me-1"></i> Submit Quotation Request';
+    }
+
+    if (focusElementId) {
+        const el = document.getElementById(focusElementId);
+        if (el) {
+            el.classList.add('is-invalid');
+            setTimeout(() => el.classList.remove('is-invalid'), 6000);
+        }
+    }
+}
+
+function showSubmissionSuccess(requestNumber, redirectUrl) {
+    const bottomAlert = document.getElementById('submitBtnAlert');
+    const bottomTitle = document.getElementById('submitBtnAlertTitle');
+    const bottomMsg = document.getElementById('submitBtnAlertMsg');
+    const bottomIcon = document.getElementById('submitBtnAlertIcon');
+    const btn = document.getElementById('submitBtn');
+
+    if (bottomAlert) {
+        bottomAlert.className = 'alert alert-success py-3 px-3 rounded-3 mb-3 border-success shadow-sm d-block';
+        if (bottomTitle) bottomTitle.textContent = 'Quotation Request Submitted Successfully!';
+        if (bottomMsg) bottomMsg.innerHTML = `Request <strong>${requestNumber}</strong> has been logged. Redirecting to your workspace...`;
+        if (bottomIcon) bottomIcon.className = 'icofont-check-circled fs-5 text-success mt-1';
+        bottomAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Request Submitted!';
+    }
+
+    setTimeout(() => {
+        window.location.href = redirectUrl || '/employee/quotations';
+    }, 1200);
+}
+
+// Handle Submit Form
+async function handleRequestSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const bottomAlert = document.getElementById('submitBtnAlert');
+
+    if (bottomAlert) bottomAlert.classList.add('d-none');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Validating & Submitting...';
+
+    const form = document.getElementById('quotationRequestForm');
+    const formData = new FormData(form);
+
+    // Client-side Validation Checks
+    const customerName = (formData.get('customerName') || '').trim();
+    if (!customerName) {
+        showSubmissionError('Please enter the customer full name.', 'Missing Customer Name', 'custName');
+        return;
+    }
+
+    const rawMobile = formData.get('customerMobile') || '';
+    const cleanMobile = rawMobile.replace(/[^0-9]/g, '').slice(-10);
+    if (cleanMobile.length !== 10) {
+        showSubmissionError('Please provide a valid 10-digit mobile number (e.g. 9826012345).', 'Invalid Mobile Number', 'custMobile');
+        return;
+    }
+
+    const kw = parseFloat(formData.get('proposedCapacityKw')) || 0;
+    if (kw < 0.5) {
+        showSubmissionError('Please enter a valid solar capacity (minimum 0.5 kW).', 'Invalid Solar Capacity', 'proposedKw');
+        return;
+    }
+
+    const siteAddress = (formData.get('siteAddress') || '').trim();
+    if (!siteAddress) {
+        showSubmissionError('Please enter the complete premises / site address.', 'Missing Site Address', 'siteAddress');
+        return;
+    }
+
+    const pincode = (formData.get('pincode') || '').trim();
+    if (!pincode || pincode.length !== 6) {
+        showSubmissionError('Please enter a valid 6-digit postal PIN code (e.g. 464551).', 'Invalid PIN Code', 'sitePincode');
+        return;
+    }
+
+    const csrfToken = document.getElementById('csrfTokenInput')?.value || '';
+
+    // Build Payload
+    const payload = {
+        _csrf: csrfToken,
+        customerName: customerName,
+        customerMobile: cleanMobile,
+        customerAlternateMobile: formData.get('customerAlternateMobile') || '',
+        customerEmail: (formData.get('customerEmail') || '').trim(),
+        siteAddress: siteAddress,
+        city: formData.get('city') || 'Raisen',
+        district: formData.get('district') || 'Raisen',
+        state: formData.get('state') || 'Madhya Pradesh',
+        pincode: pincode,
+        customerType: formData.get('customerType') || 'RESIDENTIAL',
+        discom: formData.get('discom') || 'MPPKVVCL',
+        consumerNumber: (formData.get('consumerNumber') || '').trim(),
+        proposedCapacityKw: kw,
+        systemType: formData.get('systemType') || 'ON_GRID',
+        roofType: formData.get('roofType') || 'RCC_FLAT',
+        roofAreaSqFt: parseFloat(formData.get('roofAreaSqFt')) || 0,
+        monthlyElectricityBill: parseFloat(formData.get('monthlyElectricityBill')) || 0,
+        monthlyUnitsKwh: parseFloat(formData.get('monthlyUnitsKwh')) || 0,
+        expectedBudget: parseFloat(formData.get('expectedBudget')) || 0,
+        existingSolar: formData.get('existingSolar') === 'true' || formData.get('existingSolar') === true,
+        installationLocation: formData.get('installationLocation') || siteAddress,
+        additionalRequirements: formData.get('additionalRequirements') || '',
+        employeeNotes: formData.get('employeeNotes') || '',
+        equipment: [],
+        attachments: uploadedFilesPayload || []
+    };
+
+    // Extract Equipment Rows
+    const rows = document.querySelectorAll('#equipmentBody tr');
+    rows.forEach(r => {
+        const inputs = r.querySelectorAll('input');
+        if (inputs.length >= 4 && inputs[0].value.trim()) {
+            payload.equipment.push({
+                itemName: inputs[0].value.trim(),
+                quantity: parseFloat(inputs[1].value) || 1,
+                specs: inputs[2].value.trim(),
+                remarks: inputs[3].value.trim()
+            });
+        }
+    });
+
+    try {
+        const res = await fetch('/api/quotations/request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken,
+                'CSRF-Token': csrfToken
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const rawText = await res.text();
+        let result;
+        try {
+            result = JSON.parse(rawText);
+        } catch (parseErr) {
+            showSubmissionError(`Server returned HTTP ${res.status}: ${rawText.substring(0, 120)}`, 'Server Error');
+            return;
+        }
+
+        if (result && result.success) {
+            showSubmissionSuccess(result.requestNumber, result.redirectUrl);
+        } else {
+            showSubmissionError(result.message || 'Error saving quotation request. Please check input details.', 'Submission Rejected');
+        }
+    } catch (err) {
+        console.error('Submit network error:', err);
+        showSubmissionError(err.message || 'Network connection failed. Please ensure the server is running and retry.', 'Network Communication Error');
+    }
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', updateSubsidyIndicator);
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

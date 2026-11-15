@@ -21,6 +21,20 @@ module.exports = {
             country: "India",
             full: "Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen, Madhya Pradesh – 464551, India."
         },
+        location: {
+            address: "Ward No. 15, In front of PHE Office, Arjun Nagar",
+            city: "Raisen",
+            district: "Raisen",
+            state: "Madhya Pradesh",
+            pincode: "464551",
+            country: "India"
+        },
+        contact: {
+            phone: "+91 70005 75496",
+            alternatePhone: "+91 93997 61750",
+            email: "shivayenergysolutions@gmail.com",
+            whatsapp: "+91 70005 75496"
+        },
         contacts: [
             {
                 name: "Deepak Kushwaha",
@@ -55,11 +69,17 @@ module.exports = {
         pmSuryaGhar: {
             title: "PM Surya Ghar: Muft Bijli Yojana",
             subtitle: "Government of India Rooftop Solar Subsidy Scheme",
+            authority: "Ministry of New and Renewable Energy (MNRE), Government of India",
+            notificationReference: "OM No. 318/17/2024-GCRT dated 16 March 2024",
             portalUrl: "https://pmsuryaghar.gov.in/",
+            lastVerifiedDate: "2026-11-15",
+            statutoryDisclaimer: "Subsidy shown is an indicative estimate subject to applicable government scheme guidelines, customer eligibility, DISCOM verification, installation requirements and final government approval. Actual subsidy may differ.",
             description: "Under the PM Surya Ghar Muft Bijli Yojana initiated by the Ministry of New and Renewable Energy (MNRE), residential households can get direct DBT subsidy of up to ₹78,000 for installing solar panels on their rooftop.",
             subsidySlabs: [
                 {
                     capacity: "1 kW System",
+                    capacityKw: 1,
+                    subsidyAmount: 30000,
                     subsidy: "₹30,000",
                     suitableFor: "Small Homes (1-2 BHK), Monthly units < 150",
                     estCost: "₹55,000 - ₹65,000",
@@ -67,6 +87,8 @@ module.exports = {
                 },
                 {
                     capacity: "2 kW System",
+                    capacityKw: 2,
+                    subsidyAmount: 60000,
                     subsidy: "₹60,000",
                     suitableFor: "Medium Homes (2-3 BHK), Monthly units 150-300",
                     estCost: "₹1,10,000 - ₹1,25,000",
@@ -74,11 +96,29 @@ module.exports = {
                 },
                 {
                     capacity: "3 kW & Above",
+                    capacityKw: 3,
+                    subsidyAmount: 78000,
                     subsidy: "₹78,000 (Maximum)",
                     suitableFor: "Large Homes / Villas, Monthly units 300+",
                     estCost: "₹1,65,000 - ₹1,85,000",
                     netCost: "₹87,000 - ₹1,07,000"
                 }
+            ],
+            capacityRules: {
+                rateUpTo2kWPerKw: 30000,
+                rate2to3kWPerKw: 18000,
+                maxResidentialSubsidyCap: 78000,
+                commercialIndustrialRate: 0,
+                specialCategoryStateMultiplier: 1.10 // 10% higher for Special Category States (NE, J&K, HP, UK)
+            },
+            lifecycleStages: [
+                'ESTIMATED',
+                'UNVERIFIED',
+                'VERIFIED',
+                'SUBMITTED',
+                'APPROVED',
+                'CREDITED',
+                'INELIGIBLE'
             ],
             eligibility: [
                 "Must be an Indian citizen with a valid residential electricity connection (DISCOM / MPPKVVCL).",
@@ -101,6 +141,83 @@ module.exports = {
                 { step: 5, title: "Direct Subsidy Credit", desc: "Submit commissioning report and receive up to ₹78,000 subsidy directly in your bank account." }
             ],
             disclaimer: "Note: Subsidy amounts, DISCOM rules, and guidelines are subject to MNRE Government of India updates. Shivay Energy Solutions assists you with 100% paperwork, DISCOM liaisoning, and net-metering approvals."
+        }
+    },
+
+    // Centralized GST & Tax Compliance Configuration
+    taxPolicy: {
+        state: "Madhya Pradesh",
+        stateCode: "23",
+        standardSolarGstRate: 12,
+        cgstRate: 6,
+        sgstRate: 6,
+        igstRate: 12,
+        // Classification & HSN / SAC codes
+        hsnClassifications: [
+            {
+                category: "Solar PV Modules",
+                hsn: "85414300",
+                standardGstRate: 12,
+                description: "Photovoltaic cells whether or not assembled in modules or made up into panels"
+            },
+            {
+                category: "Solar Inverters",
+                hsn: "85044090",
+                standardGstRate: 12,
+                description: "Static converters / Solar power grid-tied & hybrid inverters"
+            },
+            {
+                category: "Mounting Structure",
+                hsn: "73089090",
+                standardGstRate: 18,
+                description: "Hot dip galvanized iron/steel rooftop mounting structures"
+            },
+            {
+                category: "Solar DC/AC Cables",
+                hsn: "85444999",
+                standardGstRate: 18,
+                description: "Insulated solar cables fitted with connectors"
+            },
+            {
+                category: "Erection & Commissioning EPC Services",
+                sac: "995469",
+                standardGstRate: 18,
+                description: "Electrical installation and solar plant commissioning services"
+            }
+        ],
+        // Composite Solar EPC Works Contract Deeming Fiction (Notification 24/2018-CT Rate & 8/2021-CT Rate)
+        compositeEpcValuation: {
+            appliesTo: "Turnkey Solar Power Generating Systems (SPGS) EPC contracts",
+            goodsRatio: 0.70,
+            servicesRatio: 0.30,
+            goodsGstRate: 12, // or 5% under Notification 9/2025-CT Rate
+            servicesGstRate: 18,
+            effectiveBlendedRate: 13.8, // (70% * 12%) + (30% * 18%) = 13.8%
+            requiresCaReview: true,
+            note: "Must be reviewed with the company CA to confirm if billing is executed under composite 70:30 EPC structure or individual itemized supply."
+        }
+    },
+
+    // Payment Milestone Policy Options (Awaiting Business Owner Confirmation)
+    paymentPolicyOptions: {
+        OPTION_A: {
+            code: "CONTRACT_VALUE",
+            name: "Gross Contract Value Basis",
+            description: "Milestones calculated on final contract value after discount, before subsidy. Customer pays 100% to Shivay Energy Solutions and receives subsidy directly in bank via DBT.",
+            example: "For ₹95,800 contract: 20% Advance = ₹19,160, 60% Material = ₹57,480, 20% Commissioning = ₹19,160. Total collected = ₹95,800. Customer receives ₹78,000 from Govt.",
+            requiresCompanyFinancing: false
+        },
+        OPTION_B: {
+            code: "CUSTOMER_CONTRIBUTION",
+            name: "Net Customer Contribution Basis",
+            description: "Milestones calculated on estimated net payable after subsidy deduction. Shivay Energy Solutions bridges/finances the subsidy amount until DBT.",
+            example: "For ₹17,800 net: 20% Advance = ₹3,560, 60% Material = ₹10,680, 20% Commissioning = ₹3,560. Total collected from customer = ₹17,800.",
+            requiresCompanyFinancing: true
+        },
+        OPTION_C: {
+            code: "CUSTOM_MILESTONES",
+            name: "Fixed / Custom Milestone Amounts",
+            description: "Fixed rupee amounts agreed per stage regardless of percentage."
         }
     },
 

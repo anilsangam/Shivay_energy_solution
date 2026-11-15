@@ -420,30 +420,51 @@ class DataStore {
 
     static addInvoice(data) {
         const num = data.invoiceNumber || ('SES-INV-2026-' + Math.floor(120 + Math.random() * 800));
-        const todayStr = new Date().toLocaleDateString('en-IN', {
+        const todayStr = data.date || new Date().toLocaleDateString('en-IN', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
         }).replace(/\//g, '-');
 
         const inv = {
+            _id: data.invoiceId || data._id || undefined,
             invoiceNumber: num,
             customerName: data.customerName,
-            customerMobile: data.customerMobile,
-            customerAddress: data.customerAddress,
+            customerMobile: data.customerMobile || '',
+            customerAddress: data.customerAddress || '',
             customerGstin: data.customerGstin || '',
             plantCapacityKw: parseFloat(data.plantCapacityKw) || 3,
             subtotal: parseFloat(data.subtotal) || 100000,
-            cgst: parseFloat(data.cgst) || 6000,
-            sgst: parseFloat(data.sgst) || 6000,
+            cgst: parseFloat(data.cgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100,
+            sgst: parseFloat(data.sgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100,
             totalAmount: parseFloat(data.totalAmount) || 112000,
             paymentStatus: data.paymentStatus || 'paid',
             paymentMethod: data.paymentMethod || 'NEFT / RTGS (SBI Raisen)',
-            date: todayStr
+            date: todayStr,
+            items: data.items || [],
+            discomConsumerNo: data.discomConsumerNo || '',
+            projectId: data.projectId || '',
+            quotationId: data.quotationId || ''
         };
+
+        // If invoiceNumber already exists in memory, update in place
+        const existingIdx = invoices.findIndex(i => i.invoiceNumber === num);
+        if (existingIdx !== -1) {
+            invoices[existingIdx] = { ...invoices[existingIdx], ...inv };
+            return invoices[existingIdx];
+        }
 
         invoices.unshift(inv);
         return inv;
+    }
+
+    static deleteInvoice(invoiceNumber) {
+        const idx = invoices.findIndex(i => i.invoiceNumber === invoiceNumber);
+        if (idx !== -1) {
+            invoices.splice(idx, 1);
+            return true;
+        }
+        return false;
     }
 
     // ATTENDANCE

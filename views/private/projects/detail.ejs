@@ -1,0 +1,1102 @@
+<%- include('../admin/partials/admin-head') %>
+
+<%
+    const isEmp = user.role === 'EMPLOYEE';
+    const isMgrOrAdmin = user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || user.role === 'SUPER_ADMIN';
+    const postPrefix = user.role === 'SUPER_ADMIN' ? '/admin/projects' : (isEmp ? '/employee/projects' : '/manager/projects');
+
+    let badgeColor = 'bg-secondary';
+    if (project.status === 'COMPLETED') badgeColor = 'bg-success';
+    else if (project.status === 'INSTALLATION_IN_PROGRESS') badgeColor = 'bg-primary';
+    else if (project.status === 'TESTING_AND_COMMISSIONING') badgeColor = 'bg-info text-dark';
+    else if (project.status === 'ON_HOLD') badgeColor = 'bg-warning text-dark';
+    else if (project.status === 'CANCELLED') badgeColor = 'bg-danger';
+
+    let priorityBadge = 'bg-light text-dark border';
+    if (project.priority === 'HIGH') priorityBadge = 'bg-warning text-dark';
+    if (project.priority === 'URGENT') priorityBadge = 'bg-danger text-white';
+%>
+
+<% if (typeof successMsg !== 'undefined' && successMsg) { %>
+    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+        <i class="icofont-check-circled me-2 fs-5"></i>
+        <div><%= successMsg %></div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<% if (typeof errorMsg !== 'undefined' && errorMsg) { %>
+    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+        <i class="icofont-warning-alt me-2 fs-5"></i>
+        <div><%= errorMsg %></div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>
+
+<!-- Project Master Header -->
+<div class="admin-card p-4 mb-4">
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge bg-primary fs-6 px-3 py-1"><%= project.projectNumber %></span>
+                <span class="badge <%= badgeColor %> fs-6 px-3 py-1"><%= project.status.replace(/_/g, ' ') %></span>
+                <span class="badge <%= priorityBadge %>" style="font-size: 11px;"><i class="icofont-flame text-danger me-1"></i><%= project.priority %> Priority</span>
+            </div>
+            <h2 class="h4 font-weight-bold mb-1" style="color: var(--admin-navy-primary);">
+                <%= project.title %>
+            </h2>
+            <div class="text-muted small">
+                <span><i class="icofont-user-alt-7 me-1"></i><%= (project.customerContact && project.customerContact.name) || (project.customer && project.customer.name) %></span>
+                <span class="mx-2">•</span>
+                <span><i class="icofont-phone me-1"></i><%= (project.customerContact && project.customerContact.mobile) || (project.customer && project.customer.mobile) %></span>
+                <span class="mx-2">•</span>
+                <span><i class="icofont-location-pin me-1"></i><%= project.siteAddress || project.city %></span>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Update Status: Available to Field Employees, Managers & Super Admin -->
+            <% if (project.status !== 'COMPLETED') { %>
+                <button type="button" class="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#statusModal" style="border-radius: 6px; height: 34px;">
+                    <i class="icofont-refresh"></i> Update Status
+                </button>
+            <% } %>
+
+            <!-- Manager & Super Admin Exclusive Management Actions -->
+            <% if (isMgrOrAdmin) { %>
+                <button type="button" class="btn btn-sm btn-outline-secondary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#assignModal" style="border-radius: 6px; height: 34px;">
+                    <i class="icofont-user-suited"></i> Assign Member
+                </button>
+                <% if (project.status !== 'COMPLETED') { %>
+                    <button type="button" class="btn btn-sm btn-success fw-bold text-white d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#completeModal" style="border-radius: 6px; height: 34px;">
+                        <i class="icofont-check-circled"></i> Commission & Complete
+                    </button>
+                <% } %>
+            <% } %>
+            <% if (project.quotation) { %>
+                <a href="<%= user.role === 'SUPER_ADMIN' ? '/admin/quotations/' + project.quotation._id + '/document' : (user.role === 'EMPLOYEE' ? '/employee/quotations/' + project.quotation._id + '/document' : '/manager/quotations/' + project.quotation._id + '/document') %>" target="_blank" class="btn btn-sm btn-light border fw-bold d-inline-flex align-items-center gap-1 shadow-sm" style="border-radius: 6px; height: 34px;">
+                    <i class="icofont-file-document text-primary"></i> View Quotation
+                </a>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Overall Progress Metric -->
+    <div class="mt-4 pt-3 border-top">
+        <div class="d-flex align-items-center justify-content-between small mb-1">
+            <span class="text-muted fw-bold text-uppercase" style="font-size: 11px;">Milestone Progress</span>
+            <span class="fw-bold text-dark fs-6"><%= project.progressPercentage || 0 %>% Completed</span>
+        </div>
+        <div class="progress" style="height: 10px; border-radius: 6px;">
+            <div class="progress-bar <%= project.progressPercentage === 100 ? 'bg-success' : 'bg-primary' %>" role="progressbar" style="width: <%= project.progressPercentage || 0 %>%;" aria-valuenow="<%= project.progressPercentage || 0 %>" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ========================================================================= */
+/* WORKSPACE SEGMENTED TAB BUTTONS WITH DISTINCT BOUNDARIES & VIBRANT STATES */
+/* ========================================================================= */
+.workspace-tabs-container {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 8px 10px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    scrollbar-width: thin;
+}
+.workspace-tabs-container::-webkit-scrollbar {
+    height: 5px;
+}
+.workspace-tabs-container::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 6px;
+}
+
+.workspace-tabs-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin: 0;
+    padding: 2px 0;
+    list-style: none;
+    min-width: max-content;
+}
+
+/* Individual Defined Button Card */
+.workspace-tabs-nav .workspace-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    text-decoration: none;
+    position: relative;
+    user-select: none;
+}
+
+/* Hover State */
+.workspace-tabs-nav .workspace-tab-btn:hover {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #94a3b8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+}
+
+/* Active State (Rich Executive Navy Gradient with Glowing Blue Depth) */
+.workspace-tabs-nav .workspace-tab-btn.active {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%) !important;
+    color: #ffffff !important;
+    border-color: #0f172a !important;
+    box-shadow: 0 4px 14px rgba(30, 58, 138, 0.35) !important;
+    transform: translateY(-1px);
+}
+
+/* Tab Icons */
+.workspace-tab-btn i {
+    font-size: 16px;
+    transition: transform 0.18s ease;
+}
+.workspace-tab-btn:hover i {
+    transform: scale(1.12);
+}
+.workspace-tab-btn.active i {
+    color: #38bdf8 !important; /* Vibrant sky-blue icon on dark navy active button */
+}
+
+/* Dynamic Tab Badges (Pending, 3, 4, 0, 11) */
+.workspace-tab-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    border: 1px solid transparent;
+}
+
+/* Inactive Badge Styles */
+.badge-tab-neutral {
+    background: #e2e8f0;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+.badge-tab-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+.badge-tab-success {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+.badge-tab-info {
+    background: #e0f2fe;
+    color: #0369a1;
+    border-color: #bae6fd;
+}
+.badge-tab-indigo {
+    background: #e0e7ff;
+    color: #3730a3;
+    border-color: #c7d2fe;
+}
+.badge-tab-emerald {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+.badge-tab-slate {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+
+/* Active Button Badge Style - High Contrast White Capsule */
+.workspace-tabs-nav .workspace-tab-btn.active .workspace-tab-badge {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+</style>
+
+<!-- Project Navigation Tabs (Distinct Bounded Buttons with Color & Badges) -->
+<div class="workspace-tabs-container">
+    <ul class="workspace-tabs-nav" id="projectTab" role="tablist">
+        <li role="presentation">
+            <button class="workspace-tab-btn active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-selected="true">
+                <i class="icofont-info-circle text-primary"></i> <span>Overview & Specs</span>
+            </button>
+        </li>
+        <li role="presentation">
+            <% const svStatus = (project.siteVisit && project.siteVisit.status) || 'PENDING'; %>
+            <button class="workspace-tab-btn" id="survey-tab" data-bs-toggle="tab" data-bs-target="#survey" type="button" role="tab" aria-selected="false">
+                <i class="icofont-ruler-pencil text-warning"></i> <span>Site Survey</span>
+                <span class="workspace-tab-badge <%= svStatus === 'APPROVED' ? 'badge-tab-success' : (svStatus === 'SUBMITTED' ? 'badge-tab-info' : 'badge-tab-warning') %>">
+                    <%= svStatus === 'APPROVED' ? 'Cleared' : (svStatus === 'SUBMITTED' ? 'Review' : 'Pending') %>
+                </span>
+            </button>
+        </li>
+        <li role="presentation">
+            <button class="workspace-tab-btn" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab" aria-selected="false">
+                <i class="icofont-tasks-alt text-primary"></i> <span>Tasks</span>
+                <span class="workspace-tab-badge badge-tab-indigo"><%= project.tasks ? project.tasks.length : 0 %></span>
+            </button>
+        </li>
+        <li role="presentation">
+            <button class="workspace-tab-btn" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials" type="button" role="tab" aria-selected="false">
+                <i class="icofont-box text-success"></i> <span>Bill of Materials</span>
+                <span class="workspace-tab-badge badge-tab-emerald"><%= project.materials ? project.materials.length : 0 %></span>
+            </button>
+        </li>
+        <li role="presentation">
+            <button class="workspace-tab-btn" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-selected="false">
+                <i class="icofont-attachment text-secondary"></i> <span>Documents</span>
+                <span class="workspace-tab-badge badge-tab-neutral"><%= project.documents ? project.documents.length : 0 %></span>
+            </button>
+        </li>
+        <li role="presentation">
+            <button class="workspace-tab-btn" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab" aria-selected="false">
+                <i class="icofont-history text-muted"></i> <span>Activity History</span>
+                <span class="workspace-tab-badge badge-tab-slate"><%= activities ? activities.length : 0 %></span>
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="projectTabContent">
+    <!-- ==========================================
+         TAB 1: OVERVIEW & TECHNICAL SPECS
+         ========================================== -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="admin-card p-4 h-100">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-flash text-warning me-2"></i>Solar System & Equipment Specs
+                    </h5>
+                    <div class="row g-3 small">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Plant Capacity</span>
+                            <strong class="text-dark fs-5"><%= project.capacityKw %> kW</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">System Configuration</span>
+                            <strong class="text-dark"><%= (project.solarRequirements && project.solarRequirements.systemType) || 'ON_GRID' %></strong>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted d-block">Solar PV Modules</span>
+                            <strong class="text-dark"><%= (project.solarRequirements && project.solarRequirements.panelSpecs) || '540W Mono PERC Half-Cut (DCR Compliant)' %></strong>
+                            <% if (project.solarRequirements && project.solarRequirements.panelQty > 0) { %>
+                                <div class="text-muted">Quantity: <%= project.solarRequirements.panelQty %> Panels</div>
+                            <% } %>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted d-block">Solar Inverter</span>
+                            <strong class="text-dark"><%= (project.solarRequirements && project.solarRequirements.inverterSpecs) || 'On-Grid Dual MPPT Solar Inverter' %></strong>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-muted d-block">Mounting Structure</span>
+                            <strong class="text-dark"><%= (project.solarRequirements && project.solarRequirements.structureSpecs) || 'Hot-Dip Galvanized Elevated Structure (150 km/h wind tested)' %></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="admin-card p-4 h-100">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-rupee text-success me-2"></i>Commercial & Financial Snapshot
+                    </h5>
+                    <div class="row g-3 small">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Gross Project Value</span>
+                            <strong class="text-dark fs-6">₹ <%= Number(project.contractAmount || (project.financials && project.financials.contractAmount) || 0).toLocaleString('en-IN') %></strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Govt Subsidy (DBT Direct)</span>
+                            <strong class="text-success fs-6">₹ <%= Number(project.subsidyAmount || (project.financials && project.financials.subsidyAmount) || 0).toLocaleString('en-IN') %></strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Net Customer Investment</span>
+                            <strong class="text-primary fs-6">₹ <%= Number((project.financials && project.financials.netPayable) || (project.contractAmount - project.subsidyAmount) || 0).toLocaleString('en-IN') %></strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Advance Paid (20%)</span>
+                            <strong class="text-dark fs-6">₹ <%= Number(project.amountPaid || (project.financials && project.financials.advanceAmount) || 0).toLocaleString('en-IN') %></strong>
+                        </div>
+                    </div>
+
+                    <h5 class="fw-bold mt-4 mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-users text-primary me-2"></i>Assigned Engineering Team
+                    </h5>
+                    <div class="small">
+                        <div class="mb-2">
+                            <span class="text-muted">Assigned Manager:</span>
+                            <strong class="text-dark ms-1"><%= (project.assignedManager && project.assignedManager.name) || 'Branch Manager' %></strong>
+                        </div>
+                        <div class="mb-2">
+                            <span class="text-muted">Lead Field Engineer:</span>
+                            <strong class="text-dark ms-1"><%= (project.assignedEngineer && project.assignedEngineer.name) || 'Not Assigned' %></strong>
+                        </div>
+                        <% if (project.assignedEmployees && project.assignedEmployees.length > 0) { %>
+                            <div class="mt-2">
+                                <span class="text-muted d-block mb-1">Installation Crew Members:</span>
+                                <% project.assignedEmployees.forEach(e => { %>
+                                    <span class="badge bg-light text-dark border me-1 mb-1">
+                                        <i class="icofont-user me-1 text-primary"></i><%= e.user ? e.user.name : 'Engineer' %> (<%= e.roleInProject %>)
+                                    </span>
+                                <% }) %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 2: SITE VISIT & SURVEY WORKSPACE
+         ========================================== -->
+    <div class="tab-pane fade" id="survey" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="admin-card p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                        <h5 class="fw-bold mb-0" style="color: var(--admin-navy-primary);">
+                            <i class="icofont-ruler-alt-2 text-primary me-2"></i>Site Inspection Report
+                        </h5>
+                        <span class="badge <%= (project.siteVisit && project.siteVisit.status === 'APPROVED') ? 'bg-success' : 'bg-warning text-dark' %>">
+                            <%= (project.siteVisit && project.siteVisit.status) || 'PENDING' %>
+                        </span>
+                    </div>
+
+                    <% if (project.siteVisit && project.siteVisit.inspectionRemarks) { %>
+                        <div class="row g-3 small mb-4">
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Inspection Date</span>
+                                <strong><%= project.siteVisit.visitDate ? new Date(project.siteVisit.visitDate).toLocaleDateString('en-IN') : 'N/A' %></strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Roof Structural Suitability</span>
+                                <span class="badge bg-info text-dark"><%= project.siteVisit.roofSuitability %></span>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Roof Construction Type</span>
+                                <strong><%= project.siteVisit.roofType %></strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Shadow-Free Rooftop Area</span>
+                                <strong><%= project.siteVisit.availableAreaSqFt %> Sq. Ft.</strong>
+                            </div>
+                            <div class="col-12">
+                                <span class="text-muted d-block">Shadow Analysis Observations</span>
+                                <p class="mb-0 text-dark bg-light p-2 rounded"><%= project.siteVisit.shadowObservations %></p>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Incoming Electrical Supply</span>
+                                <strong><%= project.siteVisit.electricalConnectionDetails %></strong>
+                            </div>
+                            <div class="col-md-6">
+                                <span class="text-muted d-block">Sanctioned Electricity Load</span>
+                                <strong><%= project.siteVisit.sanctionedLoadKw %> kW</strong>
+                            </div>
+                            <div class="col-12">
+                                <span class="text-muted d-block">Field Engineer Survey Remarks</span>
+                                <p class="mb-0 text-dark bg-light p-2 rounded"><%= project.siteVisit.inspectionRemarks %></p>
+                            </div>
+                            <% if (project.siteVisit.managerRemarks) { %>
+                                <div class="col-12">
+                                    <span class="text-muted d-block">Manager Review Comments</span>
+                                    <p class="mb-0 text-dark bg-warning-subtle p-2 rounded border border-warning"><%= project.siteVisit.managerRemarks %></p>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info small mb-4">
+                            <i class="icofont-info-circle me-1"></i> A technical rooftop site survey has not yet been submitted for this installation. Field staff can submit measurements below.
+                        </div>
+                    <% } %>
+
+                    <!-- Employee Site Visit Submission Form -->
+                    <h6 class="fw-bold mb-3 border-top pt-3 text-primary">Submit / Update Site Survey Report</h6>
+                    <form method="POST" action="<%= postPrefix %>/<%= project._id %>/site-visit">
+                        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                        <div class="row g-2 small">
+                            <div class="col-md-6">
+                                <label class="form-label">Visit Date</label>
+                                <input type="date" name="visitDate" class="form-control form-control-sm" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Roof Suitability</label>
+                                <select name="roofSuitability" class="form-select form-select-sm">
+                                    <option value="EXCELLENT">Excellent (Reinforced Concrete)</option>
+                                    <option value="GOOD" selected>Good (Standard RCC Flat)</option>
+                                    <option value="NEEDS_REINFORCEMENT">Needs Reinforcement</option>
+                                    <option value="UNSUITABLE">Unsuitable</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Roof Type</label>
+                                <input type="text" name="roofType" class="form-control form-control-sm" value="RCC Flat Roof" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Available Area (Sq. Ft.)</label>
+                                <input type="number" name="availableAreaSqFt" class="form-control form-control-sm" value="350" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Shadow Observations</label>
+                                <input type="text" name="shadowObservations" class="form-control form-control-sm" value="No obstacles. Parapet wall < 3ft. South-facing clear." required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Detailed Inspection Remarks</label>
+                                <textarea name="inspectionRemarks" class="form-control form-control-sm" rows="3" placeholder="Enter findings regarding staircase, civil work, inverter location, and AC/DC cable routing..." required></textarea>
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button type="submit" class="btn btn-sm btn-primary fw-bold">
+                                    <i class="icofont-upload me-1"></i> Submit Site Survey
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Manager Review Panel -->
+            <div class="col-lg-5">
+                <div class="admin-card p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-check-circled text-success me-2"></i>Manager Site Survey Clearance
+                    </h5>
+                    <% if (isMgrOrAdmin) { %>
+                        <p class="small text-muted mb-3">
+                            Review the field survey data submitted by the installation engineer. Approving the survey advances the project to <strong>Site Visit Completed (25%)</strong> and clears material staging.
+                        </p>
+                        <form method="POST" action="<%= postPrefix %>/<%= project._id %>/site-visit/review">
+                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Manager Review Comments</label>
+                                <textarea name="managerRemarks" class="form-control form-control-sm" rows="3" placeholder="Enter instructions, structure fabrication approvals, or revision demands..." required></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" name="action" value="APPROVE" class="btn btn-sm btn-success fw-bold text-white flex-grow-1">
+                                    <i class="icofont-check me-1"></i> Approve Survey
+                                </button>
+                                <button type="submit" name="action" value="REQUEST_REVISION" class="btn btn-sm btn-outline-danger fw-bold">
+                                    <i class="icofont-close me-1"></i> Request Revision
+                                </button>
+                            </div>
+                        </form>
+                    <% } else { %>
+                        <div class="alert alert-secondary small mb-0">
+                            <i class="icofont-shield-alt me-1"></i> Only branch managers and administrators have permission to approve site surveys.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 3: INSTALLATION TASKS & DEADLINES
+         ========================================== -->
+    <div class="tab-pane fade" id="tasks" role="tabpanel">
+        <div class="admin-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                <h5 class="fw-bold mb-0" style="color: var(--admin-navy-primary);">
+                    <i class="icofont-tasks-alt text-primary me-2"></i>Site Installation Milestones & Work Orders
+                </h5>
+                <% if (isMgrOrAdmin) { %>
+                    <button type="button" class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                        <i class="icofont-plus-circle me-1"></i> Add Task
+                    </button>
+                <% } %>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">TASK & DESCRIPTION</th>
+                            <th style="width: 18%;">ASSIGNED TO</th>
+                            <th style="width: 12%;">PRIORITY</th>
+                            <th style="width: 15%;">DUE DATE</th>
+                            <th style="width: 12%;">STATUS</th>
+                            <th style="width: 8%;" class="text-end">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (project.tasks && project.tasks.length > 0) { %>
+                            <% project.tasks.forEach(task => { %>
+                                <%
+                                    let taskBadge = 'bg-secondary';
+                                    if (task.status === 'COMPLETED') taskBadge = 'bg-success';
+                                    else if (task.status === 'IN_PROGRESS') taskBadge = 'bg-primary';
+                                    else if (task.status === 'BLOCKED') taskBadge = 'bg-danger';
+                                %>
+                                <tr>
+                                    <td>
+                                        <strong class="text-dark"><%= task.title %></strong>
+                                        <% if (task.description) { %>
+                                            <div class="small text-muted"><%= task.description %></div>
+                                        <% } %>
+                                        <% if (task.remarks) { %>
+                                            <div class="small text-info mt-1"><i class="icofont-comment me-1"></i><%= task.remarks %></div>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-bold text-dark">
+                                            <i class="icofont-user-alt-7 text-primary me-1"></i><%= task.assignedTo ? (task.assignedTo.name || 'Staff') : 'Unassigned' %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= task.priority === 'HIGH' ? 'bg-warning text-dark' : 'bg-light text-dark border' %>">
+                                            <%= task.priority %>
+                                        </span>
+                                    </td>
+                                    <td class="small">
+                                        <%= task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-IN') : 'N/A' %>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= taskBadge %>"><%= task.status %></span>
+                                    </td>
+                                    <td class="text-end">
+                                        <% if (isMgrOrAdmin || (task.assignedTo && task.assignedTo._id && task.assignedTo._id.toString() === user._id.toString())) { %>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal_<%= task.taskId %>">
+                                                Update
+                                            </button>
+
+                                            <!-- Modal for task status update -->
+                                            <div class="modal fade" id="updateTaskModal_<%= task.taskId %>" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form method="POST" action="<%= postPrefix %>/<%= project._id %>/tasks/<%= task.taskId %>/status">
+                                                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title font-weight-bold">Update Task Status</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body text-start">
+                                                                <p class="small text-muted mb-3"><%= task.title %></p>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-bold">Status</label>
+                                                                    <select name="status" class="form-select form-select-sm">
+                                                                        <option value="PENDING" <%= task.status === 'PENDING' ? 'selected' : '' %>>Pending</option>
+                                                                        <option value="IN_PROGRESS" <%= task.status === 'IN_PROGRESS' ? 'selected' : '' %>>In Progress</option>
+                                                                        <option value="COMPLETED" <%= task.status === 'COMPLETED' ? 'selected' : '' %>>Completed</option>
+                                                                        <option value="BLOCKED" <%= task.status === 'BLOCKED' ? 'selected' : '' %>>Blocked</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label small fw-bold">Remarks / Progress Note</label>
+                                                                    <textarea name="remarks" class="form-control form-control-sm" rows="3" placeholder="Enter work progress or reason for delay..."><%= task.remarks || '' %></textarea>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-sm btn-primary fw-bold">Save Task Update</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        <% } else { %>
+                                            <span class="small text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted small">No installation tasks assigned.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 4: BILL OF MATERIALS (BOM)
+         ========================================== -->
+    <div class="tab-pane fade" id="materials" role="tabpanel">
+        <div class="admin-card p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                <i class="icofont-box text-primary me-2"></i>Bill of Materials & Staging Allocation
+            </h5>
+            <p class="small text-muted mb-3">
+                Track required solar equipment derived directly from the approved quotation. When all items are marked Delivered, the project transitions to <strong>Material Ready (55%)</strong>.
+            </p>
+
+            <div class="table-responsive">
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">EQUIPMENT ITEM</th>
+                            <th style="width: 12%;">REQUIRED</th>
+                            <th style="width: 12%;">ALLOCATED</th>
+                            <th style="width: 12%;">DELIVERED</th>
+                            <th style="width: 12%;">PENDING</th>
+                            <th style="width: 12%;">STATUS</th>
+                            <% if (isMgrOrAdmin) { %><th style="width: 5%;" class="text-end">ACTION</th><% } %>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (project.materials && project.materials.length > 0) { %>
+                            <% project.materials.forEach((mat, idx) => { %>
+                                <%
+                                    let mBadge = 'bg-secondary';
+                                    if (mat.status === 'DELIVERED') mBadge = 'bg-success';
+                                    else if (mat.status === 'ALLOCATED') mBadge = 'bg-primary';
+                                    else if (mat.status === 'DISPATCHED') mBadge = 'bg-warning text-dark';
+                                %>
+                                <tr>
+                                    <td>
+                                        <strong class="text-dark"><%= mat.itemName %></strong>
+                                        <% if (mat.remarks) { %><div class="small text-muted"><%= mat.remarks %></div><% } %>
+                                    </td>
+                                    <td class="fw-bold"><%= mat.requiredQty %> <%= mat.unit %></td>
+                                    <td><%= mat.allocatedQty %> <%= mat.unit %></td>
+                                    <td class="text-success fw-bold"><%= mat.deliveredQty %> <%= mat.unit %></td>
+                                    <td class="text-danger fw-bold"><%= mat.pendingQty %> <%= mat.unit %></td>
+                                    <td><span class="badge <%= mBadge %>"><%= mat.status %></span></td>
+                                    <% if (isMgrOrAdmin) { %>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editMatModal_<%= idx %>">
+                                                Edit
+                                            </button>
+
+                                            <!-- Material Update Modal -->
+                                            <div class="modal fade" id="editMatModal_<%= idx %>" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <form method="POST" action="<%= postPrefix %>/<%= project._id %>/materials/<%= mat._id || idx %>">
+                                                            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title font-weight-bold">Update Material Staging</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body text-start">
+                                                                <p class="small text-muted mb-3"><%= mat.itemName %> (Required: <%= mat.requiredQty %> <%= mat.unit %>)</p>
+                                                                <div class="row g-2">
+                                                                    <div class="col-6">
+                                                                        <label class="form-label small fw-bold">Allocated Qty</label>
+                                                                        <input type="number" name="allocatedQty" class="form-control form-control-sm" value="<%= mat.allocatedQty %>" min="0" required>
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <label class="form-label small fw-bold">Delivered at Site</label>
+                                                                        <input type="number" name="deliveredQty" class="form-control form-control-sm" value="<%= mat.deliveredQty %>" min="0" required>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label class="form-label small fw-bold">Status</label>
+                                                                        <select name="status" class="form-select form-select-sm">
+                                                                            <option value="PLANNED" <%= mat.status === 'PLANNED' ? 'selected' : '' %>>Planned</option>
+                                                                            <option value="ALLOCATED" <%= mat.status === 'ALLOCATED' ? 'selected' : '' %>>Allocated at Warehouse</option>
+                                                                            <option value="DISPATCHED" <%= mat.status === 'DISPATCHED' ? 'selected' : '' %>>Dispatched to Site</option>
+                                                                            <option value="DELIVERED" <%= mat.status === 'DELIVERED' ? 'selected' : '' %>>Delivered at Site</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <label class="form-label small fw-bold">Remarks</label>
+                                                                        <input type="text" name="remarks" class="form-control form-control-sm" value="<%= mat.remarks || '' %>" placeholder="Dispatch docket #, serial range...">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-sm btn-primary fw-bold">Save Changes</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    <% } %>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr><td colspan="7" class="text-center py-4 text-muted small">No bill of materials recorded.</td></tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 5: DOCUMENTS & ATTACHMENTS
+         ========================================== -->
+    <div class="tab-pane fade" id="documents" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="admin-card p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-attachment text-primary me-2"></i>Secure Project Attachments
+                    </h5>
+
+                    <div class="table-responsive">
+                        <table class="table admin-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">DOCUMENT</th>
+                                    <th style="width: 25%;">CATEGORY</th>
+                                    <th style="width: 20%;">UPLOADED BY</th>
+                                    <th style="width: 15%;" class="text-end">DOWNLOAD</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (project.documents && project.documents.length > 0) { %>
+                                    <% project.documents.forEach(doc => { %>
+                                        <tr>
+                                            <td>
+                                                <strong class="text-dark"><%= doc.title %></strong>
+                                                <div class="small text-muted"><%= doc.originalName %> (<%= Math.round(doc.sizeBytes / 1024) %> KB)</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border"><%= doc.category.replace(/_/g, ' ') %></span>
+                                            </td>
+                                            <td class="small">
+                                                <%= doc.uploadedBy ? doc.uploadedBy.name : 'Staff' %><br>
+                                                <span class="text-muted" style="font-size: 10px;"><%= new Date(doc.uploadedAt).toLocaleDateString('en-IN') %></span>
+                                            </td>
+                                            <td class="text-end">
+                                                <% if (doc.cloudinaryUrl || (doc.path && doc.path.startsWith('http'))) { %>
+                                                    <a href="<%= doc.cloudinaryUrl || doc.path %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info me-1" title="View Cloud Asset (Cloudinary)">
+                                                        <i class="icofont-cloud-download"></i> View
+                                                    </a>
+                                                <% } %>
+                                                <a href="/private/projects/<%= project._id %>/documents/<%= doc.documentId || doc._id %>" class="btn btn-sm btn-outline-primary" download title="Download Secure Attachment">
+                                                    <i class="icofont-download"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr><td colspan="4" class="text-center py-4 text-muted small">No documents attached yet.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Panel -->
+            <div class="col-lg-4">
+                <div class="admin-card p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                        <i class="icofont-upload-alt text-primary me-2"></i>Upload File
+                    </h5>
+                    <form method="POST" action="/private/projects/<%= project._id %>/documents" id="docUploadForm">
+                        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                        <input type="hidden" name="fileData" id="fileDataBase64">
+                        <input type="hidden" name="filename" id="fileDataName">
+                        <input type="hidden" name="mimeType" id="fileDataMime">
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Document Title</label>
+                            <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Site Survey Photos, Net Meter Clearance" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Category</label>
+                            <select name="category" class="form-select form-select-sm">
+                                <option value="SITE_SURVEY">Site Survey Report / Photos</option>
+                                <option value="INSTALLATION_PHOTO">Installation Site Photo</option>
+                                <option value="EQUIPMENT_DOC">Equipment Serial / Warranty Card</option>
+                                <option value="DISCOM_APPROVAL">DISCOM Net-Meter Clearance</option>
+                                <option value="COMMISSIONING_REPORT">Testing & Commissioning Report</option>
+                                <option value="CUSTOMER_DOC">Customer Electricity Bill / Aadhaar</option>
+                                <option value="OTHER">Other Technical Attachment</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Choose File (JPG, PNG, PDF max 5MB)</label>
+                            <input type="file" id="docFileInput" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+                        </div>
+                        <button type="submit" id="docUploadSubmitBtn" class="btn btn-sm btn-primary w-100 fw-bold" disabled>
+                            <i class="icofont-cloud-upload me-1"></i> Upload Document
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 6: ACTIVITY TIMELINE (APPEND-ONLY)
+         ========================================== -->
+    <div class="tab-pane fade" id="timeline" role="tabpanel">
+        <div class="admin-card p-4">
+            <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
+                <i class="icofont-history text-primary me-2"></i>Chronological Project Activity Log
+            </h5>
+            <p class="small text-muted mb-4">
+                Append-only immutable record of all milestones, assignments, site survey clearances, and status transitions.
+            </p>
+
+            <div class="timeline-container" style="position: relative; padding-left: 20px; border-left: 2px solid #e2e8f0; margin-left: 10px;">
+                <% if (activities && activities.length > 0) { %>
+                    <% activities.forEach(act => { %>
+                        <div class="mb-4" style="position: relative;">
+                            <div style="position: absolute; left: -27px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--admin-navy-primary, #0f172a); border: 2px solid #ffffff; box-shadow: 0 0 0 2px #cbd5e1;"></div>
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mb-1">
+                                <span class="fw-bold text-dark" style="font-size: 13.5px;"><%= act.title %></span>
+                                <span class="badge bg-light text-muted border font-monospace" style="font-size: 11px;">
+                                    <i class="icofont-clock-time me-1"></i><%= new Date(act.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                                </span>
+                            </div>
+                            <div class="small text-muted mb-1" style="font-size: 12.5px; line-height: 1.5;"><%= act.description %></div>
+                            <div class="small text-muted font-monospace" style="font-size: 11px;">
+                                <i class="icofont-user-alt-7 text-primary me-1"></i>Recorded By: <strong class="text-dark"><%= act.performedBy ? act.performedBy.name : 'System' %></strong>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <div class="text-muted small">No activity logged yet.</div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==========================================
+     MODALS: STATUS UPDATE, ASSIGN, COMPLETE
+     ========================================== -->
+
+<!-- Status Transition Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<%= postPrefix %>/<%= project._id %>/status">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Transition Project Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">New Status</label>
+                        <select name="status" class="form-select form-select-sm" required>
+                            <option value="NOT_STARTED" <%= project.status === 'NOT_STARTED' ? 'selected' : '' %>>Not Started (0%)</option>
+                            <option value="SITE_VISIT_PENDING" <%= project.status === 'SITE_VISIT_PENDING' ? 'selected' : '' %>>Site Visit Pending (10%)</option>
+                            <option value="SITE_VISIT_COMPLETED" <%= project.status === 'SITE_VISIT_COMPLETED' ? 'selected' : '' %>>Site Visit Completed (25%)</option>
+                            <option value="MATERIAL_PLANNING" <%= project.status === 'MATERIAL_PLANNING' ? 'selected' : '' %>>Material Planning (40%)</option>
+                            <option value="MATERIAL_READY" <%= project.status === 'MATERIAL_READY' ? 'selected' : '' %>>Material Ready at Warehouse (55%)</option>
+                            <option value="INSTALLATION_IN_PROGRESS" <%= project.status === 'INSTALLATION_IN_PROGRESS' ? 'selected' : '' %>>Installation In Progress (70%)</option>
+                            <option value="TESTING_AND_COMMISSIONING" <%= project.status === 'TESTING_AND_COMMISSIONING' ? 'selected' : '' %>>Testing & Commissioning (85%)</option>
+                            <option value="DISCOM_DOCUMENTATION" <%= project.status === 'DISCOM_DOCUMENTATION' ? 'selected' : '' %>>DISCOM Documentation Clearance (95%)</option>
+                            <option value="ON_HOLD" <%= project.status === 'ON_HOLD' ? 'selected' : '' %>>On Hold (Requires Reason)</option>
+                            <% if (isMgrOrAdmin) { %>
+                                <option value="CANCELLED" <%= project.status === 'CANCELLED' ? 'selected' : '' %>>Cancelled (Requires Reason)</option>
+                            <% } %>
+                        </select>
+                        <% if (isEmp) { %>
+                            <div class="alert alert-info py-2 px-3 small mt-2 mb-0" style="font-size: 11.5px; border-radius: 8px;">
+                                <i class="icofont-info-circle me-1"></i> Field Engineers can advance active execution milestones. Final commissioning & completion is certified by Branch Management.
+                            </div>
+                        <% } %>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Transition Reason / Instructions (Mandatory for ON_HOLD / CANCELLED)</label>
+                        <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Explain the project phase change, blocker, or material update..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Team Member Modal -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<%= postPrefix %>/<%= project._id %>/assign">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Assign Team Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Employee</label>
+                        <select name="employeeId" class="form-select form-select-sm" required>
+                            <option value="">-- Choose Staff Member --</option>
+                            <% if (typeof branchEmployees !== 'undefined' && branchEmployees) { %>
+                                <% branchEmployees.forEach(e => { %>
+                                    <option value="<%= e._id %>"><%= e.name %> (<%= e.employeeId || 'Staff' %>)</option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Role in Project</label>
+                        <select name="roleInProject" class="form-select form-select-sm">
+                            <option value="LEAD_FIELD_ENGINEER">Lead Field Engineer</option>
+                            <option value="INSTALLATION_TECHNICIAN" selected>Installation Technician</option>
+                            <option value="SURVEY_SPECIALIST">Site Survey Specialist</option>
+                            <option value="DISCOM_LIAISON">DISCOM Liaison Officer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">Assign Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<%= postPrefix %>/<%= project._id %>/tasks">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Create Installation Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Task Title</label>
+                        <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Structure civil anchoring, ACDB wiring..." required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Assign To</label>
+                        <select name="assignedTo" class="form-select form-select-sm" required>
+                            <option value="">-- Select Employee --</option>
+                            <% if (typeof branchEmployees !== 'undefined' && branchEmployees) { %>
+                                <% branchEmployees.forEach(e => { %>
+                                    <option value="<%= e._id %>"><%= e.name %> (<%= e.employeeId || 'Staff' %>)</option>
+                                <% }) %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Due Date</label>
+                            <input type="date" name="dueDate" class="form-control form-control-sm" value="<%= new Date(Date.now() + 5*24*60*60*1000).toISOString().split('T')[0] %>">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Priority</label>
+                            <select name="priority" class="form-select form-select-sm">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-bold">Description</label>
+                        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Task execution instructions..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Commissioning & Completion Clearance Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="<%= postPrefix %>/<%= project._id %>/complete">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold">Final Project Commissioning Clearance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning small mb-3">
+                        <i class="icofont-warning-alt me-1"></i> Completing this project certifies that physical installation, net-meter synchronization with MPPKVVCL, and plant testing are 100% complete.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Bidirectional Net-Meter Number</label>
+                        <input type="text" name="meterNumber" class="form-control form-control-sm" placeholder="e.g. MPPKV-MTR-88992" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Synchronization / Commissioning Date</label>
+                        <input type="date" name="synchronizationDate" class="form-control form-control-sm" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Commissioning Remarks</label>
+                        <textarea name="commissioningRemarks" class="form-control form-control-sm" rows="3" placeholder="Confirm VOC, ISC, inverter export grid synchronization, and PM Surya Ghar portal submission..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-success fw-bold text-white">Certify & Complete Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Client-side script for Base64 File Encoding in Document Upload -->
+<script>
+    (function() {
+        const fileInput = document.getElementById('docFileInput');
+        const submitBtn = document.getElementById('docUploadSubmitBtn');
+        const b64Input = document.getElementById('fileDataBase64');
+        const nameInput = document.getElementById('fileDataName');
+        const mimeInput = document.getElementById('fileDataMime');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    if (submitBtn) submitBtn.disabled = true;
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File exceeds maximum size limit of 5 MB.');
+                    fileInput.value = '';
+                    if (submitBtn) submitBtn.disabled = true;
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    b64Input.value = evt.target.result;
+                    nameInput.value = file.name;
+                    mimeInput.value = file.type || 'application/octet-stream';
+                    if (submitBtn) submitBtn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    })();
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

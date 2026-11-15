@@ -71,7 +71,7 @@ const customerSchema = new mongoose.Schema({
         ref: 'User'
     },
     assignedBranch: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.Mixed,
         ref: 'Branch'
     },
     createdBy: {

@@ -31,15 +31,14 @@ const verifyCsrf = (req, res, next) => {
         '/api/franchise',
         '/admin/login',
         '/manager/login',
-        '/employee/login',
-        '/employee/register'
+        '/employee/login'
     ];
 
     if (publicExemptions.some(p => (req.path && req.path === p) || (req.originalUrl && req.originalUrl.startsWith(p)) || (req.path && req.path.startsWith(p)))) {
         return next();
     }
 
-    const token = req.headers['x-csrf-token'] || (req.body && req.body._csrf) || (req.query && req.query._csrf);
+    const token = req.headers['x-csrf-token'] || req.headers['csrf-token'] || (req.body && req.body._csrf) || (req.query && req.query._csrf);
 
     if (!token || !req.session || token !== req.session.csrfToken) {
         return res.status(403).json({
@@ -77,7 +76,7 @@ const requireAuth = (req, res, next) => {
         if (req.xhr || req.path.startsWith('/api/')) {
             return res.status(403).json({ success: false, message: 'Your account is inactive or suspended. Contact Super Admin.' });
         }
-        return res.status(403).render('errors/403', {
+        return res.status(403).render('private/errors/403', {
             title: 'Account Inactive | Shivay Energy Solutions',
             message: 'Your account has been deactivated or suspended by management. Please contact Deepak Kushwaha / Rahul Saini.'
         });
@@ -88,7 +87,7 @@ const requireAuth = (req, res, next) => {
         if (req.xhr || req.path.startsWith('/api/')) {
             return res.status(403).json({ success: false, message: 'Account approval pending. Please wait for Super Admin approval.' });
         }
-        return res.status(403).render('errors/403', {
+        return res.status(403).render('private/errors/403', {
             title: 'Account Pending Approval | Shivay Energy Solutions',
             message: 'Your registration is currently pending verification. You will be notified once activated.'
         });
@@ -132,7 +131,7 @@ const requireRole = (...roles) => {
                 });
             }
 
-            return res.status(403).render('errors/403', {
+            return res.status(403).render('private/errors/403', {
                 title: 'Access Denied | Shivay Energy Solutions',
                 message: `HTTP 403 Forbidden: Your role (${userRole}) is not permitted to access this resource.`,
                 user: req.session.user
@@ -161,7 +160,7 @@ const validateObjectId = (...paramNames) => {
                         message: `Invalid identifier format: ${name}`
                     });
                 }
-                return res.status(400).render('errors/403', {
+                return res.status(400).render('private/errors/403', {
                     title: 'Invalid Request | Shivay Energy Solutions',
                     message: `Invalid format for identifier parameter '${name}'.`,
                     user: req.session ? req.session.user : null
@@ -204,7 +203,7 @@ const requireBranchAccess = (branchParamName = 'branchId') => {
                 });
             }
 
-            return res.status(403).render('errors/403', {
+            return res.status(403).render('private/errors/403', {
                 title: 'Branch Restriction | Shivay Energy Solutions',
                 message: 'HTTP 403: You do not have permission to access or modify records of another branch.',
                 user: req.session.user

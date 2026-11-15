@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= quotation.quotationNumber %> - Shivay Energy Solutions Official Quotation</title>
+    <link rel="icon" href="/images/brandlogo2.png" type="image/png">
+    
+    <style>
+        /* Base Reset & Fonts */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #1e293b;
+            background: #f1f5f9;
+        }
+
+        /* Screen Action Bar (Hidden in Print) */
+        .no-print {
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-print {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        .btn-print:hover {
+            background: #d97706;
+        }
+
+        .btn-back {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        .btn-back:hover {
+            background: #475569;
+        }
+
+        /* Document Paper Page Container */
+        .document-page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 24px auto;
+            background: #ffffff;
+            padding: 18mm 18mm;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* Official Letterhead Header */
+        .letterhead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid #163563;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .brand-logo-title h1 {
+            font-size: 20pt;
+            font-weight: 800;
+            color: #163563;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+        }
+
+        .brand-logo-title .tagline {
+            font-size: 8.5pt;
+            font-weight: 700;
+            color: #f59e0b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-logo-title .accreditation {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .company-contact-box {
+            text-align: right;
+            font-size: 8pt;
+            color: #475569;
+            line-height: 1.35;
+        }
+
+        .company-contact-box strong {
+            color: #0f172a;
+        }
+
+        /* Proposal Title Banner */
+        .proposal-title-banner {
+            background: #163563;
+            color: #ffffff;
+            padding: 6px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+
+        .proposal-title-banner h2 {
+            font-size: 11pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .proposal-title-banner .doc-number {
+            font-family: monospace;
+            font-size: 11pt;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+
+        /* Client & Metadata Grid */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .meta-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 8.5pt;
+        }
+
+        .meta-card-title {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #163563;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .meta-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .meta-value {
+            color: #0f172a;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Highlight Spec Banner */
+        .system-spec-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .spec-item .spec-label {
+            font-size: 7.5pt;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .spec-item .spec-value {
+            font-size: 11pt;
+            font-weight: 800;
+            color: #163563;
+            margin-top: 2px;
+        }
+
+        /* Bill of Materials Table */
+        .table-bom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin-bottom: 16px;
+        }
+
+        .table-bom th {
+            background: #1e3a8a;
+            color: #ffffff;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+
+        .table-bom td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .table-bom tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        .table-bom .text-right {
+            text-align: right;
+        }
+
+        .table-bom .text-center {
+            text-align: center;
+        }
+
+        /* Financial Summary Box */
+        .financial-container {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .payment-terms-box {
+            font-size: 8pt;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .payment-terms-box h4 {
+            font-size: 8.5pt;
+            color: #163563;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .payment-terms-box ul {
+            padding-left: 14px;
+            margin-bottom: 6px;
+            color: #475569;
+        }
+
+        .financial-totals-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            overflow: hidden;
+            font-size: 8.5pt;
+        }
+
+        .fin-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .fin-row.subsidy {
+            background: #ecfdf5;
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .fin-row.grand-total {
+            background: #163563;
+            color: #ffffff;
+            font-size: 10pt;
+            font-weight: 800;
+            padding: 8px 10px;
+        }
+
+        .fin-row.grand-total .net-label {
+            color: #fbbf24;
+        }
+
+        /* Warranties & Bank Info */
+        .footer-clauses-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+            font-size: 7.5pt;
+            color: #475569;
+        }
+
+        .bank-details-box {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: #fafafa;
+        }
+
+        .bank-details-box strong {
+            color: #163563;
+        }
+
+        /* Signatures Section */
+        .signatures-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 24px;
+            padding-top: 12px;
+            border-top: 1px solid #cbd5e1;
+            font-size: 8.5pt;
+        }
+
+        .sig-block {
+            text-align: center;
+        }
+
+        .sig-line {
+            border-top: 1px dashed #64748b;
+            margin-top: 40px;
+            padding-top: 6px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        /* Print Specific Styling */
+        @media print {
+            body {
+                background: #ffffff;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .document-page {
+                box-shadow: none;
+                margin: 0;
+                padding: 10mm 12mm;
+                width: 100%;
+                min-height: auto;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 8mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- On-Screen Top Action Toolbar -->
+    <div class="no-print">
+        <div style="font-weight: 700; font-size: 14px;">
+            Shivay Energy Solutions • Official Document Viewer
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-action btn-back" onclick="window.close(); if(history.length > 1) history.back();">
+                ← Close / Back
+            </button>
+            <button class="btn-action btn-print" onclick="window.print();">
+                🖨️ Print / Save as PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Official A4 Document Page -->
+    <div class="document-page">
+        <!-- 1. Letterhead Header -->
+        <div class="letterhead-header">
+            <div class="brand-logo-title">
+                <h1><%= company.name %></h1>
+                <div class="tagline">Solar EPC Solutions • Rooftop Power Plants • Raisen (M.P.)</div>
+                <div class="accreditation">MNRE Approved Channel Partner | MPPKVVCL Registered Rooftop Vendor | PM Surya Ghar Yojna Partner</div>
+            </div>
+            <div class="company-contact-box">
+                <strong>Registered Office:</strong><br>
+                <%= (company.location && company.location.address) || (company.address && company.address.line1) || 'Ward No. 15, In front of PHE Office, Arjun Nagar' %><br>
+                <%= (company.location && company.location.city) || (company.address && company.address.city) || 'Raisen' %>, <%= (company.location && company.location.state) || (company.address && company.address.state) || 'Madhya Pradesh' %> - <%= (company.location && company.location.pincode) || (company.address && company.address.pincode) || '464551' %><br>
+                Phone: <%= (company.contact && company.contact.phone) || (company.contacts && company.contacts[0] && company.contacts[0].mobile) || '+91 70005 75496' %><br>
+                Email: <%= (company.contact && company.contact.email) || company.email || 'shivayenergysolutions@gmail.com' %><br>
+                GSTIN: <strong><%= company.gstin || '23AXXXX0000X1Z5' %></strong>
+            </div>
+        </div>
+
+        <!-- 2. Proposal Banner -->
+        <div class="proposal-title-banner">
+            <h2>Commercial Techno-Financial Solar Proposal</h2>
+            <div class="doc-number"><%= quotation.quotationNumber %></div>
+        </div>
+
+        <!-- 3. Metadata Grid: Client & Quotation Info -->
+        <div class="meta-grid">
+            <div class="meta-card">
+                <div class="meta-card-title">Client Information</div>
+                <div class="meta-row">
+                    <span class="meta-label">Customer Name:</span>
+                    <span class="meta-value"><%= quotation.customerName %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Contact Mobile:</span>
+                    <span class="meta-value"><%= quotation.customerMobile %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">DISCOM & Consumer No:</span>
+                    <span class="meta-value"><%= quotation.discom || 'MPPKVVCL' %> / <%= quotation.consumerNumber || 'Pending' %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Site Address:</span>
+                    <span class="meta-value"><%= quotation.address %>, <%= quotation.city %>, <%= quotation.state %> - <%= quotation.pincode %></span>
+                </div>
+            </div>
+
+            <div class="meta-card">
+                <div class="meta-card-title">Quotation Parameters</div>
+                <div class="meta-row">
+                    <span class="meta-label">Quotation Date:</span>
+                    <span class="meta-value"><%= new Date(quotation.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Valid Until:</span>
+                    <span class="meta-value"><%= quotation.validityDate ? new Date(quotation.validityDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '30 Days from issue' %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Prepared By:</span>
+                    <span class="meta-value"><%= quotation.preparedBy ? quotation.preparedBy.name : 'Engineering Team' %></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Authorized By:</span>
+                    <span class="meta-value"><%= quotation.approvedBy ? quotation.approvedBy.name : 'Branch Authority' %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. System Engineering Highlights -->
+        <div class="system-spec-bar">
+            <div class="spec-item">
+                <div class="spec-label">Proposed Solar Capacity</div>
+                <div class="spec-value"><%= quotation.plantCapacityKw %> kWp</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">System Architecture</div>
+                <div class="spec-value"><%= quotation.systemType %></div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Estimated Monthly Yield</div>
+                <div class="spec-value">~<%= Math.round(quotation.plantCapacityKw * 120) %> Units</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Estimated Annual Savings</div>
+                <div class="spec-value">~₹<%= (Math.round(quotation.plantCapacityKw * 120 * 12 * 7.5)).toLocaleString('en-IN') %></div>
+            </div>
+        </div>
+
+        <!-- 5. Bill of Materials (Line Items) -->
+        <table class="table-bom">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 48%;">Description & Equipment Specification</th>
+                    <th style="width: 10%;" class="text-center">Qty</th>
+                    <th style="width: 15%;" class="text-right">Unit Price (₹)</th>
+                    <th style="width: 7%;" class="text-center">GST</th>
+                    <th style="width: 15%;" class="text-right">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% quotation.lineItems.forEach((item, index) => { %>
+                    <tr>
+                        <td class="text-center"><%= index + 1 %></td>
+                        <td>
+                            <strong><%= item.description %></strong>
+                            <% if (item.sku) { %><div style="font-size: 7.5pt; color: #64748b;">Model/SKU: <%= item.sku %></div><% } %>
+                        </td>
+                        <td class="text-center"><%= item.quantity %> <%= item.unit %></td>
+                        <td class="text-right"><%= Number(item.unitPrice).toLocaleString('en-IN') %></td>
+                        <td class="text-center"><%= item.gstRate %>%</td>
+                        <td class="text-right fw-bold"><%= Number(item.lineTotal).toLocaleString('en-IN') %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <!-- 6. Financial Summary & Milestones -->
+        <div class="financial-container">
+            <div class="payment-terms-box">
+                <h4>Payment Milestones & Commercial Scope</h4>
+                <div style="font-size: 7.5pt; color: #64748b; margin-bottom: 6px;">
+                    Basis: <strong><%= (quotation.paymentPolicy && quotation.paymentPolicy.basis === 'CUSTOMER_CONTRIBUTION') ? 'Net Customer Investment' : 'Gross Contract Value' %></strong> (Subject to Confirmed Payment Terms)
+                </div>
+                <ul>
+                    <li><strong>1. Advance Payment (<%= (quotation.paymentPolicy && quotation.paymentPolicy.advancePercentage) || 20 %>%):</strong> ₹ <%= Number(quotation.advanceAmount).toLocaleString('en-IN') %> along with formal purchase order.</li>
+                    <li><strong>2. Material Delivery (<%= (quotation.paymentPolicy && quotation.paymentPolicy.deliveryPercentage) || 60 %>%):</strong> ₹ <%= Number((quotation.paymentPolicy && quotation.paymentPolicy.deliveryAmount) || (quotation.grandTotal * 0.60)).toLocaleString('en-IN') %> upon dispatch of modules & inverter at site.</li>
+                    <li><strong>3. Commissioning (<%= (quotation.paymentPolicy && quotation.paymentPolicy.commissioningPercentage) || 20 %>%):</strong> ₹ <%= Number((quotation.paymentPolicy && quotation.paymentPolicy.commissioningAmount) || (quotation.grandTotal * 0.20)).toLocaleString('en-IN') %> post DISCOM bidirectional net-meter inspection.</li>
+                </ul>
+                <div style="margin-top: 8px; font-size: 7.5pt; color: #475569;">
+                    <strong>Delivery Timeline:</strong> <%= quotation.deliveryTerms || 'Material delivery within 7-10 working days from advance payment.' %>
+                </div>
+            </div>
+
+            <div class="financial-totals-box">
+                <div class="fin-row">
+                    <span>Taxable Base Value:</span>
+                    <span>₹ <%= Number(quotation.taxableValue).toLocaleString('en-IN') %></span>
+                </div>
+                <div class="fin-row">
+                    <span>CGST (6% Intra-State MP):</span>
+                    <span>₹ <%= Number(quotation.cgstAmount).toLocaleString('en-IN') %></span>
+                </div>
+                <div class="fin-row">
+                    <span>SGST (6% Intra-State MP):</span>
+                    <span>₹ <%= Number(quotation.sgstAmount).toLocaleString('en-IN') %></span>
+                </div>
+                <% if (quotation.specialDiscount > 0) { %>
+                    <div class="fin-row" style="color: #dc2626;">
+                        <span>Commercial Discount:</span>
+                        <span>- ₹ <%= Number(quotation.specialDiscount).toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                <div class="fin-row" style="font-weight: 700; border-top: 1px solid #cbd5e1;">
+                    <span>Gross Project Cost:</span>
+                    <span>₹ <%= Number(quotation.grandTotal).toLocaleString('en-IN') %></span>
+                </div>
+                <div class="fin-row subsidy">
+                    <span>PM Surya Ghar Govt Subsidy (Direct Benefit):</span>
+                    <span>- ₹ <%= Number(quotation.estimatedSubsidy).toLocaleString('en-IN') %></span>
+                </div>
+                <div class="fin-row grand-total">
+                    <span class="net-label">Net Customer Investment:</span>
+                    <span>₹ <%= Number(quotation.netPayableAfterSubsidy).toLocaleString('en-IN') %></span>
+                </div>
+                <div style="padding: 7px 10px; font-size: 7pt; color: #78350f; background: #fffbeb; border-top: 1px solid #fde68a; line-height: 1.35;">
+                    <strong>* Statutory Subsidy Notice:</strong> Subsidy shown is an indicative estimate subject to applicable government scheme guidelines, customer eligibility, DISCOM verification, installation requirements and final government approval. Actual subsidy may differ.
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Warranty & Bank Details -->
+        <div class="footer-clauses-grid">
+            <div class="bank-details-box">
+                <strong>NEFT / RTGS Bank Coordinates:</strong><br>
+                Beneficiary: <strong>SHIVAY ENERGY SOLUTIONS</strong><br>
+                Bank: <strong>State Bank of India (SBI)</strong><br>
+                Account Number: <strong>39820000000000</strong><br>
+                IFSC Code: <strong>SBIN0000465</strong> | Branch: Raisen Main
+            </div>
+            <div class="bank-details-box">
+                <strong>Standard Guarantees & Warranties:</strong><br>
+                • PV Modules: 25 Years 80% Performance Warranty.<br>
+                • Inverter: 5 Years Comprehensive Manufacturer Replacement.<br>
+                • Installation & BoS: 5 Years On-Site Free Maintenance.
+            </div>
+        </div>
+
+        <!-- 8. Signatures Section -->
+        <div class="signatures-grid">
+            <div class="sig-block">
+                <div style="font-size: 8pt; color: #64748b;">Customer Acceptance Sign & Stamp</div>
+                <div class="sig-line">Accepted By: <%= quotation.customerName %></div>
+            </div>
+            <div class="sig-block">
+                <div style="font-size: 8pt; color: #64748b;">For SHIVAY ENERGY SOLUTIONS</div>
+                <div class="sig-line">
+                    Authorized Signatory & Engineering Stamp<br>
+                    <span style="font-size: 7.5pt; color: #64748b;"><%= quotation.approvedBy ? quotation.approvedBy.name : 'Managing Director' %> • Branch Operations</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <% if (autoPrint) { %>
+        <script>
+            window.addEventListener('load', () => {
+                setTimeout(() => window.print(), 500);
+            });
+        </script>
+    <% } %>
+
+</body>
+</html>

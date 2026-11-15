@@ -224,24 +224,7 @@
     </section>
 
     <!-- Video Autoplay Controller -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var video = document.getElementById('aboutCo2Video');
-            if (video) {
-                video.muted = true;
-                var promise = video.play();
-                if (promise !== undefined) {
-                    promise.catch(function() {
-                        document.body.addEventListener('click', function() {
-                            video.play();
-                        }, { once: true });
-                    });
-                }
-            }
-        });
-    </script>
-
-    <!-- Why Choose Us Section -->
+<!-- Why Choose Us Section -->
     <section class="why-section">
         <div class="why-container">
             <div class="why-grid">
@@ -595,7 +578,8 @@
         </a>
 
         <!-- Core Scripts -->
-        <script src="/js/main.js"></script>
+        <script src="/js/about.js" defer></script>
+        <script src="/js/footer.js" defer></script>
     </div>
 </body>
 </html>

@@ -47,13 +47,40 @@ class ManagerController {
                 todayPunches: attendance.length
             };
 
-            res.render('manager/dashboard', {
+            // Real-time Phase 3 Branch Project Metrics & Recent Projects
+            let branchProjectStats = { total: 0, active: 0, completed: 0, onHold: 0, totalKw: 0 };
+            let branchProjects = [];
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                try {
+                    const Project = require('../models/Project');
+                    const bFilter = branchId ? { $or: [{ branch: branchId }, { assignedManager: manager._id }] } : {};
+                    const projs = await Project.find(bFilter)
+                        .populate('customer', 'name mobile city')
+                        .populate('assignedEngineer', 'name employeeId')
+                        .sort({ updatedAt: -1, createdAt: -1 })
+                        .lean();
+
+                    branchProjectStats.total = projs.length;
+                    projs.forEach(p => {
+                        if (p.status !== 'CANCELLED') branchProjectStats.totalKw += (p.capacityKw || 0);
+                        if (p.status === 'COMPLETED') branchProjectStats.completed++;
+                        else if (p.status === 'ON_HOLD') branchProjectStats.onHold++;
+                        else if (p.status !== 'CANCELLED') branchProjectStats.active++;
+                    });
+                    branchProjectStats.totalKw = Math.round(branchProjectStats.totalKw * 10) / 10;
+                    branchProjects = projs.slice(0, 5);
+                } catch (pe) {}
+            }
+            stats.projects = branchProjectStats;
+
+            res.render('private/manager/dashboard', {
                 title: `Branch Manager Dashboard | ${companyData.company.name}`,
                 data: companyData,
                 company: companyData.company,
                 stats,
                 branch,
                 employees: assignedEmployees,
+                recentProjects: branchProjects,
                 enquiries,
                 attendance,
                 user: req.session.user,
@@ -64,7 +91,7 @@ class ManagerController {
             });
         } catch (err) {
             console.error('Manager Dashboard Error:', err);
-            res.status(500).render('errors/403', {
+            res.status(500).render('private/errors/403', {
                 title: 'Error | Shivay Energy Solutions',
                 message: 'Error loading manager dashboard.'
             });
@@ -83,7 +110,7 @@ class ManagerController {
                 employees = allUsers.filter(u => u.role === 'EMPLOYEE');
             }
 
-            res.render('manager/employees', {
+            res.render('private/manager/employees', {
                 title: `Branch Staff Management | ${companyData.company.name}`,
                 data: companyData,
                 company: companyData.company,
@@ -96,7 +123,7 @@ class ManagerController {
             });
         } catch (err) {
             console.error('Error fetching manager employees:', err);
-            res.status(500).render('errors/403', {
+            res.status(500).render('private/errors/403', {
                 title: 'Error | Shivay Energy Solutions',
                 message: 'Error loading assigned employees.'
             });
@@ -108,7 +135,7 @@ class ManagerController {
     // -------------------------------------------------------------
     static async getAttendance(req, res) {
         const attendance = DataStore.getTodayAttendance();
-        res.render('manager/attendance', {
+        res.render('private/manager/attendance', {
             title: `Branch Field Attendance Logs | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,
@@ -126,7 +153,7 @@ class ManagerController {
     // -------------------------------------------------------------
     static async getQuotations(req, res) {
         const quotations = DataStore.getAllQuotations();
-        res.render('admin/quotations', {
+        res.render('private/admin/quotations', {
             title: `Branch Quotation Requests | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,
@@ -158,7 +185,7 @@ class ManagerController {
             ]
         };
 
-        res.render('admin/placeholder', {
+        res.render('private/admin/placeholder', {
             title: `${mod.title} | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,
@@ -175,12 +202,30 @@ class ManagerController {
     // BRANCH INVOICES
     // -------------------------------------------------------------
     static async getInvoices(req, res) {
-        const invoices = DataStore.getAllInvoices();
-        res.render('admin/invoices', {
+        let invoices = [];
+        let projects = [];
+        let quotations = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const Invoice = require('../models/Invoice');
+                const Project = require('../models/Project');
+                const Quotation = require('../models/Quotation');
+                invoices = await Invoice.find({}).sort({ createdAt: -1 }).lean();
+                projects = await Project.find({ status: { $ne: 'CANCELLED' } }).populate('customer').lean();
+                quotations = await Quotation.find({ status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] } }).populate('customerId').lean();
+            } catch (e) {}
+        }
+        if (!invoices || invoices.length === 0) {
+            invoices = DataStore.getAllInvoices();
+        }
+        res.render('private/admin/invoices', {
             title: `Branch Invoices | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,
             invoices,
+            projects,
+            quotations,
+            csrfToken: req.session ? req.session.csrfToken : '',
             user: req.session.user,
             currentUser: req.session.user,
             activePage: 'invoices',
@@ -196,7 +241,7 @@ class ManagerController {
         const sessionUser = req.session.user;
         const freshUser = await DataStore.getUserById(sessionUser._id) || sessionUser;
 
-        res.render('admin/profile', {
+        res.render('private/admin/profile', {
             title: `Manager Profile | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,

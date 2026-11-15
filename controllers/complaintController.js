@@ -2,7 +2,7 @@ const data = require('../config/company');
 const Complaint = require('../models/Complaint');
 
 exports.getComplaintPage = (req, res) => {
-    res.render('complaints', {
+    res.render('public-site/complaints', {
         title: `Service & Complaint Support | ${data.company.name}`,
         metaDescription: `Register or track solar repair, inverter error, or warranty complaints with ${data.company.name}. Quick turnaround in Raisen & MP.`,
         data,

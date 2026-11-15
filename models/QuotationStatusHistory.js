@@ -1,12 +1,20 @@
 const mongoose = require('mongoose');
 
 const quotationStatusHistorySchema = new mongoose.Schema({
+    recordType: {
+        type: String,
+        enum: ['QUOTATION_REQUEST', 'QUOTATION'],
+        default: 'QUOTATION'
+    },
     quotation: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Quotation',
-        required: [true, 'Quotation reference is required']
+        ref: 'Quotation'
     },
-    quotationNumber: {
+    quotationRequest: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'QuotationRequest'
+    },
+    documentNumber: {
         type: String,
         trim: true
     },
@@ -39,6 +47,7 @@ const quotationStatusHistorySchema = new mongoose.Schema({
 });
 
 quotationStatusHistorySchema.index({ quotation: 1 });
+quotationStatusHistorySchema.index({ quotationRequest: 1 });
 quotationStatusHistorySchema.index({ changedBy: 1 });
 quotationStatusHistorySchema.index({ createdAt: -1 });
 

@@ -1,0 +1,629 @@
+<%- include('../admin/partials/admin-head') %>
+
+<style>
+/* Executive Full-Width KPI Metric Cards */
+.project-metric-card {
+    background: #ffffff;
+    border: 1px solid var(--admin-border, #cbd5e1);
+    border-radius: 12px;
+    padding: 14px 18px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 106px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.project-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+.project-metric-card .metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.project-metric-card .metric-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.project-metric-card .metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.project-metric-card .metric-val {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+.project-metric-card .metric-sub {
+    font-size: 12px;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+/* Executive Filter Bar */
+.project-filter-card {
+    min-height: 54px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--admin-border, #cbd5e1);
+}
+
+/* Desktop Zero-Scroll for Projects Table */
+@media (min-width: 992px) {
+    .projects-table-wrap {
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+    }
+    .projects-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+    }
+}
+@media (max-width: 991.98px) {
+    .projects-table-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .projects-table {
+        min-width: 960px;
+    }
+}
+
+/* Darker, visible row separation lines */
+.projects-table tbody td {
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    padding: 14px 14px !important;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.projects-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+.projects-table thead th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #475569;
+    background: #f8fafc;
+    padding: 12px 14px !important;
+    border-bottom: 1.5px solid #cbd5e1;
+}
+
+/* Fixed 2-Line Status Badge for Clean Table Alignment */
+.project-status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    min-height: 34px;
+    padding: 3px 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* Elegant Status Edit Pen Icon Button */
+.status-edit-pen-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    padding: 0;
+}
+.status-edit-pen-btn:hover {
+    background: #eff6ff;
+    color: #0284c7;
+    border-color: #38bdf8;
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 2px 5px rgba(2, 132, 199, 0.2);
+}
+.status-edit-pen-btn i {
+    font-size: 13.5px;
+    line-height: 1;
+}
+</style>
+
+<!-- ========================================================================= -->
+<!-- TOP: FULL-WIDTH EXECUTIVE KPI METRIC CARDS (4 COLUMNS) -->
+<!-- ========================================================================= -->
+<div class="row g-3 mb-3">
+    <div class="col-6 col-lg-3">
+        <div class="project-metric-card shadow-sm">
+            <div class="metric-header">
+                <span class="metric-label text-muted">Total Work Orders</span>
+                <div class="metric-icon icon-navy">
+                    <i class="icofont-solar-panel"></i>
+                </div>
+            </div>
+            <div>
+                <div class="metric-val text-dark"><%= stats.total %></div>
+                <div class="metric-sub text-muted">All active & assigned projects</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="project-metric-card shadow-sm">
+            <div class="metric-header">
+                <span class="metric-label text-warning">Active Installations</span>
+                <div class="metric-icon icon-amber">
+                    <i class="icofont-tools-alt-2"></i>
+                </div>
+            </div>
+            <div>
+                <div class="metric-val text-warning"><%= stats.active %></div>
+                <div class="metric-sub text-warning"><%= stats.onHold %> currently on hold</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="project-metric-card shadow-sm">
+            <div class="metric-header">
+                <span class="metric-label text-success">Grid Commissioned</span>
+                <div class="metric-icon icon-green">
+                    <i class="icofont-check-circled"></i>
+                </div>
+            </div>
+            <div>
+                <div class="metric-val text-success"><%= stats.completed %></div>
+                <div class="metric-sub text-success">100% certified installations</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="project-metric-card shadow-sm">
+            <div class="metric-header">
+                <span class="metric-label text-primary">Plant Capacity</span>
+                <div class="metric-icon icon-blue">
+                    <i class="icofont-flash"></i>
+                </div>
+            </div>
+            <div>
+                <div class="metric-val text-primary"><%= stats.totalKw %> <small style="font-size: 16px; font-weight: 700;">kW</small></div>
+                <div class="metric-sub text-muted">Total capacity energized</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- COMFORTABLE SEARCH & FILTERING BAR (FULL-WIDTH 100%) -->
+<!-- ========================================================================= -->
+<div class="project-filter-card shadow-sm mb-3">
+    <form method="GET" action="" class="row g-2 align-items-center w-100 m-0">
+        <div class="col-12 col-md-5 p-0 pe-md-2">
+            <div class="input-group" style="height: 38px;">
+                <input type="text" name="search" class="form-control" placeholder="Search project #, customer name, mobile, city..." value="<%= query.search || '' %>" style="height: 38px; font-size: 13px; border-radius: 8px 0 0 8px; border: 1px solid #cbd5e1;">
+                <button class="btn px-3 d-flex align-items-center justify-content-center" type="submit" title="Search" style="height: 38px; border-radius: 0 8px 8px 0; background: var(--admin-navy-primary); border-color: var(--admin-navy-primary); color: #fff;">
+                    <i class="icofont-search" style="font-size: 15px;"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 p-0 pe-1">
+            <select name="status" class="form-select" onchange="this.form.submit()" style="height: 38px; font-size: 12.5px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <option value="ALL" <%= (!query.status || query.status === 'ALL') ? 'selected' : '' %>>All Statuses</option>
+                <option value="NOT_STARTED" <%= query.status === 'NOT_STARTED' ? 'selected' : '' %>>Not Started</option>
+                <option value="SITE_VISIT_PENDING" <%= query.status === 'SITE_VISIT_PENDING' ? 'selected' : '' %>>Site Visit Pending</option>
+                <option value="SITE_VISIT_COMPLETED" <%= query.status === 'SITE_VISIT_COMPLETED' ? 'selected' : '' %>>Site Visit Completed</option>
+                <option value="MATERIAL_READY" <%= query.status === 'MATERIAL_READY' ? 'selected' : '' %>>Material Ready</option>
+                <option value="INSTALLATION_IN_PROGRESS" <%= query.status === 'INSTALLATION_IN_PROGRESS' ? 'selected' : '' %>>Installation In Progress</option>
+                <option value="TESTING_AND_COMMISSIONING" <%= query.status === 'TESTING_AND_COMMISSIONING' ? 'selected' : '' %>>Testing & Commissioning</option>
+                <option value="COMPLETED" <%= query.status === 'COMPLETED' ? 'selected' : '' %>>Commissioned & Completed</option>
+                <option value="ON_HOLD" <%= query.status === 'ON_HOLD' ? 'selected' : '' %>>On Hold</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 p-0 pe-md-1">
+            <select name="priority" class="form-select" onchange="this.form.submit()" style="height: 38px; font-size: 12.5px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <option value="ALL" <%= (!query.priority || query.priority === 'ALL') ? 'selected' : '' %>>All Priorities</option>
+                <option value="LOW" <%= query.priority === 'LOW' ? 'selected' : '' %>>Low Priority</option>
+                <option value="MEDIUM" <%= query.priority === 'MEDIUM' ? 'selected' : '' %>>Medium Priority</option>
+                <option value="HIGH" <%= query.priority === 'HIGH' ? 'selected' : '' %>>High Priority</option>
+                <option value="URGENT" <%= query.priority === 'URGENT' ? 'selected' : '' %>>Urgent Priority</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 p-0 d-flex gap-2 justify-content-end">
+            <button type="submit" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center" style="height: 38px; font-size: 13px; border-radius: 8px; background: var(--admin-navy-primary); border-color: var(--admin-navy-primary);">
+                Filter
+            </button>
+            <a href="?" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" title="Reset Filters" style="height: 38px; width: 40px; border-radius: 8px; border: 1px solid #cbd5e1; flex-shrink: 0;">
+                <i class="icofont-close" style="font-size: 14px;"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- ========================================================================= -->
+<!-- PROJECTS LISTING TABLE (FULL-WIDTH 100%, SPACIOUS & READABLE) -->
+<!-- ========================================================================= -->
+<div class="w-100">
+    <div class="admin-card mb-4 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--admin-border, #cbd5e1) !important;">
+        <div class="admin-card-header bg-white d-flex flex-wrap align-items-center justify-content-between py-3 px-4 border-bottom">
+            <div>
+                <h5 class="admin-card-title mb-0 d-flex align-items-center gap-2" style="font-size: 16px; font-weight: 700;">
+                    <i class="icofont-solar-panel text-success fs-5"></i>
+                    Execution Projects (<%= total %>)
+                </h5>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 fw-bold" style="font-size: 12px; border-radius: 6px;">
+                    <i class="icofont-check-circled me-1"></i> <%= stats.completed %> Grid Certified
+                </span>
+            </div>
+        </div>
+
+        <div class="admin-table-container projects-table-wrap">
+            <table class="admin-table table projects-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 14%;">PROJECT # & PRIORITY</th>
+                        <th style="width: 22%;">CUSTOMER & LOCATION</th>
+                        <th style="width: 14%;">CAPACITY & TYPE</th>
+                        <th style="width: 15%;">ASSIGNED TEAM</th>
+                        <th style="width: 12%;">PROGRESS</th>
+                        <th style="width: 12%;" class="text-center">STATUS</th>
+                        <th style="width: 11%;" class="text-end pe-4">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (projects && projects.length > 0) { %>
+                        <% projects.forEach(p => { %>
+                            <% 
+                                let statusLabel = 'NOT<br>STARTED';
+                                let statusBadgeClass = 'bg-secondary text-white';
+
+                                switch(p.status) {
+                                    case 'SITE_VISIT_PENDING':
+                                        statusLabel = 'SITE VISIT<br>PENDING';
+                                        statusBadgeClass = 'bg-warning text-dark border border-warning';
+                                        break;
+                                    case 'SITE_VISIT_COMPLETED':
+                                        statusLabel = 'SITE VISIT<br>CLEARED';
+                                        statusBadgeClass = 'bg-info text-dark';
+                                        break;
+                                    case 'MATERIAL_PLANNING':
+                                        statusLabel = 'MATERIAL<br>PLANNING';
+                                        statusBadgeClass = 'bg-secondary text-white';
+                                        break;
+                                    case 'MATERIAL_READY':
+                                        statusLabel = 'MATERIAL<br>READY';
+                                        statusBadgeClass = 'bg-primary text-white';
+                                        break;
+                                    case 'INSTALLATION_IN_PROGRESS':
+                                        statusLabel = 'INSTALLATION<br>IN PROGRESS';
+                                        statusBadgeClass = 'bg-primary text-white';
+                                        break;
+                                    case 'TESTING_AND_COMMISSIONING':
+                                        statusLabel = 'TESTING &<br>COMMISSION';
+                                        statusBadgeClass = 'bg-info text-dark';
+                                        break;
+                                    case 'DISCOM_DOCUMENTATION':
+                                        statusLabel = 'DISCOM<br>NET-METER';
+                                        statusBadgeClass = 'bg-info text-dark';
+                                        break;
+                                    case 'COMPLETED':
+                                        statusLabel = 'GRID<br>CERTIFIED';
+                                        statusBadgeClass = 'bg-success text-white';
+                                        break;
+                                    case 'ON_HOLD':
+                                        statusLabel = 'ON<br>HOLD';
+                                        statusBadgeClass = 'bg-warning text-dark border border-warning';
+                                        break;
+                                    case 'CANCELLED':
+                                        statusLabel = 'PROJECT<br>CANCELLED';
+                                        statusBadgeClass = 'bg-danger text-white';
+                                        break;
+                                    default:
+                                        const rawParts = (p.status || 'ACTIVE').replace(/_/g, ' ').split(' ');
+                                        if (rawParts.length > 1) {
+                                            const mid = Math.ceil(rawParts.length / 2);
+                                            statusLabel = rawParts.slice(0, mid).join(' ') + '<br>' + rawParts.slice(mid).join(' ');
+                                        } else {
+                                            statusLabel = rawParts[0];
+                                        }
+                                        statusBadgeClass = 'bg-secondary text-white';
+                                }
+
+                                let priorityBadge = 'bg-light text-dark border';
+                                if (p.priority === 'HIGH') priorityBadge = 'bg-warning text-dark';
+                                if (p.priority === 'URGENT') priorityBadge = 'bg-danger text-white';
+
+                                let typeFormatted = 'Residential Rooftop';
+                                if (p.projectType) {
+                                    if (p.projectType === 'RESIDENTIAL_ROOFTOP') typeFormatted = 'Residential Rooftop';
+                                    else if (p.projectType === 'COMMERCIAL_ROOFTOP') typeFormatted = 'Commercial Rooftop';
+                                    else if (p.projectType === 'INDUSTRIAL') typeFormatted = 'Industrial Plant';
+                                    else if (p.projectType.includes('AGRICULTURAL') || p.projectType.includes('KUSUM')) typeFormatted = 'Solar Pump / Kusum';
+                                    else if (p.projectType === 'OFF_GRID_STORAGE') typeFormatted = 'Off-Grid + Storage';
+                                    else typeFormatted = p.projectType.replace(/_/g, ' ');
+                                }
+
+                                const detailUrl = user.role === 'SUPER_ADMIN' ? `/admin/projects/${p._id}` : (user.role === 'EMPLOYEE' ? `/employee/projects/${p._id}` : `/manager/projects/${p._id}`);
+                            %>
+                            <tr>
+                                <td class="ps-4">
+                                    <a href="<%= detailUrl %>" class="fw-bold text-primary font-monospace text-decoration-none" style="font-size: 13px;">
+                                        <%= p.projectNumber %>
+                                    </a>
+                                    <div class="mt-1">
+                                        <span class="badge <%= priorityBadge %>" style="font-size: 9.5px; padding: 2px 6px; letter-spacing: 0.3px;"><%= p.priority %></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 220px; font-size: 13.5px;" title="<%= (p.customerContact && p.customerContact.name) || (p.customer && p.customer.name) || 'Client' %>">
+                                        <%= (p.customerContact && p.customerContact.name) || (p.customer && p.customer.name) || 'Client' %>
+                                    </div>
+                                    <div class="text-muted text-truncate" style="max-width: 220px; font-size: 12px; margin-top: 2px;">
+                                        <i class="icofont-phone text-muted me-1"></i><%= (p.customerContact && p.customerContact.mobile) || (p.customer && p.customer.mobile) || 'N/A' %>
+                                    </div>
+                                    <div class="text-muted text-truncate" style="max-width: 220px; font-size: 12px; margin-top: 1px;" title="<%= p.siteAddress || p.city || 'Raisen, M.P.' %>">
+                                        <i class="icofont-location-pin text-muted me-1"></i><%= p.siteAddress || p.city || 'Raisen, M.P.' %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-primary border border-primary-subtle fw-bold" style="font-size: 12px; padding: 3px 8px;">
+                                        <%= p.capacityKw %> kW
+                                    </span>
+                                    <div class="text-muted text-truncate mt-1" style="max-width: 140px; font-size: 12px;" title="<%= typeFormatted %>">
+                                        <%= typeFormatted %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <% if (p.assignedEngineer) { %>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 155px; font-size: 13px;" title="<%= p.assignedEngineer.name %>">
+                                            <i class="icofont-user-alt-7 text-primary me-1"></i><%= p.assignedEngineer.name %>
+                                        </div>
+                                        <div class="text-muted text-truncate" style="max-width: 155px; font-size: 11.5px; margin-top: 1px;">
+                                            Lead Engineer (<%= p.assignedEngineer.employeeId || 'Staff' %>)
+                                        </div>
+                                    <% } else { %>
+                                        <span class="badge bg-light text-muted border" style="font-size: 11px;">Unassigned</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="text-muted fw-semibold" style="font-size: 11px;">Milestone</span>
+                                        <span class="fw-bold text-dark font-monospace" style="font-size: 12px;"><%= p.progressPercentage || 0 %>%</span>
+                                    </div>
+                                    <div class="progress" style="height: 7px; background: #e2e8f0; border-radius: 6px;">
+                                        <div class="progress-bar <%= p.progressPercentage === 100 ? 'bg-success' : 'bg-primary' %>" role="progressbar" style="width: <%= p.progressPercentage || 0 %>%;" aria-valuenow="<%= p.progressPercentage || 0 %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center text-nowrap">
+                                    <div class="d-inline-flex align-items-center justify-content-center gap-2">
+                                        <span class="project-status-badge <%= statusBadgeClass %>">
+                                            <%- statusLabel %>
+                                        </span>
+                                        <% 
+                                            const canEditStatus = (p.status !== 'COMPLETED') || (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER'));
+                                        %>
+                                        <% if (canEditStatus) { %>
+                                            <button type="button" 
+                                                    class="status-edit-pen-btn" 
+                                                    onclick="openQuickStatusModal('<%= p._id %>', '<%= p.projectNumber %>', '<%= p.status %>', '<%= (p.statusReason || '').replace(/'/g, '') %>')" 
+                                                    title="Click to update project status" 
+                                                    aria-label="Update Project Status">
+                                                <i class="icofont-ui-edit"></i>
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4 text-nowrap">
+                                    <a href="<%= detailUrl %>" class="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" title="Open Project Workspace" style="font-size: 12px; padding: 5px 12px; border-radius: 6px;">
+                                        <i class="icofont-external-link"></i> Workspace
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="icofont-solar-panel fs-1 d-block mb-2 text-muted" style="font-size: 40px !important;"></i>
+                                <p class="mb-1 fw-bold fs-6">No solar projects found.</p>
+                                <small style="font-size: 13px;">Projects are automatically created as soon as an approved quotation is accepted by the customer.</small>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if (pages > 1) { %>
+            <div class="p-3 px-4 border-top d-flex align-items-center justify-content-between bg-light">
+                <span class="small text-muted" style="font-size: 12.5px;">Showing page <%= page %> of <%= pages %> (<%= total %> total projects)</span>
+                <ul class="pagination pagination-sm mb-0">
+                    <% for (let i = 1; i <= pages; i++) { %>
+                        <li class="page-item <%= page === i ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= i %>&status=<%= query.status || '' %>&priority=<%= query.priority || '' %>&search=<%= query.search || '' %>" style="font-size: 12px; padding: 4px 10px;"><%= i %></a>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Quick Status Update Modal (For Project Listing Table) -->
+<div class="modal fade" id="quickStatusModal" tabindex="-1" aria-labelledby="quickStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--admin-navy-primary, #0f172a), #1e3a8a); padding: 14px 18px;">
+                <h6 class="modal-title font-weight-bold mb-0" id="quickStatusModalLabel">
+                    <i class="icofont-refresh me-2 text-warning"></i> Update Project Status
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="quickStatusForm" onsubmit="handleQuickStatusSubmit(event)">
+                <input type="hidden" id="quickStatusProjectId">
+                <input type="hidden" id="quickStatusCsrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-body p-4">
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <small class="text-muted d-block">Project Identifier:</small>
+                        <code class="fs-6 fw-bold text-dark" id="quickStatusProjNum">SES-PRJ-2026-0001</code>
+                        <div class="small text-muted mt-1">Current Milestone: <strong id="quickStatusCurrent" class="text-primary font-monospace">NOT_STARTED</strong></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Transition To Status *</label>
+                        <select id="quickStatusSelect" class="form-select" required style="height: 38px; border-radius: 8px;" onchange="handleQuickStatusChange(this.value)">
+                            <option value="NOT_STARTED">Not Started (0%)</option>
+                            <option value="SITE_VISIT_PENDING">Site Visit Pending (10%)</option>
+                            <option value="SITE_VISIT_COMPLETED">Site Visit Completed (25%)</option>
+                            <option value="MATERIAL_PLANNING">Material Planning (40%)</option>
+                            <option value="MATERIAL_READY">Material Ready at Warehouse (55%)</option>
+                            <option value="INSTALLATION_IN_PROGRESS">Installation In Progress (70%)</option>
+                            <option value="TESTING_AND_COMMISSIONING">Testing & Commissioning (85%)</option>
+                            <option value="DISCOM_DOCUMENTATION">DISCOM Documentation Clearance (95%)</option>
+                            <% if (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER')) { %>
+                                <option value="COMPLETED">Commissioned & Completed (100%)</option>
+                            <% } %>
+                            <option value="ON_HOLD">On Hold (Requires Reason)</option>
+                            <% if (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER')) { %>
+                                <option value="CANCELLED">Cancelled (Requires Reason)</option>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <% if (user && user.role === 'EMPLOYEE') { %>
+                        <div class="alert alert-info py-2 px-3 small mb-3" style="font-size: 11.5px; border-radius: 8px;">
+                            <i class="icofont-info-circle me-1"></i> Field Engineers can advance active site execution milestones. Final commissioning & completion is certified by Branch Management.
+                        </div>
+                    <% } %>
+
+                    <div class="mb-3" id="quickStatusReasonWrap">
+                        <label class="form-label small fw-bold text-dark">
+                            Status Reason / Field Remarks <span id="reasonRequiredAsterisk" class="text-danger d-none">*</span>
+                        </label>
+                        <textarea id="quickStatusReason" class="form-control" rows="3" style="border-radius: 8px;" placeholder="Explain the progress update, site condition, or reason if placing on hold..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal" style="border-radius: 6px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3" id="quickStatusSubmitBtn" style="background: var(--admin-navy-primary, #0f172a); border-radius: 6px;">
+                        <i class="icofont-save me-1"></i> Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openQuickStatusModal(projId, projNum, currStatus, reason) {
+    document.getElementById('quickStatusProjectId').value = projId;
+    document.getElementById('quickStatusProjNum').innerText = projNum;
+    document.getElementById('quickStatusCurrent').innerText = currStatus;
+    const select = document.getElementById('quickStatusSelect');
+    if (select) select.value = currStatus;
+    const reasonInput = document.getElementById('quickStatusReason');
+    if (reasonInput) reasonInput.value = reason || '';
+    handleQuickStatusChange(currStatus);
+
+    const modalEl = document.getElementById('quickStatusModal');
+    if (modalEl) {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            document.body.classList.add('modal-open');
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdropEl = document.createElement('div');
+                backdropEl.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdropEl);
+            }
+        }
+    }
+}
+
+function handleQuickStatusChange(val) {
+    const asterisk = document.getElementById('reasonRequiredAsterisk');
+    const reasonInput = document.getElementById('quickStatusReason');
+    if (val === 'ON_HOLD' || val === 'CANCELLED') {
+        if (asterisk) asterisk.classList.remove('d-none');
+        if (reasonInput) reasonInput.required = true;
+    } else {
+        if (asterisk) asterisk.classList.add('d-none');
+        if (reasonInput) reasonInput.required = false;
+    }
+}
+
+async function handleQuickStatusSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('quickStatusSubmitBtn');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+    }
+
+    const projId = document.getElementById('quickStatusProjectId').value;
+    const status = document.getElementById('quickStatusSelect').value;
+    const reason = document.getElementById('quickStatusReason').value;
+    const csrf = document.getElementById('quickStatusCsrf')?.value || '';
+
+    const postBase = '<%= user.role === "SUPER_ADMIN" ? "/admin/projects" : (user.role === "EMPLOYEE" ? "/employee/projects" : "/manager/projects") %>';
+
+    try {
+        const res = await fetch(`${postBase}/${projId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrf,
+                'CSRF-Token': csrf,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ _csrf: csrf, status, reason })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Project status updated successfully.');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error updating status.');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Network or server error updating project status.');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+}
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

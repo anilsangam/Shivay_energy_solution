@@ -16,14 +16,20 @@ const invoiceSchema = new mongoose.Schema({
     }],
     subtotal: { type: Number, required: true },
     gstRate: { type: Number, default: 12 }, // Solar in India GST is typically 12% (concessional composite)
+    cgst: { type: Number },
+    sgst: { type: Number },
     gstAmount: { type: Number, required: true },
     totalAmount: { type: Number, required: true },
     paymentStatus: { 
         type: String, 
         enum: ['unpaid', 'partially_paid', 'paid', 'overdue', 'cancelled'], 
-        default: 'unpaid' 
+        default: 'paid' 
     },
     paymentMethod: { type: String, default: 'Bank Transfer (NEFT/RTGS/UPI)' },
+    invoiceDate: { type: String },
+    discomConsumerNo: { type: String },
+    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
+    quotation: { type: mongoose.Schema.Types.ObjectId, ref: 'Quotation' },
     dueDate: { type: Date },
     branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
     createdByUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }

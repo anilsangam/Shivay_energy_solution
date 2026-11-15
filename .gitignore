@@ -31,6 +31,7 @@ build/
 
 # Local uploads and database files
 uploads/
+storage/
 *.sqlite
 *.sqlite3
 *.db

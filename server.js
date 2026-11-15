@@ -29,11 +29,11 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static assets from project root
-app.use('/css', express.static(path.join(__dirname, 'css')));
-app.use('/js', express.static(path.join(__dirname, 'js')));
+// Serve browser assets from public while keeping stable URL prefixes.
+app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
+app.use('/js', express.static(path.join(__dirname, 'public', 'js')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/fonts', express.static(path.join(__dirname, 'fonts')));
+app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/videos', express.static(path.join(__dirname, 'videos')));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -82,7 +82,7 @@ app.use('/', webRoutes);
 
 // 404 Handler
 app.use((req, res) => {
-    res.status(404).render('404', {
+    res.status(404).render('public-site/404', {
         title: `Page Not Found | ${companyData.company.name}`,
         data: companyData,
         activePage: ''
@@ -102,7 +102,7 @@ app.use((err, req, res, next) => {
         });
     }
 
-    res.status(err.status || 500).render('errors/403', {
+    res.status(err.status || 500).render('private/errors/403', {
         title: 'Server Error | Shivay Energy Solutions',
         message: isProduction ? 'An unexpected server error occurred.' : err.message,
         currentUser: req.session ? req.session.user : null

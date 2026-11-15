@@ -1,0 +1,224 @@
+<!-- Share Quotation Modal -->
+<div class="modal fade" id="shareQuotationModal" tabindex="-1" aria-labelledby="shareQuotationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--admin-navy-primary, #0f172a), #1e3a8a); padding: 16px 20px;">
+                <div>
+                    <h5 class="modal-title fs-6 fw-bold mb-0" id="shareQuotationModalLabel">
+                        <i class="icofont-share me-2"></i> Share Solar Quotation & PDF
+                    </h5>
+                    <small class="text-white-50" id="shareModalQuotationNum">SES-Q2026-0001</small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Proposal Summary Card -->
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong class="text-dark d-block fs-6" id="shareModalCustomerName">Customer Name</strong>
+                            <small class="text-muted" id="shareModalCustomerMobile"><i class="icofont-phone me-1"></i> +91 00000 00000</small>
+                        </div>
+                        <span class="badge bg-primary px-2 py-1" id="shareModalCapacity">3 kW ON_GRID</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="small text-muted">Net Investment (After Subsidy):</span>
+                        <strong class="text-success fs-6" id="shareModalNetPayable">₹ 0</strong>
+                    </div>
+                </div>
+
+                <!-- 1. Direct WhatsApp Share with PDF Option -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark d-flex align-items-center justify-content-between">
+                        <span><i class="icofont-brand-whatsapp text-success me-1"></i> Send to Client on WhatsApp</span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 10px;">Includes PDF Link</span>
+                    </label>
+
+                    <div class="d-flex flex-column gap-2">
+                        <!-- Primary: Open WhatsApp with full message including PDF download link & online accept link -->
+                        <a href="#" id="shareModalWhatsAppBtn" target="_blank" class="btn btn-success w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2 shadow-sm" style="background-color: #25d366; border-color: #25d366; border-radius: 8px;">
+                            <i class="icofont-brand-whatsapp fs-5"></i> Open WhatsApp (Text + Links)
+                        </a>
+
+                        <!-- Direct File Attachment Share (Uses Web Share on Mobile, or Auto-downloads PDF on Desktop) -->
+                        <button type="button" id="shareModalWhatsAppPdfBtn" onclick="sharePdfToWhatsApp()" class="btn btn-outline-success w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2" style="border-radius: 8px;">
+                            <i class="icofont-attachment fs-6"></i> Share Official PDF File to WhatsApp
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Copy Client Approval Link -->
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-dark">
+                        <i class="icofont-link text-primary me-1"></i> Direct Client Portal Link (Online Approval)
+                    </label>
+                    <div class="input-group">
+                        <input type="text" id="shareModalLinkInput" class="form-control form-control-sm font-monospace text-muted" readonly style="border-radius: 8px 0 0 8px;">
+                        <button class="btn btn-outline-primary btn-sm px-3 fw-bold" type="button" id="shareModalCopyBtn" onclick="copyShareModalLink()" style="border-radius: 0 8px 8px 0;">
+                            <i class="icofont-ui-copy me-1"></i> Copy Link
+                        </button>
+                    </div>
+                    <div id="shareModalCopyFeedback" class="small text-success mt-1" style="display: none;">
+                        <i class="icofont-check-circled me-1"></i> Link copied to clipboard!
+                    </div>
+                </div>
+
+                <!-- 3. Download Official PDF Document -->
+                <div>
+                    <label class="form-label small fw-bold text-dark">
+                        <i class="icofont-file-pdf text-danger me-1"></i> Official Proposal Document
+                    </label>
+                    <div class="d-flex gap-2">
+                        <a href="#" id="shareModalPdfBtn" target="_blank" class="btn btn-outline-danger btn-sm w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-1" style="border-radius: 8px;">
+                            <i class="icofont-printer fs-6"></i> Print / Save Official PDF
+                        </a>
+                        <a href="#" id="shareModalViewBtn" class="btn btn-outline-secondary btn-sm w-100 py-2 fw-bold d-flex align-items-center justify-content-center gap-1" style="border-radius: 8px;">
+                            <i class="icofont-eye fs-6"></i> View Proposal Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 px-3">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal" style="border-radius: 6px;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentShareData = null;
+let currentWaMessageText = '';
+
+function openShareQuotationModal(data) {
+    if (!data) return;
+    currentShareData = data;
+
+    // Set modal text
+    const qNum = data.quotationNumber || '';
+    const custName = data.customerName || 'Customer';
+    const custMobile = data.customerMobile || '';
+    const cap = (data.capacity || '-') + ' kW ' + (data.systemType || '');
+    const netPayable = Number(data.netPayable || 0).toLocaleString('en-IN');
+
+    document.getElementById('shareModalQuotationNum').textContent = qNum;
+    document.getElementById('shareModalCustomerName').textContent = custName;
+    document.getElementById('shareModalCustomerMobile').innerHTML = '<i class="icofont-phone me-1"></i> ' + custMobile;
+    document.getElementById('shareModalCapacity').textContent = cap;
+    document.getElementById('shareModalNetPayable').textContent = '₹ ' + netPayable;
+
+    // Build URL & WhatsApp message with both Acceptance Link AND PDF Download Link
+    const baseUrl = window.location.origin;
+    const acceptUrl = data.token ? (baseUrl + '/quotation/accept/' + data.token) : (baseUrl + '/quotations/' + data.id);
+    const pdfUrl = baseUrl + '/quotations/' + data.id + '/document';
+    document.getElementById('shareModalLinkInput').value = acceptUrl;
+
+    const cleanMobile = custMobile.replace(/[^0-9]/g, '').slice(-10);
+    currentWaMessageText = 
+        `Namaste ${custName} ji! Greetings from Shivay Energy Solutions.\n\n` +
+        `Your official rooftop solar quotation *${qNum}* (${data.capacity} kW) is approved and ready!\n\n` +
+        `⚡ System Capacity: *${data.capacity} kW* (${data.systemType || 'On-Grid'})\n` +
+        `💰 Gross Cost: ₹${Number(data.grandTotal || 0).toLocaleString('en-IN')}\n` +
+        `🎁 PM Surya Ghar Subsidy: ₹${Number(data.subsidy || 0).toLocaleString('en-IN')}\n` +
+        `✅ Net Payable: *₹${netPayable}*\n\n` +
+        `📄 Official Quotation PDF (View/Download):\n${pdfUrl}\n\n` +
+        `✍️ View & Accept Proposal Online:\n${acceptUrl}\n\n` +
+        `For queries, feel free to reply or call us at +91 70005 75496.`;
+
+    const waEncoded = encodeURIComponent(currentWaMessageText);
+
+    document.getElementById('shareModalWhatsAppBtn').href = `https://wa.me/91${cleanMobile}?text=${waEncoded}`;
+    document.getElementById('shareModalPdfBtn').href = `/quotations/${data.id}/document?print=true`;
+    document.getElementById('shareModalViewBtn').href = `/quotations/${data.id}`;
+
+    // Reset feedback
+    const fb = document.getElementById('shareModalCopyFeedback');
+    if (fb) fb.style.display = 'none';
+
+    // Show modal safely
+    const modalEl = document.getElementById('shareQuotationModal');
+    if (modalEl) {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+            document.body.classList.add('modal-open');
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdropEl = document.createElement('div');
+                backdropEl.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdropEl);
+            }
+        }
+    }
+}
+
+// Share PDF File directly to WhatsApp using Web Share API or download fallback
+async function sharePdfToWhatsApp() {
+    if (!currentShareData) return;
+    const btn = document.getElementById('shareModalWhatsAppPdfBtn');
+    const origHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Preparing PDF...';
+
+    const pdfEndpoint = `/quotations/${currentShareData.id}/document`;
+
+    try {
+        // Attempt Native Web Share with file attachment (supported on Android Chrome, iOS Safari, etc.)
+        const response = await fetch(pdfEndpoint);
+        const blob = await response.blob();
+        const pdfFile = new File([blob], `Shivay_Solar_Quotation_${currentShareData.quotationNumber}.pdf`, { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+            await navigator.share({
+                files: [pdfFile],
+                title: `Solar Quotation ${currentShareData.quotationNumber}`,
+                text: currentWaMessageText
+            });
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+            return;
+        }
+    } catch (err) {
+        console.log('Native file share cancelled or unsupported:', err);
+    }
+
+    // Fallback for Desktop/unsupported browsers:
+    // 1. Download the PDF file to user device
+    const downloadLink = document.createElement('a');
+    downloadLink.href = pdfEndpoint + '?print=true';
+    downloadLink.target = '_blank';
+    downloadLink.download = `Shivay_Solar_Quotation_${currentShareData.quotationNumber}.pdf`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    // 2. Open WhatsApp Web with the pre-filled text (which already contains the direct PDF link)
+    const cleanMobile = (currentShareData.customerMobile || '').replace(/[^0-9]/g, '').slice(-10);
+    const waUrl = `https://wa.me/91${cleanMobile}?text=${encodeURIComponent(currentWaMessageText)}`;
+    window.open(waUrl, '_blank');
+
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+
+    alert('Quotation PDF opened/downloaded! You can now drag and drop the PDF file directly into your WhatsApp chat window.');
+}
+
+function copyShareModalLink() {
+    const input = document.getElementById('shareModalLinkInput');
+    if (!input) return;
+
+    input.select();
+    input.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(input.value).then(() => {
+        const fb = document.getElementById('shareModalCopyFeedback');
+        if (fb) {
+            fb.style.display = 'block';
+            setTimeout(() => { fb.style.display = 'none'; }, 3000);
+        }
+    }).catch(() => {
+        document.execCommand('copy');
+    });
+}
+</script>

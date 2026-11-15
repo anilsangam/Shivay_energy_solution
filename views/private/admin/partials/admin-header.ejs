@@ -1,0 +1,110 @@
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const userName = authUser ? authUser.name : 'Authorized User';
+    const userRole = authUser && authUser.role ? String(authUser.role).trim().toUpperCase() : 'EMPLOYEE';
+    const isSuperAdmin = userRole === 'SUPER_ADMIN';
+    const isManager = userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER';
+    const isEmployee = userRole === 'EMPLOYEE';
+    const userEmail = authUser ? authUser.email : '';
+    const userEmployeeId = authUser ? (authUser.employeeId || 'N/A') : 'N/A';
+    
+    // Generate initials (e.g. Deepak Kushwaha -> DK)
+    const initials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SE';
+
+    let roleBadgeClass = 'badge-role-employee';
+    let roleLabel = 'Employee';
+    if (userRole === 'SUPER_ADMIN') {
+        roleBadgeClass = 'badge-role-superadmin';
+        roleLabel = 'Super Admin';
+    } else if (userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER') {
+        roleBadgeClass = 'badge-role-manager';
+        roleLabel = 'Branch Manager';
+    }
+
+    const titleStr = typeof pageTitle !== 'undefined' ? pageTitle : (typeof title !== 'undefined' ? title.split('|')[0].trim() : 'Dashboard');
+    const profileUrl = userRole === 'SUPER_ADMIN' ? '/admin/profile' : (userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER' ? '/manager/profile' : '/employee/profile');
+%>
+
+<header class="admin-header">
+    <div class="admin-header-left">
+        <!-- Sidebar Toggle for Mobile (Left side breadcrumb / drawer menu) -->
+        <button class="admin-sidebar-toggle" id="adminSidebarToggle" aria-label="Toggle navigation menu" title="Open Navigation Menu">
+            <i class="icofont-navigation-menu"></i>
+        </button>
+
+        <!-- Current Page Title (Clean & Prominent - No company name in header) -->
+        <div class="admin-page-title-wrap">
+            <h1 class="admin-header-title"><%= titleStr %></h1>
+        </div>
+    </div>
+
+    <div class="admin-header-right">
+        <!-- MOBILE VIEW ONLY (< 768px): Direct Link to My Profile (No Dropdown on Mobile) -->
+        <a href="<%= profileUrl %>" class="admin-mobile-profile-btn d-inline-flex d-md-none" title="My Profile - <%= userName %>">
+            <div class="admin-avatar-circle shadow-sm">
+                <%= initials %>
+            </div>
+        </a>
+
+        <!-- DESKTOP VIEW ONLY (>= 768px): Clean & Minimal Profile Dropdown -->
+        <div class="dropdown d-none d-md-block">
+            <div class="admin-user-pill" id="userProfileDropdown" data-bs-toggle="dropdown" aria-expanded="false" role="button" title="<%= userName %> (<%= roleLabel %>)">
+                <!-- User Profile Initials Avatar -->
+                <div class="admin-avatar-circle">
+                    <%= initials %>
+                </div>
+
+                <!-- Full Name and Role Badge -->
+                <div class="admin-user-meta">
+                    <span class="user-name"><%= userName %></span>
+                    <span class="badge-role <%= roleBadgeClass %>"><%= roleLabel %></span>
+                </div>
+
+                <i class="icofont-rounded-down text-muted admin-user-arrow ms-1"></i>
+            </div>
+
+            <!-- Clean & Minimal Profile Dropdown Menu (Spaced Away from Screen Edge) -->
+            <ul class="dropdown-menu dropdown-menu-end admin-dropdown-menu shadow-sm" aria-labelledby="userProfileDropdown">
+                <li class="px-3 py-2 border-bottom bg-light" style="border-radius: 11px 11px 0 0;">
+                    <div class="fw-bold text-dark" style="font-size: 13.5px;"><%= userName %></div>
+                    <% if (userEmployeeId && userEmployeeId !== 'N/A') { %>
+                        <div class="text-primary font-monospace fw-bold" style="font-size: 11px; margin-top: 2px;">
+                            <i class="icofont-id-card me-1"></i>EMP ID: <%= userEmployeeId %>
+                        </div>
+                    <% } %>
+                    <div class="text-muted text-truncate font-monospace" style="font-size: 11px; margin-top: 1px;"><%= userEmail %></div>
+                    <div class="mt-2">
+                        <span class="badge-role <%= roleBadgeClass %>" style="font-size: 9.5px; padding: 2px 7px;"><%= roleLabel %></span>
+                    </div>
+                </li>
+                <li class="pt-1">
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="<%= profileUrl %>">
+                        <i class="icofont-ui-user text-primary" style="font-size: 14px;"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="<%= profileUrl %>#passwordSection">
+                        <i class="icofont-key text-warning" style="font-size: 14px;"></i>
+                        <span>Security & Password</span>
+                    </a>
+                </li>
+                <% if (isSuperAdmin) { %>
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/activity-logs">
+                            <i class="icofont-history text-info" style="font-size: 14px;"></i>
+                            <span>Activity Logs</span>
+                        </a>
+                    </li>
+                <% } %>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li class="pb-1">
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger small fw-bold" href="/auth/logout">
+                        <i class="icofont-logout" style="font-size: 14px;"></i>
+                        <span>Sign Out (Logout)</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</header>

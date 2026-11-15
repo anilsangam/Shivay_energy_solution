@@ -1,0 +1,932 @@
+<%- include('partials/admin-head') %>
+
+<style>
+/* ========================================================================= */
+/* ACTIVITY LOGS & AUDIT TRAIL EXECUTIVE STYLING                            */
+/* ========================================================================= */
+.activity-metric-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.activity-metric-card:hover {
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    transform: translateY(-2px);
+}
+.activity-metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.icon-navy { background: #eff6ff; color: #1e40af; }
+.icon-emerald { background: #ecfdf5; color: #059669; }
+.icon-crimson { background: #fef2f2; color: #dc2626; }
+.icon-amber { background: #fffbeb; color: #d97706; }
+
+/* Filter Buttons & Pills */
+.filter-pill-btn {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.filter-pill-btn:hover, .filter-pill-btn.active {
+    background: var(--admin-navy-primary, #0f172a);
+    color: #ffffff;
+    border-color: var(--admin-navy-primary, #0f172a);
+}
+
+/* Desktop Audit Table */
+.audit-table {
+    min-width: 980px;
+    margin-bottom: 0;
+}
+.audit-table thead th {
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 14px !important;
+    border-bottom: 1.5px solid #cbd5e1;
+    white-space: nowrap;
+}
+.audit-table tbody td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 14px !important;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.audit-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Action Severity Badges */
+.log-action-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.2;
+}
+.log-badge-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.log-badge-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.log-badge-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.log-badge-primary { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.log-badge-info { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+.log-badge-secondary { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* Mobile Audit Cards (< 992px) */
+.mobile-log-card {
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    transition: all 0.2s ease;
+}
+.mobile-log-card:active {
+    background: #f8fafc;
+}
+.actor-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.payload-chip {
+    display: inline-block;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-right: 4px;
+    margin-bottom: 3px;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Pixel-Perfect Unified 38px Search Bar */
+.activity-search-box {
+    display: flex;
+    align-items: stretch;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.activity-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    background: #ffffff;
+    color: #64748b;
+    border: none;
+    padding: 0;
+}
+.activity-search-input {
+    height: 38px !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 13px !important;
+    padding: 0 8px !important;
+    flex: 1 1 auto;
+    color: #1e293b;
+    outline: none !important;
+    background: transparent;
+}
+.activity-search-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 38px;
+    background: #ffffff;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+}
+.activity-search-clear:hover {
+    color: #334155;
+}
+.activity-search-btn {
+    height: 38px;
+    padding: 0 18px;
+    border: none;
+    background: var(--admin-navy-primary, #0f172a);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    white-space: nowrap;
+}
+.activity-search-btn:hover {
+    background: #1e293b;
+}
+</style>
+
+<%
+    // Compute executive KPI counters
+    let totalLogs = logs ? logs.length : 0;
+    let countSecurity = 0;
+    let countAuth = 0;
+    let countCommercial = 0;
+    let countField = 0;
+
+    if (logs && logs.length > 0) {
+        logs.forEach(l => {
+            const act = (l.action || '').toUpperCase();
+            if (act.includes('UNAUTHORIZED') || act.includes('FAILED') || act.includes('SUSPEND') || act.includes('REJECT')) {
+                countSecurity++;
+            } else if (act.includes('LOGIN') || act.includes('LOGOUT')) {
+                countAuth++;
+            } else if (act.includes('QUOTATION') || act.includes('INVOICE') || act.includes('PROJECT')) {
+                countCommercial++;
+            } else if (act.includes('ATTENDANCE')) {
+                countField++;
+            }
+        });
+    }
+
+    // Helper functions for actions
+    function getActionConfig(action) {
+        const act = (action || '').toUpperCase();
+        if (act.includes('UNAUTHORIZED') || act.includes('FAILED') || act.includes('SUSPENDED')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-warning-alt',
+                badgeClass: 'log-badge-danger',
+                category: 'security'
+            };
+        } else if (act === 'LOGIN_SUCCESS') {
+            return {
+                label: 'Sign In Success',
+                icon: 'icofont-login',
+                badgeClass: 'log-badge-success',
+                category: 'auth'
+            };
+        } else if (act === 'LOGOUT') {
+            return {
+                label: 'User Signed Out',
+                icon: 'icofont-logout',
+                badgeClass: 'log-badge-secondary',
+                category: 'auth'
+            };
+        } else if (act.includes('QUOTATION')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-paper',
+                badgeClass: 'log-badge-primary',
+                category: 'commercial'
+            };
+        } else if (act.includes('INVOICE')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-bill',
+                badgeClass: 'log-badge-primary',
+                category: 'commercial'
+            };
+        } else if (act.includes('PROJECT')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-solar-panel',
+                badgeClass: 'log-badge-info',
+                category: 'commercial'
+            };
+        } else if (act.includes('ATTENDANCE')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-location-pin',
+                badgeClass: 'log-badge-info',
+                category: 'field'
+            };
+        } else if (act.includes('ROLE') || act.includes('MANAGER') || act.includes('ACTIVATED') || act.includes('APPROVED')) {
+            return {
+                label: act.replace(/_/g, ' '),
+                icon: 'icofont-ui-user',
+                badgeClass: 'log-badge-warning',
+                category: 'admin'
+            };
+        }
+        return {
+            label: act.replace(/_/g, ' '),
+            icon: 'icofont-info-circle',
+            badgeClass: 'log-badge-secondary',
+            category: 'other'
+        };
+    }
+%>
+
+<!-- ========================================================================= -->
+<!-- 1. HEADER & SYSTEM SECURITY BADGES                                       -->
+<!-- ========================================================================= -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--admin-navy-primary, #0f172a); font-size: 22px;">
+            <i class="icofont-shield-alt text-primary me-2"></i>System Audit & Security Logs
+        </h4>
+        <p class="text-muted small mb-0">
+            Immutable log of system authentications, role changes, commercial transactions & security events.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 d-inline-flex align-items-center gap-1" style="border-radius: 8px; font-size: 12px; font-weight: 600;">
+            <i class="icofont-lock"></i> Session-Verified & Immutable
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" onclick="window.location.reload()" style="border-radius: 8px; padding: 6px 12px; font-size: 12px;">
+            <i class="icofont-refresh"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 2. EXECUTIVE AUDIT METRIC CARDS (4 COLUMNS)                              -->
+<!-- ========================================================================= -->
+<div class="row g-2 g-md-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="activity-metric-card shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold">Total Audit Events</span>
+                <div class="activity-metric-icon icon-navy">
+                    <i class="icofont-history"></i>
+                </div>
+            </div>
+            <div>
+                <div class="h3 fw-bold text-dark mb-0"><%= totalLogs %></div>
+                <div class="text-muted small" style="font-size: 11.5px;">Recent immutable records</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="activity-metric-card shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold">Security Alerts / Blocks</span>
+                <div class="activity-metric-icon icon-crimson">
+                    <i class="icofont-shield-alt"></i>
+                </div>
+            </div>
+            <div>
+                <div class="h3 fw-bold text-danger mb-0"><%= countSecurity %></div>
+                <div class="text-danger small" style="font-size: 11.5px;">Unauthorized / failed attempts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="activity-metric-card shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold">Auth & Sessions</span>
+                <div class="activity-metric-icon icon-emerald">
+                    <i class="icofont-login"></i>
+                </div>
+            </div>
+            <div>
+                <div class="h3 fw-bold text-success mb-0"><%= countAuth %></div>
+                <div class="text-success small" style="font-size: 11.5px;">Sign-in & logout events</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="activity-metric-card shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold">Commercial Operations</span>
+                <div class="activity-metric-icon icon-amber">
+                    <i class="icofont-file-document"></i>
+                </div>
+            </div>
+            <div>
+                <div class="h3 fw-bold text-dark mb-0"><%= countCommercial %></div>
+                <div class="text-muted small" style="font-size: 11.5px;">Quotes, invoices & projects</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 3. INTERACTIVE SEARCH & CATEGORY FILTER TOOLBAR                          -->
+<!-- ========================================================================= -->
+<div class="bg-white p-3 rounded-3 shadow-sm border mb-4" style="border-color: #cbd5e1 !important;">
+    <div class="row g-2 align-items-center">
+        <!-- Search Input with Pixel-Perfect Unified 38px Height -->
+        <div class="col-12 col-lg-5">
+            <div class="activity-search-box">
+                <span class="activity-search-icon">
+                    <i class="icofont-search" style="font-size: 15px;"></i>
+                </span>
+                <input type="text" 
+                       id="logSearchInput" 
+                       class="form-control activity-search-input" 
+                       placeholder="Search by user, role, action, IP, resource..." 
+                       value="<%= typeof search !== 'undefined' ? search : '' %>"
+                       oninput="filterAuditLogs()"
+                       onkeydown="if(event.key==='Enter'){ filterAuditLogs(); event.preventDefault(); }">
+                <button type="button" 
+                        id="clearSearchBtn" 
+                        class="activity-search-clear <%= (typeof search !== 'undefined' && search) ? '' : 'd-none' %>" 
+                        onclick="clearSearchInput()" 
+                        title="Clear search">
+                    <i class="icofont-close-line" style="font-size: 16px;"></i>
+                </button>
+                <button type="button" 
+                        class="activity-search-btn" 
+                        onclick="filterAuditLogs()">
+                    Filter
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Category Pills (Horizontal Scroll on Mobile) -->
+        <div class="col-12 col-lg-7">
+            <div class="d-flex align-items-center gap-1 overflow-x-auto pb-1 pb-lg-0" style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                <button type="button" class="filter-pill-btn active" data-category="ALL" onclick="setLogCategory('ALL', this)">
+                    All Logs (<%= totalLogs %>)
+                </button>
+                <button type="button" class="filter-pill-btn" data-category="security" onclick="setLogCategory('security', this)">
+                    <i class="icofont-warning-alt me-1 text-danger"></i>Security (<%= countSecurity %>)
+                </button>
+                <button type="button" class="filter-pill-btn" data-category="auth" onclick="setLogCategory('auth', this)">
+                    <i class="icofont-login me-1 text-success"></i>Auth (<%= countAuth %>)
+                </button>
+                <button type="button" class="filter-pill-btn" data-category="commercial" onclick="setLogCategory('commercial', this)">
+                    <i class="icofont-bill me-1 text-primary"></i>Commercial (<%= countCommercial %>)
+                </button>
+                <button type="button" class="filter-pill-btn" data-category="field" onclick="setLogCategory('field', this)">
+                    <i class="icofont-location-pin me-1 text-info"></i>Field (<%= countField %>)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 4. DESKTOP AUDIT LOGS TABLE VIEW (>= 992px)                               -->
+<!-- ========================================================================= -->
+<div class="d-none d-lg-block">
+    <div class="admin-card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1 !important;">
+        <div class="admin-card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="fw-bold mb-0 text-dark" style="font-size: 15px;">
+                    <i class="icofont-listine-dots text-primary me-2"></i>Security Audit Events
+                </h6>
+                <small class="text-muted" id="desktopCountNotice">Displaying <%= totalLogs %> audit trail entries</small>
+            </div>
+            <span class="badge bg-light text-muted border font-monospace" style="font-size: 11px;">
+                <%= totalLogs %> Recent Records
+            </span>
+        </div>
+
+        <div class="admin-table-container">
+            <table class="admin-table audit-table">
+                <thead>
+                    <tr>
+                        <th style="width: 17%;">TIMESTAMP (IST)</th>
+                        <th style="width: 18%;">SECURITY / EVENT ACTION</th>
+                        <th style="width: 20%;">ACTOR / USER</th>
+                        <th style="width: 15%;">TARGET / RESOURCE</th>
+                        <th style="width: 12%;">ORIGIN (IP)</th>
+                        <th style="width: 18%;">AUDIT PAYLOAD / DETAILS</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                    <% if (logs && logs.length > 0) { %>
+                        <% logs.forEach((log, idx) => { 
+                            const cfg = getActionConfig(log.action);
+                            const userName = (log.user && log.user.name) ? log.user.name : (log.role || 'Guest / System');
+                            const userEmpId = (log.user && log.user.employeeId) ? log.user.employeeId : (log.user && log.user.email ? log.user.email : '');
+                            const userRole = (log.user && log.user.role) ? log.user.role : (log.role || 'GUEST');
+                            const targetInfo = (log.targetUser && log.targetUser.name) ? log.targetUser.name : (log.targetResource || '-');
+                            
+                            // Format IST Date & Time
+                            const logDate = log.createdAt ? new Date(log.createdAt) : null;
+                            const dateStr = logDate ? logDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                            const timeStr = logDate ? logDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) : '';
+
+                            // Parse details into readable format & construct safe search string
+                            const detailsObj = log.details || {};
+                            let searchParts = [
+                                log.action,
+                                cfg.label,
+                                userName,
+                                userEmpId,
+                                userRole,
+                                targetInfo,
+                                log.ipAddress,
+                                log.userAgent
+                            ];
+                            if (detailsObj && typeof detailsObj === 'object') {
+                                Object.entries(detailsObj).forEach(([k, v]) => {
+                                    searchParts.push(k);
+                                    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+                                        searchParts.push(String(v));
+                                    } else if (v && typeof v === 'object') {
+                                        searchParts.push(JSON.stringify(v));
+                                    }
+                                });
+                            }
+                            const cleanSearchStr = searchParts.filter(Boolean).join(' ').replace(/["'<>]/g, ' ').toLowerCase();
+                        %>
+                            <tr class="audit-row" data-category="<%= cfg.category %>" data-search="<%= cleanSearchStr %>">
+                                <td>
+                                    <div class="fw-bold text-dark font-monospace" style="font-size: 12px;">
+                                        <%= dateStr %>
+                                    </div>
+                                    <div class="text-muted font-monospace" style="font-size: 11px;">
+                                        <i class="icofont-clock-time me-1"></i><%= timeStr %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="log-action-badge <%= cfg.badgeClass %>">
+                                        <i class="<%= cfg.icon %>"></i>
+                                        <%= cfg.label %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 190px;" title="<%= userName %>">
+                                        <%= userName %>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size: 10px; padding: 2px 5px;">
+                                            <%= userRole %>
+                                        </span>
+                                        <% if (userEmpId) { %>
+                                            <span class="text-muted small text-truncate font-monospace" style="font-size: 11px; max-width: 110px;">
+                                                <%= userEmpId %>
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td>
+                                    <% if (targetInfo && targetInfo !== '-') { %>
+                                        <span class="badge bg-light text-dark border font-monospace text-truncate d-inline-block" style="max-width: 140px; font-size: 11.5px; padding: 4px 7px;" title="<%= targetInfo %>">
+                                            <%= targetInfo %>
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-muted small">-</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-muted border font-monospace" style="font-size: 11px; padding: 3px 6px;">
+                                        <i class="icofont-network me-1"></i><%= log.ipAddress || '127.0.0.1' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="max-width: 260px;">
+                                        <% 
+                                            const keys = Object.keys(detailsObj);
+                                            if (keys.length > 0) { 
+                                        %>
+                                            <% keys.slice(0, 3).forEach(k => { %>
+                                                <span class="payload-chip" title="<%= k %>: <%= typeof detailsObj[k] === 'object' ? JSON.stringify(detailsObj[k]) : detailsObj[k] %>">
+                                                    <strong><%= k %>:</strong> <%= typeof detailsObj[k] === 'object' ? JSON.stringify(detailsObj[k]).slice(0, 15) + '...' : detailsObj[k] %>
+                                                </span>
+                                            <% }) %>
+                                            <% if (keys.length > 3) { %>
+                                                <button type="button" class="btn btn-link p-0 text-primary small text-decoration-none" onclick="showLogDetailsModal(<%= idx %>)" style="font-size: 11px;">
+                                                    +<%= keys.length - 3 %> more
+                                                </button>
+                                            <% } %>
+                                        <% } else { %>
+                                            <span class="text-muted small">-</span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="icofont-shield-alt fs-1 d-block mb-2 text-muted" style="font-size: 40px !important;"></i>
+                                <p class="mb-0 fw-bold">No audit events recorded yet.</p>
+                                <small>System security events and actions will automatically stream here.</small>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 5. MOBILE AUDIT LOGS CARD STACK (< 992px)                                -->
+<!-- ========================================================================= -->
+<div class="d-block d-lg-none" id="mobileCardsContainer">
+    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+        <small class="text-muted fw-bold" id="mobileCountNotice">Displaying <%= totalLogs %> logs</small>
+        <span class="badge bg-light text-muted border font-monospace" style="font-size: 10px;">Mobile View</span>
+    </div>
+
+    <% if (logs && logs.length > 0) { %>
+        <% logs.forEach((log, idx) => { 
+            const cfg = getActionConfig(log.action);
+            const userName = (log.user && log.user.name) ? log.user.name : (log.role || 'Guest / System');
+            const userEmpId = (log.user && log.user.employeeId) ? log.user.employeeId : (log.user && log.user.email ? log.user.email : '');
+            const userRole = (log.user && log.user.role) ? log.user.role : (log.role || 'GUEST');
+            const targetInfo = (log.targetUser && log.targetUser.name) ? log.targetUser.name : (log.targetResource || '');
+            
+            const logDate = log.createdAt ? new Date(log.createdAt) : null;
+            const dateStr = logDate ? logDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }) : 'N/A';
+            const timeStr = logDate ? logDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+            const detailsObj = log.details || {};
+            let searchParts = [
+                log.action,
+                cfg.label,
+                userName,
+                userEmpId,
+                userRole,
+                targetInfo,
+                log.ipAddress,
+                log.userAgent
+            ];
+            if (detailsObj && typeof detailsObj === 'object') {
+                Object.entries(detailsObj).forEach(([k, v]) => {
+                    searchParts.push(k);
+                    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+                        searchParts.push(String(v));
+                    } else if (v && typeof v === 'object') {
+                        searchParts.push(JSON.stringify(v));
+                    }
+                });
+            }
+            const cleanSearchStr = searchParts.filter(Boolean).join(' ').replace(/["'<>]/g, ' ').toLowerCase();
+            const initial = userName.charAt(0).toUpperCase() || 'U';
+        %>
+            <div class="mobile-log-card" data-category="<%= cfg.category %>" data-search="<%= cleanSearchStr %>">
+                <!-- Top Row: Action Badge + Timestamp -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="log-action-badge <%= cfg.badgeClass %>" style="font-size: 11px;">
+                        <i class="<%= cfg.icon %>"></i>
+                        <%= cfg.label %>
+                    </span>
+                    <span class="text-muted font-monospace small" style="font-size: 11px;">
+                        <i class="icofont-clock-time me-1"></i><%= dateStr %>, <%= timeStr %>
+                    </span>
+                </div>
+
+                <!-- Middle Row: Actor Profile -->
+                <div class="d-flex align-items-center gap-2 mb-2 pt-1 border-top" style="border-color: #f1f5f9 !important;">
+                    <div class="actor-avatar">
+                        <%= initial %>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;">
+                            <%= userName %>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="badge bg-secondary-subtle text-secondary border font-monospace" style="font-size: 9.5px; padding: 1px 4px;">
+                                <%= userRole %>
+                            </span>
+                            <% if (userEmpId) { %>
+                                <span class="text-muted small font-monospace text-truncate" style="font-size: 11px;">
+                                    <%= userEmpId %>
+                                </span>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-light text-muted border font-monospace" style="font-size: 10px;">
+                            <%= log.ipAddress || '127.0.0.1' %>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Target Resource (If Present) -->
+                <% if (targetInfo) { %>
+                    <div class="small mb-2 px-2 py-1 bg-light rounded text-muted text-truncate" style="font-size: 11.5px;">
+                        <strong class="text-dark">Target:</strong> <code class="text-primary"><%= targetInfo %></code>
+                    </div>
+                <% } %>
+
+                <!-- Bottom Row: Payload Chips & Quick Modal Trigger -->
+                <% const keys = Object.keys(detailsObj); %>
+                <% if (keys.length > 0) { %>
+                    <div class="pt-1 border-top d-flex flex-wrap align-items-center justify-content-between gap-1" style="border-color: #f1f5f9 !important;">
+                        <div class="flex-grow-1 text-truncate">
+                            <% keys.slice(0, 2).forEach(k => { %>
+                                <span class="payload-chip">
+                                    <strong><%= k %>:</strong> <%= typeof detailsObj[k] === 'object' ? JSON.stringify(detailsObj[k]).slice(0, 15) : detailsObj[k] %>
+                                </span>
+                            <% }) %>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary p-1 px-2 fw-bold" onclick="showLogDetailsModal(<%= idx %>)" style="font-size: 10.5px; border-radius: 6px;">
+                            Inspect <i class="icofont-arrow-right"></i>
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="text-center py-5 bg-white rounded-3 border">
+            <i class="icofont-shield-alt fs-1 d-block mb-2 text-muted" style="font-size: 36px !important;"></i>
+            <p class="mb-0 fw-bold">No audit events recorded yet.</p>
+        </div>
+    <% } %>
+</div>
+
+<!-- No Results Placeholder (Filtered State) -->
+<div id="noResultsNotice" class="text-center py-5 bg-white rounded-3 border shadow-sm my-3 d-none">
+    <i class="icofont-search fs-1 d-block mb-2 text-muted" style="font-size: 36px !important;"></i>
+    <p class="mb-1 fw-bold text-dark">No matching audit events found.</p>
+    <small class="text-muted">Try adjusting your keyword search or category filter.</small>
+    <div class="mt-3">
+        <button type="button" class="btn btn-sm btn-primary" onclick="resetAuditFilters()">
+            Clear Filters
+        </button>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 6. RAW AUDIT DETAILS INSPECTION MODAL                                     -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--admin-navy-primary, #0f172a), #1e3a8a); padding: 14px 18px;">
+                <h6 class="modal-title font-weight-bold mb-0" id="logDetailsModalLabel">
+                    <i class="icofont-shield-alt me-2 text-warning"></i> Audit Event Payload Inspector
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="bg-white p-3 rounded-3 border mb-3">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
+                            <small class="text-muted d-block" style="font-size: 11px;">Action Event:</small>
+                            <span class="badge bg-primary font-monospace" id="modalActionName">-</span>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <small class="text-muted d-block" style="font-size: 11px;">Actor Role:</small>
+                            <span class="badge bg-secondary font-monospace" id="modalUserRole">-</span>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <small class="text-muted d-block" style="font-size: 11px;">Origin IP:</small>
+                            <code class="text-dark fw-bold" id="modalOriginIp">-</code>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <small class="text-muted d-block" style="font-size: 11px;">Recorded Time:</small>
+                            <span class="small text-muted font-monospace" id="modalTimestamp">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <label class="form-label small fw-bold text-dark mb-0">Payload Metadata & Properties (JSON):</label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 font-monospace" onclick="copyModalJson()" style="font-size: 11px;">
+                        <i class="icofont-copy me-1"></i> Copy
+                    </button>
+                </div>
+                <pre id="modalJsonDisplay" class="p-3 bg-dark text-light rounded-3 mb-0" style="font-size: 12px; font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"></pre>
+            </div>
+            <div class="modal-footer bg-white p-3">
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal" style="border-radius: 6px;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Data Store for Modal Details & Filter Engine -->
+<script>
+const rawLogsData = <%- JSON.stringify(logs || []).replace(/</g, '\\u003c') %>;
+let currentActiveCategory = 'ALL';
+
+function filterAuditLogs() {
+    const input = document.getElementById('logSearchInput');
+    const searchVal = (input ? input.value : '').toLowerCase().trim();
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    // Toggle Clear button visibility
+    if (clearBtn) {
+        if (searchVal.length > 0) {
+            clearBtn.classList.remove('d-none');
+        } else {
+            clearBtn.classList.add('d-none');
+        }
+    }
+
+    // 1. Filter Desktop Rows
+    const desktopRows = document.querySelectorAll('#auditTableBody tr.audit-row');
+    let visibleDesktopCount = 0;
+
+    desktopRows.forEach(r => {
+        const cat = r.getAttribute('data-category') || '';
+        const searchAttr = r.getAttribute('data-search') || '';
+        const rowText = (r.textContent || '').toLowerCase();
+
+        const matchCat = (currentActiveCategory === 'ALL' || cat === currentActiveCategory);
+        const matchSearch = (!searchVal || searchAttr.includes(searchVal) || rowText.includes(searchVal));
+
+        if (matchCat && matchSearch) {
+            r.style.display = '';
+            visibleDesktopCount++;
+        } else {
+            r.style.display = 'none';
+        }
+    });
+
+    // 2. Filter Mobile Cards
+    const mobileCards = document.querySelectorAll('#mobileCardsContainer .mobile-log-card');
+    let visibleMobileCount = 0;
+
+    mobileCards.forEach(c => {
+        const cat = c.getAttribute('data-category') || '';
+        const searchAttr = c.getAttribute('data-search') || '';
+        const cardText = (c.textContent || '').toLowerCase();
+
+        const matchCat = (currentActiveCategory === 'ALL' || cat === currentActiveCategory);
+        const matchSearch = (!searchVal || searchAttr.includes(searchVal) || cardText.includes(searchVal));
+
+        if (matchCat && matchSearch) {
+            c.style.display = '';
+            visibleMobileCount++;
+        } else {
+            c.style.display = 'none';
+        }
+    });
+
+    // 3. Update desktop & mobile count notices
+    const desktopNotice = document.getElementById('desktopCountNotice');
+    if (desktopNotice) {
+        desktopNotice.innerText = `Displaying ${visibleDesktopCount} matching audit trail entries`;
+    }
+
+    const mobileNotice = document.getElementById('mobileCountNotice');
+    if (mobileNotice) {
+        mobileNotice.innerText = `Displaying ${visibleMobileCount} logs`;
+    }
+
+    // 4. Toggle empty state placeholder
+    const isDesktop = window.innerWidth >= 992;
+    const currentVisibleCount = isDesktop ? visibleDesktopCount : visibleMobileCount;
+    const totalItems = isDesktop ? desktopRows.length : mobileCards.length;
+
+    const noResults = document.getElementById('noResultsNotice');
+    if (noResults) {
+        if (currentVisibleCount === 0 && totalItems > 0) {
+            noResults.classList.remove('d-none');
+        } else {
+            noResults.classList.add('d-none');
+        }
+    }
+}
+
+function clearSearchInput() {
+    const input = document.getElementById('logSearchInput');
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+    filterAuditLogs();
+}
+
+function setLogCategory(cat, btn) {
+    currentActiveCategory = cat;
+    document.querySelectorAll('.filter-pill-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    filterAuditLogs();
+}
+
+function resetAuditFilters() {
+    const input = document.getElementById('logSearchInput');
+    if (input) input.value = '';
+    currentActiveCategory = 'ALL';
+    document.querySelectorAll('.filter-pill-btn').forEach(b => {
+        if (b.getAttribute('data-category') === 'ALL') b.classList.add('active');
+        else b.classList.remove('active');
+    });
+    filterAuditLogs();
+}
+
+function showLogDetailsModal(index) {
+    const log = rawLogsData[index];
+    if (!log) return;
+
+    document.getElementById('modalActionName').innerText = log.action || 'EVENT';
+    document.getElementById('modalUserRole').innerText = (log.user && log.user.role) || log.role || 'GUEST';
+    document.getElementById('modalOriginIp').innerText = log.ipAddress || '127.0.0.1';
+    document.getElementById('modalTimestamp').innerText = log.createdAt ? new Date(log.createdAt).toLocaleString('en-IN') : 'N/A';
+
+    const payload = {
+        _id: log._id,
+        action: log.action,
+        user: log.user,
+        role: log.role,
+        targetUser: log.targetUser,
+        targetResource: log.targetResource,
+        ipAddress: log.ipAddress,
+        userAgent: log.userAgent,
+        details: log.details,
+        createdAt: log.createdAt
+    };
+
+    document.getElementById('modalJsonDisplay').innerText = JSON.stringify(payload, null, 2);
+
+    const modalEl = document.getElementById('logDetailsModal');
+    if (modalEl) {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+    }
+}
+
+function copyModalJson() {
+    const text = document.getElementById('modalJsonDisplay').innerText;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Audit JSON copied to clipboard!');
+        });
+    }
+}
+
+// Auto filter on load if query search is pre-filled
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('logSearchInput');
+    if (input && input.value.trim().length > 0) {
+        filterAuditLogs();
+    }
+});
+</script>
+
+<%- include('partials/admin-footer') %>

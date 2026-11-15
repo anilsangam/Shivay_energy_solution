@@ -1,0 +1,436 @@
+<%- include('../admin/partials/admin-head') %>
+
+<%
+    const cs = request.customerSnapshot || {
+        name: request.customerName || (request.customer && request.customer.name) || 'Customer',
+        mobile: request.customerMobile || (request.customer && request.customer.mobile) || '',
+        alternateMobile: request.customerAlternateMobile || '',
+        email: request.customerEmail || (request.customer && request.customer.email) || '',
+        siteAddress: request.siteAddress || (request.customer && request.customer.address) || '',
+        city: request.city || (request.customer && request.customer.city) || 'Raisen',
+        district: request.district || (request.customer && request.customer.district) || 'Raisen',
+        state: request.state || (request.customer && request.customer.state) || 'Madhya Pradesh',
+        pincode: request.pincode || (request.customer && request.customer.pincode) || '',
+        consumerNumber: request.consumerNumber || '',
+        discom: request.discom || 'MPPKVVCL',
+        customerType: request.customerType || 'RESIDENTIAL'
+    };
+    const sr = request.solarRequirements || {
+        proposedCapacityKw: request.proposedCapacityKw || 0,
+        systemType: request.systemType || 'ON_GRID',
+        roofType: request.roofType || 'RCC_FLAT',
+        roofAreaSqFt: request.roofAreaSqFt || 0,
+        monthlyElectricityBill: request.monthlyElectricityBill || 0,
+        monthlyUnitsKwh: request.monthlyUnitsKwh || 0,
+        existingSolarInstallation: request.existingSolar || false,
+        budgetExpected: request.expectedBudget || 0,
+        additionalRequirements: request.additionalRequirements || ''
+    };
+%>
+
+<!-- Status Banner / Action Bar -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="font-weight-bold mb-0" style="color: var(--admin-navy-primary); font-size: 22px;">
+                Quotation Request: <%= request.requestNumber %>
+            </h2>
+            <span class="badge <%= request.status === 'SUBMITTED' ? 'bg-primary' : (request.status === 'UNDER_REVIEW' ? 'bg-info' : (request.status === 'REVISION_REQUESTED' ? 'bg-warning text-dark' : (request.status === 'QUOTATION_PREPARED' ? 'bg-success' : (request.status === 'REJECTED' ? 'bg-danger' : 'bg-secondary')))) %> px-2 py-1">
+                <%= request.status %>
+            </span>
+        </div>
+        <p class="text-muted small mb-0">
+            Submitted by <strong><%= request.assignedEmployee ? request.assignedEmployee.name : 'Staff' %></strong> on <%= new Date(request.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-3 mt-md-0">
+        <%
+            let backQuotationsUrl = '/manager/quotations';
+            if (currentUser && currentUser.role === 'EMPLOYEE') {
+                backQuotationsUrl = '/employee/quotations';
+            } else if (currentUser && currentUser.role === 'SUPER_ADMIN') {
+                backQuotationsUrl = '/admin/quotations';
+            }
+        %>
+        <a href="<%= backQuotationsUrl %>" class="btn btn-sm btn-outline-secondary">
+            <i class="icofont-arrow-left me-1"></i> Back to Quotations
+        </a>
+        <% if (request.status === 'REVISION_REQUESTED' && currentUser && currentUser.role === 'EMPLOYEE') { %>
+            <button class="btn btn-sm btn-warning font-weight-bold" data-bs-toggle="modal" data-bs-target="#resubmitModal">
+                <i class="icofont-refresh me-1"></i> Update & Resubmit Request
+            </button>
+        <% } %>
+        <% if (request.linkedQuotation) { %>
+            <% 
+                const linkedQuoteId = (request.linkedQuotation && request.linkedQuotation._id) 
+                    ? request.linkedQuotation._id 
+                    : request.linkedQuotation;
+                let quoteDetailUrl = '/manager/quotations/' + linkedQuoteId;
+                if (currentUser && currentUser.role === 'EMPLOYEE') {
+                    quoteDetailUrl = '/employee/quotations/' + linkedQuoteId;
+                } else if (currentUser && currentUser.role === 'SUPER_ADMIN') {
+                    quoteDetailUrl = '/admin/quotations/' + linkedQuoteId;
+                }
+            %>
+            <a href="<%= quoteDetailUrl %>" class="btn btn-sm btn-success">
+                <i class="icofont-file-document me-1"></i> View Prepared Quotation
+            </a>
+        <% } %>
+        <% if ((currentUser && (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER' || currentUser.role === 'SUPER_ADMIN')) && request.status !== 'QUOTATION_PREPARED' && request.status !== 'REJECTED') { %>
+            <a href="<%= (currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations/prepare/' + request._id : '/manager/quotations/prepare/' + request._id %>" class="btn btn-sm btn-primary" style="background: var(--admin-navy-primary);">
+                <i class="icofont-calculator-alt me-1"></i> Prepare Quotation
+            </a>
+        <% } %>
+    </div>
+</div>
+
+<!-- Alert for Revisions / Rejections -->
+<% if (request.status === 'REVISION_REQUESTED') { %>
+    <div class="alert alert-warning d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert" style="border-left: 4px solid #f59e0b;">
+        <i class="icofont-warning-alt fs-4 text-warning mt-1"></i>
+        <div>
+            <h6 class="alert-heading font-weight-bold mb-1">Action Required: Revision Requested by Manager</h6>
+            <p class="mb-1 small">The reviewing manager has requested modifications to this quotation request before pricing can proceed:</p>
+            <div class="p-2 bg-white rounded border small mt-2 font-monospace text-dark">
+                <%= request.revisionComments || 'Please review technical specs or billing information as discussed with branch manager.' %>
+            </div>
+            <% if (currentUser && currentUser.role === 'EMPLOYEE') { %>
+                <button class="btn btn-sm btn-warning mt-3 font-weight-bold" data-bs-toggle="modal" data-bs-target="#resubmitModal">
+                    <i class="icofont-edit me-1"></i> Open Update & Resubmit Form
+                </button>
+            <% } %>
+        </div>
+    </div>
+<% } else if (request.status === 'REJECTED') { %>
+    <div class="alert alert-danger d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert" style="border-left: 4px solid #ef4444;">
+        <i class="icofont-close-circled fs-4 text-danger mt-1"></i>
+        <div>
+            <h6 class="alert-heading font-weight-bold mb-1">Request Declined / Rejected</h6>
+            <p class="mb-1 small">This quotation request was marked as declined by management:</p>
+            <div class="p-2 bg-white rounded border small mt-2 text-danger">
+                <%= request.rejectionReason || 'Site unviable or customer not responsive.' %>
+            </div>
+        </div>
+    </div>
+<% } else if (request.status === 'RESUBMITTED') { %>
+    <div class="alert alert-info d-flex align-items-start gap-3 mb-4 shadow-sm" role="alert" style="border-left: 4px solid #0284c7;">
+        <i class="icofont-refresh fs-4 text-info mt-1"></i>
+        <div>
+            <h6 class="alert-heading font-weight-bold mb-1">Updated & Resubmitted for Review</h6>
+            <p class="mb-1 small">The employee has addressed the revision points and resubmitted this proposal for manager review.</p>
+            <% if (request.employeeNotes) { %>
+                <div class="p-2 bg-white rounded border small mt-2 text-dark">
+                    <strong>Staff Notes:</strong> <%= request.employeeNotes %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+<% } %>
+
+<div class="row g-4">
+    <!-- Left Column: Customer & Solar Specs -->
+    <div class="col-lg-8">
+        <!-- Customer Details -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Customer Profile</h5>
+                    <div class="admin-card-subtitle">Verified customer & electricity connection records</div>
+                </div>
+                <span class="badge bg-light text-primary border"><%= cs.customerType %></span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Customer Name</small>
+                        <strong class="fs-6 text-dark"><%= cs.name %></strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Primary Mobile</small>
+                        <a href="tel:<%= cs.mobile %>" class="text-dark fw-bold">
+                            <i class="icofont-phone text-success me-1"></i><%= cs.mobile %>
+                        </a>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Alternate Mobile / Email</small>
+                        <span><%= cs.alternateMobile || 'None' %> • <%= cs.email || 'No email' %></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">DISCOM & Consumer Number</small>
+                        <strong><%= cs.discom || 'MPPKVVCL' %></strong> - 
+                        <span class="font-monospace"><%= cs.consumerNumber || 'Pending Bill' %></span>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Installation Site Address</small>
+                        <span><%= cs.siteAddress || 'Raisen, Madhya Pradesh' %>, <%= cs.city || 'Raisen' %>, <%= cs.state || 'Madhya Pradesh' %> - <%= cs.pincode || '464551' %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solar Technical Specifications -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Solar Plant Technical Requirements</h5>
+                    <div class="admin-card-subtitle">Parameters gathered during on-site energy audit</div>
+                </div>
+                <span class="badge bg-primary text-white"><%= sr.proposedCapacityKw %> kW <%= sr.systemType %></span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Capacity (kW)</small>
+                        <h4 class="text-primary mb-0 font-weight-bold"><%= sr.proposedCapacityKw %> kW</h4>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">System Configuration</small>
+                        <strong class="text-dark"><%= sr.systemType %></strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Existing Solar</small>
+                        <span><%= sr.existingSolarInstallation ? 'Yes (Expansion)' : 'No (Fresh Setup)' %></span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Roof Type</small>
+                        <strong><%= sr.roofType %></strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Roof Area</small>
+                        <span><%= sr.roofAreaSqFt ? sr.roofAreaSqFt + ' sq.ft' : 'Not measured' %></span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Avg. Monthly Electricity Bill</small>
+                        <strong class="text-danger">₹ <%= Number(sr.monthlyElectricityBill || 0).toLocaleString('en-IN') %></strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">Customer Expected Budget</small>
+                        <span><%= sr.budgetExpected ? '₹ ' + Number(sr.budgetExpected).toLocaleString('en-IN') : 'Standard PM Surya Ghar' %></span>
+                    </div>
+                    <div class="col-sm-8">
+                        <small class="text-muted d-block">Special Employee Remarks</small>
+                        <p class="mb-0 small text-muted"><%= sr.additionalRequirements || 'No special requirements noted.' %></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment / Bill of Materials Requested -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Requested Equipment & Hardware Items</h5>
+                    <div class="admin-card-subtitle">Solar modules, inverters, structure & cabling required</div>
+                </div>
+            </div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Equipment / Product Name</th>
+                            <th>Qty</th>
+                            <th>Specifications</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (request.equipment && request.equipment.length > 0) { %>
+                            <% request.equipment.forEach((item, idx) => { %>
+                                <tr>
+                                    <td><%= idx + 1 %></td>
+                                    <td><strong><%= item.productName %></strong></td>
+                                    <td><%= item.quantity %> <%= item.unit || 'Nos' %></td>
+                                    <td><%= item.specifications || 'Standard' %></td>
+                                    <td><%= item.remarks || '-' %></td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted small">
+                                    No custom equipment list entered. Standard <%= sr.proposedCapacityKw %> kW Tier-1 Mono PERC DCR bill of materials applies.
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Attachments & Survey Photos -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <div>
+                    <h5 class="admin-card-title">Survey Documents & Roof Photos</h5>
+                    <div class="admin-card-subtitle">Secure files verified with magic-byte validation</div>
+                </div>
+            </div>
+            <div class="p-4">
+                <% if (request.attachments && request.attachments.length > 0) { %>
+                    <div class="row g-3">
+                        <% request.attachments.forEach(att => { %>
+                            <div class="col-sm-6">
+                                <div class="p-3 border rounded d-flex align-items-center justify-content-between bg-light">
+                                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                        <i class="icofont-file-alt fs-4 text-primary"></i>
+                                        <div class="text-truncate">
+                                            <span class="d-block small font-weight-bold text-truncate"><%= att.originalName %></span>
+                                            <small class="text-muted"><%= att.label || 'Document' %> • <%= (att.fileSize / 1024).toFixed(1) %> KB</small>
+                                        </div>
+                                    </div>
+                                    <a href="<%= att.cloudinaryUrl || att.path %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary ms-2" title="View Cloud Asset">
+                                        <i class="icofont-eye-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted small mb-0">No document attachments uploaded for this request.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Status & Timeline -->
+    <div class="col-lg-4">
+        <!-- Assigned Staff Details -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title">Handling Personnel</h5>
+            </div>
+            <div class="p-4">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Submitting Field Staff</small>
+                    <strong><%= request.assignedEmployee ? request.assignedEmployee.name : 'Unknown' %></strong>
+                    <div class="small text-muted"><%= request.assignedEmployee ? request.assignedEmployee.email : '' %></div>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Reviewing Branch Manager</small>
+                    <strong><%= request.assignedManager ? request.assignedManager.name : 'Branch Operations' %></strong>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Originating Branch</small>
+                    <span>Raisen Central Branch (MP-RSN-01)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow Status Audit Trail -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <h5 class="admin-card-title">Workflow Audit Trail</h5>
+            </div>
+            <div class="p-4">
+                <% if (history && history.length > 0) { %>
+                    <div class="timeline" style="border-left: 2px solid var(--admin-border); padding-left: 15px;">
+                        <% history.forEach(h => { %>
+                            <div class="mb-3 position-relative">
+                                <div style="position: absolute; left: -21px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: var(--admin-navy-primary);"></div>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <strong class="small text-dark"><%= h.newStatus %></strong>
+                                    <small class="text-muted" style="font-size: 11px;">
+                                        <%= new Date(h.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) %>
+                                    </small>
+                                </div>
+                                <small class="text-muted d-block">By: <%= h.changedBy ? h.changedBy.name : 'System' %> (<%= h.changedBy ? h.changedBy.role : 'AUTO' %>)</small>
+                                <% if (h.comments) { %>
+                                    <div class="p-1 mt-1 bg-light rounded small text-dark border" style="font-size: 11px;">
+                                        <%= h.comments %>
+                                    </div>
+                                <% } %>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted small mb-0">Initial submission logged.</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resubmit Modal (For Employee when REVISION_REQUESTED) -->
+<% if (request.status === 'REVISION_REQUESTED' && currentUser && currentUser.role === 'EMPLOYEE') { %>
+<div class="modal fade" id="resubmitModal" tabindex="-1" aria-labelledby="resubmitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--admin-navy-primary); color: white;">
+                <h5 class="modal-title fs-6" id="resubmitModalLabel">Update & Resubmit Quotation Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="resubmitForm">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info small mb-3">
+                        <strong>Manager Revision Notes:</strong> <%= request.revisionComments %>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Proposed Solar Capacity (kW) *</label>
+                            <input type="number" step="0.5" min="1" max="100" class="form-control" name="proposedCapacityKw" value="<%= sr.proposedCapacityKw %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Avg. Monthly Electricity Bill (₹)</label>
+                            <input type="number" class="form-control" name="monthlyElectricityBill" value="<%= sr.monthlyElectricityBill %>">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Additional Technical Notes / Corrections</label>
+                            <textarea class="form-control" name="additionalRequirements" rows="3" placeholder="Enter updated specs, roof shadow observations, or cable length..."><%= sr.additionalRequirements %></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Staff Response to Manager Comments</label>
+                            <textarea class="form-control" name="employeeNotes" rows="2" placeholder="Explain what was modified or verified..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm font-weight-bold" id="btnSubmitResubmit">
+                        <i class="icofont-check-circled me-1"></i> Resubmit for Manager Review
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('resubmitForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitResubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Resubmitting...';
+
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/employee/quotations/request/<%= request._id %>/resubmit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': payload._csrf,
+                'CSRF-Token': payload._csrf
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Quotation request successfully resubmitted for manager review.');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error resubmitting request.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Resubmit for Manager Review';
+        }
+    } catch (err) {
+        alert('Network or server error during resubmission.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Resubmit for Manager Review';
+    }
+});
+</script>
+<% } %>
+
+<%- include('../admin/partials/admin-footer') %>

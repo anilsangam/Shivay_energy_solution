@@ -14,7 +14,100 @@ exports.getDashboard = async (req, res) => {
         const todayAttendance = DataStore.getTodayAttendance();
         const recentActivities = await AuditService.getRecentLogs(10);
 
-        res.render('admin/dashboard', {
+        // 1. Real-time Phase 3 Project Execution Metrics & Recent Projects
+        let projectStats = { total: 0, active: 0, completed: 0, onHold: 0, totalKw: 0 };
+        let recentProjects = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const Project = require('../models/Project');
+                const allProjs = await Project.find({})
+                    .populate('customer', 'name mobile city')
+                    .populate('assignedEngineer', 'name employeeId')
+                    .sort({ updatedAt: -1, createdAt: -1 })
+                    .lean();
+
+                projectStats.total = allProjs.length;
+                allProjs.forEach(p => {
+                    if (p.status !== 'CANCELLED') {
+                        projectStats.totalKw += (p.capacityKw || 0);
+                    }
+                    if (p.status === 'COMPLETED') {
+                        projectStats.completed++;
+                    } else if (p.status === 'ON_HOLD') {
+                        projectStats.onHold++;
+                    } else if (p.status !== 'CANCELLED') {
+                        projectStats.active++;
+                    }
+                });
+                projectStats.totalKw = Math.round(projectStats.totalKw * 10) / 10;
+                recentProjects = allProjs.slice(0, 5);
+            } catch (pErr) {
+                console.error('Project stats error in admin dashboard:', pErr);
+            }
+        }
+
+        // 2. Real-time Phase 2 Quotation Metrics & Recent Quotations
+        let quotationStats = { total: 0, pending: 0, approved: 0, accepted: 0 };
+        let recentQuotations = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const Quotation = require('../models/Quotation');
+                const allQuotes = await Quotation.find({})
+                    .populate('customerId', 'name mobile city')
+                    .populate('preparedBy', 'name employeeId')
+                    .populate('approvedBy', 'name')
+                    .sort({ createdAt: -1 })
+                    .lean();
+
+                quotationStats.total = allQuotes.length;
+                allQuotes.forEach(q => {
+                    if (q.status === 'PENDING_APPROVAL') {
+                        quotationStats.pending++;
+                    } else if (q.status === 'APPROVED') {
+                        quotationStats.approved++;
+                    } else if (q.status === 'CUSTOMER_ACCEPTED') {
+                        quotationStats.accepted++;
+                    }
+                });
+                recentQuotations = allQuotes.slice(0, 5);
+            } catch (qErr) {
+                console.error('Quotation stats error in admin dashboard:', qErr);
+            }
+        }
+
+        // 3. Live Customer Inquiries / Requests (Mongo QuotationRequest or fallback DataStore)
+        let liveInquiries = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const QuotationRequest = require('../models/QuotationRequest');
+                const mongoRequests = await QuotationRequest.find({})
+                    .populate('customer', 'name mobile city district')
+                    .populate('assignedEmployee', 'name employeeId')
+                    .sort({ createdAt: -1 })
+                    .limit(6)
+                    .lean();
+
+                if (mongoRequests && mongoRequests.length > 0) {
+                    liveInquiries = mongoRequests.map(r => ({
+                        id: r.requestNumber || 'REQ',
+                        name: (r.customer && r.customer.name) || r.customerName || 'Direct Customer',
+                        mobile: (r.customer && r.customer.mobile) || r.customerMobile || 'N/A',
+                        requirement: `${r.proposedCapacityKw || 3} kW Solar Rooftop`,
+                        district: (r.customer && r.customer.city) || r.city || 'Raisen (M.P.)',
+                        status: r.status || 'SUBMITTED',
+                        createdAt: r.createdAt,
+                        rawId: r._id
+                    }));
+                }
+            } catch (reqErr) {
+                console.error('QuotationRequest inquiry error in admin dashboard:', reqErr);
+            }
+        }
+        if (liveInquiries.length === 0 && recentEnquiries && recentEnquiries.length > 0) {
+            liveInquiries = recentEnquiries.slice(0, 6);
+        }
+
+        res.render('private/admin/dashboard', {
             title: `Admin Management Dashboard | ${data.company.name}`,
             data,
             company: data.company,
@@ -24,11 +117,15 @@ exports.getDashboard = async (req, res) => {
                 activeUsers: counts.activeCount,
                 inactiveUsers: counts.inactiveCount,
                 totalUsers: counts.totalUsers,
-                totalEnquiries: recentEnquiries.length,
-                todayAttendance: todayAttendance.length
+                totalEnquiries: liveInquiries.length,
+                todayAttendance: todayAttendance.length,
+                projects: projectStats,
+                quotations: quotationStats
             },
             users,
-            recentEnquiries,
+            recentProjects,
+            recentQuotations,
+            recentEnquiries: liveInquiries,
             todayAttendance,
             recentActivities,
             user: req.session.user,
@@ -39,7 +136,7 @@ exports.getDashboard = async (req, res) => {
         });
     } catch (err) {
         console.error('Super Admin Dashboard Error:', err);
-        res.status(500).render('errors/403', {
+        res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error rendering Admin Dashboard.'
         });
@@ -49,7 +146,7 @@ exports.getDashboard = async (req, res) => {
 // 2. QUOTATIONS MODULE
 exports.getQuotations = (req, res) => {
     const quotations = DataStore.getAllQuotations();
-    res.render('admin/quotations', {
+    res.render('private/admin/quotations', {
         title: `Quotation Management | ${data.company.name}`,
         data,
         company: data.company,
@@ -63,19 +160,55 @@ exports.getQuotations = (req, res) => {
 };
 
 // 3. INVOICES MODULE
-exports.getInvoices = (req, res) => {
-    const invoices = DataStore.getAllInvoices();
-    res.render('admin/invoices', {
-        title: `Invoice Management | ${data.company.name}`,
-        data,
-        company: data.company,
-        invoices,
-        user: req.session.user,
-        currentUser: req.session.user,
-        activePage: 'invoices',
-        pageTitle: 'Tax Invoices & Billing',
-        breadcrumbs: [{ label: 'Invoices', url: '/admin/invoices' }]
-    });
+exports.getInvoices = async (req, res) => {
+    try {
+        let invoices = [];
+        let projects = [];
+        let quotations = [];
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const Invoice = require('../models/Invoice');
+                const Project = require('../models/Project');
+                const Quotation = require('../models/Quotation');
+
+                invoices = await Invoice.find({}).sort({ createdAt: -1 }).lean();
+                projects = await Project.find({ status: { $ne: 'CANCELLED' } })
+                    .populate('customer', 'name mobile city address consumerNumber gstin')
+                    .lean();
+                quotations = await Quotation.find({ status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] } })
+                    .populate('customerId', 'name mobile city address consumerNumber gstin')
+                    .lean();
+            } catch (dbErr) {
+                console.error('Invoice DB fetch error:', dbErr);
+            }
+        }
+
+        if (!invoices || invoices.length === 0) {
+            invoices = DataStore.getAllInvoices();
+        }
+
+        res.render('private/admin/invoices', {
+            title: `Tax Invoices & Customer Billing | ${data.company.name}`,
+            data,
+            company: data.company,
+            invoices,
+            projects,
+            quotations,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            user: req.session.user,
+            currentUser: req.session.user,
+            activePage: 'invoices',
+            pageTitle: 'Tax Invoices & Billing',
+            breadcrumbs: [{ label: 'Invoices', url: '/admin/invoices' }]
+        });
+    } catch (err) {
+        console.error('Error in getInvoices:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Unable to load invoice records.'
+        });
+    }
 };
 
 // 4. USER & EMPLOYEE MANAGEMENT
@@ -94,7 +227,7 @@ exports.getEmployees = async (req, res) => {
 
         const managers = users.filter(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER');
 
-        res.render('admin/employees', {
+        res.render('private/admin/employees', {
             title: `Staff & User Management | ${data.company.name}`,
             data,
             company: data.company,
@@ -109,7 +242,7 @@ exports.getEmployees = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching employees:', err);
-        res.status(500).render('errors/403', {
+        res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error loading staff database'
         });
@@ -136,7 +269,7 @@ exports.getManagers = async (req, res) => {
             return mgrObj;
         });
 
-        res.render('admin/managers', {
+        res.render('private/admin/managers', {
             title: `Branch Managers | ${data.company.name}`,
             data,
             company: data.company,
@@ -149,7 +282,7 @@ exports.getManagers = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching managers:', err);
-        res.status(500).render('errors/403', {
+        res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error loading managers list.'
         });
@@ -159,12 +292,14 @@ exports.getManagers = async (req, res) => {
 // 6. SYSTEM ACTIVITY & AUDIT LOGS
 exports.getActivityLogs = async (req, res) => {
     try {
-        const logs = await AuditService.getRecentLogs(50);
-        res.render('admin/activity-logs', {
+        const search = (req.query.search || '').trim();
+        const logs = await AuditService.getRecentLogs(100);
+        res.render('private/admin/activity-logs', {
             title: `System Activity Logs | ${data.company.name}`,
             data,
             company: data.company,
             logs,
+            search,
             user: req.session.user,
             currentUser: req.session.user,
             activePage: 'admin-logs',
@@ -173,7 +308,7 @@ exports.getActivityLogs = async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching activity logs:', err);
-        res.status(500).render('errors/403', {
+        res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error loading audit logs.'
         });
@@ -186,7 +321,7 @@ exports.getProfile = async (req, res) => {
         const sessionUser = req.session.user;
         const freshUser = await DataStore.getUserById(sessionUser._id) || sessionUser;
 
-        res.render('admin/profile', {
+        res.render('private/admin/profile', {
             title: `My Profile | ${data.company.name}`,
             data,
             company: data.company,
@@ -199,7 +334,7 @@ exports.getProfile = async (req, res) => {
         });
     } catch (err) {
         console.error('Error loading profile:', err);
-        res.status(500).render('errors/403', {
+        res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error loading user profile.'
         });
@@ -278,7 +413,7 @@ exports.getModulePlaceholder = (moduleKey) => {
             plannedFeatures: []
         };
 
-        res.render('admin/placeholder', {
+        res.render('private/admin/placeholder', {
             title: `${mod.title} | ${data.company.name}`,
             data,
             company: data.company,
@@ -580,6 +715,36 @@ exports.saveInvoice = (req, res) => {
 
     const saved = DataStore.addInvoice(invData);
 
+    // If MongoDB is available, save/update in DB
+    if (mongoose.connection.readyState === 1) {
+        try {
+            const Invoice = require('../models/Invoice');
+            const mongoData = {
+                invoiceNumber: saved.invoiceNumber,
+                customerName: saved.customerName,
+                customerMobile: saved.customerMobile,
+                customerAddress: saved.customerAddress,
+                customerGstin: saved.customerGstin || '',
+                plantCapacityKw: saved.plantCapacityKw,
+                items: invData.items || [],
+                subtotal: saved.subtotal,
+                cgst: saved.cgst,
+                sgst: saved.sgst,
+                gstRate: 12,
+                gstAmount: (saved.cgst || 0) + (saved.sgst || 0),
+                totalAmount: saved.totalAmount,
+                paymentStatus: saved.paymentStatus || 'paid',
+                paymentMethod: saved.paymentMethod,
+                invoiceDate: saved.date,
+                discomConsumerNo: invData.discomConsumerNo || '',
+                project: invData.projectId || null,
+                quotation: invData.quotationId || null,
+                createdByUser: user._id
+            };
+            Invoice.findOneAndUpdate({ invoiceNumber: saved.invoiceNumber }, mongoData, { upsert: true, new: true }).exec().catch(()=>{});
+        } catch (e) {}
+    }
+
     AuditService.log({
         action: 'INVOICE_GENERATED',
         user: user._id,
@@ -590,4 +755,31 @@ exports.saveInvoice = (req, res) => {
     });
 
     return res.json({ success: true, invoice: saved, message: `Invoice ${saved.invoiceNumber} recorded successfully` });
+};
+
+// 16. API: DELETE INVOICE (SUPER ADMIN & MANAGERS ONLY)
+exports.deleteInvoice = (req, res) => {
+    const user = req.session ? req.session.user : null;
+    if (!user || user.role === 'EMPLOYEE') {
+        return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+    const { invoiceNumber } = req.body;
+    if (!invoiceNumber) {
+        return res.status(400).json({ success: false, message: 'Invoice number is required' });
+    }
+    DataStore.deleteInvoice(invoiceNumber);
+    if (mongoose.connection.readyState === 1) {
+        try {
+            const Invoice = require('../models/Invoice');
+            Invoice.findOneAndDelete({ invoiceNumber }).exec().catch(()=>{});
+        } catch (e) {}
+    }
+    AuditService.log({
+        action: 'INVOICE_DELETED',
+        user: user._id,
+        role: user.role,
+        ipAddress: req.ip,
+        details: { invoiceNumber }
+    });
+    return res.json({ success: true, message: `Invoice ${invoiceNumber} deleted successfully` });
 };

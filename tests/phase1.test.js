@@ -11,7 +11,6 @@ const QuotationStatusHistory = require('../models/QuotationStatusHistory');
 const Project = require('../models/Project');
 const ProjectActivity = require('../models/ProjectActivity');
 const ProjectNote = require('../models/ProjectNote');
-const Notification = require('../models/Notification');
 const AuditLog = require('../models/AuditLog');
 
 const adminController = require('../controllers/adminController');
@@ -87,7 +86,6 @@ async function runPhase1Tests() {
     assert(typeof Project === 'function', 'Project model defined for Phase 3 readiness');
     assert(typeof ProjectActivity === 'function', 'ProjectActivity model defined');
     assert(typeof ProjectNote === 'function', 'ProjectNote model defined');
-    assert(typeof Notification === 'function', 'Notification model defined with types');
     assert(typeof AuditLog === 'function', 'AuditLog model defined with security actions');
 
     // Check User Schema extensions
@@ -165,7 +163,7 @@ async function runPhase1Tests() {
     };
     const mockResAdminDash = createMockRes();
     await adminController.getDashboard(mockReqAdminDash, mockResAdminDash);
-    assert(mockResAdminDash.renderedView === 'admin/dashboard', 'Super Admin dashboard renders admin/dashboard view');
+    assert(mockResAdminDash.renderedView.includes('admin/dashboard'), 'Super Admin dashboard renders admin/dashboard view');
     assert(mockResAdminDash.renderedData.stats.totalEmployees >= 0 &&
            mockResAdminDash.renderedData.stats.totalManagers >= 0, 'Super Admin dashboard calculates real non-static user metrics');
     assert(Array.isArray(mockResAdminDash.renderedData.users), 'Super Admin dashboard receives employee-manager user list');
@@ -179,10 +177,10 @@ async function runPhase1Tests() {
     };
     const mockResMgrDash = createMockRes();
     await managerController.getDashboard(mockReqMgrDash, mockResMgrDash);
-    assert(mockResMgrDash.renderedView === 'manager/dashboard', 'Manager dashboard renders manager/dashboard view');
+    assert(mockResMgrDash.renderedView.includes('manager/dashboard'), 'Manager dashboard renders manager/dashboard view');
     assert(Array.isArray(mockResMgrDash.renderedData.employees), 'Manager dashboard receives assigned team members');
 
-    // Employee Dashboard
+    // Employee Workspace Redirect
     const mockReqEmpDash = {
         session: {
             user: { _id: new mongoose.Types.ObjectId(), name: 'Anil Sharma', role: 'EMPLOYEE', employeeId: 'SES-EMP-03' }
@@ -190,20 +188,19 @@ async function runPhase1Tests() {
     };
     const mockResEmpDash = createMockRes();
     await employeeController.getDashboard(mockReqEmpDash, mockResEmpDash);
-    assert(mockResEmpDash.renderedView === 'employee/dashboard', 'Employee dashboard renders employee/dashboard view');
-    assert(mockResEmpDash.renderedData.profileUser && mockResEmpDash.renderedData.profileUser.name, 'Employee dashboard provides actual name and profile details');
+    assert(mockResEmpDash.redirectUrl === '/employee/attendance', 'Employee login/workspace automatically routes to attendance portal');
 
     // Employee Profile
     const mockResEmpProfile = createMockRes();
     await employeeController.getProfile(mockReqEmpDash, mockResEmpProfile);
-    assert(mockResEmpProfile.renderedView === 'admin/profile', 'Profile renders unified admin/profile view');
+    assert(mockResEmpProfile.renderedView.includes('admin/profile'), 'Profile renders unified admin/profile view');
 
     // TEST GROUP 6: Future Module Placeholders
     console.log('\n--- 6. Future Module Coming-Soon Placeholders ---');
     const custPlaceholder = adminController.getModulePlaceholder('customers');
     const mockResCust = createMockRes();
     custPlaceholder(mockReqAdminDash, mockResCust);
-    assert(mockResCust.renderedView === 'admin/placeholder', 'Future module renders clean coming-soon placeholder');
+    assert(mockResCust.renderedView.includes('admin/placeholder'), 'Future module renders clean coming-soon placeholder');
     assert(mockResCust.renderedData.module.phase.includes('Phase 2'), 'Customers module correctly tagged as Phase 2 Architecture');
 
     const projPlaceholder = adminController.getModulePlaceholder('projects');

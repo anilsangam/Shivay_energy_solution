@@ -1,0 +1,410 @@
+<%- include('../admin/partials/admin-head') %>
+
+<style>
+/* =========================================================================
+   BRANCH MANAGER OPERATIONS COMMAND CENTER - BLUISH EXECUTIVE THEME
+   ========================================================================= */
+.mgr-section-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease;
+}
+.mgr-section-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 42, 74, 0.08);
+}
+.mgr-section-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.mgr-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f2a4a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Bound Integrated Stats Ribbon Strip */
+.mgr-stats-strip {
+    background: #f1f6fc;
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 10px 14px;
+}
+.mgr-stat-item {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.mgr-stat-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #4b6584;
+    margin-bottom: 2px;
+}
+.mgr-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #12335e;
+}
+
+/* Bluish-Styled Tables */
+.mgr-table {
+    width: 100%;
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+.mgr-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #3b5577;
+    background: #f7faff;
+    padding: 11px 14px !important;
+    border-bottom: 1.5px solid #dce5f1 !important;
+    white-space: nowrap;
+}
+.mgr-table tbody td {
+    padding: 11px 14px !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e7eff8 !important;
+}
+.mgr-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+.mgr-table tbody tr:hover td {
+    background-color: #f5f9ff;
+}
+
+/* Fixed 2-Line Project Status Badge */
+.project-status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 86px;
+    min-height: 30px;
+    padding: 2px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 767.98px) {
+    .mgr-section-header {
+        padding: 10px 12px;
+    }
+    .mgr-section-title {
+        font-size: 13.5px;
+    }
+    .mgr-stats-strip {
+        padding: 8px 10px;
+    }
+    .mgr-stat-item {
+        padding: 6px 8px;
+    }
+    .mgr-stat-value {
+        font-size: 18px;
+    }
+    .mgr-table-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .mgr-table-min {
+        min-width: 600px;
+    }
+}
+</style>
+
+<!-- Header Welcome Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 22px;">
+            <%= stats.branchName %> (<%= stats.branchCode %>)
+        </h2>
+        <p class="text-muted small mb-0">
+            Branch Manager: <strong><%= currentUser ? currentUser.name : 'Branch Manager' %></strong> • <%= company.name %> Regional Operations
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+        <a href="/manager/projects" class="btn btn-sm btn-primary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-solar-panel me-1"></i> Branch Projects
+        </a>
+        <a href="/manager/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> My Team (<%= stats.totalAssigned %>)
+        </a>
+        <a href="/manager/attendance" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-location-pin me-1"></i> GPS Logs
+        </a>
+        <a href="/manager/quotations" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
+            <i class="icofont-paper me-1"></i> Quotation Requests
+        </a>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 1. BOUND BRANCH PROJECTS EXECUTION CARD -->
+<!-- ========================================================================= -->
+<div class="mgr-section-card shadow-sm">
+    <div class="dash-section-header">
+        <div>
+            <h5 class="dash-section-title">
+                <i class="icofont-solar-panel text-primary fs-5"></i>
+                Branch Solar Installation Projects
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11px;">
+                    <%= (stats.projects && stats.projects.active) || 0 %> Active Work Orders
+                </span>
+            </h5>
+        </div>
+        <a href="/manager/projects" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+            View All Projects <i class="icofont-arrow-right"></i>
+        </a>
+    </div>
+
+    <!-- Integrated Stats Ribbon Strip -->
+    <div class="mgr-stats-strip">
+        <div class="row g-2 align-items-center text-center text-sm-start">
+            <div class="col-6 col-sm-3 mgr-stat-item border-end-sm">
+                <div class="mgr-stat-label">Total Work Orders</div>
+                <div class="mgr-stat-value text-dark"><%= (stats.projects && stats.projects.total) || 0 %></div>
+            </div>
+            <div class="col-6 col-sm-3 mgr-stat-item border-end-sm">
+                <div class="mgr-stat-label text-warning">Active Installs</div>
+                <div class="mgr-stat-value text-warning"><%= (stats.projects && stats.projects.active) || 0 %></div>
+            </div>
+            <div class="col-6 col-sm-3 mgr-stat-item border-end-sm">
+                <div class="mgr-stat-label text-success">Grid Certified</div>
+                <div class="mgr-stat-value text-success"><%= (stats.projects && stats.projects.completed) || 0 %></div>
+            </div>
+            <div class="col-6 col-sm-3 mgr-stat-item">
+                <div class="mgr-stat-label text-primary">Capacity kW</div>
+                <div class="mgr-stat-value text-primary"><%= (stats.projects && stats.projects.totalKw) || 0 %> <small style="font-size: 13px; font-weight: 700;">kW</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Branch Projects Table -->
+    <div class="mgr-table-wrap">
+        <table class="mgr-table table align-middle mgr-table-min mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">PROJECT #</th>
+                    <th style="width: 26%;">CUSTOMER & LOCATION</th>
+                    <th style="width: 14%;">CAPACITY</th>
+                    <th style="width: 16%;">ASSIGNED TEAM</th>
+                    <th style="width: 12%;">PROGRESS</th>
+                    <th style="width: 10%;" class="text-end pe-3">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (typeof recentProjects !== 'undefined' && recentProjects && recentProjects.length > 0) { %>
+                    <% recentProjects.forEach(p => { %>
+                        <tr>
+                            <td>
+                                <a href="/manager/projects/<%= p._id %>" class="fw-bold text-primary font-monospace text-decoration-none" style="font-size: 12.5px;">
+                                    <%= p.projectNumber %>
+                                </a>
+                                <div class="mt-1">
+                                    <span class="badge bg-light text-dark border" style="font-size: 9.5px; padding: 1px 5px;"><%= p.priority || 'MEDIUM' %></span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 170px;" title="<%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || 'Client' %>">
+                                    <%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || 'Client' %>
+                                </div>
+                                <div class="text-muted text-truncate" style="max-width: 170px; font-size: 11px;">
+                                    <i class="icofont-location-pin text-muted"></i> <%= p.siteAddress || p.city || 'Raisen, M.P.' %>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border border-primary-subtle font-monospace fw-bold" style="font-size: 11.5px; padding: 2px 6px;">
+                                    <%= p.capacityKw %> kW
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 140px; font-size: 12px;">
+                                    <%= p.assignedEngineer ? p.assignedEngineer.name : 'Unassigned' %>
+                                </div>
+                                <small class="text-muted font-monospace"><%= p.assignedEngineer ? p.assignedEngineer.employeeId : '' %></small>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <small class="text-muted" style="font-size: 10px;">Milestone</small>
+                                    <small class="fw-bold text-dark font-monospace" style="font-size: 11px;"><%= p.progressPercentage || 0 %>%</small>
+                                </div>
+                                <div class="progress" style="height: 6px; background: #e2e8f0; border-radius: 4px;">
+                                    <div class="progress-bar <%= p.progressPercentage === 100 ? 'bg-success' : 'bg-primary' %>" role="progressbar" style="width: <%= p.progressPercentage || 0 %>%;"></div>
+                                </div>
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="/manager/projects/<%= p._id %>" class="btn btn-sm btn-outline-primary" title="Open Project Workspace" style="font-size: 11px; padding: 3px 8px; border-radius: 5px; white-space: nowrap;">
+                                    Workspace
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="icofont-solar-panel fs-2 d-block mb-1 text-muted"></i>
+                            <span class="small">No active branch projects found. Work orders are generated as accepted quotes clear.</span>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 2. TWO EQUAL COLUMNS: ASSIGNED STAFF & TODAY'S ATTENDANCE -->
+<!-- ========================================================================= -->
+<div class="row g-3 mb-4">
+    <!-- Assigned Employees Card -->
+    <div class="col-12 col-lg-6">
+        <div class="mgr-section-card h-100 shadow-sm">
+            <div class="mgr-section-header">
+                <div>
+                    <h5 class="mgr-section-title">
+                        <i class="icofont-users-alt-2 text-primary fs-5"></i>
+                        Field Installation Team
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11px;">
+                            <%= stats.activeStaff %> Active
+                        </span>
+                    </h5>
+                </div>
+                <a href="/manager/employees" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+                    Manage Team <i class="icofont-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="mgr-table-wrap">
+                <table class="mgr-table table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>STAFF MEMBER</th>
+                            <th>EMP ID</th>
+                            <th>DESIGNATION</th>
+                            <th class="text-end pe-3">STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (employees && employees.length > 0) { %>
+                            <% employees.slice(0, 5).forEach(e => { %>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="admin-avatar-circle" style="width: 28px; height: 28px; font-size: 10px; flex-shrink: 0;">
+                                                <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <div class="text-truncate" style="max-width: 140px;">
+                                                <strong class="text-dark d-block text-truncate" style="font-size: 12.5px;"><%= e.name %></strong>
+                                                <div class="text-muted text-truncate font-monospace" style="font-size: 11px;"><%= e.mobile %></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><code style="font-size: 11px;"><%= e.employeeId || 'N/A' %></code></td>
+                                    <td><span class="text-muted" style="font-size: 11.5px;"><%= e.designation || 'Solar Technician' %></span></td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge <%= e.status === 'ACTIVE' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary text-white' %>" style="font-size: 9.5px; padding: 2px 6px;">
+                                            <%= e.status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No personnel currently assigned to your branch.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Attendance Logs Summary -->
+    <div class="col-12 col-lg-6">
+        <div class="mgr-section-card h-100 shadow-sm">
+            <div class="mgr-section-header">
+                <div>
+                    <h5 class="mgr-section-title">
+                        <i class="icofont-location-pin text-danger fs-5"></i>
+                        Field GPS Attendance Check-ins
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-monospace ms-1" style="font-size: 11px;">
+                            <%= stats.todayPunches %> Punches
+                        </span>
+                    </h5>
+                </div>
+                <a href="/manager/attendance" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+                    View Full Logs <i class="icofont-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="mgr-table-wrap">
+                <table class="mgr-table table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>STAFF MEMBER</th>
+                            <th>PUNCH</th>
+                            <th>TIME</th>
+                            <th class="text-end pe-3">MAP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (attendance && attendance.length > 0) { %>
+                            <% attendance.slice(0, 5).forEach(a => { %>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 140px; font-size: 12.5px;"><%= a.employeeName %></div>
+                                        <code style="font-size: 10px;"><%= a.employeeId %></code>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= a.type === 'check_in' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary text-white' %>" style="font-size: 9.5px; padding: 2px 6px;">
+                                            <%= a.type ? a.type.replace('_', ' ').toUpperCase() : 'CHECK IN' %>
+                                        </span>
+                                    </td>
+                                    <td><small class="text-muted font-monospace" style="font-size: 11px;"><%= a.timestamp %></small></td>
+                                    <td class="text-end pe-3">
+                                        <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2 d-inline-flex align-items-center gap-1" style="font-size: 10.5px; border-radius: 4px;">
+                                            <i class="icofont-google-map"></i> View Map
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">No attendance punches recorded for today yet.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../admin/partials/admin-footer') %>

@@ -1,7 +1,7 @@
 const data = require('../config/company');
 
 exports.getFranchisePage = (req, res) => {
-    res.render('franchise', {
+    res.render('public-site/franchise', {
         title: `Franchise & Dealership Partnership | ${data.company.name}`,
         metaDescription: `Become an authorized solar dealer or franchise partner of ${data.company.name} in Madhya Pradesh. High margin solar business opportunity.`,
         data,

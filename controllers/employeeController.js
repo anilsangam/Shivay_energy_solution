@@ -2,36 +2,9 @@ const data = require('../config/company');
 const DataStore = require('../services/dataStore');
 const AuditService = require('../services/auditService');
 
-// Employee Dashboard
+// Employee Portal Entry (Redirect to GPS Attendance)
 exports.getDashboard = async (req, res) => {
-    try {
-        const sessionUser = req.session.user;
-        const freshUser = await DataStore.getUserById(sessionUser._id) || sessionUser;
-        const today = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-        const userAttendance = DataStore.getTodayAttendance().filter(a => a.employeeId === sessionUser.employeeId);
-        const assignedManager = freshUser.managerId || freshUser.manager || null;
-
-        res.render('employee/dashboard', {
-            title: `Employee Workspace | ${data.company.name}`,
-            data,
-            company: data.company,
-            profileUser: freshUser,
-            manager: assignedManager,
-            user: sessionUser,
-            currentUser: sessionUser,
-            today,
-            userAttendance,
-            activePage: 'emp-dashboard',
-            pageTitle: `Welcome, ${freshUser.name || 'Staff Member'}`,
-            breadcrumbs: [{ label: 'Workspace' }]
-        });
-    } catch (err) {
-        console.error('Employee Dashboard Error:', err);
-        res.status(500).render('errors/403', {
-            title: 'Error | Shivay Energy Solutions',
-            message: 'Error loading employee workspace.'
-        });
-    }
+    return res.redirect('/employee/attendance');
 };
 
 // Employee Field GPS Attendance Page
@@ -40,7 +13,7 @@ exports.getAttendancePage = (req, res) => {
     const today = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
     const userPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === (user ? user.employeeId : ''));
 
-    res.render('employee/attendance', {
+    res.render('private/employee/attendance', {
         title: `Employee Field GPS Attendance | ${data.company.name}`,
         data,
         company: data.company,
@@ -140,7 +113,7 @@ exports.submitAttendance = (req, res) => {
 // Employee Quotations (Allowed - Existing proposals engine + Phase 2 placeholder notice)
 exports.getQuotations = (req, res) => {
     const quotations = DataStore.getAllQuotations();
-    res.render('admin/quotations', {
+    res.render('private/admin/quotations', {
         title: `My Solar Quotations | ${data.company.name}`,
         data,
         company: data.company,
@@ -170,7 +143,7 @@ exports.getProjects = (req, res) => {
         ]
     };
 
-    res.render('admin/placeholder', {
+    res.render('private/admin/placeholder', {
         title: `${mod.title} | ${data.company.name}`,
         data,
         company: data.company,
@@ -188,7 +161,7 @@ exports.getProfile = async (req, res) => {
     const sessionUser = req.session.user;
     const freshUser = await DataStore.getUserById(sessionUser._id) || sessionUser;
 
-    res.render('admin/profile', {
+    res.render('private/admin/profile', {
         title: `My Profile | ${data.company.name}`,
         data,
         company: data.company,

@@ -1,0 +1,452 @@
+<%- include('../admin/partials/admin-head') %>
+
+<!-- Top Header & Back Link -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="font-weight-bold mb-0" style="color: var(--admin-navy-primary); font-size: 22px;">
+                Prepare Solar Commercial Quotation
+            </h2>
+            <span class="badge bg-primary px-2 py-1"><%= request.requestNumber %></span>
+        </div>
+        <p class="text-muted small mb-0">
+            Customer: <strong><%= request.customerName %></strong> (<%= request.customerMobile %>) • Branch: Raisen Central (M.P.)
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-3 mt-md-0">
+        <a href="/manager/quotations/request/<%= request._id %>" class="btn btn-sm btn-outline-secondary">
+            <i class="icofont-arrow-left me-1"></i> Back to Request Details
+        </a>
+    </div>
+</div>
+
+<form id="quotationPrepareForm">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <input type="hidden" name="requestId" value="<%= request._id %>">
+    <input type="hidden" name="quotationRequestId" value="<%= request._id %>">
+    <input type="hidden" name="customerId" value="<%= request.customer ? (request.customer._id || request.customer) : '' %>">
+    <input type="hidden" name="customerName" value="<%= request.customerName %>">
+    <input type="hidden" name="customerMobile" value="<%= request.customerMobile %>">
+    <input type="hidden" name="customerEmail" value="<%= request.customerEmail || '' %>">
+    <input type="hidden" name="customerAddress" value="<%= request.siteAddress || '' %>">
+    <input type="hidden" name="address" value="<%= request.siteAddress || '' %>">
+    <input type="hidden" name="city" value="<%= request.city || 'Raisen' %>">
+    <input type="hidden" name="district" value="<%= request.district || 'Raisen' %>">
+    <input type="hidden" name="state" value="<%= request.state || 'Madhya Pradesh' %>">
+    <input type="hidden" name="pincode" value="<%= request.pincode || '464551' %>">
+    <input type="hidden" name="discom" value="<%= request.discom || 'MPPKVVCL' %>">
+    <input type="hidden" name="consumerNumber" value="<%= request.consumerNumber || '' %>">
+    <input type="hidden" name="customerType" id="customerTypeInput" value="<%= request.customerType || 'RESIDENTIAL' %>">
+
+    <div class="row g-4">
+        <!-- Main Form Column: Technical Specs & Line Items -->
+        <div class="col-lg-8">
+            <!-- Technical Plant Configuration -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <div>
+                        <h5 class="admin-card-title">1. Plant Engineering Parameters</h5>
+                        <div class="admin-card-subtitle">Solar PV capacity, roof structural setup & DISCOM interconnection</div>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Plant Capacity (kW) *</label>
+                            <input type="number" step="0.5" min="1" max="500" class="form-control" name="plantCapacityKw" id="plantCapacityKw" value="<%= request.proposedCapacityKw %>" required onchange="recalculateTotals()">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">System Configuration *</label>
+                            <select class="form-select" name="systemType" id="systemType">
+                                <option value="ON_GRID" <%= request.systemType === 'ON_GRID' ? 'selected' : '' %>>On-Grid / Grid-Tied (Net Metering)</option>
+                                <option value="HYBRID" <%= request.systemType === 'HYBRID' ? 'selected' : '' %>>Hybrid with Battery Backup</option>
+                                <option value="OFF_GRID" <%= request.systemType === 'OFF_GRID' ? 'selected' : '' %>>Off-Grid Autonomous</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Roof Type *</label>
+                            <select class="form-select" name="roofType">
+                                <option value="RCC_FLAT" <%= request.roofType === 'RCC_FLAT' ? 'selected' : '' %>>RCC Flat Roof (Standard Pier)</option>
+                                <option value="TIN_SHED" <%= request.roofType === 'TIN_SHED' ? 'selected' : '' %>>Tin / Metal Profile Sheet</option>
+                                <option value="TILED" <%= request.roofType === 'TILED' ? 'selected' : '' %>>Tiled Sloped Roof</option>
+                                <option value="ELEVATED_SUPERSTRUCTURE" <%= request.roofType === 'ELEVATED_SUPERSTRUCTURE' ? 'selected' : '' %>>Elevated Superstructure (Gazebo/High Raise)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line Items Table Builder -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <div>
+                        <h5 class="admin-card-title">2. Bill of Materials & Line Items (BOM)</h5>
+                        <div class="admin-card-subtitle">Server-authoritative pricing and 12% solar GST calculations</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLineItem()">
+                        <i class="icofont-plus-circle me-1"></i> Add Custom Line Item
+                    </button>
+                </div>
+                <div class="admin-table-container">
+                    <table class="admin-table" id="lineItemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 32%;">Item Description & Specification</th>
+                                <th style="width: 14%;">SKU</th>
+                                <th style="width: 10%;">Qty</th>
+                                <th style="width: 9%;">Unit</th>
+                                <th style="width: 15%;">Unit Price (₹)</th>
+                                <th style="width: 12%;">GST</th>
+                                <th style="width: 8%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineItemsBody">
+                            <% initialLineItems.forEach((item, index) => { %>
+                                <tr class="line-item-row">
+                                    <td>
+                                        <textarea class="form-control form-control-sm item-desc" rows="2" required><%= item.description %></textarea>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm item-sku" value="<%= item.sku %>">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.1" min="1" class="form-control form-control-sm item-qty" value="<%= item.quantity %>" required onchange="recalculateTotals()">
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm item-unit">
+                                            <option value="Nos" <%= item.unit === 'Nos' ? 'selected' : '' %>>Nos</option>
+                                            <option value="Set" <%= item.unit === 'Set' ? 'selected' : '' %>>Set</option>
+                                            <option value="kW" <%= item.unit === 'kW' ? 'selected' : '' %>>kW</option>
+                                            <option value="Job" <%= item.unit === 'Job' ? 'selected' : '' %>>Job</option>
+                                            <option value="Mtr" <%= item.unit === 'Mtr' ? 'selected' : '' %>>Mtr</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="100" min="0" class="form-control form-control-sm item-price" value="<%= item.unitPrice %>" required onchange="recalculateTotals()">
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm item-gst" onchange="recalculateTotals()">
+                                            <option value="12" <%= item.gstRate === 12 ? 'selected' : '' %>>12%</option>
+                                            <option value="18" <%= item.gstRate === 18 ? 'selected' : '' %>>18%</option>
+                                            <option value="5" <%= item.gstRate === 5 ? 'selected' : '' %>>5%</option>
+                                            <option value="0" <%= item.gstRate === 0 ? 'selected' : '' %>>0%</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeLineItem(this)" title="Remove item">
+                                            <i class="icofont-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Commercial Scope & Warranties -->
+            <div class="admin-card mb-4">
+                <div class="admin-card-header">
+                    <h5 class="admin-card-title">3. Terms, Scope of Work & Warranties</h5>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Quotation Validity</label>
+                            <input type="date" class="form-control" name="validityDate" id="validityDate">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Delivery & Commissioning Timeline</label>
+                            <input type="text" class="form-control" name="deliveryTerms" value="15-21 working days from DISCOM Net Metering feasibility approval.">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Warranty Clauses</label>
+                            <textarea class="form-control" name="warrantyTerms" rows="2">25 Years Linear Power Output Warranty on Solar PV Modules (min 80% at 25th year); 5 Years Comprehensive On-Site Warranty on Solar Inverter; 5 Years on Mounting Structure & Electrical BoS.</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Payment Terms & Milestones</label>
+                            <textarea class="form-control" name="paymentTerms" rows="2">20% Advance along with formal Work Order confirmation; 70% against delivery of solar modules and inverter at site; 10% post DISCOM meter testing & plant commissioning.</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Scope of Work</label>
+                            <textarea class="form-control" name="scopeOfWork" rows="2">Supply of DCR Tier-1 Modules, Inverter, HDG Structure, DC/ACDB, Earthing, Lightning Arrester, Installation, Testing & DISCOM net-meter liaisoning.</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Exclusions</label>
+                            <textarea class="form-control" name="exclusions" rows="2">Civil roof masonry repairs, statutory DISCOM meter testing fee/security deposit paid directly to MPPKVVCL, Internet Wi-Fi router at site.</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Internal Manager Notes (Not displayed on client PDF)</label>
+                            <input type="text" class="form-control" name="internalNotes" placeholder="Special margin notes or manager instructions...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Summary Column: Live Authoritative Financials -->
+        <div class="col-lg-4">
+            <div class="admin-card sticky-top" style="top: 80px;">
+                <div class="admin-card-header bg-light">
+                    <h5 class="admin-card-title text-primary"><i class="icofont-calculator-alt me-1"></i> Financial Summary</h5>
+                </div>
+                <div class="p-4">
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Total Taxable Value (₹):</span>
+                        <strong id="displayTaxable">₹ <%= Number(previewFinancials.taxableValue).toLocaleString('en-IN') %></strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">CGST (6% Intra-State MP):</span>
+                        <span id="displayCgst">₹ <%= Number(previewFinancials.cgstAmount).toLocaleString('en-IN') %></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">SGST (6% Intra-State MP):</span>
+                        <span id="displaySgst">₹ <%= Number(previewFinancials.sgstAmount).toLocaleString('en-IN') %></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2 small border-top pt-2">
+                        <span class="fw-bold">Gross Total (Incl. GST):</span>
+                        <strong class="text-dark" id="displayGross">₹ <%= Number(previewFinancials.grossTotal).toLocaleString('en-IN') %></strong>
+                    </div>
+
+                    <!-- Commercial Discount -->
+                    <div class="my-3 p-2 bg-light rounded border">
+                        <label class="form-label small fw-bold d-flex justify-content-between">
+                            <span>Special Project Discount (₹):</span>
+                        </label>
+                        <input type="number" step="500" min="0" class="form-control form-control-sm" name="specialDiscount" id="specialDiscount" value="0" onchange="recalculateTotals()">
+                    </div>
+
+                    <!-- PM Surya Ghar Govt Subsidy -->
+                    <div class="p-3 mb-3 rounded" style="background: #ecfdf5; border: 1px solid #a7f3d0;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="fw-bold text-success"><i class="icofont-sun-alt me-1"></i> PM Surya Ghar Subsidy</small>
+                            <span class="badge bg-success" id="subsidyTag">Govt Benefit</span>
+                        </div>
+                        <div class="h5 font-weight-bold text-success mb-0" id="displaySubsidy">
+                            - ₹ <%= Number(previewFinancials.estimatedSubsidy).toLocaleString('en-IN') %>
+                        </div>
+                        <small class="text-muted" style="font-size: 11px;">Credited directly to customer's Aadhaar-linked bank account</small>
+                    </div>
+
+                    <!-- Net Payable -->
+                    <div class="p-3 mb-4 rounded" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+                        <small class="text-muted d-block">Estimated Net Customer Investment</small>
+                        <div class="h4 font-weight-bold text-primary mb-0" id="displayNetPayable">
+                            ₹ <%= Number(previewFinancials.netPayableAfterSubsidy).toLocaleString('en-IN') %>
+                        </div>
+                    </div>
+
+                    <!-- Milestone Payments -->
+                    <div class="border rounded p-3 mb-4 bg-light small">
+                        <div class="fw-bold text-dark mb-2">Payment Milestones</div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>20% Advance with Order:</span>
+                            <strong id="displayAdvance">₹ <%= Number(previewFinancials.advanceAmount).toLocaleString('en-IN') %></strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>80% Balance on Delivery:</span>
+                            <strong id="displayBalance">₹ <%= Number(previewFinancials.balanceAmount).toLocaleString('en-IN') %></strong>
+                        </div>
+                    </div>
+
+                    <!-- Actions: Direct Approve OR Save for Later -->
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success py-2 fw-bold shadow-sm" id="btnApproveQuotation" onclick="submitQuotationForm(true)">
+                            <i class="icofont-check-circled me-1"></i> Approve & Issue Official Quotation
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary py-2 small font-weight-bold" id="btnDraftQuotation" onclick="submitQuotationForm(false)">
+                            <i class="icofont-save me-1"></i> Save as Draft / Pending Approval
+                        </button>
+                    </div>
+                    <small class="text-muted d-block text-center mt-2" style="font-size: 11px;">
+                        <i class="icofont-shield-alt text-success"></i> Direct Approval generates official stamped PDF and enables WhatsApp sharing for staff.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+// Default validity date to 30 days from today
+const today = new Date();
+today.setDate(today.getDate() + 30);
+document.getElementById('validityDate').value = today.toISOString().split('T')[0];
+
+function addLineItem() {
+    const tbody = document.getElementById('lineItemsBody');
+    const tr = document.createElement('tr');
+    tr.className = 'line-item-row';
+    tr.innerHTML = `
+        <td><textarea class="form-control form-control-sm item-desc" rows="2" placeholder="Item description & specification..." required></textarea></td>
+        <td><input type="text" class="form-control form-control-sm item-sku" placeholder="SKU/Model"></td>
+        <td><input type="number" step="0.1" min="1" class="form-control form-control-sm item-qty" value="1" required onchange="recalculateTotals()"></td>
+        <td>
+            <select class="form-select form-select-sm item-unit">
+                <option value="Nos">Nos</option>
+                <option value="Set">Set</option>
+                <option value="kW">kW</option>
+                <option value="Job">Job</option>
+                <option value="Mtr">Mtr</option>
+            </select>
+        </td>
+        <td><input type="number" step="100" min="0" class="form-control form-control-sm item-price" value="0" required onchange="recalculateTotals()"></td>
+        <td>
+            <select class="form-select form-select-sm item-gst" onchange="recalculateTotals()">
+                <option value="12">12%</option>
+                <option value="18">18%</option>
+                <option value="5">5%</option>
+                <option value="0">0%</option>
+            </select>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeLineItem(this)" title="Remove item">
+                <i class="icofont-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    recalculateTotals();
+}
+
+function removeLineItem(btn) {
+    const tbody = document.getElementById('lineItemsBody');
+    if (tbody.querySelectorAll('.line-item-row').length <= 1) {
+        alert('A quotation must contain at least one line item.');
+        return;
+    }
+    btn.closest('tr').remove();
+    recalculateTotals();
+}
+
+function gatherLineItems() {
+    const rows = document.querySelectorAll('.line-item-row');
+    const items = [];
+    rows.forEach(r => {
+        const desc = r.querySelector('.item-desc').value.trim();
+        const sku = r.querySelector('.item-sku').value.trim();
+        const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
+        const unit = r.querySelector('.item-unit').value;
+        const price = parseFloat(r.querySelector('.item-price').value) || 0;
+        const gst = parseFloat(r.querySelector('.item-gst').value) || 12;
+
+        if (desc) {
+            items.push({
+                description: desc,
+                sku: sku,
+                quantity: qty,
+                unit: unit,
+                unitPrice: price,
+                discount: 0,
+                gstRate: gst
+            });
+        }
+    });
+    return items;
+}
+
+async function recalculateTotals() {
+    const items = gatherLineItems();
+    const kw = parseFloat(document.getElementById('plantCapacityKw').value) || 3;
+    const specialDiscount = parseFloat(document.getElementById('specialDiscount').value) || 0;
+    const customerType = document.getElementById('customerTypeInput').value;
+
+    try {
+        const res = await fetch('/manager/quotations/preview-financials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lineItems: items,
+                plantCapacityKw: kw,
+                specialDiscount: specialDiscount,
+                customerType: customerType,
+                customerState: 'Madhya Pradesh'
+            })
+        });
+        const data = await res.json();
+        if (data.success && data.financials) {
+            const f = data.financials;
+            document.getElementById('displayTaxable').textContent = '₹ ' + Number(f.taxableValue).toLocaleString('en-IN');
+            document.getElementById('displayCgst').textContent = '₹ ' + Number(f.cgstAmount).toLocaleString('en-IN');
+            document.getElementById('displaySgst').textContent = '₹ ' + Number(f.sgstAmount).toLocaleString('en-IN');
+            document.getElementById('displayGross').textContent = '₹ ' + Number(f.grossTotal).toLocaleString('en-IN');
+            document.getElementById('displaySubsidy').textContent = '- ₹ ' + Number(f.estimatedSubsidy).toLocaleString('en-IN');
+            document.getElementById('displayNetPayable').textContent = '₹ ' + Number(f.netPayableAfterSubsidy).toLocaleString('en-IN');
+            document.getElementById('displayAdvance').textContent = '₹ ' + Number(f.advanceAmount).toLocaleString('en-IN');
+            document.getElementById('displayBalance').textContent = '₹ ' + Number(f.balanceAmount).toLocaleString('en-IN');
+        }
+    } catch (err) {
+        console.error('Error previewing calculations:', err);
+    }
+}
+
+async function submitQuotationForm(directApprove) {
+    const form = document.getElementById('quotationPrepareForm');
+    const btnApprove = document.getElementById('btnApproveQuotation');
+    const btnDraft = document.getElementById('btnDraftQuotation');
+
+    btnApprove.disabled = true;
+    btnDraft.disabled = true;
+
+    if (directApprove) {
+        btnApprove.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Approving & Issuing...';
+    } else {
+        btnDraft.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving Draft...';
+    }
+
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    payload.lineItems = gatherLineItems();
+    payload.plantCapacityKw = parseFloat(payload.plantCapacityKw) || 3;
+    payload.specialDiscount = parseFloat(payload.specialDiscount) || 0;
+    payload.directApprove = directApprove;
+
+    if (payload.lineItems.length === 0) {
+        alert('Please add at least one line item to the quotation.');
+        btnApprove.disabled = false;
+        btnDraft.disabled = false;
+        btnApprove.innerHTML = '<i class="icofont-check-circled me-1"></i> Approve & Issue Official Quotation';
+        btnDraft.innerHTML = '<i class="icofont-save me-1"></i> Save as Draft / Pending Approval';
+        return;
+    }
+
+    const postUrl = window.location.pathname.startsWith('/admin')
+        ? '/admin/quotations/save-prepared'
+        : '/manager/quotations/save-prepared';
+
+    try {
+        const res = await fetch(postUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': payload._csrf,
+                'X-CSRF-Token': payload._csrf
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || (directApprove ? 'Quotation approved and issued successfully!' : 'Quotation draft saved!'));
+            const redirectBase = window.location.pathname.startsWith('/admin') ? '/admin/quotations' : '/manager/quotations';
+            window.location.href = redirectBase;
+        } else {
+            alert(data.message || 'Error saving quotation.');
+            btnApprove.disabled = false;
+            btnDraft.disabled = false;
+            btnApprove.innerHTML = '<i class="icofont-check-circled me-1"></i> Approve & Issue Official Quotation';
+            btnDraft.innerHTML = '<i class="icofont-save me-1"></i> Save as Draft / Pending Approval';
+        }
+    } catch (err) {
+        alert('Server or network connection error.');
+        btnApprove.disabled = false;
+        btnDraft.disabled = false;
+        btnApprove.innerHTML = '<i class="icofont-check-circled me-1"></i> Approve & Issue Official Quotation';
+        btnDraft.innerHTML = '<i class="icofont-save me-1"></i> Save as Draft / Pending Approval';
+    }
+}
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

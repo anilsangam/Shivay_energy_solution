@@ -1,0 +1,118 @@
+<!-- Reusable Modal: Record Customer Decision (Accepted / Rejected) -->
+<div class="modal fade" id="customerResponseModal" tabindex="-1" aria-labelledby="custResponseLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--admin-navy-primary, #0f172a), #1e3a8a); padding: 14px 18px;">
+                <h6 class="modal-title font-weight-bold mb-0" id="custResponseLabel">
+                    <i class="icofont-ui-user me-2 text-warning"></i> Record Client Decision
+                </h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="handleRecordCustomerResponse(event)">
+                <input type="hidden" id="modalQuoteId">
+                <input type="hidden" id="modalCustomerCsrfToken" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <div class="modal-body p-4">
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <small class="text-muted d-block">Target Quotation Number:</small>
+                        <code class="fs-6 fw-bold text-dark" id="modalQuoteNum">SES-Q2026-0001</code>
+                        <div class="small text-muted mt-1">
+                            Recording client acceptance will update the quotation status to <strong>CUSTOMER_ACCEPTED</strong> and unlock Phase 3 Project Onboarding.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold text-dark">Client Decision *</label>
+                        <select id="modalResponseStatus" class="form-select" required style="height: 40px; border-radius: 8px;">
+                            <option value="ACCEPTED" selected>Client ACCEPTED Proposal (Ready for Project)</option>
+                            <option value="REJECTED">Client REJECTED / Declined Proposal</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold text-dark">Discussion Remarks / Notes</label>
+                        <textarea id="modalResponseRemarks" class="form-control" rows="3" style="border-radius: 8px;" placeholder="e.g. Client confirmed via call/WhatsApp; agreed on 20% advance milestone; site execution approved."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal" style="border-radius: 6px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3" id="modalResponseSubmitBtn" style="background: var(--admin-navy-primary, #0f172a); border-radius: 6px;">
+                        <i class="icofont-save me-1"></i> Save Client Decision
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCustomerResponseModal(quoteId, quoteNum) {
+    const idInput = document.getElementById('modalQuoteId');
+    const numDisplay = document.getElementById('modalQuoteNum');
+    if (idInput) idInput.value = quoteId;
+    if (numDisplay) numDisplay.innerText = quoteNum;
+
+    const modalEl = document.getElementById('customerResponseModal');
+    if (modalEl) {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.removeAttribute('aria-hidden');
+            modalEl.setAttribute('aria-modal', 'true');
+            document.body.classList.add('modal-open');
+            if (!document.querySelector('.modal-backdrop')) {
+                const backdropEl = document.createElement('div');
+                backdropEl.className = 'modal-backdrop fade show';
+                document.body.appendChild(backdropEl);
+            }
+        }
+    }
+}
+
+async function handleRecordCustomerResponse(e) {
+    e.preventDefault();
+    const btn = document.getElementById('modalResponseSubmitBtn');
+    const origBtnHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+    }
+
+    const quoteId = document.getElementById('modalQuoteId').value;
+    const status = document.getElementById('modalResponseStatus').value;
+    const remarks = document.getElementById('modalResponseRemarks').value;
+    const csrfEl = document.getElementById('modalCustomerCsrfToken') || document.querySelector('input[name="_csrf"]') || document.getElementById('csrfTokenInput');
+    const csrf = csrfEl ? csrfEl.value : '';
+
+    try {
+        const res = await fetch(`/employee/quotations/${quoteId}/customer-response`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrf,
+                'CSRF-Token': csrf
+            },
+            body: JSON.stringify({ _csrf: csrf, status, remarks })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Customer response recorded successfully!');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error recording customer response.');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origBtnHtml;
+            }
+        }
+    } catch (err) {
+        console.error('Customer response error:', err);
+        alert('Network or server error while recording client decision.');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origBtnHtml;
+        }
+    }
+}
+</script>

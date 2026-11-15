@@ -1,0 +1,645 @@
+<%- include('partials/admin-head') %>
+
+<style>
+/* =========================================================================
+   EXECUTIVE COMMAND CENTER - BLUISH PALETTE & 60% / 40% ARCHITECTURE
+   ========================================================================= */
+
+/* Responsive 60/40 Desktop Split with 100% Mobile Stack */
+@media (min-width: 1200px) {
+    .dash-col-60 {
+        flex: 0 0 60% !important;
+        max-width: 60% !important;
+    }
+    .dash-col-40 {
+        flex: 0 0 40% !important;
+        max-width: 40% !important;
+    }
+}
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    .dash-col-60 {
+        flex: 0 0 58% !important;
+        max-width: 58% !important;
+    }
+    .dash-col-40 {
+        flex: 0 0 42% !important;
+        max-width: 42% !important;
+    }
+}
+@media (max-width: 991.98px) {
+    .dash-col-60, .dash-col-40 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+/* Executive Bluish Cards */
+.dash-section-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease;
+}
+.dash-section-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 42, 74, 0.08);
+}
+.dash-section-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.dash-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f2a4a;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Bound Integrated Stats Ribbon Strip */
+.dash-stats-strip {
+    background: #f1f6fc;
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 10px 14px;
+}
+.dash-stat-item {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.dash-stat-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #4b6584;
+    margin-bottom: 2px;
+}
+.dash-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #12335e;
+}
+
+/* Bluish-Styled Tables */
+.dash-table {
+    width: 100%;
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+.dash-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #3b5577;
+    background: #f7faff;
+    padding: 11px 14px !important;
+    border-bottom: 1.5px solid #dce5f1 !important;
+    white-space: nowrap;
+}
+.dash-table tbody td {
+    padding: 11px 14px !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e7eff8 !important;
+}
+.dash-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+.dash-table tbody tr:hover td {
+    background-color: #f5f9ff;
+}
+
+/* Fixed 2-Line Project Status Badge */
+.project-status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 86px;
+    min-height: 30px;
+    padding: 2px 4px;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+/* Mobile Responsiveness Fine-Tuning */
+@media (max-width: 767.98px) {
+    .dash-section-header {
+        padding: 10px 12px;
+    }
+    .dash-section-title {
+        font-size: 13.5px;
+    }
+    .dash-stats-strip {
+        padding: 8px 10px;
+    }
+    .dash-stat-item {
+        padding: 6px 8px;
+    }
+    .dash-stat-value {
+        font-size: 18px;
+    }
+    .dash-table-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .dash-table-min {
+        min-width: 580px;
+    }
+}
+</style>
+
+<!-- Quick Action Alert / Status Toast -->
+<div id="statusToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="statusToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('statusToast').classList.add('d-none')"></button>
+</div>
+
+<!-- ========================================================================= -->
+<!-- TOP: WELCOME BANNER & ACTION BUTTONS (PRESERVED & FULLY RESPONSIVE) -->
+<!-- ========================================================================= -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 22px;">
+            Shivay Energy Solutions Enterprise Command Center
+        </h2>
+        <p class="text-muted small mb-0">
+            Authorized Turnkey Solar EPC • Raisen Central (M.P.) • Headed by Deepak Kushwaha & Rahul Saini
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+        <a href="/admin/projects" class="btn btn-sm btn-primary font-weight-bold" style="border-radius: 8px;">
+            <i class="icofont-solar-panel me-1"></i> Solar Projects
+        </a>
+        <a href="/admin/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> Manage Staff
+        </a>
+        <a href="/admin/quotations" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+            <i class="icofont-calculator-alt-2 me-1"></i> Quotations
+        </a>
+        <a href="/admin/activity-logs" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
+            <i class="icofont-history me-1"></i> Audit Logs
+        </a>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ROW 1: 60% PROJECTS (BOUND SECTION) | 40% ENQUIRIES (BOUND SECTION) -->
+<!-- ========================================================================= -->
+<div class="row g-3 mb-1">
+    <!-- LEFT 60%: SOLAR EXECUTION PROJECTS (SINGLE UNIFIED BOUND SECTION) -->
+    <div class="col-12 dash-col-60">
+        <div class="dash-section-card">
+            <!-- Header -->
+            <div class="dash-section-header">
+                <div>
+                    <h5 class="dash-section-title">
+                        <i class="icofont-solar-panel text-primary fs-5"></i>
+                        Current Projects Execution
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11px;">
+                            <%= stats.projects.active %> Active
+                        </span>
+                    </h5>
+                </div>
+                <a href="/admin/projects" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+                    View All Projects <i class="icofont-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Integrated Bound Stats Strip -->
+            <div class="dash-stats-strip">
+                <div class="row g-2 align-items-center text-center text-sm-start">
+                    <div class="col-6 col-sm-3 dash-stat-item border-end-sm">
+                        <div class="dash-stat-label">Total Orders</div>
+                        <div class="dash-stat-value text-dark"><%= stats.projects.total %></div>
+                    </div>
+                    <div class="col-6 col-sm-3 dash-stat-item border-end-sm">
+                        <div class="dash-stat-label text-warning">Active Installs</div>
+                        <div class="dash-stat-value text-warning"><%= stats.projects.active %></div>
+                    </div>
+                    <div class="col-6 col-sm-3 dash-stat-item border-end-sm">
+                        <div class="dash-stat-label text-success">Grid Certified</div>
+                        <div class="dash-stat-value text-success"><%= stats.projects.completed %></div>
+                    </div>
+                    <div class="col-6 col-sm-3 dash-stat-item">
+                        <div class="dash-stat-label text-primary">Capacity kW</div>
+                        <div class="dash-stat-value text-primary"><%= stats.projects.totalKw %> <small style="font-size: 13px; font-weight: 700;">kW</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Projects Data Table -->
+            <div class="dash-table-wrap">
+                <table class="dash-table table align-middle dash-table-min mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 22%;">PROJECT #</th>
+                            <th style="width: 28%;">CUSTOMER & LOCATION</th>
+                            <th style="width: 14%;">CAPACITY</th>
+                            <th style="width: 16%;">PROGRESS</th>
+                            <th style="width: 12%;" class="text-center">STATUS</th>
+                            <th style="width: 8%;" class="text-end pe-3">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (recentProjects && recentProjects.length > 0) { %>
+                            <% recentProjects.forEach(p => { 
+                                let pLabel = 'NOT<br>STARTED';
+                                let pBadge = 'bg-secondary text-white';
+
+                                switch(p.status) {
+                                    case 'SITE_VISIT_PENDING':
+                                        pLabel = 'SITE VISIT<br>PENDING';
+                                        pBadge = 'bg-warning text-dark border border-warning';
+                                        break;
+                                    case 'SITE_VISIT_COMPLETED':
+                                        pLabel = 'SITE VISIT<br>CLEARED';
+                                        pBadge = 'bg-info text-dark';
+                                        break;
+                                    case 'MATERIAL_READY':
+                                        pLabel = 'MATERIAL<br>READY';
+                                        pBadge = 'bg-primary text-white';
+                                        break;
+                                    case 'INSTALLATION_IN_PROGRESS':
+                                        pLabel = 'INSTALLATION<br>IN PROGRESS';
+                                        pBadge = 'bg-primary text-white';
+                                        break;
+                                    case 'TESTING_AND_COMMISSIONING':
+                                        pLabel = 'TESTING &<br>COMMISSION';
+                                        pBadge = 'bg-info text-dark';
+                                        break;
+                                    case 'COMPLETED':
+                                        pLabel = 'GRID<br>CERTIFIED';
+                                        pBadge = 'bg-success text-white';
+                                        break;
+                                    case 'ON_HOLD':
+                                        pLabel = 'ON<br>HOLD';
+                                        pBadge = 'bg-warning text-dark border border-warning';
+                                        break;
+                                    case 'CANCELLED':
+                                        pLabel = 'PROJECT<br>CANCELLED';
+                                        pBadge = 'bg-danger text-white';
+                                        break;
+                                    default:
+                                        pLabel = p.status ? p.status.replace(/_/g, ' ') : 'ACTIVE';
+                                        pBadge = 'bg-secondary text-white';
+                                }
+                            %>
+                                <tr>
+                                    <td>
+                                        <a href="/admin/projects/<%= p._id %>" class="fw-bold text-primary font-monospace text-decoration-none" style="font-size: 12.5px;">
+                                            <%= p.projectNumber %>
+                                        </a>
+                                        <div class="mt-1">
+                                            <span class="badge bg-light text-dark border" style="font-size: 9.5px; padding: 1px 5px;"><%= p.priority || 'MEDIUM' %></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 180px;" title="<%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || 'Direct Client' %>">
+                                            <%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || 'Direct Client' %>
+                                        </div>
+                                        <div class="text-muted text-truncate" style="max-width: 180px; font-size: 11px;">
+                                            <i class="icofont-location-pin text-muted"></i> <%= p.siteAddress || p.city || 'Raisen, M.P.' %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-primary border border-primary-subtle fw-bold font-monospace" style="font-size: 11.5px; padding: 2px 6px;">
+                                            <%= p.capacityKw %> kW
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <small class="text-muted" style="font-size: 10px;">Milestone</small>
+                                            <small class="fw-bold text-dark font-monospace" style="font-size: 11px;"><%= p.progressPercentage || 0 %>%</small>
+                                        </div>
+                                        <div class="progress" style="height: 6px; background: #e2e8f0; border-radius: 4px;">
+                                            <div class="progress-bar <%= p.progressPercentage === 100 ? 'bg-success' : 'bg-primary' %>" role="progressbar" style="width: <%= p.progressPercentage || 0 %>%;"></div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="project-status-badge <%= pBadge %>">
+                                            <%- pLabel %>
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="/admin/projects/<%= p._id %>" class="btn btn-sm btn-outline-primary" title="Open Project Workspace" style="font-size: 11px; padding: 3px 8px; border-radius: 5px; white-space: nowrap;">
+                                            Workspace
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    <i class="icofont-solar-panel fs-2 d-block mb-1 text-muted"></i>
+                                    <span class="small">No active execution projects found. Projects are automatically created from accepted quotations.</span>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT 40%: CUSTOMER ENQUIRIES & LEADS (BOUND SECTION) -->
+    <div class="col-12 dash-col-40">
+        <div class="dash-section-card h-100">
+            <!-- Header -->
+            <div class="dash-section-header">
+                <div>
+                    <h5 class="dash-section-title">
+                        <i class="icofont-chat text-primary fs-5"></i>
+                        Solar Enquiries & Leads
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11px;">
+                            <%= stats.totalEnquiries %>
+                        </span>
+                    </h5>
+                </div>
+                <a href="/admin/quotations/new" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" style="font-size: 11px; padding: 4px 9px; border-radius: 6px;">
+                    <i class="icofont-plus-circle"></i> New Request
+                </a>
+            </div>
+
+            <!-- Enquiries Table -->
+            <div class="dash-table-wrap">
+                <table class="dash-table table align-middle dash-table-min mb-0">
+                    <thead>
+                        <tr>
+                            <th>CUSTOMER</th>
+                            <th>REQUIREMENT</th>
+                            <th>LOCATION</th>
+                            <th class="text-end pe-3">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (recentEnquiries && recentEnquiries.length > 0) { %>
+                            <% recentEnquiries.slice(0, 6).forEach(e => { %>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 140px;" title="<%= e.name %>"><%= e.name %></div>
+                                        <div class="text-muted" style="font-size: 11px;"><i class="icofont-phone"></i> <%= e.mobile %></div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-primary border border-primary-subtle fw-semibold" style="font-size: 11px;">
+                                            <%= e.requirement || '3 kW Solar Rooftop' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted text-truncate d-block" style="max-width: 105px;" title="<%= e.district || 'Raisen (M.P.)' %>">
+                                            <%= e.district || 'Raisen (M.P.)' %>
+                                        </small>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a href="/admin/quotations/new" class="btn btn-sm btn-outline-warning text-dark fw-bold" title="Generate Quotation" style="font-size: 11px; padding: 3px 8px; border-radius: 5px; white-space: nowrap;">
+                                            <i class="icofont-calculator-alt-2"></i> Quote
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <i class="icofont-inbox fs-2 d-block mb-1 text-muted"></i>
+                                    <span class="small">No solar customer inquiries received yet.</span>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- ROW 2: 60% QUOTATIONS (BOUND SECTION) | 40% EMPLOYEE MANAGEMENT (BOUND) -->
+<!-- ========================================================================= -->
+<div class="row g-3 mb-3">
+    <!-- LEFT 60%: QUOTATIONS OVERVIEW (SINGLE UNIFIED BOUND SECTION) -->
+    <div class="col-12 dash-col-60">
+        <div class="dash-section-card">
+            <!-- Header -->
+            <div class="dash-section-header">
+                <div>
+                    <h5 class="dash-section-title">
+                        <i class="icofont-calculator-alt-2 text-warning fs-5"></i>
+                        Solar Quotation Proposals
+                    </h5>
+                </div>
+                <a href="/admin/quotations" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+                    View All Quotations <i class="icofont-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Integrated Bound Stats Strip -->
+            <div class="dash-stats-strip">
+                <div class="row g-2 align-items-center text-center">
+                    <div class="col-4 dash-stat-item border-end">
+                        <div class="dash-stat-label">Total Quotes</div>
+                        <div class="dash-stat-value text-dark"><%= stats.quotations.total %></div>
+                    </div>
+                    <div class="col-4 dash-stat-item border-end">
+                        <div class="dash-stat-label text-warning">Pending Approval</div>
+                        <div class="dash-stat-value text-warning"><%= stats.quotations.pending %></div>
+                    </div>
+                    <div class="col-4 dash-stat-item">
+                        <div class="dash-stat-label text-success">Approved / Accepted</div>
+                        <div class="dash-stat-value text-success"><%= stats.quotations.accepted + stats.quotations.approved %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quotations Data Table -->
+            <div class="dash-table-wrap">
+                <table class="dash-table table align-middle dash-table-min mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">QUOTE #</th>
+                            <th style="width: 28%;">CUSTOMER</th>
+                            <th style="width: 14%;">CAPACITY</th>
+                            <th style="width: 18%;">NET PAYABLE</th>
+                            <th style="width: 15%;" class="text-end pe-3">STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (recentQuotations && recentQuotations.length > 0) { %>
+                            <% recentQuotations.forEach(q => { 
+                                let qBadge = 'bg-secondary text-white';
+                                let qLabel = q.status ? q.status.replace(/_/g, ' ') : 'DRAFT';
+                                if (q.status === 'CUSTOMER_ACCEPTED') { qBadge = 'bg-success text-white'; qLabel = 'CLIENT ACCEPTED'; }
+                                else if (q.status === 'APPROVED') { qBadge = 'bg-info text-dark'; qLabel = 'APPROVED'; }
+                                else if (q.status === 'PENDING_APPROVAL') { qBadge = 'bg-warning text-dark'; qLabel = 'PENDING'; }
+                                else if (q.status === 'REVISION_REQUESTED') { qBadge = 'bg-danger text-white'; qLabel = 'REVISION'; }
+                                else if (q.status === 'REJECTED') { qBadge = 'bg-danger text-white'; qLabel = 'REJECTED'; }
+                            %>
+                                <tr>
+                                    <td>
+                                        <a href="/admin/quotations" class="fw-bold text-primary font-monospace text-decoration-none" style="font-size: 12.5px;">
+                                            <%= q.quotationNumber %>
+                                        </a>
+                                        <div class="text-muted" style="font-size: 10.5px;">
+                                            By: <%= (q.preparedBy && q.preparedBy.name) ? q.preparedBy.name.split(' ')[0] : 'Staff' %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark text-truncate" style="max-width: 170px;" title="<%= (q.customer && q.customer.name) || q.customerName || 'Customer' %>">
+                                            <%= (q.customer && q.customer.name) || q.customerName || 'Customer' %>
+                                        </div>
+                                        <small class="text-muted"><%= (q.customer && q.customer.mobile) || q.customerMobile || 'N/A' %></small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace" style="font-size: 11.5px;">
+                                            <%= q.systemCapacityKw || (q.pricing && q.pricing.systemCapacityKw) || 3 %> kW
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark font-monospace" style="font-size: 12.5px;">
+                                            ₹<%= (q.pricing && q.pricing.netPayable ? q.pricing.netPayable.toLocaleString('en-IN') : 'N/A') %>
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge <%= qBadge %>" style="font-size: 10px; padding: 3px 6px;">
+                                            <%= qLabel %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="icofont-calculator-alt-2 fs-2 d-block mb-1 text-muted"></i>
+                                    <span class="small">No solar quotations created yet.</span>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT 40%: EMPLOYEE MANAGEMENT OVERVIEW (BOUND SECTION) -->
+    <div class="col-12 dash-col-40">
+        <div class="dash-section-card h-100">
+            <!-- Header -->
+            <div class="dash-section-header">
+                <div>
+                    <h5 class="dash-section-title">
+                        <i class="icofont-users-alt-2 text-primary fs-5"></i>
+                        Workforce & Team Directory
+                    </h5>
+                </div>
+                <a href="/admin/employees" class="small text-decoration-none text-primary font-weight-bold d-inline-flex align-items-center gap-1">
+                    Manage Staff <i class="icofont-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Mini Workforce Stats Strip -->
+            <div class="dash-stats-strip">
+                <div class="row g-1 align-items-center text-center">
+                    <div class="col-3 dash-stat-item border-end">
+                        <div class="dash-stat-label">Staff</div>
+                        <div class="dash-stat-value text-dark"><%= stats.totalEmployees %></div>
+                    </div>
+                    <div class="col-3 dash-stat-item border-end">
+                        <div class="dash-stat-label">Managers</div>
+                        <div class="dash-stat-value text-dark"><%= stats.totalManagers %></div>
+                    </div>
+                    <div class="col-3 dash-stat-item border-end">
+                        <div class="dash-stat-label text-success">Active</div>
+                        <div class="dash-stat-value text-success"><%= stats.activeUsers %></div>
+                    </div>
+                    <div class="col-3 dash-stat-item">
+                        <div class="dash-stat-label text-warning">Pending</div>
+                        <div class="dash-stat-value text-warning"><%= stats.inactiveUsers %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personnel Table -->
+            <div class="dash-table-wrap">
+                <table class="dash-table table align-middle dash-table-min mb-0">
+                    <thead>
+                        <tr>
+                            <th>STAFF</th>
+                            <th>EMP ID</th>
+                            <th>ROLE</th>
+                            <th class="text-end pe-3">STATUS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (users && users.length > 0) { %>
+                            <% users.slice(0, 5).forEach(u => { 
+                                let roleBadge = 'bg-secondary';
+                                let roleTitle = 'Staff';
+                                if (u.role === 'SUPER_ADMIN') { roleBadge = 'bg-dark text-white'; roleTitle = 'Admin'; }
+                                else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') { roleBadge = 'bg-warning text-dark'; roleTitle = 'Manager'; }
+                                else if (u.role === 'EMPLOYEE') { roleBadge = 'bg-primary text-white'; roleTitle = 'Engineer'; }
+
+                                let statusBadge = 'bg-success-subtle text-success border border-success-subtle';
+                                if (u.status === 'PENDING') statusBadge = 'bg-warning-subtle text-warning border border-warning-subtle';
+                                else if (u.status === 'INACTIVE' || u.status === 'SUSPENDED') statusBadge = 'bg-danger-subtle text-danger border border-danger-subtle';
+                            %>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="admin-avatar-circle" style="width: 28px; height: 28px; font-size: 10px; flex-shrink: 0;">
+                                                <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                            </div>
+                                            <div class="text-truncate" style="max-width: 120px;">
+                                                <div class="fw-bold text-dark text-truncate" style="font-size: 12px;"><%= u.name %></div>
+                                                <small class="text-muted d-block text-truncate" style="font-size: 10px;"><%= u.designation || 'Staff' %></small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code style="font-size: 11px;"><%= u.employeeId || 'N/A' %></code>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= roleBadge %>" style="font-size: 9.5px; padding: 2px 6px;">
+                                            <%= roleTitle %>
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge <%= statusBadge %>" style="font-size: 9.5px; padding: 2px 6px;">
+                                            <%= u.status || 'ACTIVE' %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    <span class="small">No employee records found.</span>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/admin-footer') %>

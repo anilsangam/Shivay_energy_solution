@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Enterprise Sign In | Shivay Energy Solutions' %></title>
+    <link rel="icon" href="/images/brandlogo2.png" type="image/png" sizes="16x16">
+    <meta name="description" content="Shivay Energy Solutions Enterprise Single Sign-On Portal for Administrators, Managers, and Employees.">
+    
+    <!-- Core Fonts & Icons -->
+    <link href="/fonts/icofont/icofont.min.css" rel="stylesheet" type="text/css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --ses-navy-dark: #0a192f;
+            --ses-navy-primary: #163563;
+            --ses-navy-light: #1e427b;
+            --ses-gold: #f59e0b;
+            --ses-gold-hover: #d97706;
+            --ses-bg-gradient: linear-gradient(135deg, #0a192f 0%, #163563 50%, #0d213f 100%);
+            --ses-text-dark: #0f172a;
+            --ses-text-muted: #64748b;
+            --ses-border: #e2e8f0;
+            --ses-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.35);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--ses-bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--ses-text-dark);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle Background Overlay Grid */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(22, 53, 99, 0.4) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+            pointer-events: none;
+        }
+
+        .login-wrapper {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: var(--ses-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            padding: 36px 32px;
+            border-top: 5px solid var(--ses-gold);
+        }
+
+        .login-brand-header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .login-brand-logo {
+            width: 64px;
+            height: auto;
+            max-height: 64px;
+            object-fit: contain;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .login-brand-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--ses-navy-primary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .login-brand-subtitle {
+            font-size: 13px;
+            color: var(--ses-text-muted);
+            margin-bottom: 14px;
+        }
+
+        .role-badges-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+
+        .role-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--ses-gold);
+        }
+
+        /* Error Alert */
+        .login-alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 11px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .login-alert-error i {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 7px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: #94a3b8;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 46px;
+            padding: 10px 14px 10px 42px;
+            font-size: 14px;
+            color: #0f172a;
+            background: #f8fafc;
+            border: 1px solid var(--ses-border);
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            background: #ffffff;
+            border-color: var(--ses-navy-primary);
+            box-shadow: 0 0 0 3px rgba(22, 53, 99, 0.12);
+        }
+
+        .form-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .pass-toggle-btn {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: color 0.15s ease;
+        }
+
+        .pass-toggle-btn:hover {
+            color: var(--ses-navy-primary);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            height: 48px;
+            background: var(--ses-navy-primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(22, 53, 99, 0.25);
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            background: var(--ses-navy-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(22, 53, 99, 0.35);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Card Footer */
+        .login-card-footer {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #f1f5f9;
+            text-align: center;
+        }
+
+        .back-home-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ses-navy-primary);
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .back-home-link:hover {
+            color: var(--ses-gold-hover);
+            text-decoration: underline;
+        }
+
+        .security-badge-text {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .security-badge-text i {
+            color: #10b981;
+        }
+
+        .login-portal-copyright {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 16px;
+            }
+            .login-card {
+                padding: 28px 20px;
+                border-radius: 14px;
+            }
+            .login-brand-title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <!-- Brand Header -->
+            <div class="login-brand-header">
+                <img src="/images/brandlogo2.png" alt="Shivay Energy Solutions" class="login-brand-logo">
+                <h1 class="login-brand-title">Shivay Energy Solutions</h1>
+                <p class="login-brand-subtitle">Enterprise Unified Portal</p>
+                <div class="role-badges-pill">
+                    <span class="role-dot"></span>
+                    <span>Admin • Manager • Employee</span>
+                </div>
+            </div>
+
+            <!-- Error Feedback -->
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="login-alert-error" role="alert">
+                    <i class="icofont-warning-alt"></i>
+                    <span><%= error %></span>
+                </div>
+            <% } %>
+
+            <!-- Unified Authentication Form -->
+            <form action="/admin/login" method="POST" autocomplete="off">
+                <input type="hidden" name="returnUrl" value="<%= typeof returnUrl !== 'undefined' ? returnUrl : '' %>">
+
+                <!-- Identifier Field -->
+                <div class="form-group">
+                    <label class="form-label" for="loginIdentifier">Email or Employee ID</label>
+                    <div class="input-wrapper">
+                        <i class="icofont-ui-user input-icon"></i>
+                        <input 
+                            type="text" 
+                            id="loginIdentifier" 
+                            name="identifier" 
+                            class="form-input" 
+                            placeholder="admin@shivayenergy.com or EMP ID" 
+                            required 
+                            autofocus
+                        >
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">Password</label>
+                    <div class="input-wrapper">
+                        <i class="icofont-lock input-icon"></i>
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            name="password" 
+                            class="form-input" 
+                            placeholder="••••••••••••" 
+                            style="padding-right: 44px;" 
+                            required
+                        >
+                        <button type="button" class="pass-toggle-btn" id="passToggleBtn" title="Toggle password visibility" aria-label="Toggle password visibility">
+                            <i class="icofont-eye" id="passToggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn" id="loginSubmitBtn">
+                    <i class="icofont-login"></i>
+                    <span>Sign In to Portal</span>
+                </button>
+            </form>
+
+            <!-- Card Footer -->
+            <div class="login-card-footer">
+                <a href="/" class="back-home-link">
+                    <i class="icofont-arrow-left"></i>
+                    <span>Return to Public Website</span>
+                </a>
+                <div class="security-badge-text">
+                    <i class="icofont-shield-alt"></i>
+                    <span>256-Bit Encrypted Session • RBAC Protected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-portal-copyright">
+            &copy; <%= new Date().getFullYear() %> Shivay Energy Solutions. Raisen Central, M.P.
+        </div>
+    </div>
+
+    <!-- Standalone Interactions Script -->
+    <script>
+        (function() {
+            const passInput = document.getElementById('loginPassword');
+            const toggleBtn = document.getElementById('passToggleBtn');
+            const toggleIcon = document.getElementById('passToggleIcon');
+
+            if (toggleBtn && passInput && toggleIcon) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (passInput.type === 'password') {
+                        passInput.type = 'text';
+                        toggleIcon.className = 'icofont-eye-blocked';
+                    } else {
+                        passInput.type = 'password';
+                        toggleIcon.className = 'icofont-eye';
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

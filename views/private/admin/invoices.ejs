@@ -1,0 +1,824 @@
+<%- include('partials/admin-head') %>
+
+<style>
+/* =========================================================================
+   EXECUTIVE GST TAX INVOICES & BILLING MANAGEMENT
+   ========================================================================= */
+.inv-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    margin-bottom: 20px;
+    transition: box-shadow 0.2s ease;
+}
+.inv-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 42, 74, 0.08);
+}
+.inv-card-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.inv-stats-strip {
+    background: #f1f6fc;
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 10px 14px;
+}
+.inv-stat-item {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.inv-stat-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #4b6584;
+    margin-bottom: 2px;
+}
+.inv-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #12335e;
+}
+
+/* Table styling */
+.inv-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+.inv-table {
+    width: 100%;
+    margin-bottom: 0;
+    vertical-align: middle;
+    min-width: 860px;
+}
+.inv-table thead th {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #3b5577;
+    background: #f7faff;
+    padding: 11px 14px !important;
+    border-bottom: 1.5px solid #dce5f1 !important;
+    white-space: nowrap;
+}
+.inv-table tbody td {
+    padding: 11px 14px !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e7eff8 !important;
+}
+.inv-table tbody tr:last-child td {
+    border-bottom: none !important;
+}
+.inv-table tbody tr:hover td {
+    background-color: #f5f9ff;
+}
+
+/* Printable Document Layout */
+.invoice-paper {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-top: 6px solid #163563 !important;
+    border-radius: 12px;
+    padding: 36px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+    max-width: 920px;
+    margin: 0 auto 30px auto;
+}
+
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    .invoice-paper, .invoice-paper * {
+        visibility: visible !important;
+    }
+    .invoice-paper {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .no-print, .admin-sidebar, .admin-header, .admin-footer {
+        display: none !important;
+    }
+}
+</style>
+
+<!-- Top Header & Action Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2 no-print">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 23px;">
+            GST Tax Invoices & Customer Billing
+        </h2>
+        <p class="text-muted small mb-0">
+            Authorized GST Compliant Tax Invoices for Solar Rooftops, PM Surya Ghar Subsidies & MPPKVVCL Net-Metering.
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+        <button type="button" class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 7px 14px;">
+            <i class="icofont-plus-circle fs-6"></i> Generate New Bill
+        </button>
+    </div>
+</div>
+
+<%
+    // Calculate aggregate totals
+    let totalTaxable = 0;
+    let totalTax = 0;
+    let totalBilled = 0;
+    if (invoices && invoices.length > 0) {
+        invoices.forEach(inv => {
+            totalTaxable += Number(inv.subtotal || 0);
+            totalTax += Number((inv.cgst || 0) + (inv.sgst || 0) || inv.gstAmount || 0);
+            totalBilled += Number(inv.totalAmount || 0);
+        });
+    }
+    const primaryInvoice = (invoices && invoices.length > 0) ? invoices[0] : null;
+%>
+
+<!-- ========================================================================= -->
+<!-- 1. INVOICE LEDGER CARD (ALL BILLS WITH EDIT & PRINT ACTIONS) -->
+<!-- ========================================================================= -->
+<div class="inv-card no-print">
+    <div class="inv-card-header">
+        <div>
+            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 15px; color: #0f2a4a;">
+                <i class="icofont-bill text-primary fs-5"></i>
+                Issued Tax Invoices Ledger
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11.5px;">
+                    <%= invoices ? invoices.length : 0 %> Invoices
+                </span>
+            </h5>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()">
+                <i class="icofont-plus-circle me-1"></i> Create Bill
+            </button>
+        </div>
+    </div>
+
+    <!-- Integrated Stats Ribbon Strip -->
+    <div class="inv-stats-strip">
+        <div class="row g-2 align-items-center text-center text-sm-start">
+            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
+                <div class="inv-stat-label">Total Invoices</div>
+                <div class="inv-stat-value text-dark"><%= invoices ? invoices.length : 0 %></div>
+            </div>
+            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
+                <div class="inv-stat-label text-primary">Taxable Value</div>
+                <div class="inv-stat-value text-primary">₹<%= Math.round(totalTaxable).toLocaleString('en-IN') %></div>
+            </div>
+            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
+                <div class="inv-stat-label text-warning">12% GST Total</div>
+                <div class="inv-stat-value text-warning">₹<%= Math.round(totalTax).toLocaleString('en-IN') %></div>
+            </div>
+            <div class="col-6 col-sm-3 inv-stat-item">
+                <div class="inv-stat-label text-success">Total Billed</div>
+                <div class="inv-stat-value text-success">₹<%= Math.round(totalBilled).toLocaleString('en-IN') %></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="inv-table-wrap">
+        <table class="inv-table table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width: 18%;">INVOICE #</th>
+                    <th style="width: 25%;">CUSTOMER & SITE LOCATION</th>
+                    <th style="width: 11%;">CAPACITY</th>
+                    <th style="width: 14%;">TAXABLE (₹)</th>
+                    <th style="width: 14%;">TOTAL WITH GST (₹)</th>
+                    <th style="width: 8%;" class="text-center">STATUS</th>
+                    <th style="width: 10%;" class="text-end pe-3">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (invoices && invoices.length > 0) { %>
+                    <% invoices.forEach((inv, index) => { 
+                        let isPaid = (inv.paymentStatus || 'paid').toLowerCase() === 'paid';
+                        let statusBadge = isPaid ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle';
+                    %>
+                        <tr>
+                            <td>
+                                <strong class="text-primary font-monospace" style="font-size: 13px;"><%= inv.invoiceNumber %></strong>
+                                <small class="text-muted d-block font-monospace" style="font-size: 11px;"><%= inv.date || '07-11-2026' %></small>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark text-truncate" style="max-width: 210px; font-size: 13px;" title="<%= inv.customerName %>">
+                                    <%= inv.customerName %>
+                                </div>
+                                <div class="text-muted text-truncate" style="max-width: 210px; font-size: 11px;">
+                                    <i class="icofont-location-pin text-muted"></i> <%= inv.customerAddress || 'Raisen, M.P.' %>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border border-primary-subtle fw-bold font-monospace" style="font-size: 11.5px; padding: 2px 6px;">
+                                    <%= inv.plantCapacityKw || 3 %> kW
+                                </span>
+                            </td>
+                            <td>
+                                <span class="font-monospace text-dark" style="font-size: 12.5px;">
+                                    ₹<%= Number(inv.subtotal || 0).toLocaleString('en-IN') %>
+                                </span>
+                            </td>
+                            <td>
+                                <strong class="font-monospace text-success" style="font-size: 13px;">
+                                    ₹<%= Number(inv.totalAmount || 0).toLocaleString('en-IN') %>
+                                </strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge <%= statusBadge %>" style="font-size: 9.5px; padding: 3px 6px;">
+                                    <%= (inv.paymentStatus || 'PAID').toUpperCase() %>
+                                </span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="d-inline-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-primary py-1 px-2" title="View & Print Document" onclick="selectInvoiceToPrint(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
+                                        <i class="icofont-print"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
+                                        <i class="icofont-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Invoice" onclick="deleteInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
+                                        <i class="icofont-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="icofont-bill fs-1 d-block mb-2 text-muted" style="font-size: 38px !important;"></i>
+                            <p class="mb-1 fw-bold fs-6">No tax invoices recorded yet.</p>
+                            <small class="text-muted">Click "+ Generate New Bill" to create your first GST invoice.</small>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 2. PRINTABLE OFFICIAL GST TAX INVOICE DOCUMENT PREVIEW -->
+<!-- ========================================================================= -->
+<div class="invoice-paper" id="printableInvoiceCard">
+    <!-- Header with Company & Customer Info -->
+    <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+        <div>
+            <h3 class="font-weight-bold mb-0 text-dark" style="font-size: 22px;"><%= company.name %></h3>
+            <span class="badge bg-success mb-2" style="font-size: 10px;">GST Compliant Tax Invoice</span>
+            <small class="text-muted d-block"><%= company.address.full %></small>
+            <small class="text-muted d-block">GSTIN: <strong><%= company.gstin %></strong> | State Code: 23 (Madhya Pradesh)</small>
+            <small class="text-muted">Contact: +91 70005 75496 | Email: <%= company.email %></small>
+        </div>
+        <div class="text-end">
+            <h4 class="text-dark font-weight-bold mb-1" style="font-size: 20px;">TAX INVOICE</h4>
+            <small class="d-block text-muted">Invoice No: <strong id="docInvNum" class="text-primary font-monospace"><%= primaryInvoice ? primaryInvoice.invoiceNumber : 'SES-INV-2026-0001' %></strong></small>
+            <small class="d-block text-muted">Date: <strong id="docInvDate"><%= primaryInvoice ? (primaryInvoice.date || '07-11-2026') : '07-11-2026' %></strong></small>
+            <small class="d-block text-muted mt-1">Payment: <strong class="badge bg-success" id="docPaymentStatus"><%= primaryInvoice ? (primaryInvoice.paymentStatus || 'PAID').toUpperCase() : 'PAID (NEFT)' %></strong></small>
+        </div>
+    </div>
+
+    <!-- Customer & Technical Installation Details -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6">
+            <div class="p-3 bg-light rounded-2 h-100 border">
+                <span class="text-muted small text-uppercase font-weight-bold d-block mb-1" style="font-size: 10.5px;">Billed To (Customer):</span>
+                <h6 class="font-weight-bold text-dark mb-1" id="docCustomerName" style="font-size: 14px;"><%= primaryInvoice ? primaryInvoice.customerName : 'Client Name' %></h6>
+                <small class="text-muted d-block" id="docCustomerAddress"><%= primaryInvoice ? (primaryInvoice.customerAddress || 'Raisen, M.P.') : 'Site Address' %></small>
+                <small class="text-muted d-block">Phone: <span id="docCustomerMobile"><%= primaryInvoice ? primaryInvoice.customerMobile : '+91 XXXXX XXXXX' %></span></small>
+                <small class="text-muted d-block">GSTIN: <span id="docCustomerGstin"><%= primaryInvoice ? (primaryInvoice.customerGstin || 'Consumer (URP)') : 'Consumer (URP)' %></span></small>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="p-3 bg-light rounded-2 h-100 border">
+                <span class="text-muted small text-uppercase font-weight-bold d-block mb-1" style="font-size: 10.5px;">Solar Installation & Site Details:</span>
+                <small class="d-block">Plant Capacity: <strong id="docCapacityKw"><%= primaryInvoice ? primaryInvoice.plantCapacityKw : 3 %></strong> kW On-Grid Solar Plant</small>
+                <small class="d-block">Modules: <strong>Tier-1 Mono PERC Half-Cut (ALMM Approved)</strong></small>
+                <small class="d-block">Inverter: <strong>Grid-Tie Dual MPPT Inverter with Wi-Fi</strong></small>
+                <small class="d-block">DISCOM: <strong>MPPKVVCL Net-Meter Approved (State Code 23)</strong></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered small">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 45%;">Item & Description</th>
+                    <th style="width: 12%;">HSN/SAC</th>
+                    <th style="width: 10%;" class="text-center">Qty</th>
+                    <th style="width: 14%;" class="text-end">Rate (₹)</th>
+                    <th style="width: 14%;" class="text-end">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="docItemsBody">
+                <!-- Dynamically filled or default -->
+                <tr>
+                    <td>1</td>
+                    <td>
+                        <strong>Supply of Tier-1 Mono PERC Solar PV Modules (ALMM Approved)</strong>
+                        <small class="text-muted d-block">25-Year Linear Performance Warranty</small>
+                    </td>
+                    <td>85414011</td>
+                    <td class="text-center">Set</td>
+                    <td class="text-end" id="docItem1Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.55).toLocaleString('en-IN') : '95,000' %></td>
+                    <td class="text-end" id="docItem1Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.55).toLocaleString('en-IN') : '95,000' %></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>
+                        <strong>High-Efficiency Solar Inverter with Cloud Monitoring</strong>
+                        <small class="text-muted d-block">Dual MPPT with 5-Year Standard Warranty</small>
+                    </td>
+                    <td>85044090</td>
+                    <td class="text-center">1 No</td>
+                    <td class="text-end" id="docItem2Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.20).toLocaleString('en-IN') : '35,000' %></td>
+                    <td class="text-end" id="docItem2Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.20).toLocaleString('en-IN') : '35,000' %></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>
+                        <strong>BOS Structures, DC/AC Distribution Boxes & UV Cables</strong>
+                    </td>
+                    <td>85371000</td>
+                    <td class="text-center">1 Set</td>
+                    <td class="text-end" id="docItem3Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.15).toLocaleString('en-IN') : '25,000' %></td>
+                    <td class="text-end" id="docItem3Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.15).toLocaleString('en-IN') : '25,000' %></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>
+                        <strong>Turnkey Installation, Testing, Commissioning & Net-Metering</strong>
+                    </td>
+                    <td>995461</td>
+                    <td class="text-center">1 Job</td>
+                    <td class="text-end" id="docItem4Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.10).toLocaleString('en-IN') : '18,000' %></td>
+                    <td class="text-end" id="docItem4Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.10).toLocaleString('en-IN') : '18,000' %></td>
+                </tr>
+                <tr class="table-light">
+                    <td colspan="5" class="text-end fw-bold">Taxable Subtotal:</td>
+                    <td class="text-end fw-bold" id="docSubtotal">₹<%= primaryInvoice ? Number(primaryInvoice.subtotal).toLocaleString('en-IN') : '1,73,000' %></td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="text-end">CGST @ 6%:</td>
+                    <td class="text-end" id="docCgst">₹<%= primaryInvoice ? Number(primaryInvoice.cgst || Math.round(primaryInvoice.subtotal * 0.06)).toLocaleString('en-IN') : '10,380' %></td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="text-end">SGST @ 6%:</td>
+                    <td class="text-end" id="docSgst">₹<%= primaryInvoice ? Number(primaryInvoice.sgst || Math.round(primaryInvoice.subtotal * 0.06)).toLocaleString('en-IN') : '10,380' %></td>
+                </tr>
+                <tr class="table-dark text-white fw-bold">
+                    <td colspan="5" class="text-end">Total Invoice Amount (INR):</td>
+                    <td class="text-end text-success fs-6" id="docTotal">₹<%= primaryInvoice ? Number(primaryInvoice.totalAmount).toLocaleString('en-IN') : '1,93,760' %></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bank Details & Signatory -->
+    <div class="row g-3 pt-3 border-top small text-muted">
+        <div class="col-sm-7">
+            <h6 class="fw-bold text-dark small mb-1">Company Bank Details for RTGS / NEFT / IMPS:</h6>
+            <small class="d-block">Account Name: <strong>SHIVAY ENERGY SOLUTIONS</strong></small>
+            <small class="d-block">Bank Name: State Bank of India (SBI), Raisen Branch</small>
+            <small class="d-block">Account No: <strong>409823100452</strong></small>
+            <small class="d-block">IFSC Code: <strong>SBIN0000462</strong></small>
+        </div>
+        <div class="col-sm-5 text-sm-end">
+            <small class="d-block fw-bold text-dark">For SHIVAY ENERGY SOLUTIONS</small>
+            <div class="my-2 text-secondary" style="font-family: cursive; font-size: 16px;">Deepak Kushwaha</div>
+            <small class="d-block text-muted">Authorized Finance Signatory</small>
+        </div>
+    </div>
+
+    <div class="text-center mt-4 pt-3 border-top no-print">
+        <button onclick="window.print()" class="btn btn-sm btn-dark me-2 px-3 fw-bold shadow-sm" style="background: var(--admin-navy-primary);">
+            <i class="icofont-print me-1"></i> Print / Download PDF
+        </button>
+        <button onclick="editCurrentDocInvoice()" class="btn btn-sm btn-outline-secondary px-3">
+            <i class="icofont-edit me-1"></i> Edit This Bill
+        </button>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 3. MODAL: GENERATE / EDIT TAX INVOICE -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header" style="background: var(--admin-navy-primary); color: white;">
+                <h5 class="modal-title fs-6 fw-bold d-flex align-items-center gap-2" id="modalTitle">
+                    <i class="icofont-bill"></i> Generate GST Tax Invoice
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeInvoiceModal('invoiceModal')" aria-label="Close"></button>
+            </div>
+            <form id="invoiceForm">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <input type="hidden" name="invoiceId" id="formInvoiceId">
+
+                <div class="modal-body p-4">
+                    <!-- Quick Autofill Selector from Projects/Quotations -->
+                    <div class="p-3 mb-3 bg-light rounded-3 border">
+                        <label class="form-label small fw-bold text-primary mb-1">
+                            <i class="icofont-magic me-1"></i> Quick Pre-Fill From Accepted Project or Quotation:
+                        </label>
+                        <select class="form-select" id="prefillSelector" onchange="applyPrefill(this.value)" style="height: 38px; border-radius: 8px;">
+                            <option value="">-- Select Project / Quotation to Autofill (Optional) --</option>
+                            <% if (typeof projects !== 'undefined' && projects && projects.length > 0) { %>
+                                <optgroup label="Active Projects">
+                                    <% projects.forEach(p => { %>
+                                        <option value="PRJ_<%= p._id %>" 
+                                            data-name="<%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || '' %>"
+                                            data-mobile="<%= (p.customer && p.customer.mobile) || (p.customerContact && p.customerContact.mobile) || '' %>"
+                                            data-address="<%= p.siteAddress || p.city || 'Raisen, M.P.' %>"
+                                            data-kw="<%= p.capacityKw || 3 %>"
+                                            data-consumer="<%= (p.customer && p.customer.consumerNumber) || '' %>"
+                                            data-gstin="<%= (p.customer && p.customer.gstin) || '' %>"
+                                            data-id="<%= p._id %>">
+                                            <%= p.projectNumber %> - <%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || 'Client' %> (<%= p.capacityKw %> kW)
+                                        </option>
+                                    <% }); %>
+                                </optgroup>
+                            <% } %>
+                            <% if (typeof quotations !== 'undefined' && quotations && quotations.length > 0) { %>
+                                <optgroup label="Accepted Quotations">
+                                    <% quotations.forEach(q => { %>
+                                        <option value="Q_<%= q._id %>"
+                                            data-name="<%= (q.customerId && q.customerId.name) || (q.customer && q.customer.name) || q.customerName || '' %>"
+                                            data-mobile="<%= (q.customerId && q.customerId.mobile) || (q.customer && q.customer.mobile) || q.customerMobile || '' %>"
+                                            data-address="<%= (q.customerId && q.customerId.address) || (q.customer && q.customer.address) || q.customerAddress || q.customerCity || 'Raisen, M.P.' %>"
+                                            data-kw="<%= q.systemCapacityKw || (q.pricing && q.pricing.systemCapacityKw) || 3 %>"
+                                            data-subtotal="<%= (q.pricing && q.pricing.taxableBase) || (q.pricing && q.pricing.grossAmount) || 150000 %>"
+                                            data-consumer="<%= (q.customerId && q.customerId.consumerNumber) || (q.customer && q.customer.consumerNumber) || '' %>"
+                                            data-gstin="<%= (q.customerId && q.customerId.gstin) || (q.customer && q.customer.gstin) || '' %>"
+                                            data-id="<%= q._id %>">
+                                            <%= q.quotationNumber %> - <%= (q.customerId && q.customerId.name) || (q.customer && q.customer.name) || q.customerName || 'Client' %> (<%= q.systemCapacityKw || 3 %> kW)
+                                        </option>
+                                    <% }); %>
+                                </optgroup>
+                            <% } %>
+                        </select>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;">Select a project above to fill customer & kW details automatically, or fill manually below.</small>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Invoice Number *</label>
+                            <input type="text" class="form-control" name="invoiceNumber" id="formInvNum" required placeholder="SES-INV-2026-..." style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Invoice Date *</label>
+                            <input type="text" class="form-control" name="date" id="formDate" required placeholder="DD-MM-YYYY" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Customer Full Name *</label>
+                            <input type="text" class="form-control" name="customerName" id="formCustomerName" required placeholder="e.g. Ramesh Patel" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Customer Mobile (10 digits) *</label>
+                            <input type="tel" class="form-control" name="customerMobile" id="formCustomerMobile" required placeholder="e.g. 9826012345" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label small fw-bold">Site Address & City *</label>
+                            <input type="text" class="form-control" name="customerAddress" id="formCustomerAddress" required placeholder="Plot No., Street, Raisen (M.P.)" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Customer GSTIN (Optional)</label>
+                            <input type="text" class="form-control" name="customerGstin" id="formCustomerGstin" placeholder="e.g. 23AABCP..." style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Plant Capacity (kW) *</label>
+                            <input type="number" step="0.1" class="form-control" name="plantCapacityKw" id="formCapacityKw" required value="3" oninput="recalcInvoiceTotals()" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Taxable Subtotal (₹) *</label>
+                            <input type="number" step="1" class="form-control" name="subtotal" id="formSubtotal" required value="150000" oninput="recalcInvoiceTotals()" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Total with 12% GST (₹)</label>
+                            <input type="number" step="1" class="form-control bg-light" name="totalAmount" id="formTotalAmount" readonly style="height: 38px; border-radius: 8px; font-weight: bold; color: #15803d;">
+                        </div>
+
+                        <!-- Hidden CGST/SGST inputs -->
+                        <input type="hidden" name="cgst" id="formCgst">
+                        <input type="hidden" name="sgst" id="formSgst">
+                        <input type="hidden" name="projectId" id="formProjectId">
+                        <input type="hidden" name="quotationId" id="formQuotationId">
+
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Payment Status *</label>
+                            <select class="form-select" name="paymentStatus" id="formPaymentStatus" style="height: 38px; border-radius: 8px;">
+                                <option value="paid">PAID (Full Payment Received)</option>
+                                <option value="partially_paid">PARTIALLY PAID (Milestone Advance)</option>
+                                <option value="unpaid">UNPAID (Pending Payment)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Payment Method</label>
+                            <select class="form-select" name="paymentMethod" id="formPaymentMethod" style="height: 38px; border-radius: 8px;">
+                                <option value="NEFT / RTGS (SBI Raisen)">NEFT / RTGS (SBI Raisen)</option>
+                                <option value="UPI / Direct Bank Transfer">UPI / Direct Bank Transfer</option>
+                                <option value="Cheque / Demand Draft">Cheque / Demand Draft</option>
+                                <option value="Cash Deposit">Cash Deposit</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="closeInvoiceModal('invoiceModal')" style="border-radius: 6px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" id="btnSaveInvoice" style="background: var(--admin-navy-primary); border-radius: 6px;">
+                        <i class="icofont-check-circled me-1"></i> Save & Record Invoice
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Loaded Invoices Data
+const allInvoices = <%- JSON.stringify(invoices || []) %>;
+let currentPreviewIndex = 0;
+
+// Pure DOM Modal Controls (independent of bootstrap JS bundle)
+function showInvoiceModal(modalId = 'invoiceModal') {
+    const modalEl = document.getElementById(modalId);
+    if (!modalEl) return;
+    modalEl.classList.add('show');
+    modalEl.style.display = 'block';
+    modalEl.removeAttribute('aria-hidden');
+    modalEl.setAttribute('aria-modal', 'true');
+    document.body.classList.add('modal-open');
+
+    let backdrop = document.querySelector('.modal-backdrop');
+    if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop fade show';
+        document.body.appendChild(backdrop);
+        backdrop.addEventListener('click', function() {
+            closeInvoiceModal(modalId);
+        });
+    }
+}
+
+function closeInvoiceModal(modalId = 'invoiceModal') {
+    const modalEl = document.getElementById(modalId);
+    if (!modalEl) return;
+    modalEl.classList.remove('show');
+    modalEl.style.display = 'none';
+    modalEl.setAttribute('aria-hidden', 'true');
+    modalEl.removeAttribute('aria-modal');
+    document.body.classList.remove('modal-open');
+
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.remove();
+}
+
+// Global bootstrap shim in case external code calls bootstrap.Modal
+if (typeof window.bootstrap === 'undefined') {
+    window.bootstrap = {
+        Modal: function(el) {
+            const id = (typeof el === 'string') ? el.replace('#', '') : (el && el.id ? el.id : 'invoiceModal');
+            return {
+                show: function() { showInvoiceModal(id); },
+                hide: function() { closeInvoiceModal(id); }
+            };
+        }
+    };
+}
+
+// Recalculate Totals in Modal
+function recalcInvoiceTotals() {
+    const subtotal = parseFloat(document.getElementById('formSubtotal').value) || 0;
+    const cgst = Math.round(subtotal * 0.06 * 100) / 100;
+    const sgst = Math.round(subtotal * 0.06 * 100) / 100;
+    const total = Math.round(subtotal + cgst + sgst);
+
+    document.getElementById('formCgst').value = cgst;
+    document.getElementById('formSgst').value = sgst;
+    document.getElementById('formTotalAmount').value = total;
+}
+
+// Open Clean New Invoice Modal
+function openNewInvoiceModal() {
+    try {
+        const titleEl = document.getElementById('modalTitle');
+        if (titleEl) titleEl.innerHTML = '<i class="icofont-bill"></i> Generate GST Tax Invoice';
+        
+        const formEl = document.getElementById('invoiceForm');
+        if (formEl) formEl.reset();
+        
+        const idEl = document.getElementById('formInvoiceId');
+        if (idEl) idEl.value = '';
+        
+        // Auto-generate invoice number
+        const randNum = Math.floor(100 + Math.random() * 900);
+        const invNumEl = document.getElementById('formInvNum');
+        if (invNumEl) invNumEl.value = 'SES-INV-2026-' + randNum;
+        
+        const today = new Date();
+        const dStr = String(today.getDate()).padStart(2, '0') + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + today.getFullYear();
+        const dateEl = document.getElementById('formDate');
+        if (dateEl) dateEl.value = dStr;
+
+        const capEl = document.getElementById('formCapacityKw');
+        if (capEl) capEl.value = 3;
+        
+        const subEl = document.getElementById('formSubtotal');
+        if (subEl) subEl.value = 150000;
+        
+        recalcInvoiceTotals();
+    } catch(err) {
+        console.error('Error initializing invoice form:', err);
+    }
+
+    showInvoiceModal('invoiceModal');
+}
+
+// Apply Autofill from Project / Quotation
+function applyPrefill(val) {
+    if (!val) return;
+    const sel = document.getElementById('prefillSelector');
+    const opt = sel.options[sel.selectedIndex];
+
+    document.getElementById('formCustomerName').value = opt.getAttribute('data-name') || '';
+    document.getElementById('formCustomerMobile').value = opt.getAttribute('data-mobile') || '';
+    document.getElementById('formCustomerAddress').value = opt.getAttribute('data-address') || '';
+    document.getElementById('formCustomerGstin').value = opt.getAttribute('data-gstin') || '';
+    
+    const kw = parseFloat(opt.getAttribute('data-kw')) || 3;
+    document.getElementById('formCapacityKw').value = kw;
+
+    const sub = parseFloat(opt.getAttribute('data-subtotal')) || (kw * 50000);
+    document.getElementById('formSubtotal').value = sub;
+
+    if (val.startsWith('PRJ_')) {
+        document.getElementById('formProjectId').value = opt.getAttribute('data-id');
+    } else if (val.startsWith('Q_')) {
+        document.getElementById('formQuotationId').value = opt.getAttribute('data-id');
+    }
+
+    recalcInvoiceTotals();
+}
+
+// Select an invoice to preview on the printable document
+function selectInvoiceToPrint(index) {
+    if (!allInvoices || !allInvoices[index]) return;
+    currentPreviewIndex = index;
+    const inv = allInvoices[index];
+
+    document.getElementById('docInvNum').innerText = inv.invoiceNumber;
+    document.getElementById('docInvDate').innerText = inv.date || '07-11-2026';
+    document.getElementById('docPaymentStatus').innerText = (inv.paymentStatus || 'PAID').toUpperCase();
+
+    document.getElementById('docCustomerName').innerText = inv.customerName;
+    document.getElementById('docCustomerAddress').innerText = inv.customerAddress || 'Raisen, M.P.';
+    document.getElementById('docCustomerMobile').innerText = inv.customerMobile || 'N/A';
+    document.getElementById('docCustomerGstin').innerText = inv.customerGstin || 'Consumer (URP)';
+
+    document.getElementById('docCapacityKw').innerText = inv.plantCapacityKw || 3;
+
+    const sub = parseFloat(inv.subtotal) || 100000;
+    const cgst = parseFloat(inv.cgst) || Math.round(sub * 0.06);
+    const sgst = parseFloat(inv.sgst) || Math.round(sub * 0.06);
+    const total = parseFloat(inv.totalAmount) || (sub + cgst + sgst);
+
+    document.getElementById('docItem1Rate').innerText = '₹' + Math.round(sub * 0.55).toLocaleString('en-IN');
+    document.getElementById('docItem1Amount').innerText = '₹' + Math.round(sub * 0.55).toLocaleString('en-IN');
+
+    document.getElementById('docItem2Rate').innerText = '₹' + Math.round(sub * 0.20).toLocaleString('en-IN');
+    document.getElementById('docItem2Amount').innerText = '₹' + Math.round(sub * 0.20).toLocaleString('en-IN');
+
+    document.getElementById('docItem3Rate').innerText = '₹' + Math.round(sub * 0.15).toLocaleString('en-IN');
+    document.getElementById('docItem3Amount').innerText = '₹' + Math.round(sub * 0.15).toLocaleString('en-IN');
+
+    document.getElementById('docItem4Rate').innerText = '₹' + Math.round(sub * 0.10).toLocaleString('en-IN');
+    document.getElementById('docItem4Amount').innerText = '₹' + Math.round(sub * 0.10).toLocaleString('en-IN');
+
+    document.getElementById('docSubtotal').innerText = '₹' + Math.round(sub).toLocaleString('en-IN');
+    document.getElementById('docCgst').innerText = '₹' + Math.round(cgst).toLocaleString('en-IN');
+    document.getElementById('docSgst').innerText = '₹' + Math.round(sgst).toLocaleString('en-IN');
+    document.getElementById('docTotal').innerText = '₹' + Math.round(total).toLocaleString('en-IN');
+
+    document.getElementById('printableInvoiceCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Edit existing invoice
+function editInvoice(index) {
+    if (!allInvoices || !allInvoices[index]) return;
+    const inv = allInvoices[index];
+
+    try {
+        const titleEl = document.getElementById('modalTitle');
+        if (titleEl) titleEl.innerHTML = '<i class="icofont-edit"></i> Edit GST Tax Invoice (' + inv.invoiceNumber + ')';
+        
+        document.getElementById('formInvoiceId').value = inv._id || '';
+        document.getElementById('formInvNum').value = inv.invoiceNumber;
+        document.getElementById('formDate').value = inv.date || '';
+
+        document.getElementById('formCustomerName').value = inv.customerName || '';
+        document.getElementById('formCustomerMobile').value = inv.customerMobile || '';
+        document.getElementById('formCustomerAddress').value = inv.customerAddress || '';
+        document.getElementById('formCustomerGstin').value = inv.customerGstin || '';
+        document.getElementById('formCapacityKw').value = inv.plantCapacityKw || 3;
+        document.getElementById('formSubtotal').value = inv.subtotal || 100000;
+        document.getElementById('formPaymentStatus').value = (inv.paymentStatus || 'paid').toLowerCase();
+        document.getElementById('formPaymentMethod').value = inv.paymentMethod || 'NEFT / RTGS (SBI Raisen)';
+
+        recalcInvoiceTotals();
+    } catch(err) {
+        console.error('Error editing invoice:', err);
+    }
+
+    showInvoiceModal('invoiceModal');
+}
+
+function editCurrentDocInvoice() {
+    editInvoice(currentPreviewIndex);
+}
+
+// Delete Invoice with prompt
+async function deleteInvoicePrompt(invNum) {
+    if (!confirm('Are you sure you want to delete invoice ' + invNum + '?')) return;
+    try {
+        const csrfEl = document.querySelector('input[name="_csrf"]');
+        const res = await fetch('/api/admin/invoices/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': csrfEl ? csrfEl.value : ''
+            },
+            body: JSON.stringify({ invoiceNumber: invNum })
+        });
+        const d = await res.json();
+        if (d.success) {
+            alert(d.message || 'Invoice deleted successfully.');
+            window.location.reload();
+        } else {
+            alert(d.message || 'Error deleting invoice.');
+        }
+    } catch(e) {
+        alert('Server error.');
+    }
+}
+
+// Handle Form Submission (Create or Edit)
+document.getElementById('invoiceForm')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveInvoice');
+    btn.disabled = true;
+
+    const formData = new FormData(this);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/api/admin/invoices/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': payload._csrf
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Invoice saved successfully!');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving invoice.');
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert('Server or network connection error.');
+        btn.disabled = false;
+    }
+});
+</script>
+
+<%- include('partials/admin-footer') %>

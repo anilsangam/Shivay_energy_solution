@@ -5,7 +5,7 @@ const data = require('../config/company');
 const DataStore = require('../services/dataStore');
 
 exports.getHome = (req, res) => {
-    res.render('index', {
+    res.render('public-site/index', {
         title: `${data.company.name} | ${data.company.tagline}`,
         metaDescription: `Official website of ${data.company.name}, Raisen (M.P.). Rooftop Solar, Inverters, Panels & PM Surya Ghar Muft Bijli Yojana subsidy assistance.`,
         data,
@@ -14,7 +14,7 @@ exports.getHome = (req, res) => {
 };
 
 exports.getAbout = (req, res) => {
-    res.render('about', {
+    res.render('public-site/about', {
         title: `About Us | ${data.company.name} - Solar Energy Experts in Raisen, MP`,
         metaDescription: `Know more about ${data.company.name}, founded by Deepak Kushwaha & Rahul Saini in Raisen, Madhya Pradesh. Turnkey solar rooftop solutions across Central India.`,
         data,
@@ -23,7 +23,7 @@ exports.getAbout = (req, res) => {
 };
 
 exports.getServices = (req, res) => {
-    res.render('services', {
+    res.render('public-site/services', {
         title: `Solar & EV Services | ${data.company.name}`,
         metaDescription: `Residential and commercial solar, agricultural pumps, EV charger installation, and maintenance services across Raisen and Madhya Pradesh.`,
         data,
@@ -32,7 +32,7 @@ exports.getServices = (req, res) => {
 };
 
 exports.getProducts = (req, res) => {
-    res.render('products', {
+    res.render('public-site/products', {
         title: `Solar Products & Inverters | ${data.company.name}`,
         metaDescription: `Explore On-Grid, Off-Grid, and Hybrid Solar Inverters, Mono PERC Solar Panels, and Lithium Batteries available at ${data.company.name}.`,
         data,
@@ -41,7 +41,7 @@ exports.getProducts = (req, res) => {
 };
 
 exports.getCareers = (req, res) => {
-    res.render('careers', {
+    res.render('public-site/careers', {
         title: `Careers & Opportunities | ${data.company.name}`,
         metaDescription: `Explore job, tender, and freelance opportunities with ${data.company.name} in solar energy and EV charging across Madhya Pradesh.`,
         data,
@@ -50,7 +50,7 @@ exports.getCareers = (req, res) => {
 };
 
 exports.getProjects = (req, res) => {
-    res.render('projects', {
+    res.render('public-site/projects', {
         title: `Completed Solar Projects | ${data.company.name} - Portfolio`,
         metaDescription: `View residential, commercial, and agricultural solar rooftop installations completed by ${data.company.name} in Madhya Pradesh.`,
         data,
@@ -59,7 +59,7 @@ exports.getProjects = (req, res) => {
 };
 
 exports.getCalculator = (req, res) => {
-    res.render('calculator', {
+    res.render('public-site/calculator', {
         title: `India Solar Savings Calculator | ${data.company.name}`,
         metaDescription: `Calculate your rooftop solar capacity, estimated monthly units generation, savings in â‚¹ and PM Surya Ghar subsidy eligibility.`,
         data,
@@ -69,7 +69,7 @@ exports.getCalculator = (req, res) => {
 };
 
 exports.getContact = (req, res) => {
-    res.render('contact', {
+    res.render('public-site/contact', {
         title: `Contact Us | ${data.company.name} - Raisen (M.P.)`,
         metaDescription: `Contact Deepak Kushwaha (+91 70005 75496) and Rahul Saini (+91 93997 61750) at ${data.company.name}, Ward No. 15, PHE Office, Arjun Nagar, Raisen.`,
         data,
