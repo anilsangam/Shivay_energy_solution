@@ -76,13 +76,19 @@
                 <i class="icofont-file-document me-1"></i> View Prepared Quotation
             </a>
         <% } %>
-        <% if ((currentUser && (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER' || currentUser.role === 'SUPER_ADMIN')) && request.status !== 'QUOTATION_PREPARED' && request.status !== 'REJECTED') { %>
-            <a href="<%= (currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations/prepare/' + request._id : '/manager/quotations/prepare/' + request._id %>" class="btn btn-sm btn-primary" style="background: var(--admin-navy-primary);">
-                <i class="icofont-calculator-alt me-1"></i> Prepare Quotation
+        <% if (currentUser && (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER' || currentUser.role === 'SUPER_ADMIN') && request.status !== 'REJECTED') { %>
+            <a href="<%= (currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations/prepare/' + request._id : '/manager/quotations/prepare/' + request._id %>" class="btn btn-sm btn-primary fw-bold" style="background: var(--admin-navy-primary);">
+                <i class="icofont-calculator-alt me-1"></i> <%= request.linkedQuotation ? 'Revise Quotation Directly' : 'Prepare Quotation Directly' %>
             </a>
+            <% if (request.status !== 'QUOTATION_PREPARED' && request.status !== 'REVISION_REQUESTED') { %>
+                <button type="button" class="btn btn-sm btn-outline-warning fw-bold" onclick="requestStaffRevisionPrompt('<%= request._id %>', '<%= request.requestNumber %>')">
+                    <i class="icofont-refresh me-1"></i> Send Revision Request to Staff
+                </button>
+            <% } %>
         <% } %>
     </div>
 </div>
+<input type="hidden" id="pageCsrfToken" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
 <!-- Alert for Revisions / Rejections -->
 <% if (request.status === 'REVISION_REQUESTED') { %>
@@ -432,5 +438,37 @@ document.getElementById('resubmitForm')?.addEventListener('submit', async functi
 });
 </script>
 <% } %>
+
+<script>
+async function requestStaffRevisionPrompt(reqId, reqNum) {
+    const comments = prompt(`Enter revision comments for quotation request ${reqNum} (Assigned staff will be notified to modify site or electrical details):`);
+    if (!comments || !comments.trim()) return;
+
+    try {
+        const csrfEl = document.getElementById('pageCsrfToken') || document.querySelector('input[name="_csrf"]');
+        const postUrl = window.location.pathname.startsWith('/admin')
+            ? `/admin/quotations/request/${reqId}/status`
+            : `/manager/quotations/request/${reqId}/status`;
+
+        const res = await fetch(postUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': csrfEl ? csrfEl.value : ''
+            },
+            body: JSON.stringify({ action: 'REVISION_REQUESTED', comments: comments.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Revision request successfully sent to field staff.');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error sending revision request.');
+        }
+    } catch (err) {
+        alert('Server or network connection error.');
+    }
+}
+</script>
 
 <%- include('../admin/partials/admin-footer') %>

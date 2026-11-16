@@ -187,7 +187,7 @@ function trackTicket() {
                 <div class="mt-1 text-white-50">Updates: ${c.resolutionNotes || 'Technician assigned. Under review.'}</div>
             `;
         } else {
-            resultBox.innerHTML = '<span class="text-danger">Ticket nahi mila. Kripya Ticket ID aur Mobile number check karein.</span>';
+            resultBox.innerHTML = `<span class="text-danger font-weight-bold"><i class="icofont-warning me-1"></i> ${res.message || 'Complaint ticket not found. Please verify your ticket number.'}</span>`;
         }
     })
     .catch(() => {

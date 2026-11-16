@@ -46,7 +46,7 @@
                     <th>Employee ID</th>
                     <th>Contact</th>
                     <th>Role</th>
-                    <th>Assigned Manager</th>
+                    <th>Assigned Manager / Branch</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -69,7 +69,18 @@
                         else if (u.status === 'SUSPENDED') statusClass = 'badge-status-suspended';
                         else if (u.status === 'INACTIVE') statusClass = 'badge-status-inactive';
 
-                        const mgrName = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : (u.role === 'SUPER_ADMIN' ? 'Self / Executive Board' : (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER' ? 'Deepak Kushwaha (MD)' : 'None (Unassigned)')));
+                        let mgrDisplay = '';
+                        let mgrIcon = 'icofont-business-man text-warning';
+                        if (u.role === 'SUPER_ADMIN') {
+                            mgrDisplay = 'Self / Executive Board';
+                            mgrIcon = 'icofont-shield-check text-primary';
+                        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
+                            const branchName = (u.branchId && u.branchId.name) ? u.branchId.name : ((u.branch && u.branch.name) ? u.branch.name : 'Central Branch');
+                            mgrDisplay = `Self / Branch Head (${branchName})`;
+                            mgrIcon = 'icofont-building text-info';
+                        } else {
+                            mgrDisplay = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : 'None (Unassigned)');
+                        }
                     %>
                         <tr id="user-row-<%= u._id %>">
                             <td>
@@ -91,7 +102,7 @@
                             <td><span class="badge-role <%= roleClass %>"><%= roleName %></span></td>
                             <td>
                                 <span class="d-inline-flex align-items-center gap-1 font-weight-bold" style="font-size: 12px; color: var(--admin-navy-primary);">
-                                    <i class="icofont-business-man text-warning"></i> <%= mgrName %>
+                                    <i class="<%= mgrIcon %>"></i> <%= mgrDisplay %>
                                 </span>
                             </td>
                             <td>
@@ -102,10 +113,12 @@
                             <td class="text-end">
                                 <div class="btn-group">
                                     <% if (u.role !== 'SUPER_ADMIN') { %>
-                                        <!-- Assign Manager Button -->
-                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
-                                            <i class="icofont-business-man"></i>
-                                        </button>
+                                        <% if (u.role === 'EMPLOYEE') { %>
+                                            <!-- Assign Manager Button ONLY for field staff/employees -->
+                                            <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
+                                                <i class="icofont-business-man"></i>
+                                            </button>
+                                        <% } %>
 
                                         <!-- Status Toggle Button -->
                                         <% if (u.status === 'ACTIVE') { %>
@@ -184,6 +197,25 @@
                         </div>
                     </div>
 
+                    <!-- Branch Assignment (Required for Branch Manager) -->
+                    <div class="mb-3" id="branchSelectWrap">
+                        <label class="form-label small font-weight-bold" id="branchLabel">
+                            Branch Assignment <span id="branchReqStar" class="text-danger" style="display: none;">*</span>
+                        </label>
+                        <select id="newBranchId" class="form-select">
+                            <option value="">-- Select Branch --</option>
+                            <% if (typeof branches !== 'undefined' && branches && branches.length > 0) { %>
+                                <% branches.forEach(b => { %>
+                                    <option value="<%= b._id %>"><%= b.name %> (<%= b.code %>)</option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                        <div class="form-text text-muted" id="branchHelpText" style="font-size: 11px;">
+                            Each branch can have only one active Branch Manager.
+                        </div>
+                    </div>
+
+                    <!-- Reporting Manager (Hidden for Branch Managers & Super Admins) -->
                     <div class="mb-3" id="managerSelectWrap">
                         <label class="form-label small font-weight-bold">Assigned Manager</label>
                         <select id="newManagerId" class="form-select">
@@ -296,9 +328,25 @@ function showToast(msg) {
 }
 
 function handleRoleChange(role) {
-    const wrap = document.getElementById('managerSelectWrap');
-    if (wrap) {
-        wrap.style.display = (role === 'SUPER_ADMIN' || role === 'BRANCH_MANAGER') ? 'none' : 'block';
+    const mgrWrap = document.getElementById('managerSelectWrap');
+    const branchWrap = document.getElementById('branchSelectWrap');
+    const branchReqStar = document.getElementById('branchReqStar');
+    const empIdInput = document.getElementById('newEmpId');
+
+    if (role === 'BRANCH_MANAGER') {
+        if (mgrWrap) mgrWrap.style.display = 'none';
+        if (branchWrap) branchWrap.style.display = 'block';
+        if (branchReqStar) branchReqStar.style.display = 'inline';
+        if (empIdInput) empIdInput.placeholder = 'Leave blank to auto-generate (e.g. SES-MGR-...)';
+    } else if (role === 'EMPLOYEE') {
+        if (mgrWrap) mgrWrap.style.display = 'block';
+        if (branchWrap) branchWrap.style.display = 'block';
+        if (branchReqStar) branchReqStar.style.display = 'none';
+        if (empIdInput) empIdInput.placeholder = 'Leave blank to auto-generate (e.g. SES-EMP-...)';
+    } else if (role === 'SUPER_ADMIN') {
+        if (mgrWrap) mgrWrap.style.display = 'none';
+        if (branchWrap) branchWrap.style.display = 'none';
+        if (empIdInput) empIdInput.placeholder = 'Leave blank to auto-generate (e.g. SES-ADMIN-...)';
     }
 }
 
@@ -307,13 +355,24 @@ async function handleCreateUser(e) {
     const errBox = document.getElementById('createErrAlert');
     errBox.classList.add('d-none');
 
+    const role = document.getElementById('newRole').value;
+    const branchId = document.getElementById('newBranchId') ? document.getElementById('newBranchId').value : null;
+    const managerId = (role === 'EMPLOYEE' && document.getElementById('newManagerId')) ? (document.getElementById('newManagerId').value || null) : null;
+
+    if (role === 'BRANCH_MANAGER' && !branchId) {
+        errBox.innerText = 'Branch selection is required when creating a Branch Manager.';
+        errBox.classList.remove('d-none');
+        return;
+    }
+
     const body = {
         name: document.getElementById('newName').value,
         email: document.getElementById('newEmail').value,
         mobile: document.getElementById('newMobile').value,
         password: document.getElementById('newPass').value,
-        role: document.getElementById('newRole').value,
-        managerId: document.getElementById('newManagerId').value || null,
+        role: role,
+        branchId: branchId || null,
+        managerId: managerId,
         designation: document.getElementById('newDesig').value,
         department: document.getElementById('newDept').value,
         employeeId: document.getElementById('newEmpId').value,

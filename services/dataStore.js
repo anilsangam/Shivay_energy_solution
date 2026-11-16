@@ -40,8 +40,8 @@ let inMemoryUsers = [
         designation: 'General Operations Manager',
         department: 'Operations & DISCOM Approvals',
         branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
-        managerId: adminSeedId,
-        manager: { _id: adminSeedId, name: 'Deepak Kushwaha', email: 'admin@shivayenergy.com', mobile: '+91 70005 75496' },
+        managerId: null,
+        manager: null,
         lastLogin: new Date(),
         createdAt: new Date('2026-01-10')
     },
@@ -95,207 +95,13 @@ let inMemoryUsers = [
     }
 ];
 
-// Initial seed enquiries for Raisen & MP
-let enquiries = [
-    {
-        id: 'ENQ-94821',
-        name: 'Mukesh Ahirwar',
-        mobile: '+91 98261 44521',
-        district: 'Raisen (M.P.)',
-        state: 'Madhya Pradesh',
-        requirement: '3 kW Residential (PM Surya Ghar)',
-        monthlyBill: 3200,
-        message: 'Looking for 3kW rooftop solar with net meter under PM Surya Ghar Yojana. Roof is 400 sq.ft.',
-        status: 'new',
-        date: '07-11-2026',
-        createdAt: new Date('2026-11-07T10:15:00+05:30'),
-        notes: ['Customer contacted on phone, interested in 3kW mono perc subsidy.']
-    },
-    {
-        id: 'ENQ-94820',
-        name: 'Sunil Verma',
-        mobile: '+91 94250 88712',
-        district: 'Bhopal',
-        state: 'Madhya Pradesh',
-        requirement: '25 kW Commercial Rooftop',
-        monthlyBill: 38000,
-        message: 'Warehouse rooftop installation for flour mill near Mandideep.',
-        status: 'survey_scheduled',
-        date: '06-11-2026',
-        createdAt: new Date('2026-11-06T14:30:00+05:30'),
-        notes: ['Site survey scheduled with site engineer Vikram Solanki for 9th Nov.']
-    },
-    {
-        id: 'ENQ-94819',
-        name: 'Babulal Meena',
-        mobile: '+91 99933 11204',
-        district: 'Gairatganj, Raisen',
-        state: 'Madhya Pradesh',
-        requirement: '5 HP Solar Water Pump',
-        monthlyBill: 0,
-        message: 'Agricultural pump installation under PM-KUSUM Component-B.',
-        status: 'converted',
-        date: '06-11-2026',
-        createdAt: new Date('2026-11-06T11:00:00+05:30'),
-        notes: ['Payment received for 5HP VFD solar pump kit. Dispatch initiated.']
-    },
-    {
-        id: 'ENQ-94818',
-        name: 'Dr. Alok Saxena',
-        mobile: '+91 98930 77319',
-        district: 'Vidisha Road, Raisen',
-        state: 'Madhya Pradesh',
-        requirement: '5 kW Hybrid Lithium System',
-        monthlyBill: 6500,
-        message: 'Need battery backup for private clinic during frequent grid cuts.',
-        status: 'quotation_sent',
-        date: '05-11-2026',
-        createdAt: new Date('2026-11-05T16:45:00+05:30'),
-        notes: ['Quotation SES-Q2026-401 sent via WhatsApp. Follow up on Monday.']
-    },
-    {
-        id: 'ENQ-94817',
-        name: 'Dharmendra Lodhi',
-        mobile: '+91 91792 55301',
-        district: 'Begumganj, Raisen',
-        state: 'Madhya Pradesh',
-        requirement: '2 kW Residential (PM Surya Ghar)',
-        monthlyBill: 2100,
-        message: 'Family home rooftop. Wants subsidy directly into SBI account.',
-        status: 'new',
-        date: '05-11-2026',
-        createdAt: new Date('2026-11-05T09:20:00+05:30'),
-        notes: []
-    }
-];
-
-// Initial seed quotations
-let quotations = [
-    {
-        quotationNumber: 'SES-Q2026-402',
-        customerName: 'Suresh Chouksey',
-        customerMobile: '+91 98260 12345',
-        customerAddress: 'Near Bus Stand, Raisen (M.P.)',
-        plantCapacityKw: 3,
-        ratePerKw: 58000,
-        grossAmount: 174000,
-        subsidy: 78000,
-        netAmount: 96000,
-        panelSpecs: '6 x 540W Mono PERC Half-Cut (DCR Compliant)',
-        inverterSpecs: '3 kW On-Grid Dual MPPT Inverter with Wi-Fi Monitoring',
-        date: '07-11-2026',
-        status: 'sent'
-    },
-    {
-        quotationNumber: 'SES-Q2026-401',
-        customerName: 'Dr. Alok Saxena',
-        customerMobile: '+91 98930 77319',
-        customerAddress: 'Vidisha Road, Raisen (M.P.)',
-        plantCapacityKw: 5,
-        ratePerKw: 62000,
-        grossAmount: 310000,
-        subsidy: 78000,
-        netAmount: 232000,
-        panelSpecs: '10 x 540W Mono PERC TopCon Modules',
-        inverterSpecs: '5 kW Hybrid Inverter with 5.12 kWh Lithium Battery',
-        date: '05-11-2026',
-        status: 'sent'
-    }
-];
-
-// Initial seed invoices
-let invoices = [
-    {
-        invoiceNumber: 'SES-INV-2026-118',
-        customerName: 'Patel Cold Storage & Agro Pvt. Ltd.',
-        customerMobile: '+91 94250 88712',
-        customerAddress: 'Mandideep Industrial Area, Bhopal (M.P.)',
-        customerGstin: '23AABCP1234F1Z0',
-        plantCapacityKw: 25,
-        subtotal: 996640,
-        cgst: 59798.40,
-        sgst: 59798.40,
-        totalAmount: 1116236.80,
-        paymentStatus: 'paid',
-        paymentMethod: 'NEFT / RTGS (SBI Raisen)',
-        date: '07-11-2026'
-    },
-    {
-        invoiceNumber: 'SES-INV-2026-117',
-        customerName: 'Ramswaroop Meena',
-        customerMobile: '+91 99933 11204',
-        customerAddress: 'Gairatganj, Raisen (M.P.)',
-        customerGstin: '',
-        plantCapacityKw: 5,
-        subtotal: 215000,
-        cgst: 12900,
-        sgst: 12900,
-        totalAmount: 240800,
-        paymentStatus: 'paid',
-        paymentMethod: 'UPI / Direct Bank',
-        date: '06-11-2026'
-    }
-];
-
-// Initial seed field attendance records for today
-let attendanceRecords = [
-    {
-        id: 'ATT-101',
-        employeeId: 'SES-EMP-01',
-        employeeName: 'Deepak Kushwaha',
-        role: 'Technical Lead & Co-Founder',
-        type: 'check_in',
-        latitude: 23.3315,
-        longitude: 77.7807,
-        accuracy: 8,
-        locationName: 'Shivay Energy HQ, Arjun Nagar, Raisen',
-        timestamp: '09:12 AM',
-        date: '07-11-2026',
-        isWithinGeofence: true
-    },
-    {
-        id: 'ATT-102',
-        employeeId: 'SES-EMP-02',
-        employeeName: 'Rahul Saini',
-        role: 'Operations Lead & Co-Founder',
-        type: 'check_in',
-        latitude: 23.3321,
-        longitude: 77.7812,
-        accuracy: 12,
-        locationName: 'PHE Office Ward 15, Raisen',
-        timestamp: '09:25 AM',
-        date: '07-11-2026',
-        isWithinGeofence: true
-    },
-    {
-        id: 'ATT-103',
-        employeeId: 'SES-EMP-03',
-        employeeName: 'Anil Sharma',
-        role: 'Site Technician',
-        type: 'check_in',
-        latitude: 23.3289,
-        longitude: 77.7794,
-        accuracy: 15,
-        locationName: 'Site Survey: Bus Stand Road, Raisen',
-        timestamp: '09:40 AM',
-        date: '07-11-2026',
-        isWithinGeofence: true
-    },
-    {
-        id: 'ATT-104',
-        employeeId: 'SES-EMP-04',
-        employeeName: 'Vikram Solanki',
-        role: 'Installation Specialist',
-        type: 'check_in',
-        latitude: 23.2599,
-        longitude: 77.4126,
-        accuracy: 18,
-        locationName: 'Mandideep Industrial Sector, Raisen',
-        timestamp: '10:05 AM',
-        date: '07-11-2026',
-        isWithinGeofence: true
-    }
-];
+// Empty storage collections for production data (no seed/dummy fallback records)
+let enquiries = [];
+let quotations = [];
+let invoices = [];
+let attendanceRecords = [];
+let complaints = [];
+let systemSettings = null;
 
 class DataStore {
     // ENQUIRIES
@@ -414,8 +220,8 @@ class DataStore {
     }
 
     // INVOICES
-    static getAllInvoices() {
-        return invoices;
+    static getAllInvoices(includeArchived = false) {
+        return includeArchived ? invoices : invoices.filter(i => !i.isArchived);
     }
 
     static addInvoice(data) {
@@ -426,9 +232,47 @@ class DataStore {
             year: 'numeric'
         }).replace(/\//g, '-');
 
+        const existingIdx = invoices.findIndex(i => i.invoiceNumber === num);
+        
+        // If invoiceNumber already exists in memory, archive old state to previousVersions and update with customer fields strictly locked
+        if (existingIdx !== -1) {
+            const existing = invoices[existingIdx];
+            const oldSnapshot = {
+                version: existing.version || 1,
+                items: existing.items || [],
+                subtotal: existing.subtotal,
+                cgst: existing.cgst,
+                sgst: existing.sgst,
+                totalAmount: existing.totalAmount,
+                paymentStatus: existing.paymentStatus,
+                paymentMethod: existing.paymentMethod,
+                plantCapacityKw: existing.plantCapacityKw,
+                date: existing.date,
+                updatedAt: new Date()
+            };
+            existing.previousVersions = existing.previousVersions || [];
+            existing.previousVersions.push(oldSnapshot);
+            existing.version = (existing.version || 1) + 1;
+
+            // Retain locked customer info
+            existing.plantCapacityKw = parseFloat(data.plantCapacityKw) || existing.plantCapacityKw;
+            existing.subtotal = parseFloat(data.subtotal) || existing.subtotal;
+            existing.cgst = parseFloat(data.cgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100;
+            existing.sgst = parseFloat(data.sgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100;
+            existing.totalAmount = parseFloat(data.totalAmount) || existing.totalAmount;
+            existing.paymentStatus = data.paymentStatus || existing.paymentStatus;
+            existing.paymentMethod = data.paymentMethod || existing.paymentMethod;
+            existing.date = todayStr;
+            existing.items = data.items || existing.items;
+            return existing;
+        }
+
         const inv = {
             _id: data.invoiceId || data._id || undefined,
             invoiceNumber: num,
+            version: 1,
+            previousVersions: [],
+            isArchived: false,
             customerName: data.customerName,
             customerMobile: data.customerMobile || '',
             customerAddress: data.customerAddress || '',
@@ -447,24 +291,24 @@ class DataStore {
             quotationId: data.quotationId || ''
         };
 
-        // If invoiceNumber already exists in memory, update in place
-        const existingIdx = invoices.findIndex(i => i.invoiceNumber === num);
-        if (existingIdx !== -1) {
-            invoices[existingIdx] = { ...invoices[existingIdx], ...inv };
-            return invoices[existingIdx];
-        }
-
         invoices.unshift(inv);
         return inv;
     }
 
-    static deleteInvoice(invoiceNumber) {
+    static archiveInvoice(invoiceNumber) {
         const idx = invoices.findIndex(i => i.invoiceNumber === invoiceNumber);
         if (idx !== -1) {
-            invoices.splice(idx, 1);
+            invoices[idx].isArchived = true;
+            invoices[idx].archivedAt = new Date();
+            invoices[idx].paymentStatus = 'cancelled';
             return true;
         }
         return false;
+    }
+
+    static deleteInvoice(invoiceNumber) {
+        // Soft-archive instead of hard-deleting to preserve immutable audit trail
+        return this.archiveInvoice(invoiceNumber);
     }
 
     // ATTENDANCE
@@ -502,9 +346,9 @@ class DataStore {
 
     // STATS
     static getStats() {
-        const totalEnquiries = enquiries.length + 43; // total historical + active
+        const totalEnquiries = enquiries.length;
         const newEnquiries = enquiries.filter(e => e.status === 'new').length;
-        const convertedEnquiries = enquiries.filter(e => e.status === 'converted').length + 24;
+        const convertedEnquiries = enquiries.filter(e => e.status === 'converted').length;
         const todayAttendance = attendanceRecords.filter(a => a.type === 'check_in').length;
 
         return {
@@ -512,11 +356,73 @@ class DataStore {
             newEnquiries,
             convertedEnquiries,
             todayAttendance,
-            totalEmployees: 9,
-            totalQuotations: quotations.length + 32,
-            totalInvoices: invoices.length + 20,
-            monthlyRevenueInr: '₹18,45,000'
+            totalEmployees: inMemoryUsers.filter(u => u.role === 'EMPLOYEE').length,
+            totalQuotations: quotations.length,
+            totalInvoices: invoices.length,
+            monthlyRevenueInr: '₹0'
         };
+    }
+
+    // COMPLAINTS
+    static getAllComplaints() {
+        return complaints;
+    }
+
+    static addComplaint(complaintData) {
+        const complaint = {
+            _id: complaintData._id || new mongoose.Types.ObjectId(),
+            ticketId: complaintData.ticketId || ('SHIVAY-' + Math.floor(10000 + Math.random() * 90000)),
+            customerName: complaintData.customerName,
+            mobile: complaintData.mobile,
+            email: complaintData.email || '',
+            systemCapacity: complaintData.systemCapacity || '',
+            category: complaintData.category || 'inverter_error',
+            description: complaintData.description || '',
+            status: complaintData.status || 'submitted',
+            assignedEngineer: complaintData.assignedEngineer || null,
+            resolutionNotes: complaintData.resolutionNotes || '',
+            createdAt: complaintData.createdAt || new Date(),
+            updatedAt: new Date()
+        };
+        complaints.unshift(complaint);
+        return complaint;
+    }
+
+    static getComplaint(ticketId, mobile) {
+        if (!ticketId) return null;
+        const cleanTicket = ticketId.trim().toUpperCase();
+        const cleanMobile = mobile ? mobile.replace(/\D/g, '').slice(-10) : '';
+        return complaints.find(c => {
+            const matchTicket = c.ticketId && c.ticketId.toUpperCase() === cleanTicket;
+            if (!cleanMobile) return matchTicket;
+            const cMobile = (c.mobile || '').replace(/\D/g, '').slice(-10);
+            return matchTicket && cMobile === cleanMobile;
+        }) || null;
+    }
+
+    static updateComplaintStatus(ticketId, status, resolutionNotes, assignedEngineer) {
+        if (!ticketId) return null;
+        const cleanTicket = ticketId.trim().toUpperCase();
+        const comp = complaints.find(c => c.ticketId && c.ticketId.toUpperCase() === cleanTicket);
+        if (comp) {
+            comp.status = status;
+            if (resolutionNotes) comp.resolutionNotes = resolutionNotes;
+            if (assignedEngineer) comp.assignedEngineer = assignedEngineer;
+            if (status === 'resolved' || status === 'closed') comp.resolvedAt = new Date();
+            comp.updatedAt = new Date();
+            return comp;
+        }
+        return null;
+    }
+
+    // SYSTEM SETTINGS
+    static getSettings() {
+        return systemSettings;
+    }
+
+    static saveSettings(settingsObj) {
+        systemSettings = { ...systemSettings, ...settingsObj };
+        return systemSettings;
     }
 
     // USER & TEAM MANAGEMENT HELPERS (With DB & In-Memory fallback)
@@ -529,7 +435,7 @@ class DataStore {
                     .populate('managerId', 'name email mobile role employeeId')
                     .populate('branchId', 'name code')
                     .select('-password');
-                if (list && list.length > 0) return list;
+                if (list) return list;
             } catch (err) {}
         }
         return inMemoryUsers;
@@ -552,20 +458,45 @@ class DataStore {
         return mem || null;
     }
 
-    static async getEmployeesByManager(managerId) {
-        if (!managerId) return [];
-        const mStr = managerId.toString();
+    static getUserByIdSync(id) {
+        if (!id) return null;
+        const idStr = id.toString();
+        const mem = inMemoryUsers.find(u => u._id && u._id.toString() === idStr);
+        return mem || null;
+    }
+
+    static async getEmployeesByManager(managerId, branchId) {
+        if (!managerId && !branchId) return [];
+        const mStr = managerId ? managerId.toString() : '';
+        const bStr = branchId ? (branchId._id || branchId).toString() : '';
         const User = require('../models/User');
+
         if (mongoose.connection.readyState === 1) {
             try {
+                const orConditions = [];
+                if (managerId && mongoose.isValidObjectId(managerId)) {
+                    orConditions.push({ managerId: managerId }, { manager: managerId });
+                }
+                if (branchId && mongoose.isValidObjectId(branchId)) {
+                    orConditions.push({ branchId: branchId });
+                }
+                if (orConditions.length === 0) return [];
+
                 const found = await User.find({
                     role: 'EMPLOYEE',
-                    $or: [{ managerId: managerId }, { manager: managerId }]
+                    $or: orConditions
                 }).populate('branchId', 'name code').select('-password');
-                if (found && found.length > 0) return found;
+                return found || [];
             } catch (err) {}
         }
-        return inMemoryUsers.filter(u => u.role === 'EMPLOYEE' && u.managerId && u.managerId.toString() === mStr);
+
+        return inMemoryUsers.filter(u => {
+            if (u.role !== 'EMPLOYEE') return false;
+            const matchesMgr = mStr && ((u.managerId && u.managerId.toString() === mStr) || (u.manager && u.manager.toString() === mStr));
+            const uBranch = u.branchId ? (u.branchId._id || u.branchId).toString() : '';
+            const matchesBranch = bStr && uBranch === bStr;
+            return matchesMgr || matchesBranch;
+        });
     }
 
     static async getRealCounts() {

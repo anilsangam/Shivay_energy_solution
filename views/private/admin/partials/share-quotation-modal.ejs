@@ -93,7 +93,7 @@ function openShareQuotationModal(data) {
     if (!data) return;
     currentShareData = data;
 
-    // Set modal text
+    // Set modal text safely using textContent
     const qNum = data.quotationNumber || '';
     const custName = data.customerName || 'Customer';
     const custMobile = data.customerMobile || '';
@@ -102,7 +102,15 @@ function openShareQuotationModal(data) {
 
     document.getElementById('shareModalQuotationNum').textContent = qNum;
     document.getElementById('shareModalCustomerName').textContent = custName;
-    document.getElementById('shareModalCustomerMobile').innerHTML = '<i class="icofont-phone me-1"></i> ' + custMobile;
+    
+    const mobileEl = document.getElementById('shareModalCustomerMobile');
+    if (mobileEl) {
+        mobileEl.textContent = ' ' + custMobile;
+        const icon = document.createElement('i');
+        icon.className = 'icofont-phone me-1';
+        mobileEl.prepend(icon);
+    }
+
     document.getElementById('shareModalCapacity').textContent = cap;
     document.getElementById('shareModalNetPayable').textContent = '₹ ' + netPayable;
 
@@ -221,4 +229,17 @@ function copyShareModalLink() {
         document.execCommand('copy');
     });
 }
+
+// Unobtrusive event delegation for share modal buttons (No inline onclick needed)
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-open-share-modal');
+    if (btn && btn.dataset && btn.dataset.quote) {
+        try {
+            const data = JSON.parse(btn.dataset.quote);
+            openShareQuotationModal(data);
+        } catch(err) {
+            console.error('Error parsing quotation data:', err);
+        }
+    }
+});
 </script>

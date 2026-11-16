@@ -17,7 +17,22 @@ connectDB();
 
 // Security Headers with Helmet
 app.use(helmet({
-    contentSecurityPolicy: false, // Prevents blocking inline scripts & dynamic calculators
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrcAttr: ["'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+            imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+            mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com"],
+            connectSrc: ["'self'", "https://res.cloudinary.com", "https://api.cloudinary.com"],
+            frameSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"]
+        }
+    },
     crossOriginEmbedderPolicy: false
 }));
 
@@ -55,14 +70,26 @@ if (mongoURI) {
     console.warn('⚠️ Note: Using in-memory session store (MONGO_URI / MONGODB_URI not provided).');
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+let activeSessionSecret = process.env.SESSION_SECRET;
+
+if (!activeSessionSecret) {
+    if (isProduction) {
+        console.error('FATAL CONFIGURATION ERROR: Required SESSION_SECRET environment variable is missing in production environment.');
+        process.exit(1);
+    }
+    console.warn('⚠️ Warning: SESSION_SECRET is not set in environment. Generating an ephemeral random session secret for development.');
+    activeSessionSecret = require('crypto').randomBytes(32).toString('hex');
+}
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'shivay-energy-super-secure-secret-2026',
+    secret: activeSessionSecret,
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }

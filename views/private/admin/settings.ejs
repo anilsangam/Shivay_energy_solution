@@ -1,0 +1,414 @@
+<%- include('partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="settingsToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="settingsToastMsg">Settings updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('settingsToast').classList.add('d-none')"></button>
+</div>
+
+<div id="settingsErrAlert" class="alert alert-danger d-none mb-4"></div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-gear me-2 text-warning"></i> Company & System Configuration
+        </h2>
+        <p class="text-muted small mb-0">
+            Configure enterprise master data, PM Surya Ghar subsidy rates, branch GPS geofences, and security controls.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary font-weight-bold px-4 shadow-sm" onclick="submitSettingsForm()" style="background: var(--admin-navy-primary); border-radius: 8px;">
+            <i class="icofont-save me-1"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<!-- Settings Card with Tabs -->
+<div class="admin-card border-0 shadow-sm" style="border-radius: 12px; border: 1px solid var(--admin-border, #cbd5e1) !important;">
+    <div class="admin-card-header bg-white p-3 border-bottom">
+        <ul class="nav nav-pills gap-2" id="settingsTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active font-weight-bold btn-sm py-2 px-3" id="company-tab" data-bs-toggle="tab" data-bs-target="#company-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-building me-1"></i> Company Profile
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold btn-sm py-2 px-3" id="pricing-tab" data-bs-toggle="tab" data-bs-target="#pricing-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-sun-alt me-1"></i> Pricing & Subsidy
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold btn-sm py-2 px-3" id="geofence-tab" data-bs-toggle="tab" data-bs-target="#geofence-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-location-pin me-1"></i> GPS Geofencing
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold btn-sm py-2 px-3" id="security-tab" data-bs-toggle="tab" data-bs-target="#security-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-shield-check me-1"></i> Security & Policies
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold btn-sm py-2 px-3" id="discom-tab" data-bs-toggle="tab" data-bs-target="#discom-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-flash me-1"></i> DISCOM Net-Metering
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <form id="settingsForm" onsubmit="event.preventDefault(); submitSettingsForm();">
+        <div class="card-body p-4">
+            <div class="tab-content" id="settingsTabContent">
+                
+                <!-- TAB 1: COMPANY PROFILE -->
+                <div class="tab-pane fade show active" id="company-pane" role="tabpanel">
+                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">Legal Entity & Branding Information</h5>
+                    <p class="text-muted small mb-4">Official company details rendered on quotes, tax invoices, and legal disclosures.</p>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small font-weight-bold">Registered Legal Entity Name *</label>
+                            <input type="text" class="form-control" name="companyName" value="<%= setting.companyName %>" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">Short Display Name</label>
+                            <input type="text" class="form-control" name="shortName" value="<%= setting.shortName %>">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">GSTIN Number (State 23 - M.P.)</label>
+                            <input type="text" class="form-control" name="gstin" value="<%= setting.gstin %>" placeholder="23AXXXX0000X1Z5">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Company Tagline</label>
+                        <input type="text" class="form-control" name="tagline" value="<%= setting.tagline %>">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">Official Business Email *</label>
+                            <input type="email" class="form-control" name="officialEmail" value="<%= setting.officialEmail %>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">Primary Phone (Mobile) *</label>
+                            <input type="text" class="form-control" name="primaryPhone" value="<%= setting.primaryPhone %>" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">WhatsApp Business Number</label>
+                            <input type="text" class="form-control" name="whatsappNumber" value="<%= setting.whatsappNumber %>">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small font-weight-bold">Alternate Contact / Support Phone</label>
+                            <input type="text" class="form-control" name="alternatePhone" value="<%= setting.alternatePhone %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small font-weight-bold">Official Website URL</label>
+                            <input type="url" class="form-control" name="website" value="<%= setting.website %>">
+                        </div>
+                    </div>
+
+                    <hr class="my-4 text-muted">
+                    <h6 class="font-weight-bold text-dark mb-3" style="font-size: 14px;">Central Headquarters Address</h6>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Office Address Line *</label>
+                        <input type="text" class="form-control" name="addressLine" value="<%= setting.addressLine %>" required>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">City *</label>
+                            <input type="text" class="form-control" name="city" value="<%= setting.city %>" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">District *</label>
+                            <input type="text" class="form-control" name="district" value="<%= setting.district %>" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">State *</label>
+                            <input type="text" class="form-control" name="state" value="<%= setting.state %>" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small font-weight-bold">Pincode *</label>
+                            <input type="text" class="form-control" name="pincode" value="<%= setting.pincode %>" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: PRICING & SUBSIDY -->
+                <div class="tab-pane fade" id="pricing-pane" role="tabpanel">
+                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">PM Surya Ghar Subsidy Slabs & Default Rates</h5>
+                    <p class="text-muted small mb-4">Configure direct benefit transfer (DBT) subsidy calculations and default solar rate per kilowatt.</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light border rounded-3">
+                                <label class="form-label small font-weight-bold text-dark">Default Solar EPC Rate per kW (₹) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" class="form-control" name="defaultRatePerKw" value="<%= setting.defaultRatePerKw %>" required min="30000" max="150000" step="500">
+                                </div>
+                                <div class="form-text text-muted" style="font-size: 11px;">Standard installation rate applied during quotation preparation.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light border rounded-3">
+                                <label class="form-label small font-weight-bold text-dark">Default Composite GST Rate (%)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="defaultGstPercent" value="<%= setting.defaultGstPercent %>" min="0" max="28" step="0.1">
+                                    <span class="input-group-text bg-white">%</span>
+                                </div>
+                                <div class="form-text text-muted" style="font-size: 11px;">Standard 13.8% composite rate (70% goods @ 12% + 30% services @ 18%).</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="font-weight-bold text-dark mb-3" style="font-size: 14px;">
+                        <i class="icofont-award text-warning me-1"></i> PM Surya Ghar: Muft Bijli Yojana Subsidy Slabs (MNRE)
+                    </h6>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3">
+                                <label class="form-label small font-weight-bold">1 kW System Subsidy</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" class="form-control" name="subsidy1Kw" value="<%= setting.subsidy1Kw %>" min="0" step="1000">
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Official GoI slab: ₹30,000 for 1kW.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3">
+                                <label class="form-label small font-weight-bold">2 kW System Subsidy</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" class="form-control" name="subsidy2Kw" value="<%= setting.subsidy2Kw %>" min="0" step="1000">
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Official GoI slab: ₹60,000 for 2kW.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3">
+                                <label class="form-label small font-weight-bold">3 kW & Above Max Subsidy</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white">₹</span>
+                                    <input type="number" class="form-control" name="subsidy3KwMax" value="<%= setting.subsidy3KwMax %>" min="0" step="1000">
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Official GoI cap: Maximum ₹78,000 for 3kW+.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: GPS GEOFENCING -->
+                <div class="tab-pane fade" id="geofence-pane" role="tabpanel">
+                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">Branch Geofence & Attendance Settings</h5>
+                    <p class="text-muted small mb-4">Configure GPS location parameters and radius for mobile employee attendance punches.</p>
+
+                    <div class="p-3 bg-light border rounded-3 mb-4">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="enforceGeofenceSwitch" name="enforceGeofence" value="true" <%= setting.enforceGeofence ? 'checked' : '' %>>
+                            <label class="form-check-label font-weight-bold text-dark ms-2" for="enforceGeofenceSwitch">
+                                Enforce Strict GPS Geofence Verification for Field Staff Check-In
+                            </label>
+                        </div>
+                        <div class="small text-muted ms-4 mt-1" style="font-size: 11.5px;">
+                            When enabled, field staff cannot punch attendance unless their device is physically within the configured radius of their assigned branch.
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">Default Geofence Radius (Meters) *</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="defaultGeofenceRadiusMeters" value="<%= setting.defaultGeofenceRadiusMeters %>" min="50" max="5000" step="50" required>
+                                <span class="input-group-text bg-white">meters</span>
+                            </div>
+                            <div class="form-text text-muted" style="font-size: 11px;">Standard office boundary radius (default 500m).</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">HQ Latitude *</label>
+                            <input type="number" class="form-control" name="hqLatitude" value="<%= setting.hqLatitude %>" step="0.000001" required>
+                            <div class="form-text text-muted" style="font-size: 11px;">Raisen Central HQ: 23.331500</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small font-weight-bold">HQ Longitude *</label>
+                            <input type="number" class="form-control" name="hqLongitude" value="<%= setting.hqLongitude %>" step="0.000001" required>
+                            <div class="form-text text-muted" style="font-size: 11px;">Raisen Central HQ: 77.780700</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: SECURITY & ACCESS POLICIES -->
+                <div class="tab-pane fade" id="security-pane" role="tabpanel">
+                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">System Security & Session Governance</h5>
+                    <p class="text-muted small mb-4">Enterprise access control, brute-force mitigation, and authentication lifecycle policies.</p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <label class="form-label small font-weight-bold">Failed Login Lockout Threshold</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="maxFailedLoginAttempts" value="<%= setting.maxFailedLoginAttempts %>" min="3" max="10" required>
+                                    <span class="input-group-text bg-white">attempts</span>
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Accounts are temporarily locked after this many consecutive bad passwords.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <label class="form-label small font-weight-bold">Account Lockout Duration</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="lockoutDurationMinutes" value="<%= setting.lockoutDurationMinutes %>" min="5" max="120" required>
+                                    <span class="input-group-text bg-white">minutes</span>
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Duration before a locked account can attempt authentication again.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <label class="form-label small font-weight-bold">Session Expiry Timeout</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" name="sessionTimeoutHours" value="<%= setting.sessionTimeoutHours %>" min="1" max="168" required>
+                                    <span class="input-group-text bg-white">hours</span>
+                                </div>
+                                <div class="small text-muted mt-2" style="font-size: 11px;">Cookie session lifetime before re-authentication is required.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 border rounded-3 bg-white">
+                        <h6 class="font-weight-bold text-dark mb-2" style="font-size: 13px;">
+                            <i class="icofont-check-circled text-success me-1"></i> Active Platform Defenses
+                        </h6>
+                        <ul class="mb-0 small text-muted ps-3">
+                            <li class="mb-1"><strong>Real-time Session Revocation:</strong> Account suspension immediately terminates active user sessions.</li>
+                            <li class="mb-1"><strong>CSRF Verification:</strong> State-changing requests strictly enforced with anti-CSRF token tokens.</li>
+                            <li class="mb-1"><strong>IDOR & Branch Isolation:</strong> Managers and staff scoped strictly to their authorized jurisdiction.</li>
+                            <li><strong>Helmet CSP Headers:</strong> Restricts unauthorized script injection and resource loading.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- TAB 5: DISCOM NET-METERING -->
+                <div class="tab-pane fade" id="discom-pane" role="tabpanel">
+                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">DISCOM & Net-Meter Regulatory Configuration</h5>
+                    <p class="text-muted small mb-4">Madhya Pradesh power utility connection settings and portal application parameters.</p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small font-weight-bold">Primary Electricity Distribution Company (DISCOM) *</label>
+                            <input type="text" class="form-control" name="primaryDiscom" value="<%= setting.primaryDiscom %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small font-weight-bold">DISCOM Emergency Helpline</label>
+                            <input type="text" class="form-control" name="discomHelpline" value="<%= setting.discomHelpline %>">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">DISCOM Net-Meter Application Portal URL</label>
+                        <input type="url" class="form-control" name="discomPortalUrl" value="<%= setting.discomPortalUrl %>">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card-footer bg-light p-3 d-flex justify-content-end gap-2 border-top">
+            <button type="button" class="btn btn-outline-secondary btn-sm px-4" onclick="location.reload()" style="border-radius: 8px;">
+                Reset
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold" style="background: var(--admin-navy-primary); border-radius: 8px;">
+                <i class="icofont-save me-1"></i> Save System Settings
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+// Reliable Tab Switching for Settings Navigation
+document.addEventListener('DOMContentLoaded', function() {
+    const tabBtns = document.querySelectorAll('#settingsTab button');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            tabBtns.forEach(b => {
+                b.classList.remove('active');
+                b.setAttribute('aria-selected', 'false');
+            });
+            document.querySelectorAll('#settingsTabContent .tab-pane').forEach(p => {
+                p.classList.remove('show', 'active');
+            });
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+            const targetSelector = this.getAttribute('data-bs-target');
+            const targetPane = document.querySelector(targetSelector);
+            if (targetPane) {
+                targetPane.classList.add('show', 'active');
+            }
+        });
+    });
+});
+
+function showToast(msg) {
+    const toast = document.getElementById('settingsToast');
+    const toastMsg = document.getElementById('settingsToastMsg');
+    if (toast && toastMsg) {
+        toastMsg.innerText = msg;
+        toast.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => toast.classList.add('d-none'), 5000);
+    }
+}
+
+async function submitSettingsForm() {
+    const errBox = document.getElementById('settingsErrAlert');
+    errBox.classList.add('d-none');
+
+    const form = document.getElementById('settingsForm');
+    const formData = new FormData(form);
+    const body = {};
+
+    formData.forEach((value, key) => {
+        body[key] = value;
+    });
+
+    body.enforceGeofence = document.getElementById('enforceGeofenceSwitch').checked;
+    body._csrf = CSRF_TOKEN;
+
+    try {
+        const res = await fetch('/api/admin/settings/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'System settings saved successfully.');
+        } else {
+            errBox.innerText = data.message || 'Error saving settings.';
+            errBox.classList.remove('d-none');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    } catch (err) {
+        errBox.innerText = 'Server error while communicating with system settings API.';
+        errBox.classList.remove('d-none');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

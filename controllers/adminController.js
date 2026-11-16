@@ -2,6 +2,7 @@ const data = require('../config/company');
 const DataStore = require('../services/dataStore');
 const User = require('../models/User');
 const Branch = require('../models/Branch');
+const Setting = require('../models/Setting');
 const AuditService = require('../services/auditService');
 const mongoose = require('mongoose');
 
@@ -160,11 +161,35 @@ exports.getQuotations = (req, res) => {
 };
 
 // 3. INVOICES MODULE
+// Helper to self-heal existing managers with legacy SES-EMP IDs or assigned managers
+const selfHealManagers = async () => {
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+        try {
+            const managers = await User.find({ role: { $in: ['BRANCH_MANAGER', 'MANAGER'] } });
+            for (const m of managers) {
+                let modified = false;
+                if (m.employeeId && m.employeeId.startsWith('SES-EMP-')) {
+                    m.employeeId = m.employeeId.replace('SES-EMP-', 'SES-MGR-');
+                    modified = true;
+                }
+                if (m.managerId) {
+                    m.managerId = null;
+                    modified = true;
+                }
+                if (modified) {
+                    await m.save();
+                }
+            }
+        } catch (e) {}
+    }
+};
+
 exports.getInvoices = async (req, res) => {
     try {
         let invoices = [];
         let projects = [];
         let quotations = [];
+        const sessionUser = req.session.user;
 
         if (mongoose.connection && mongoose.connection.readyState === 1) {
             try {
@@ -172,20 +197,33 @@ exports.getInvoices = async (req, res) => {
                 const Project = require('../models/Project');
                 const Quotation = require('../models/Quotation');
 
-                invoices = await Invoice.find({}).sort({ createdAt: -1 }).lean();
-                projects = await Project.find({ status: { $ne: 'CANCELLED' } })
+                let invFilter = { isArchived: { $ne: true } };
+                let projFilter = { status: { $ne: 'CANCELLED' } };
+                let quoteFilter = { status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] }, isArchived: { $ne: true } };
+
+                // Scope dropdowns and invoices for Branch Managers to their own branch/team
+                if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
+                    if (sessionUser.branchId) {
+                        invFilter.$or = [{ branch: sessionUser.branchId }, { createdBy: sessionUser._id }];
+                        projFilter.$or = [{ branch: sessionUser.branchId }, { assignedManager: sessionUser._id }];
+                        quoteFilter.$or = [{ branch: sessionUser.branchId }, { preparedBy: sessionUser._id }];
+                    } else {
+                        invFilter.createdBy = sessionUser._id;
+                        projFilter.assignedManager = sessionUser._id;
+                        quoteFilter.preparedBy = sessionUser._id;
+                    }
+                }
+
+                invoices = await Invoice.find(invFilter).sort({ createdAt: -1 }).lean();
+                projects = await Project.find(projFilter)
                     .populate('customer', 'name mobile city address consumerNumber gstin')
                     .lean();
-                quotations = await Quotation.find({ status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] } })
+                quotations = await Quotation.find(quoteFilter)
                     .populate('customerId', 'name mobile city address consumerNumber gstin')
                     .lean();
             } catch (dbErr) {
                 console.error('Invoice DB fetch error:', dbErr);
             }
-        }
-
-        if (!invoices || invoices.length === 0) {
-            invoices = DataStore.getAllInvoices();
         }
 
         res.render('private/admin/invoices', {
@@ -214,6 +252,7 @@ exports.getInvoices = async (req, res) => {
 // 4. USER & EMPLOYEE MANAGEMENT
 exports.getEmployees = async (req, res) => {
     try {
+        await selfHealManagers();
         const users = await DataStore.getUsers();
         let branches = [];
         if (mongoose.connection.readyState === 1) {
@@ -289,6 +328,478 @@ exports.getManagers = async (req, res) => {
     }
 };
 
+// 5.1 BRANCHES MANAGEMENT (SUPER ADMIN)
+exports.getBranches = async (req, res) => {
+    try {
+        let branches = [];
+        let allManagers = [];
+        let totalEmployees = 0;
+        let totalProjects = 0;
+
+        if (mongoose.connection.readyState === 1) {
+            try {
+                branches = await Branch.find({})
+                    .populate('manager', 'name employeeId mobile email role status')
+                    .sort({ createdAt: -1 })
+                    .lean();
+
+                // Compute employee and project counts per branch
+                const Project = require('../models/Project');
+                for (const b of branches) {
+                    b.employeeCount = await User.countDocuments({ branchId: b._id, role: 'EMPLOYEE' });
+                    b.projectCount = await Project.countDocuments({ branch: b._id, status: { $ne: 'CANCELLED' } });
+                    totalEmployees += b.employeeCount;
+                    totalProjects += b.projectCount;
+                }
+
+                // Available managers
+                allManagers = await User.find({
+                    role: { $in: ['BRANCH_MANAGER', 'MANAGER'] },
+                    status: { $in: ['ACTIVE', 'PENDING'] }
+                }).select('name employeeId email mobile branchId').lean();
+            } catch (dbErr) {
+                console.error('Error fetching branches from DB:', dbErr);
+            }
+        }
+
+        // In-memory fallback
+        if (!branches || branches.length === 0) {
+            branches = [
+                {
+                    _id: 'br-raisen-1',
+                    name: 'Raisen Central Branch (HQ)',
+                    code: 'MP-RSN-01',
+                    contactNumber: '+91 70005 75496',
+                    email: 'raisen@shivayenergy.com',
+                    city: 'Raisen',
+                    district: 'Raisen',
+                    state: 'Madhya Pradesh',
+                    address: 'Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen',
+                    coordinates: { latitude: 23.3315, longitude: 77.7807 },
+                    geofenceRadiusMeters: 500,
+                    isActive: true,
+                    manager: { name: 'Rahul Saini', employeeId: 'SES-MGR-01', mobile: '+91 93997 61750' },
+                    employeeCount: 4,
+                    projectCount: 6
+                }
+            ];
+            totalEmployees = 4;
+            totalProjects = 6;
+        }
+
+        res.render('private/admin/branches', {
+            title: `Branches & Regional Offices | ${data.company.name}`,
+            data,
+            company: data.company,
+            branches,
+            managers: allManagers,
+            stats: {
+                totalBranches: branches.length,
+                activeBranches: branches.filter(b => b.isActive !== false).length,
+                totalEmployees,
+                totalProjects
+            },
+            user: req.session.user,
+            currentUser: req.session.user,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            activePage: 'admin-branches',
+            pageTitle: 'Regional Branches & Offices',
+            breadcrumbs: [{ label: 'Organization' }, { label: 'Branches' }]
+        });
+    } catch (err) {
+        console.error('Error in getBranches:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Unable to load branch locations.'
+        });
+    }
+};
+
+// 5.2 API: CREATE BRANCH
+exports.createBranch = async (req, res) => {
+    try {
+        const {
+            name,
+            code,
+            contactNumber,
+            email,
+            address,
+            city,
+            district,
+            state,
+            latitude,
+            longitude,
+            geofenceRadiusMeters,
+            managerId
+        } = req.body;
+
+        if (!name || !name.trim() || !contactNumber || !contactNumber.trim() || !address || !address.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: 'Branch Name, Contact Number, and Office Address are required.'
+            });
+        }
+
+        const cleanCity = city ? city.trim() : 'Raisen';
+        const cleanDistrict = district ? district.trim() : cleanCity;
+        const cleanState = state ? state.trim() : 'Madhya Pradesh';
+
+        // Auto-generate unique Branch Code if blank
+        let cleanCode = code ? code.trim().toUpperCase() : '';
+        if (!cleanCode) {
+            const cityPrefix = cleanCity.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'BRN';
+            const randomNum = Math.floor(10 + Math.random() * 90);
+            cleanCode = `MP-${cityPrefix}-${randomNum}`;
+        }
+
+        // Verify Branch Code uniqueness
+        if (mongoose.connection.readyState === 1) {
+            const existingCode = await Branch.findOne({ code: cleanCode });
+            if (existingCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Branch code '${cleanCode}' is already in use. Please specify a unique code.`
+                });
+            }
+        }
+
+        // Validate Manager assignment (if selected)
+        let validatedManagerId = null;
+        if (managerId && mongoose.isValidObjectId(managerId)) {
+            // Check if manager is already assigned to another branch
+            if (mongoose.connection.readyState === 1) {
+                const existingBranchManager = await Branch.findOne({ manager: managerId, isActive: true });
+                if (existingBranchManager) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `This manager is already leading another branch (${existingBranchManager.name}). Each branch can only have one Branch Manager.`
+                    });
+                }
+            }
+            validatedManagerId = managerId;
+        }
+
+        let newBranch = null;
+        if (mongoose.connection.readyState === 1) {
+            newBranch = await Branch.create({
+                name: name.trim(),
+                code: cleanCode,
+                manager: validatedManagerId,
+                contactNumber: contactNumber.trim(),
+                email: email ? email.trim().toLowerCase() : '',
+                address: address.trim(),
+                city: cleanCity,
+                district: cleanDistrict,
+                state: cleanState,
+                coordinates: {
+                    latitude: parseFloat(latitude) || 23.3315,
+                    longitude: parseFloat(longitude) || 77.7807
+                },
+                geofenceRadiusMeters: parseInt(geofenceRadiusMeters, 10) || 500,
+                isActive: true
+            });
+
+            // If a manager was assigned, update manager's branchId
+            if (validatedManagerId) {
+                await User.findByIdAndUpdate(validatedManagerId, { branchId: newBranch._id });
+            }
+        } else {
+            newBranch = {
+                _id: new mongoose.Types.ObjectId(),
+                name: name.trim(),
+                code: cleanCode,
+                manager: validatedManagerId,
+                contactNumber: contactNumber.trim(),
+                email: email || '',
+                address: address.trim(),
+                city: cleanCity,
+                district: cleanDistrict,
+                state: cleanState,
+                coordinates: { latitude: parseFloat(latitude) || 23.3315, longitude: parseFloat(longitude) || 77.7807 },
+                geofenceRadiusMeters: parseInt(geofenceRadiusMeters, 10) || 500,
+                isActive: true,
+                createdAt: new Date()
+            };
+        }
+
+        AuditService.log({
+            action: 'BRANCH_CREATED',
+            user: req.session.user._id,
+            role: req.session.user.role,
+            ipAddress: req.ip,
+            details: { branchName: newBranch.name, branchCode: cleanCode, city: cleanCity }
+        });
+
+        return res.json({
+            success: true,
+            branch: newBranch,
+            message: `Branch '${newBranch.name}' (${cleanCode}) created successfully.`
+        });
+    } catch (err) {
+        console.error('Error creating branch:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Server error creating branch.' });
+    }
+};
+
+// 5.3 API: UPDATE BRANCH
+exports.updateBranch = async (req, res) => {
+    try {
+        const {
+            branchId,
+            name,
+            contactNumber,
+            email,
+            address,
+            city,
+            district,
+            state,
+            latitude,
+            longitude,
+            geofenceRadiusMeters,
+            managerId,
+            isActive
+        } = req.body;
+
+        if (!branchId || !mongoose.isValidObjectId(branchId)) {
+            return res.status(400).json({ success: false, message: 'Valid Branch ID is required.' });
+        }
+
+        if (mongoose.connection.readyState === 1) {
+            const branch = await Branch.findById(branchId);
+            if (!branch) {
+                return res.status(404).json({ success: false, message: 'Branch not found.' });
+            }
+
+            if (name) branch.name = name.trim();
+            if (contactNumber) branch.contactNumber = contactNumber.trim();
+            if (email !== undefined) branch.email = email.trim().toLowerCase();
+            if (address) branch.address = address.trim();
+            if (city) branch.city = city.trim();
+            if (district) branch.district = district.trim();
+            if (state) branch.state = state.trim();
+            if (latitude) branch.coordinates.latitude = parseFloat(latitude);
+            if (longitude) branch.coordinates.longitude = parseFloat(longitude);
+            if (geofenceRadiusMeters) branch.geofenceRadiusMeters = parseInt(geofenceRadiusMeters, 10);
+            if (isActive !== undefined) branch.isActive = Boolean(isActive);
+
+            if (managerId && mongoose.isValidObjectId(managerId)) {
+                // Verify manager not leading another branch
+                const otherBranch = await Branch.findOne({ manager: managerId, _id: { $ne: branch._id }, isActive: true });
+                if (otherBranch) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Manager already assigned to ${otherBranch.name}. A manager can lead only one branch.`
+                    });
+                }
+                branch.manager = managerId;
+                await User.findByIdAndUpdate(managerId, { branchId: branch._id });
+            } else if (managerId === '' || managerId === null) {
+                branch.manager = null;
+            }
+
+            await branch.save();
+
+            AuditService.log({
+                action: 'BRANCH_UPDATED',
+                user: req.session.user._id,
+                role: req.session.user.role,
+                ipAddress: req.ip,
+                details: { branchId, branchName: branch.name }
+            });
+
+            return res.json({
+                success: true,
+                message: `Branch '${branch.name}' updated successfully.`
+            });
+        }
+
+        return res.json({ success: true, message: 'Branch updated successfully.' });
+    } catch (err) {
+        console.error('Error updating branch:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Server error updating branch.' });
+    }
+};
+
+// 5.4 API: TOGGLE BRANCH ACTIVE STATUS
+exports.toggleBranchStatus = async (req, res) => {
+    try {
+        const { branchId, isActive } = req.body;
+        if (!branchId || !mongoose.isValidObjectId(branchId)) {
+            return res.status(400).json({ success: false, message: 'Valid Branch ID is required.' });
+        }
+
+        if (mongoose.connection.readyState === 1) {
+            const branch = await Branch.findById(branchId);
+            if (!branch) {
+                return res.status(404).json({ success: false, message: 'Branch not found.' });
+            }
+
+            branch.isActive = Boolean(isActive);
+            await branch.save();
+
+            return res.json({
+                success: true,
+                message: `Branch '${branch.name}' status changed to ${branch.isActive ? 'Active' : 'Inactive'}.`
+            });
+        }
+
+        return res.json({ success: true, message: 'Branch status updated.' });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// 8.1 SETTINGS VIEW (SUPER ADMIN)
+exports.getSettings = async (req, res) => {
+    try {
+        let setting = null;
+        if (mongoose.connection.readyState === 1) {
+            try {
+                setting = await Setting.findOne({}).lean();
+            } catch (dbErr) {
+                console.error('Error fetching settings:', dbErr);
+            }
+        }
+
+        if (!setting && DataStore.getSettings) {
+            setting = DataStore.getSettings();
+        }
+
+        // Fallback default from companyData
+        if (!setting) {
+            setting = {
+                companyName: data.company.name || "SHIVAY ENERGY SOLUTIONS",
+                shortName: data.company.shortName || "Shivay Energy",
+                tagline: data.company.tagline || "Save Green Energy To Build A Better Future",
+                gstin: data.company.gstin || "23AXXXX0000X1Z5",
+                officialEmail: data.company.email || "shivayenergysolutions@gmail.com",
+                primaryPhone: (data.company.contact && data.company.contact.phone) || "+91 70005 75496",
+                alternatePhone: (data.company.contact && data.company.contact.alternatePhone) || "+91 93997 61750",
+                whatsappNumber: (data.company.contact && data.company.contact.whatsapp) || "+91 70005 75496",
+                website: data.company.website || "https://shivayenergysolutions.com",
+                addressLine: (data.company.address && data.company.address.line1) || "Ward No. 15, In front of PHE Office, Arjun Nagar",
+                city: (data.company.address && data.company.address.city) || "Raisen",
+                district: (data.company.address && data.company.address.district) || "Raisen",
+                state: (data.company.address && data.company.address.state) || "Madhya Pradesh",
+                pincode: (data.company.address && data.company.address.pincode) || "464551",
+
+                defaultRatePerKw: 58000,
+                subsidy1Kw: 30000,
+                subsidy2Kw: 60000,
+                subsidy3KwMax: 78000,
+                defaultGstPercent: 13.8,
+
+                hqLatitude: 23.3315,
+                hqLongitude: 77.7807,
+                defaultGeofenceRadiusMeters: 500,
+                enforceGeofence: true,
+
+                maxFailedLoginAttempts: 5,
+                lockoutDurationMinutes: 15,
+                sessionTimeoutHours: 24,
+
+                primaryDiscom: "MPPKVVCL (Madhya Kshetra)",
+                discomPortalUrl: "https://portal.mpcz.in/",
+                discomHelpline: "1912"
+            };
+        }
+
+        res.render('private/admin/settings', {
+            title: `System & Business Settings | ${data.company.name}`,
+            data,
+            company: data.company,
+            setting,
+            user: req.session.user,
+            currentUser: req.session.user,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            activePage: 'admin-settings',
+            pageTitle: 'Company & System Settings',
+            breadcrumbs: [{ label: 'Settings' }, { label: 'System Configuration' }]
+        });
+    } catch (err) {
+        console.error('Error in getSettings:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Unable to load system configuration.'
+        });
+    }
+};
+
+// 8.2 API: SAVE SYSTEM SETTINGS
+exports.saveSettings = async (req, res) => {
+    try {
+        const body = req.body;
+        const updateData = {
+            companyName: body.companyName ? body.companyName.trim() : "SHIVAY ENERGY SOLUTIONS",
+            shortName: body.shortName ? body.shortName.trim() : "Shivay Energy",
+            tagline: body.tagline ? body.tagline.trim() : "",
+            gstin: body.gstin ? body.gstin.trim().toUpperCase() : "",
+            officialEmail: body.officialEmail ? body.officialEmail.trim().toLowerCase() : "",
+            primaryPhone: body.primaryPhone ? body.primaryPhone.trim() : "",
+            alternatePhone: body.alternatePhone ? body.alternatePhone.trim() : "",
+            whatsappNumber: body.whatsappNumber ? body.whatsappNumber.trim() : "",
+            website: body.website ? body.website.trim() : "",
+            addressLine: body.addressLine ? body.addressLine.trim() : "",
+            city: body.city ? body.city.trim() : "Raisen",
+            district: body.district ? body.district.trim() : "Raisen",
+            state: body.state ? body.state.trim() : "Madhya Pradesh",
+            pincode: body.pincode ? body.pincode.trim() : "464551",
+
+            defaultRatePerKw: parseFloat(body.defaultRatePerKw) || 58000,
+            subsidy1Kw: parseFloat(body.subsidy1Kw) || 30000,
+            subsidy2Kw: parseFloat(body.subsidy2Kw) || 60000,
+            subsidy3KwMax: parseFloat(body.subsidy3KwMax) || 78000,
+            defaultGstPercent: parseFloat(body.defaultGstPercent) || 13.8,
+
+            hqLatitude: parseFloat(body.hqLatitude) || 23.3315,
+            hqLongitude: parseFloat(body.hqLongitude) || 77.7807,
+            defaultGeofenceRadiusMeters: parseInt(body.defaultGeofenceRadiusMeters, 10) || 500,
+            enforceGeofence: body.enforceGeofence === 'true' || body.enforceGeofence === true,
+
+            maxFailedLoginAttempts: parseInt(body.maxFailedLoginAttempts, 10) || 5,
+            lockoutDurationMinutes: parseInt(body.lockoutDurationMinutes, 10) || 15,
+            sessionTimeoutHours: parseInt(body.sessionTimeoutHours, 10) || 24,
+
+            primaryDiscom: body.primaryDiscom ? body.primaryDiscom.trim() : "MPPKVVCL (Madhya Kshetra)",
+            discomPortalUrl: body.discomPortalUrl ? body.discomPortalUrl.trim() : "https://portal.mpcz.in/",
+            discomHelpline: body.discomHelpline ? body.discomHelpline.trim() : "1912"
+        };
+
+        if (mongoose.connection.readyState === 1) {
+            await Setting.findOneAndUpdate({}, updateData, { upsert: true, new: true });
+        }
+        if (DataStore.saveSettings) {
+            DataStore.saveSettings(updateData);
+        }
+
+        // Synchronize in-memory company configuration so headers and invoices reflect it
+        if (data.company) {
+            if (updateData.companyName) data.company.name = updateData.companyName;
+            if (updateData.shortName) data.company.shortName = updateData.shortName;
+            if (updateData.gstin) data.company.gstin = updateData.gstin;
+            if (updateData.officialEmail) data.company.email = updateData.officialEmail;
+            if (updateData.primaryPhone && data.company.contact) data.company.contact.phone = updateData.primaryPhone;
+            if (updateData.whatsappNumber && data.company.contact) data.company.contact.whatsapp = updateData.whatsappNumber;
+        }
+
+        AuditService.log({
+            action: 'SETTINGS_UPDATED',
+            user: req.session.user._id,
+            role: req.session.user.role,
+            ipAddress: req.ip,
+            details: { updatedBy: req.session.user.name }
+        });
+
+        return res.json({
+            success: true,
+            message: 'Company and system settings saved successfully.'
+        });
+    } catch (err) {
+        console.error('Error saving settings:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Error saving settings.' });
+    }
+};
+
 // 6. SYSTEM ACTIVITY & AUDIT LOGS
 exports.getActivityLogs = async (req, res) => {
     try {
@@ -338,6 +849,317 @@ exports.getProfile = async (req, res) => {
             title: 'Error | Shivay Energy Solutions',
             message: 'Error loading user profile.'
         });
+    }
+};
+
+// 7.1 EXECUTIVE SOLAR EPC REPORTS & ANALYTICS
+exports.getReports = async (req, res) => {
+    try {
+        const users = await DataStore.getUsers();
+        let branches = [];
+        let projects = [];
+        let quotations = [];
+        let invoices = [];
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                branches = await Branch.find({}).lean();
+            } catch (e) {}
+            try {
+                const Project = require('../models/Project');
+                projects = await Project.find({}).populate('customer', 'name mobile city').populate('assignedEngineer', 'name employeeId').lean();
+            } catch (e) {}
+            try {
+                const Quotation = require('../models/Quotation');
+                quotations = await Quotation.find({}).lean();
+            } catch (e) {}
+            try {
+                const Invoice = require('../models/Invoice');
+                invoices = await Invoice.find({}).lean();
+            } catch (e) {}
+        }
+
+        // Fallback default branch if none exists
+        if (!branches || branches.length === 0) {
+            branches = [{ _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01', city: 'Raisen', state: 'Madhya Pradesh', isActive: true }];
+        }
+
+        let totalCapacityKw = 0;
+        let commissionedCapacityKw = 0;
+        let totalInvoicedValue = 0;
+        let totalSubsidyDisbursed = 0;
+        let residentialKw = 0;
+        let commercialKw = 0;
+        let agriculturalKw = 0;
+
+        projects.forEach(p => {
+            const cap = Number(p.capacityKw) || 0;
+            if (p.status !== 'CANCELLED') {
+                totalCapacityKw += cap;
+                if (p.status === 'COMPLETED') {
+                    commissionedCapacityKw += cap;
+                    if (cap <= 1) totalSubsidyDisbursed += 30000;
+                    else if (cap <= 2) totalSubsidyDisbursed += 60000;
+                    else totalSubsidyDisbursed += 78000;
+                }
+            }
+            const sys = (p.systemType || '').toUpperCase();
+            if (sys.includes('COMMERCIAL') || cap > 10) commercialKw += cap;
+            else if (sys.includes('PUMP') || sys.includes('AGRICULTURAL')) agriculturalKw += cap;
+            else residentialKw += cap;
+        });
+
+        invoices.forEach(inv => {
+            if (inv.status !== 'ARCHIVED' && inv.status !== 'CANCELLED') {
+                totalInvoicedValue += (Number(inv.totalAmount) || Number(inv.total) || 0);
+            }
+        });
+
+        // Branch-wise stats
+        const branchStats = branches.map(b => {
+            const bIdStr = b._id ? b._id.toString() : '';
+            const branchStaff = users.filter(u => {
+                const uBId = (u.branchId && u.branchId._id) ? u.branchId._id.toString() : (u.branchId ? u.branchId.toString() : '');
+                return uBId === bIdStr;
+            });
+            const branchMgr = branchStaff.find(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER');
+            const bProjects = projects.filter(p => {
+                const pBId = (p.branchId && p.branchId._id) ? p.branchId._id.toString() : (p.branchId ? p.branchId.toString() : '');
+                return pBId === bIdStr || !p.branchId;
+            });
+            const bKw = bProjects.reduce((sum, p) => sum + (Number(p.capacityKw) || 0), 0);
+            const bCompleted = bProjects.filter(p => p.status === 'COMPLETED').length;
+
+            return {
+                _id: b._id,
+                name: b.name,
+                code: b.code,
+                city: b.city || 'Raisen',
+                state: b.state || 'Madhya Pradesh',
+                isActive: b.isActive !== false,
+                managerName: branchMgr ? branchMgr.name : 'Unassigned',
+                staffCount: branchStaff.length,
+                projectCount: bProjects.length,
+                completedCount: bCompleted,
+                totalKw: bKw
+            };
+        });
+
+        res.render('private/admin/reports', {
+            title: `Executive Solar Analytics & Reports | ${data.company.name}`,
+            data,
+            company: data.company,
+            stats: {
+                totalCapacityKw: totalCapacityKw.toFixed(1),
+                commissionedCapacityKw: commissionedCapacityKw.toFixed(1),
+                totalProjects: projects.length,
+                completedProjects: projects.filter(p => p.status === 'COMPLETED').length,
+                activeProjects: projects.filter(p => p.status !== 'COMPLETED' && p.status !== 'CANCELLED').length,
+                totalInvoicedValue: totalInvoicedValue.toLocaleString('en-IN'),
+                totalSubsidyDisbursed: totalSubsidyDisbursed.toLocaleString('en-IN'),
+                totalQuotations: quotations.length,
+                residentialKw: residentialKw.toFixed(1),
+                commercialKw: commercialKw.toFixed(1),
+                agriculturalKw: agriculturalKw.toFixed(1)
+            },
+            branchStats,
+            recentProjects: projects.slice(0, 15),
+            user: req.session.user,
+            currentUser: req.session.user,
+            activePage: 'admin-reports',
+            pageTitle: 'Solar EPC Business Intelligence & Reports',
+            breadcrumbs: [
+                { label: 'Executive Dashboard', url: '/admin' },
+                { label: 'Business Reports & Analytics' }
+            ]
+        });
+    } catch (err) {
+        console.error('Admin Reports Error:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Reports Error | Shivay Energy Solutions',
+            message: 'Unable to compile business analytics and installation reports.'
+        });
+    }
+};
+
+// 7.2 DIRECT CSV EXPORT FOR REPORTS
+exports.exportReportCsv = async (req, res) => {
+    try {
+        const { type } = req.params;
+        let filename = `solar_report_${type}_${Date.now()}.csv`;
+        let csvContent = '';
+
+        if (type === 'projects') {
+            let list = [];
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                const Project = require('../models/Project');
+                list = await Project.find({}).populate('customer', 'name mobile city').lean();
+            }
+            csvContent = 'Project ID,Customer Name,Customer Mobile,City,Capacity (kW),System Type,Status,Created At\n';
+            list.forEach(p => {
+                const cName = (p.customer && p.customer.name) ? `"${p.customer.name.replace(/"/g, '""')}"` : 'N/A';
+                const cMob = (p.customer && p.customer.mobile) ? p.customer.mobile : 'N/A';
+                const cCity = (p.customer && p.customer.city) ? p.customer.city : 'Raisen';
+                csvContent += `${p.projectId || p._id},${cName},${cMob},${cCity},${p.capacityKw || 0},${p.systemType || 'On-Grid'},${p.status || 'NEW'},${p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : ''}\n`;
+            });
+        } else if (type === 'invoices') {
+            let list = [];
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                const Invoice = require('../models/Invoice');
+                list = await Invoice.find({}).lean();
+            } else {
+                list = DataStore.getAllInvoices(true);
+            }
+            csvContent = 'Invoice Number,Client Name,Client Mobile,Taxable Amount,GST Amount,Total Amount,Status,Issue Date\n';
+            list.forEach(i => {
+                const clientName = (i.clientName || i.customerName) ? `"${(i.clientName || i.customerName).replace(/"/g, '""')}"` : 'N/A';
+                csvContent += `${i.invoiceNumber || i._id},${clientName},${i.clientMobile || i.customerMobile || 'N/A'},${i.subtotal || i.amount || 0},${i.gstAmount || 0},${i.totalAmount || i.total || 0},${i.status || i.paymentStatus || 'PAID'},${i.date || i.invoiceDate || ''}\n`;
+            });
+        } else if (type === 'quotations') {
+            let list = [];
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                const Quotation = require('../models/Quotation');
+                list = await Quotation.find({}).lean();
+            }
+            csvContent = 'Quotation Number,Customer Name,Mobile,System Capacity (kW),Final Price,Subsidy Amount,Status,Created At\n';
+            list.forEach(q => {
+                const name = q.customerName ? `"${q.customerName.replace(/"/g, '""')}"` : 'N/A';
+                csvContent += `${q.quotationNumber || q._id},${name},${q.customerMobile || 'N/A'},${q.systemCapacityKw || 0},${q.finalPrice || 0},${q.subsidyAmount || 0},${q.status || 'PENDING'},${q.createdAt ? new Date(q.createdAt).toISOString().split('T')[0] : ''}\n`;
+            });
+        } else {
+            return res.status(400).send('Invalid export type requested');
+        }
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.status(200).send(csvContent);
+    } catch (err) {
+        console.error('Export CSV Error:', err);
+        return res.status(500).send('Error generating CSV export.');
+    }
+};
+
+// 7.3 SERVICE & COMPLAINTS MANAGEMENT (SUPER ADMIN & MANAGERS)
+exports.getComplaints = async (req, res) => {
+    try {
+        const Complaint = require('../models/Complaint');
+        let dbComplaints = [];
+        const statusFilter = req.query.status || '';
+        const search = (req.query.search || '').trim().toLowerCase();
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                let query = {};
+                if (statusFilter) query.status = statusFilter;
+                dbComplaints = await Complaint.find(query).populate('assignedEngineer', 'name employeeId mobile').sort({ createdAt: -1 }).lean();
+            } catch (dbErr) {
+                console.error('Error fetching complaints from DB:', dbErr);
+            }
+        }
+
+        // Merge with DataStore complaints (so submitted tickets are never lost)
+        const memComplaints = DataStore.getAllComplaints ? DataStore.getAllComplaints() : [];
+        const seenTicketIds = new Set(dbComplaints.map(c => (c.ticketId || '').toUpperCase()));
+        let complaints = [...dbComplaints];
+        memComplaints.forEach(mc => {
+            if (mc && mc.ticketId && !seenTicketIds.has(mc.ticketId.toUpperCase())) {
+                if (!statusFilter || mc.status === statusFilter) {
+                    complaints.push(mc);
+                    seenTicketIds.add(mc.ticketId.toUpperCase());
+                }
+            }
+        });
+
+        if (search && complaints.length > 0) {
+            complaints = complaints.filter(c => 
+                (c.ticketId && c.ticketId.toLowerCase().includes(search)) ||
+                (c.customerName && c.customerName.toLowerCase().includes(search)) ||
+                (c.mobile && c.mobile.includes(search)) ||
+                (c.category && c.category.toLowerCase().includes(search))
+            );
+        }
+
+        const counts = {
+            total: complaints.length,
+            submitted: complaints.filter(c => c.status === 'submitted').length,
+            in_progress: complaints.filter(c => c.status === 'in_progress' || c.status === 'assigned').length,
+            resolved: complaints.filter(c => c.status === 'resolved' || c.status === 'closed').length
+        };
+
+        const users = await DataStore.getUsers();
+        const engineers = users.filter(u => u.role === 'EMPLOYEE');
+
+        res.render('private/admin/complaints', {
+            title: `Service & Complaint Management | ${data.company.name}`,
+            data,
+            company: data.company,
+            complaints,
+            counts,
+            engineers,
+            currentStatus: statusFilter,
+            search,
+            user: req.session.user,
+            currentUser: req.session.user,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            activePage: 'admin-complaints',
+            pageTitle: 'Customer Solar Service & Complaints Console',
+            breadcrumbs: [
+                { label: 'Executive Dashboard', url: '/admin' },
+                { label: 'Service & Complaints' }
+            ]
+        });
+    } catch (err) {
+        console.error('Error in getComplaints:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Error loading complaints.'
+        });
+    }
+};
+
+// 7.4 UPDATE COMPLAINT STATUS API
+exports.updateComplaintStatus = async (req, res) => {
+    try {
+        const { ticketId, status, resolutionNotes, assignedEngineer } = req.body;
+        if (!ticketId || !status) {
+            return res.status(400).json({ success: false, message: 'Ticket ID and status are required.' });
+        }
+
+        const Complaint = require('../models/Complaint');
+        let complaint = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            const updateFields = { status };
+            if (resolutionNotes) updateFields.resolutionNotes = resolutionNotes;
+            if (assignedEngineer && mongoose.isValidObjectId(assignedEngineer)) updateFields.assignedEngineer = assignedEngineer;
+            if (status === 'resolved' || status === 'closed') updateFields.resolvedAt = new Date();
+
+            complaint = await Complaint.findOneAndUpdate(
+                { ticketId: { $regex: new RegExp('^' + ticketId.trim() + '$', 'i') } },
+                { $set: updateFields },
+                { new: true }
+            );
+        }
+
+        // Also update in DataStore
+        if (DataStore.updateComplaintStatus) {
+            DataStore.updateComplaintStatus(ticketId, status, resolutionNotes, assignedEngineer);
+        }
+
+        AuditService.log({
+            action: 'COMPLAINT_STATUS_UPDATED',
+            user: req.session.user._id,
+            role: req.session.user.role,
+            ipAddress: req.ip,
+            details: { ticketId, status, updatedBy: req.session.user.name }
+        });
+
+        return res.json({
+            success: true,
+            message: `Ticket ${ticketId} status updated to ${status}.`
+        });
+    } catch (err) {
+        console.error('Error updating complaint status:', err);
+        return res.status(500).json({ success: false, message: 'Error updating complaint status.' });
     }
 };
 
@@ -429,7 +1251,7 @@ exports.getModulePlaceholder = (moduleKey) => {
 
 // 9. API: CREATE USER (SUPER ADMIN ONLY)
 exports.createUser = async (req, res) => {
-    const { name, email, mobile, password, role, employeeId, branchId, managerId, designation, department } = req.body;
+    let { name, email, mobile, password, role, employeeId, branchId, managerId, designation, department } = req.body;
     const adminUser = req.session.user;
 
     try {
@@ -442,7 +1264,7 @@ exports.createUser = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid role specified.' });
         }
 
-        // Check existing user
+        // Check existing user by email
         if (mongoose.connection.readyState === 1) {
             const existing = await User.findOne({ email: email.trim().toLowerCase() });
             if (existing) {
@@ -450,10 +1272,71 @@ exports.createUser = async (req, res) => {
             }
         }
 
-        const cleanEmpId = employeeId ? employeeId.trim() : ('SES-EMP-' + Math.floor(100 + Math.random() * 900));
+        // Role-Specific Validation & ID Prefix Generation:
+        // SES-MGR- for Manager/Branch Manager, SES-ADMIN- for Super Admin, SES-EMP- for Employee
+        let prefix = 'SES-EMP-';
+        if (role === 'BRANCH_MANAGER' || role === 'MANAGER') {
+            prefix = 'SES-MGR-';
+
+            // Branch is MANDATORY for a Branch Manager
+            if (!branchId || (typeof branchId === 'string' && !branchId.trim())) {
+                return res.status(400).json({ success: false, message: 'Branch selection is required when creating a Branch Manager.' });
+            }
+
+            // Enforce: "ek branch me 2 manager na ho" (Only one active Branch Manager per branch)
+            if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(branchId)) {
+                const existingBranchManager = await User.findOne({
+                    role: { $in: ['BRANCH_MANAGER', 'MANAGER'] },
+                    branchId: branchId,
+                    status: { $in: ['ACTIVE', 'PENDING'] }
+                });
+                if (existingBranchManager) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `This branch already has an active Branch Manager (${existingBranchManager.name} - ${existingBranchManager.employeeId || 'Manager'}). Each branch can only have one Branch Manager.`
+                    });
+                }
+            } else {
+                const existingMemManager = (await DataStore.getUsers()).find(u =>
+                    (u.role === 'BRANCH_MANAGER' || u.role === 'MANAGER') &&
+                    u.branchId && (u.branchId._id || u.branchId).toString() === branchId.toString() &&
+                    (u.status === 'ACTIVE' || u.status === 'PENDING')
+                );
+                if (existingMemManager) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `This branch already has an active Branch Manager (${existingMemManager.name} - ${existingMemManager.employeeId || 'Manager'}). Each branch can only have one Branch Manager.`
+                    });
+                }
+            }
+
+            // Manager cannot be assigned to another manager
+            managerId = null;
+        } else if (role === 'SUPER_ADMIN') {
+            prefix = 'SES-ADMIN-';
+            managerId = null;
+            branchId = null;
+        }
+
+        // Clean & Auto-generate unique ID with correct role-based prefix
+        let cleanEmpId = '';
+        if (employeeId && employeeId.trim()) {
+            cleanEmpId = employeeId.trim().toUpperCase();
+            if ((role === 'BRANCH_MANAGER' || role === 'MANAGER') && cleanEmpId.startsWith('SES-EMP-')) {
+                cleanEmpId = cleanEmpId.replace('SES-EMP-', 'SES-MGR-');
+            }
+        } else {
+            cleanEmpId = prefix + Math.floor(100 + Math.random() * 900);
+        }
 
         let createdUserObj = null;
         if (mongoose.connection.readyState === 1) {
+            // Verify ID uniqueness
+            const duplicateId = await User.findOne({ employeeId: cleanEmpId });
+            if (duplicateId) {
+                cleanEmpId = prefix + Math.floor(100 + Math.random() * 900);
+            }
+
             createdUserObj = await User.create({
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
@@ -463,10 +1346,17 @@ exports.createUser = async (req, res) => {
                 employeeId: cleanEmpId,
                 branchId: (branchId && mongoose.isValidObjectId(branchId)) ? branchId : null,
                 managerId: (managerId && mongoose.isValidObjectId(managerId)) ? managerId : null,
-                designation: designation ? designation.trim() : '',
-                department: department ? department.trim() : '',
+                designation: designation ? designation.trim() : (role === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Staff'),
+                department: department ? department.trim() : (role === 'BRANCH_MANAGER' ? 'Operations Management' : 'Field Operations'),
                 status: 'ACTIVE'
             });
+
+            // If a Branch Manager was created, link Branch.manager reference
+            if ((role === 'BRANCH_MANAGER' || role === 'MANAGER') && branchId && mongoose.isValidObjectId(branchId)) {
+                try {
+                    await Branch.findByIdAndUpdate(branchId, { manager: createdUserObj._id });
+                } catch (bErr) {}
+            }
         } else {
             createdUserObj = {
                 _id: new mongoose.Types.ObjectId(),
@@ -477,8 +1367,8 @@ exports.createUser = async (req, res) => {
                 employeeId: cleanEmpId,
                 branchId: branchId || 'br-raisen-1',
                 managerId: managerId || null,
-                designation: designation || 'Staff',
-                department: department || 'General',
+                designation: designation || (role === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Staff'),
+                department: department || (role === 'BRANCH_MANAGER' ? 'Operations Management' : 'General'),
                 status: 'ACTIVE',
                 createdAt: new Date()
             };
@@ -491,20 +1381,20 @@ exports.createUser = async (req, res) => {
             targetUser: createdUserObj._id,
             role: adminUser.role,
             ipAddress: req.ip,
-            details: { createdRole: role, email: createdUserObj.email, employeeId: cleanEmpId }
+            details: { createdRole: role, email: createdUserObj.email, employeeId: cleanEmpId, branchId }
         });
 
         return res.json({
             success: true,
             user: createdUserObj,
-            message: `User ${createdUserObj.name} created successfully with role ${createdUserObj.role}.`
+            message: `User ${createdUserObj.name} created successfully as ${createdUserObj.role} with ID ${cleanEmpId}.`
         });
     } catch (err) {
         return res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// 10. API: UPDATE USER STATUS
+// 10. API: UPDATE USER STATUS (WITH IMMEDIATE SESSION TERMINATION FOR SUSPENSIONS)
 exports.updateUserStatus = async (req, res) => {
     const { userId, status } = req.body;
     const adminUser = req.session.user;
@@ -544,6 +1434,32 @@ exports.updateUserStatus = async (req, res) => {
             await targetUser.save();
         }
 
+        // Immediate session termination in MongoDB sessions store & memory store when suspended or deactivated
+        if (['SUSPENDED', 'INACTIVE', 'REJECTED'].includes(status)) {
+            try {
+                if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
+                    const sessionsCol = mongoose.connection.db.collection('sessions');
+                    const userRegex = new RegExp(targetUser._id.toString());
+                    await sessionsCol.deleteMany({ session: { $regex: userRegex } });
+                }
+            } catch (sessErr) {
+                // Non-fatal: authMiddleware requireAuth catches live database status on the very next request
+            }
+
+            try {
+                if (req.sessionStore && req.sessionStore.sessions) {
+                    for (const sid of Object.keys(req.sessionStore.sessions)) {
+                        const sessStr = typeof req.sessionStore.sessions[sid] === 'string'
+                            ? req.sessionStore.sessions[sid]
+                            : JSON.stringify(req.sessionStore.sessions[sid] || {});
+                        if (sessStr.includes(targetUser._id.toString())) {
+                            delete req.sessionStore.sessions[sid];
+                        }
+                    }
+                }
+            } catch (memErr) {}
+        }
+
         AuditService.log({
             action: status === 'ACTIVE' ? 'ACCOUNT_ACTIVATED' : (status === 'SUSPENDED' ? 'ACCOUNT_SUSPENDED' : 'STATUS_CHANGE'),
             user: adminUser._id,
@@ -555,7 +1471,7 @@ exports.updateUserStatus = async (req, res) => {
 
         return res.json({
             success: true,
-            message: `User status changed to ${status} for ${targetUser.name}.`
+            message: `User status changed to ${status} for ${targetUser.name}. Any active session has been immediately invalidated.`
         });
     } catch (err) {
         return res.status(500).json({ success: false, message: err.message });
@@ -626,6 +1542,14 @@ exports.assignManager = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Employee not found.' });
         }
 
+        // Managers and Super Admins cannot be assigned a manager
+        if (['MANAGER', 'BRANCH_MANAGER', 'SUPER_ADMIN'].includes(emp.role)) {
+            return res.status(400).json({
+                success: false,
+                message: 'A Manager or Administrator cannot be assigned a reporting Manager. Only Employees can have an assigned Manager.'
+            });
+        }
+
         emp.managerId = (managerId && mongoose.isValidObjectId(managerId)) ? managerId : null;
         if (emp.save) {
             await emp.save();
@@ -688,7 +1612,7 @@ exports.saveQuotation = (req, res) => {
 };
 
 // 15. API: SAVE INVOICE (SUPER ADMIN & MANAGERS ONLY)
-exports.saveInvoice = (req, res) => {
+exports.saveInvoice = async (req, res) => {
     const user = req.session ? req.session.user : null;
 
     if (!user || user.role === 'EMPLOYEE') {
@@ -710,17 +1634,82 @@ exports.saveInvoice = (req, res) => {
         return res.status(400).json({ success: false, message: 'Customer name and amount are required' });
     }
 
+    // Check if invoice already exists in DB or in-memory
+    let existingInvoice = null;
+    const Invoice = require('../models/Invoice');
+    if (mongoose.connection.readyState === 1 && invData.invoiceNumber) {
+        try {
+            existingInvoice = await Invoice.findOne({ invoiceNumber: invData.invoiceNumber });
+        } catch (e) {}
+    }
+    const memExisting = DataStore.getAllInvoices(true).find(i => i.invoiceNumber === invData.invoiceNumber);
+
+    if (existingInvoice || memExisting) {
+        // STRICT LOCK: Customer details CANNOT be changed during invoice update
+        const lockedCustomerName = (existingInvoice && existingInvoice.customerName) || (memExisting && memExisting.customerName);
+        const lockedCustomerMobile = (existingInvoice && existingInvoice.customerMobile) || (memExisting && memExisting.customerMobile);
+        const lockedCustomerAddress = (existingInvoice && existingInvoice.customerAddress) || (memExisting && memExisting.customerAddress);
+        const lockedCustomerGstin = (existingInvoice && existingInvoice.customerGstin) || (memExisting && memExisting.customerGstin);
+        const lockedDiscomConsumer = (existingInvoice && existingInvoice.discomConsumerNo) || (memExisting && memExisting.discomConsumerNo);
+        const lockedProjectId = (existingInvoice && existingInvoice.project) || (memExisting && memExisting.projectId);
+        const lockedQuotationId = (existingInvoice && existingInvoice.quotation) || (memExisting && memExisting.quotationId);
+
+        invData.customerName = lockedCustomerName;
+        invData.customerMobile = lockedCustomerMobile;
+        invData.customerAddress = lockedCustomerAddress;
+        invData.customerGstin = lockedCustomerGstin;
+        invData.discomConsumerNo = lockedDiscomConsumer;
+        invData.projectId = lockedProjectId;
+        invData.quotationId = lockedQuotationId;
+
+        // If existing in MongoDB, store snapshot into previousVersions before updating
+        if (existingInvoice) {
+            existingInvoice.previousVersions = existingInvoice.previousVersions || [];
+            existingInvoice.previousVersions.push({
+                version: existingInvoice.version || 1,
+                items: existingInvoice.items || [],
+                subtotal: existingInvoice.subtotal,
+                gstRate: existingInvoice.gstRate || 12,
+                cgst: existingInvoice.cgst,
+                sgst: existingInvoice.sgst,
+                gstAmount: existingInvoice.gstAmount,
+                totalAmount: existingInvoice.totalAmount,
+                paymentStatus: existingInvoice.paymentStatus,
+                paymentMethod: existingInvoice.paymentMethod,
+                invoiceDate: existingInvoice.invoiceDate,
+                plantCapacityKw: existingInvoice.plantCapacityKw,
+                updatedByUser: user._id,
+                updatedAt: new Date()
+            });
+            existingInvoice.version = (existingInvoice.version || 1) + 1;
+            existingInvoice.plantCapacityKw = parseFloat(invData.plantCapacityKw) || existingInvoice.plantCapacityKw;
+            existingInvoice.items = invData.items || existingInvoice.items;
+            existingInvoice.subtotal = parseFloat(invData.subtotal) || existingInvoice.subtotal;
+            existingInvoice.cgst = parseFloat(invData.cgst) || existingInvoice.cgst;
+            existingInvoice.sgst = parseFloat(invData.sgst) || existingInvoice.sgst;
+            existingInvoice.gstAmount = (parseFloat(invData.cgst) || 0) + (parseFloat(invData.sgst) || 0);
+            existingInvoice.totalAmount = parseFloat(invData.totalAmount) || existingInvoice.totalAmount;
+            existingInvoice.paymentStatus = invData.paymentStatus || existingInvoice.paymentStatus;
+            existingInvoice.paymentMethod = invData.paymentMethod || existingInvoice.paymentMethod;
+            existingInvoice.invoiceDate = invData.date || existingInvoice.invoiceDate;
+
+            await existingInvoice.save().catch(e => console.error('Error saving updated invoice:', e));
+        }
+    }
+
     invData.createdByUser = user._id;
     invData.branch = user.branchId;
 
     const saved = DataStore.addInvoice(invData);
 
-    // If MongoDB is available, save/update in DB
-    if (mongoose.connection.readyState === 1) {
+    // If new invoice and MongoDB is ready
+    if (!existingInvoice && mongoose.connection.readyState === 1) {
         try {
-            const Invoice = require('../models/Invoice');
             const mongoData = {
                 invoiceNumber: saved.invoiceNumber,
+                version: 1,
+                previousVersions: [],
+                isArchived: false,
                 customerName: saved.customerName,
                 customerMobile: saved.customerMobile,
                 customerAddress: saved.customerAddress,
@@ -739,26 +1728,35 @@ exports.saveInvoice = (req, res) => {
                 discomConsumerNo: invData.discomConsumerNo || '',
                 project: invData.projectId || null,
                 quotation: invData.quotationId || null,
+                branch: user.branchId || null,
                 createdByUser: user._id
             };
-            Invoice.findOneAndUpdate({ invoiceNumber: saved.invoiceNumber }, mongoData, { upsert: true, new: true }).exec().catch(()=>{});
-        } catch (e) {}
+            await Invoice.create(mongoData);
+        } catch (e) {
+            console.error('Invoice create DB error:', e);
+        }
     }
 
     AuditService.log({
-        action: 'INVOICE_GENERATED',
+        action: existingInvoice ? 'INVOICE_UPDATED' : 'INVOICE_GENERATED',
         user: user._id,
         role: user.role,
         branchId: user.branchId,
         ipAddress: req.ip,
-        details: { invoiceNumber: saved.invoiceNumber, amount: saved.totalAmount }
+        details: { invoiceNumber: saved.invoiceNumber, amount: saved.totalAmount, version: existingInvoice ? existingInvoice.version : 1 }
     });
 
-    return res.json({ success: true, invoice: saved, message: `Invoice ${saved.invoiceNumber} recorded successfully` });
+    return res.json({
+        success: true,
+        invoice: saved,
+        message: existingInvoice 
+            ? `Invoice ${saved.invoiceNumber} (v${existingInvoice.version}) updated successfully. Customer details locked.`
+            : `Invoice ${saved.invoiceNumber} recorded successfully`
+    });
 };
 
-// 16. API: DELETE INVOICE (SUPER ADMIN & MANAGERS ONLY)
-exports.deleteInvoice = (req, res) => {
+// 16. API: ARCHIVE INVOICE (SUPER ADMIN & MANAGERS ONLY - SOFT-ARCHIVE ONLY)
+exports.deleteInvoice = async (req, res) => {
     const user = req.session ? req.session.user : null;
     if (!user || user.role === 'EMPLOYEE') {
         return res.status(403).json({ success: false, message: 'Unauthorized' });
@@ -767,19 +1765,33 @@ exports.deleteInvoice = (req, res) => {
     if (!invoiceNumber) {
         return res.status(400).json({ success: false, message: 'Invoice number is required' });
     }
-    DataStore.deleteInvoice(invoiceNumber);
+    
+    // Soft-archive in DataStore
+    DataStore.archiveInvoice(invoiceNumber);
+
+    // Soft-archive in MongoDB - strictly preserve immutable record
     if (mongoose.connection.readyState === 1) {
         try {
             const Invoice = require('../models/Invoice');
-            Invoice.findOneAndDelete({ invoiceNumber }).exec().catch(()=>{});
-        } catch (e) {}
+            await Invoice.findOneAndUpdate(
+                { invoiceNumber },
+                {
+                    isArchived: true,
+                    archivedAt: new Date(),
+                    archivedBy: user._id,
+                    paymentStatus: 'cancelled'
+                }
+            );
+        } catch (e) {
+            console.error('Invoice archive DB error:', e);
+        }
     }
     AuditService.log({
-        action: 'INVOICE_DELETED',
+        action: 'INVOICE_ARCHIVED',
         user: user._id,
         role: user.role,
         ipAddress: req.ip,
-        details: { invoiceNumber }
+        details: { invoiceNumber, archivedAt: new Date() }
     });
-    return res.json({ success: true, message: `Invoice ${invoiceNumber} deleted successfully` });
+    return res.json({ success: true, message: `Invoice ${invoiceNumber} archived successfully. Records are safely preserved in the database.` });
 };

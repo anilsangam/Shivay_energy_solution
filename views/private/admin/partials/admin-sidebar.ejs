@@ -57,6 +57,18 @@
                     <span>Tax Invoices</span>
                 </a>
             </li>
+            <li class="admin-nav-item">
+                <a href="/admin/reports" class="admin-nav-link <%= currentActive === 'admin-reports' ? 'active' : '' %>">
+                    <i class="icofont-chart-growth"></i>
+                    <span>Reports & Analytics</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/complaints" class="admin-nav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
+                    <i class="icofont-tools-alt-2"></i>
+                    <span>Service Complaints</span>
+                </a>
+            </li>
 
             <li class="admin-sidebar-heading">Team Management</li>
             <li class="admin-nav-item">
@@ -69,6 +81,12 @@
                 <a href="/admin/managers" class="admin-nav-link <%= currentActive === 'admin-managers' ? 'active' : '' %>">
                     <i class="icofont-business-man"></i>
                     <span>Managers</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
+                <a href="/admin/branches" class="admin-nav-link <%= currentActive === 'admin-branches' ? 'active' : '' %>">
+                    <i class="icofont-building-alt"></i>
+                    <span>Branches & Offices</span>
                 </a>
             </li>
 
@@ -201,10 +219,13 @@
 
     <!-- Sidebar Simple Logout Button Area -->
     <div class="admin-sidebar-footer">
-        <a href="/auth/logout" class="admin-sidebar-logout-btn" title="Sign Out of Panel">
-            <i class="icofont-logout"></i>
-            <span>Logout</span>
-        </a>
+        <form id="sidebarLogoutForm" action="/logout" method="POST" style="margin: 0; padding: 0;">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button type="submit" class="admin-sidebar-logout-btn w-100 border-0 bg-transparent text-start" style="cursor: pointer;" title="Sign Out of Panel">
+                <i class="icofont-logout"></i>
+                <span>Logout</span>
+            </button>
+        </form>
     </div>
 </aside>
 

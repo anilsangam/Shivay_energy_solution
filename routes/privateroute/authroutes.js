@@ -25,8 +25,21 @@ router.post('/employee/login', loginLimiter, authController.postEmployeeLogin);
 
 // No Public Signup: Only Super Admin can onboard staff via /admin/employees
 router.get(['/employee/register', '/register', '/signup'], (req, res) => res.redirect('/login'));
-router.get(['/logout', '/auth/logout', '/admin/logout', '/manager/logout', '/employee/logout'], authController.logout);
-router.post(['/logout', '/auth/logout', '/admin/logout', '/manager/logout', '/employee/logout'], authController.logout);
+// Secure Logout: POST only with CSRF verification (GET logout disabled to prevent CSRF attacks)
+router.get(['/logout', '/auth/logout', '/admin/logout', '/manager/logout', '/employee/logout'], (req, res) => {
+    if (req.xhr || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
+        return res.status(405).json({
+            success: false,
+            message: 'Method Not Allowed: Logout must be submitted via POST with valid CSRF verification.'
+        });
+    }
+    return res.status(405).render('private/errors/403', {
+        title: 'Method Not Allowed | Shivay Energy Solutions',
+        message: 'Security Policy: Session logout must be submitted as a POST request with valid CSRF verification.',
+        currentUser: req.session ? req.session.user : null
+    });
+});
+router.post(['/logout', '/auth/logout', '/admin/logout', '/manager/logout', '/employee/logout'], requireAuth, verifyCsrf, authController.logout);
 
 // Password Change for Authenticated User
 router.post('/api/auth/change-password', requireAuth, verifyCsrf, authController.changePassword);

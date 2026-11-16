@@ -169,9 +169,23 @@ const quotationSchema = new mongoose.Schema({
             'CUSTOMER_ACCEPTED',
             'CUSTOMER_REJECTED',
             'EXPIRED',
-            'CANCELLED'
+            'CANCELLED',
+            'ARCHIVED'
         ],
         default: 'PENDING_APPROVAL'
+    },
+    isArchived: {
+        type: Boolean,
+        default: false
+    },
+    archivedAt: {
+        type: Date,
+        default: null
+    },
+    archivedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
     },
     preparedBy: {
         type: mongoose.Schema.Types.ObjectId,

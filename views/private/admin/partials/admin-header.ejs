@@ -38,7 +38,19 @@
         </div>
     </div>
 
-    <div class="admin-header-right">
+    <div class="admin-header-right d-flex align-items-center gap-2">
+        <% if (isSuperAdmin) { %>
+            <!-- Quick Settings Direct Access for Super Admin -->
+            <a href="/admin/settings" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 shadow-sm text-dark font-weight-bold" style="border-radius: 8px; padding: 5px 12px; font-size: 12.5px; height: 36px;" title="Enterprise System Settings">
+                <i class="icofont-gear text-warning fs-6"></i>
+                <span class="d-none d-sm-inline">Settings</span>
+            </a>
+            <a href="/admin/branches" class="btn btn-sm btn-light border d-none d-lg-inline-flex align-items-center gap-1 shadow-sm text-dark font-weight-bold" style="border-radius: 8px; padding: 5px 12px; font-size: 12.5px; height: 36px;" title="Branch Management">
+                <i class="icofont-building-alt text-success fs-6"></i>
+                <span>Branches</span>
+            </a>
+        <% } %>
+
         <!-- MOBILE VIEW ONLY (< 768px): Direct Link to My Profile (No Dropdown on Mobile) -->
         <a href="<%= profileUrl %>" class="admin-mobile-profile-btn d-inline-flex d-md-none" title="My Profile - <%= userName %>">
             <div class="admin-avatar-circle shadow-sm">
@@ -91,6 +103,24 @@
                 </li>
                 <% if (isSuperAdmin) { %>
                     <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/settings">
+                            <i class="icofont-gear text-warning" style="font-size: 14px;"></i>
+                            <span>System Settings</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/branches">
+                            <i class="icofont-building-alt text-success" style="font-size: 14px;"></i>
+                            <span>Branches & Hubs</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/reports">
+                            <i class="icofont-chart-growth text-primary" style="font-size: 14px;"></i>
+                            <span>Analytics & Reports</span>
+                        </a>
+                    </li>
+                    <li>
                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/activity-logs">
                             <i class="icofont-history text-info" style="font-size: 14px;"></i>
                             <span>Activity Logs</span>
@@ -99,10 +129,13 @@
                 <% } %>
                 <li><hr class="dropdown-divider my-1"></li>
                 <li class="pb-1">
-                    <a class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger small fw-bold" href="/auth/logout">
-                        <i class="icofont-logout" style="font-size: 14px;"></i>
-                        <span>Sign Out (Logout)</span>
-                    </a>
+                    <form id="headerLogoutForm" action="/logout" method="POST" style="margin: 0; padding: 0;">
+                        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                        <button type="submit" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger small fw-bold border-0 bg-transparent w-100" style="cursor: pointer;">
+                            <i class="icofont-logout" style="font-size: 14px;"></i>
+                            <span>Sign Out (Logout)</span>
+                        </button>
+                    </form>
                 </li>
             </ul>
         </div>

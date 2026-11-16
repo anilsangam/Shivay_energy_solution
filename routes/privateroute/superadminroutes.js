@@ -31,12 +31,14 @@ router.post('/admin/quotations/new', requireAuth, requireSuperAdmin, verifyCsrf,
 router.get(['/admin/quotations/request/:id', '/admin/quotations/requests/:id'], requireAuth, requireSuperAdmin, validateObjectId('id'), quotationController.getRequestDetails);
 router.post(['/admin/quotations/request/:id/status', '/admin/quotations/requests/:id/status'], requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('id'), quotationController.postUpdateRequestStatus);
 router.get('/admin/quotations/prepare/:requestId', requireAuth, requireSuperAdmin, validateObjectId('requestId'), quotationController.getPrepareQuotationPage);
-router.post('/admin/quotations/preview-financials', requireAuth, requireSuperAdmin, quotationController.previewFinancials);
+router.post('/admin/quotations/preview-financials', requireAuth, requireSuperAdmin, verifyCsrf, quotationController.previewFinancials);
 router.post('/admin/quotations/save-prepared', requireAuth, requireSuperAdmin, verifyCsrf, quotationController.postSavePreparedQuotation);
 router.get('/admin/quotations/:id', requireAuth, requireSuperAdmin, validateObjectId('id'), quotationController.getQuotationDetails);
+router.get('/admin/quotations/:id/edit', requireAuth, requireSuperAdmin, validateObjectId('id'), quotationController.getEditQuotationPage);
 router.get('/admin/quotations/:id/document', requireAuth, requireSuperAdmin, validateObjectId('id'), quotationController.getQuotationDocument);
 router.post('/admin/quotations/:id/approve', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('id'), quotationController.postApproveQuotation);
 router.post('/admin/quotations/:id/reject', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('id'), quotationController.postRejectQuotation);
+router.post('/admin/quotations/:id/archive', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('id'), quotationController.postArchiveQuotation);
 
 // Phase 3: Project Execution, Staging & Grid Commissioning
 router.get('/admin/projects', requireAuth, requireSuperAdmin, projectController.getProjectsPage);
@@ -51,15 +53,15 @@ router.get('/admin/projects/:id/documents/:documentId', requireAuth, requireSupe
 
 // Financials, System Audit & Organization Management
 router.get('/admin/invoices', requireAuth, requireSuperAdmin, adminController.getInvoices);
-router.get('/admin/reports', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('reports'));
+router.get('/admin/reports', requireAuth, requireSuperAdmin, adminController.getReports);
+router.get('/api/admin/reports/export/:type', requireAuth, requireSuperAdmin, adminController.exportReportCsv);
 router.get('/admin/activity-logs', requireAuth, requireSuperAdmin, adminController.getActivityLogs);
-router.get('/admin/settings', requireAuth, requireSuperAdmin, adminController.getModulePlaceholder('settings'));
+router.get('/admin/settings', requireAuth, requireSuperAdmin, adminController.getSettings);
 router.get('/admin/profile', requireAuth, requireSuperAdmin, adminController.getProfile);
-
-// Legacy Admin Aliases
-router.get('/admin/branches', requireAuth, requireSuperAdmin, adminController.getManagers);
+router.get('/admin/branches', requireAuth, requireSuperAdmin, adminController.getBranches);
 router.get('/admin/enquiries', requireAuth, requireSuperAdmin, adminController.getDashboard);
-router.get('/admin/complaints', requireAuth, requireSuperAdmin, adminController.getDashboard);
+router.get('/admin/complaints', requireAuth, requireSuperAdmin, adminController.getComplaints);
+router.post('/api/admin/complaints/status', requireAuth, requireBranchManager, verifyCsrf, adminController.updateComplaintStatus);
 
 // Super Admin / Governance Mutating APIs
 router.post('/api/admin/enquiries/status', requireAuth, requireBranchManager, verifyCsrf, adminController.updateEnquiryStatus);
@@ -70,5 +72,9 @@ router.post('/api/admin/users/create', requireAuth, requireSuperAdmin, verifyCsr
 router.post('/api/admin/users/status', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('userId'), adminController.updateUserStatus);
 router.post('/api/admin/users/reset-password', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('userId'), adminController.resetUserPassword);
 router.post('/api/admin/employees/assign-manager', requireAuth, requireSuperAdmin, verifyCsrf, validateObjectId('employeeId'), adminController.assignManager);
+router.post('/api/admin/branches/create', requireAuth, requireSuperAdmin, verifyCsrf, adminController.createBranch);
+router.post('/api/admin/branches/update', requireAuth, requireSuperAdmin, verifyCsrf, adminController.updateBranch);
+router.post('/api/admin/branches/status', requireAuth, requireSuperAdmin, verifyCsrf, adminController.toggleBranchStatus);
+router.post('/api/admin/settings/save', requireAuth, requireSuperAdmin, verifyCsrf, adminController.saveSettings);
 
 module.exports = router;

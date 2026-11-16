@@ -1,0 +1,306 @@
+<%- include('partials/admin-head') %>
+
+<!-- Action Header & Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-chart-growth me-2 text-warning"></i> Business Intelligence & Analytics Reports
+        </h2>
+        <p class="text-muted small mb-0">
+            Real-time solar installation metrics, sanctioned capacity, regional branch performance, and subsidy disbursals.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <div class="dropdown">
+            <button class="btn btn-warning font-weight-bold text-dark shadow-sm dropdown-toggle" type="button" id="exportMenu" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 8px;">
+                <i class="icofont-download me-1"></i> Export Data (CSV)
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="exportMenu" style="border-radius: 10px;">
+                <li><a class="dropdown-item py-2 small" href="/api/admin/reports/export/projects"><i class="icofont-energy-solar me-2 text-primary"></i>Export Projects Report</a></li>
+                <li><a class="dropdown-item py-2 small" href="/api/admin/reports/export/invoices"><i class="icofont-bill me-2 text-success"></i>Export Tax Invoices</a></li>
+                <li><a class="dropdown-item py-2 small" href="/api/admin/reports/export/quotations"><i class="icofont-calculator-alt-2 me-2 text-warning"></i>Export Quotations Data</a></li>
+            </ul>
+        </div>
+        <a href="/admin/branches" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-building-alt me-1"></i> Regional Hubs
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators (KPI Cards) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small font-weight-bold text-uppercase">Sanctioned Solar</span>
+                <i class="icofont-sun fs-4 text-warning"></i>
+            </div>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-2"><%= stats.totalCapacityKw %> <small class="fs-6 fw-normal text-muted">kW</small></div>
+            <div class="small text-muted mt-1"><%= stats.totalProjects %> total plant orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small font-weight-bold text-uppercase">Commissioned Plants</span>
+                <i class="icofont-check-circled fs-4 text-success"></i>
+            </div>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-2"><%= stats.commissionedCapacityKw %> <small class="fs-6 fw-normal text-muted">kW</small></div>
+            <div class="small text-success mt-1"><i class="icofont-verification-check me-1"></i><%= stats.completedProjects %> grid-connected plants</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small font-weight-bold text-uppercase">Invoiced Turnkey EPC</span>
+                <i class="icofont-rupee fs-4 text-primary"></i>
+            </div>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-2">₹<%= stats.totalInvoicedValue %></div>
+            <div class="small text-muted mt-1">Tax invoice billing total</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted small font-weight-bold text-uppercase">PM Surya Ghar Subsidy</span>
+                <i class="icofont-flash fs-4 text-info"></i>
+            </div>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-2">₹<%= stats.totalSubsidyDisbursed %></div>
+            <div class="small text-info mt-1"><i class="icofont-info-circle me-1"></i>Direct Beneficiary Transfer</div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Analytics: Segment Breakdown & Scheme Benefits -->
+<div class="row g-4 mb-4">
+    <!-- Left: Segment Capacity Breakdown -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100 shadow-sm border p-4 bg-white rounded-3">
+            <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">
+                <i class="icofont-pie-chart me-2 text-primary"></i> Segment Capacity Distribution
+            </h5>
+            <p class="text-muted small mb-3">Breakdown of sanctioned solar installations across consumer sectors.</p>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small font-weight-bold text-dark">Residential Rooftop (1kW - 3kW Scheme)</span>
+                    <span class="small text-primary font-weight-bold"><%= stats.residentialKw %> kW</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: <%= (stats.totalCapacityKw > 0) ? Math.min(100, Math.round((stats.residentialKw / stats.totalCapacityKw) * 100)) : 0 %>%;"></div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small font-weight-bold text-dark">Commercial & Industrial Rooftop (> 5kW)</span>
+                    <span class="small text-warning font-weight-bold"><%= stats.commercialKw %> kW</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: <%= (stats.totalCapacityKw > 0) ? Math.min(100, Math.round((stats.commercialKw / stats.totalCapacityKw) * 100)) : 0 %>%;"></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="small font-weight-bold text-dark">Agricultural Solar Pumps & Off-Grid Hubs</span>
+                    <span class="small text-success font-weight-bold"><%= stats.agriculturalKw %> kW</span>
+                </div>
+                <div class="progress" style="height: 10px; border-radius: 6px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: <%= (stats.totalCapacityKw > 0) ? Math.min(100, Math.round((stats.agriculturalKw / stats.totalCapacityKw) * 100)) : 0 %>%;"></div>
+                </div>
+            </div>
+
+            <hr class="my-3">
+            <div class="d-flex justify-content-between text-muted small">
+                <span>Active Field Projects: <strong><%= stats.activeProjects %></strong></span>
+                <span>Active Quotations: <strong><%= stats.totalQuotations %></strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: DISCOM & PM Surya Ghar Scheme Insights -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100 shadow-sm border p-4 bg-white rounded-3">
+            <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">
+                <i class="icofont-certificate-alt-1 me-2 text-warning"></i> PM Surya Ghar & DISCOM Compliance
+            </h5>
+            <p class="text-muted small mb-3">Madhya Pradesh Power Distribution Company (MPPKVVCL) grid synchronization status.</p>
+
+            <div class="p-3 bg-light rounded-3 border mb-3">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-success font-weight-bold" style="font-size: 10.5px;">APPROVED SCHEME</span>
+                    <strong class="text-dark small">PM Surya Ghar: Muft Bijli Yojana</strong>
+                </div>
+                <p class="small text-muted mb-0" style="font-size: 12px;">
+                    Central DBT Subsidy: ₹30,000 for 1kW, ₹60,000 for 2kW, and ₹78,000 for 3kW+ rooftop systems directly credited to customer Aadhaar-linked accounts.
+                </p>
+            </div>
+
+            <div class="row g-2 text-center">
+                <div class="col-4">
+                    <div class="p-2 border rounded-2 bg-white">
+                        <small class="text-muted d-block" style="font-size: 11px;">1kW System</small>
+                        <strong class="text-primary font-monospace" style="font-size: 13px;">₹30,000</strong>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 border rounded-2 bg-white">
+                        <small class="text-muted d-block" style="font-size: 11px;">2kW System</small>
+                        <strong class="text-primary font-monospace" style="font-size: 13px;">₹60,000</strong>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="p-2 border rounded-2 bg-white">
+                        <small class="text-muted d-block" style="font-size: 11px;">3kW+ System</small>
+                        <strong class="text-primary font-monospace" style="font-size: 13px;">₹78,000</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 text-end">
+                <a href="/admin/settings" class="small text-decoration-none text-primary font-weight-bold">
+                    <i class="icofont-gear me-1"></i>Configure Subsidy Rates in Settings →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regional Hubs & Operational Branches Performance Leaderboard -->
+<div class="admin-card mb-4 shadow-sm border bg-white rounded-3">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="font-weight-bold text-dark mb-0" style="font-size: 16px;">
+                <i class="icofont-building-alt me-2 text-primary"></i> Regional Branches & Hubs Performance
+            </h5>
+            <small class="text-muted">Installation progress, staff allocation, and sanctioned kW capacity per operational center.</small>
+        </div>
+        <a href="/admin/branches" class="btn btn-sm btn-outline-primary" style="border-radius: 6px;">
+            <i class="icofont-external-link me-1"></i> Manage Branches
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="table-light">
+                <tr>
+                    <th style="padding: 12px 16px;">BRANCH NAME</th>
+                    <th>BRANCH CODE</th>
+                    <th>LOCATION</th>
+                    <th>DESIGNATED MANAGER</th>
+                    <th class="text-center">STAFF</th>
+                    <th class="text-center">PROJECTS</th>
+                    <th class="text-end" style="padding-right: 16px;">SANCTIONED CAPACITY</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (branchStats && branchStats.length > 0) { %>
+                    <% branchStats.forEach(b => { %>
+                        <tr>
+                            <td style="padding: 12px 16px;">
+                                <strong class="text-dark d-block"><%= b.name %></strong>
+                                <span class="badge <%= b.isActive ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-secondary text-white' %>" style="font-size: 10px;">
+                                    <%= b.isActive ? 'OPERATIONAL' : 'INACTIVE' %>
+                                </span>
+                            </td>
+                            <td><code class="font-monospace fw-bold text-primary"><%= b.code %></code></td>
+                            <td><%= b.city %>, <%= b.state %></td>
+                            <td>
+                                <strong class="text-dark"><%= b.managerName %></strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border px-2 py-1"><%= b.staffCount %> Staff</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                    <%= b.completedCount %> / <%= b.projectCount %> Done
+                                </span>
+                            </td>
+                            <td class="text-end font-monospace font-weight-bold text-dark" style="padding-right: 16px;">
+                                <%= b.totalKw.toFixed(1) %> kW
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No regional branches registered.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Recent Solar Plant Installations & Commissioning Pipeline -->
+<div class="admin-card shadow-sm border bg-white rounded-3 mb-4">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h5 class="font-weight-bold text-dark mb-0" style="font-size: 16px;">
+                <i class="icofont-list me-2 text-warning"></i> Recent Projects Pipeline & Commissioning Status
+            </h5>
+            <small class="text-muted">Turnkey EPC work orders and net-meter synchronization updates.</small>
+        </div>
+        <a href="/admin/projects" class="btn btn-sm btn-primary" style="border-radius: 6px;">
+            View All Projects
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="table-light">
+                <tr>
+                    <th style="padding: 12px 16px;">PROJECT ID</th>
+                    <th>CUSTOMER</th>
+                    <th>CAPACITY</th>
+                    <th>SYSTEM TYPE</th>
+                    <th>ASSIGNED ENGINEER</th>
+                    <th>STATUS</th>
+                    <th class="text-end" style="padding-right: 16px;">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (recentProjects && recentProjects.length > 0) { %>
+                    <% recentProjects.forEach(p => { %>
+                        <tr>
+                            <td style="padding: 12px 16px;">
+                                <a href="/admin/projects/<%= p._id %>" class="fw-bold font-monospace text-primary text-decoration-none">
+                                    <%= p.projectId || p._id.toString().substring(0, 8).toUpperCase() %>
+                                </a>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block"><%= (p.customer && p.customer.name) ? p.customer.name : 'Client' %></strong>
+                                <small class="text-muted"><%= (p.customer && p.customer.city) ? p.customer.city : 'Raisen' %></small>
+                            </td>
+                            <td class="font-monospace fw-bold text-dark"><%= p.capacityKw || 0 %> kW</td>
+                            <td><span class="badge bg-light text-dark border"><%= p.systemType || 'On-Grid' %></span></td>
+                            <td><%= (p.assignedEngineer && p.assignedEngineer.name) ? p.assignedEngineer.name : 'Unassigned' %></td>
+                            <td>
+                                <% if (p.status === 'COMPLETED') { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">COMMISSIONED</span>
+                                <% } else if (p.status === 'IN_PROGRESS' || p.status === 'INSTALLATION') { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">IN PROGRESS</span>
+                                <% } else if (p.status === 'ON_HOLD') { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">ON HOLD</span>
+                                <% } else { %>
+                                    <span class="badge bg-light text-secondary border px-2 py-1"><%= p.status || 'NEW' %></span>
+                                <% } %>
+                            </td>
+                            <td class="text-end" style="padding-right: 16px;">
+                                <a href="/admin/projects/<%= p._id %>" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 3px 8px; border-radius: 5px;">
+                                    View Details
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No solar project records found.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('partials/admin-footer') %>

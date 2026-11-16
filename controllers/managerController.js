@@ -26,13 +26,8 @@ class ManagerController {
                 } catch (e) {}
             }
 
-            // Retrieve actual assigned employees
-            let assignedEmployees = await DataStore.getEmployeesByManager(manager._id);
-            if (!assignedEmployees || assignedEmployees.length === 0) {
-                // If no direct managerId matches, retrieve staff within same branch
-                const allUsers = await DataStore.getUsers();
-                assignedEmployees = allUsers.filter(u => u.role === 'EMPLOYEE');
-            }
+            // Retrieve actual assigned employees strictly for this manager and their branch
+            const assignedEmployees = await DataStore.getEmployeesByManager(manager._id, manager.branchId);
 
             const activeStaffCount = assignedEmployees.filter(e => e.status === 'ACTIVE').length;
             const enquiries = DataStore.getAllEnquiries();
@@ -53,7 +48,7 @@ class ManagerController {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 try {
                     const Project = require('../models/Project');
-                    const bFilter = branchId ? { $or: [{ branch: branchId }, { assignedManager: manager._id }] } : {};
+                    const bFilter = branchId ? { $or: [{ branch: branchId }, { assignedManager: manager._id }] } : { assignedManager: manager._id };
                     const projs = await Project.find(bFilter)
                         .populate('customer', 'name mobile city')
                         .populate('assignedEngineer', 'name employeeId')
@@ -104,11 +99,7 @@ class ManagerController {
     static async getEmployees(req, res) {
         try {
             const manager = req.session.user;
-            let employees = await DataStore.getEmployeesByManager(manager._id);
-            if (!employees || employees.length === 0) {
-                const allUsers = await DataStore.getUsers();
-                employees = allUsers.filter(u => u.role === 'EMPLOYEE');
-            }
+            const employees = await DataStore.getEmployeesByManager(manager._id, manager.branchId);
 
             res.render('private/manager/employees', {
                 title: `Branch Staff Management | ${companyData.company.name}`,
@@ -205,18 +196,31 @@ class ManagerController {
         let invoices = [];
         let projects = [];
         let quotations = [];
+        const sessionUser = req.session.user;
         if (mongoose.connection && mongoose.connection.readyState === 1) {
             try {
                 const Invoice = require('../models/Invoice');
                 const Project = require('../models/Project');
                 const Quotation = require('../models/Quotation');
-                invoices = await Invoice.find({}).sort({ createdAt: -1 }).lean();
-                projects = await Project.find({ status: { $ne: 'CANCELLED' } }).populate('customer').lean();
-                quotations = await Quotation.find({ status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] } }).populate('customerId').lean();
+                
+                // Strict Branch Isolation: Managers only view records within their branch jurisdiction
+                const branchQuery = sessionUser.branchId ? { branch: sessionUser.branchId } : { createdByUser: sessionUser._id };
+                invoices = await Invoice.find({ isArchived: { $ne: true }, ...branchQuery }).sort({ createdAt: -1 }).lean();
+                
+                const projectFilter = { status: { $ne: 'CANCELLED' } };
+                if (sessionUser.branchId) {
+                    projectFilter.$or = [{ branch: sessionUser.branchId }, { assignedManager: sessionUser._id }];
+                } else {
+                    projectFilter.assignedManager = sessionUser._id;
+                }
+                projects = await Project.find(projectFilter).populate('customer').lean();
+                
+                quotations = await Quotation.find({ 
+                    isArchived: { $ne: true }, 
+                    status: { $in: ['CUSTOMER_ACCEPTED', 'APPROVED'] },
+                    ...branchQuery 
+                }).populate('customerId').lean();
             } catch (e) {}
-        }
-        if (!invoices || invoices.length === 0) {
-            invoices = DataStore.getAllInvoices();
         }
         res.render('private/admin/invoices', {
             title: `Branch Invoices | ${companyData.company.name}`,

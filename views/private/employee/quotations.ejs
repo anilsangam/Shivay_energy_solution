@@ -467,7 +467,7 @@
                                         </a>
 
                                         <% if (q.status === 'APPROVED' || q.status === 'SHARED' || q.status === 'CUSTOMER_ACCEPTED') { %>
-                                            <button type="button" class="btn btn-share" onclick='openShareQuotationModal(<%- JSON.stringify({
+                                            <button type="button" class="btn btn-share btn-open-share-modal" data-quote="<%= JSON.stringify({
                                                 id: q._id,
                                                 quotationNumber: q.quotationNumber,
                                                 customerName: q.customerName,
@@ -478,7 +478,7 @@
                                                 subsidy: q.estimatedSubsidy,
                                                 netPayable: q.netPayableAfterSubsidy,
                                                 token: q.customerResponse ? q.customerResponse.acceptanceToken : ""
-                                            }) %>)' title="Share via WhatsApp & Copy Link">
+                                            }) %>" title="Share via WhatsApp & Copy Link">
                                                 <i class="icofont-share"></i> Share
                                             </button>
                                         <% } else { %>

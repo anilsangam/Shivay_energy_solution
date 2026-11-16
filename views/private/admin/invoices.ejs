@@ -258,8 +258,8 @@
                                     <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
                                         <i class="icofont-edit"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger py-1 px-2" title="Delete Invoice" onclick="deleteInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
-                                        <i class="icofont-trash"></i>
+                                    <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Archive Invoice" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
+                                        <i class="icofont-archive"></i>
                                     </button>
                                 </div>
                             </td>
@@ -282,7 +282,7 @@
 <!-- ========================================================================= -->
 <!-- 2. PRINTABLE OFFICIAL GST TAX INVOICE DOCUMENT PREVIEW -->
 <!-- ========================================================================= -->
-<div class="invoice-paper" id="printableInvoiceCard">
+<div class="invoice-paper" id="printableInvoiceCard" <%= primaryInvoice ? '' : 'hidden' %>>
     <!-- Header with Company & Customer Info -->
     <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
         <div>
@@ -442,8 +442,13 @@
                 <input type="hidden" name="invoiceId" id="formInvoiceId">
 
                 <div class="modal-body p-4">
+                    <!-- Customer Locked Notice for Updates -->
+                    <div id="customerLockedNotice" class="alert alert-warning py-2 px-3 small mb-3 d-none" style="border-left: 4px solid #f59e0b; border-radius: 8px;">
+                        <i class="icofont-lock me-1 fw-bold"></i> <strong>Customer Details Locked:</strong> Client and site information cannot be altered on an existing invoice. You can revise items, plant capacity, subtotal amounts, and payment status.
+                    </div>
+
                     <!-- Quick Autofill Selector from Projects/Quotations -->
-                    <div class="p-3 mb-3 bg-light rounded-3 border">
+                    <div class="p-3 mb-3 bg-light rounded-3 border" id="prefillContainer">
                         <label class="form-label small fw-bold text-primary mb-1">
                             <i class="icofont-magic me-1"></i> Quick Pre-Fill From Accepted Project or Quotation:
                         </label>
@@ -561,9 +566,18 @@
     </div>
 </div>
 
+<script type="application/json" id="invoicesData">
+<%- JSON.stringify(invoices || []).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %>
+</script>
 <script>
-// Loaded Invoices Data
-const allInvoices = <%- JSON.stringify(invoices || []) %>;
+// Loaded Invoices Data safely parsed from context-safe application/json container
+let allInvoices = [];
+try {
+    const rawData = document.getElementById('invoicesData')?.textContent;
+    allInvoices = rawData ? JSON.parse(rawData) : [];
+} catch (e) {
+    console.error('Error parsing invoices data:', e);
+}
 let currentPreviewIndex = 0;
 
 // Pure DOM Modal Controls (independent of bootstrap JS bundle)
@@ -636,6 +650,25 @@ function openNewInvoiceModal() {
         
         const idEl = document.getElementById('formInvoiceId');
         if (idEl) idEl.value = '';
+
+        // Enable prefill selector & unlock customer fields for new invoices
+        const prefillBox = document.getElementById('prefillContainer');
+        if (prefillBox) prefillBox.style.display = 'block';
+        const prefillSel = document.getElementById('prefillSelector');
+        if (prefillSel) prefillSel.disabled = false;
+
+        const lockedNotice = document.getElementById('customerLockedNotice');
+        if (lockedNotice) lockedNotice.classList.add('d-none');
+
+        const customerFields = ['formCustomerName', 'formCustomerMobile', 'formCustomerAddress', 'formCustomerGstin'];
+        customerFields.forEach(fId => {
+            const el = document.getElementById(fId);
+            if (el) {
+                el.readOnly = false;
+                el.style.backgroundColor = '';
+                el.style.cursor = 'text';
+            }
+        });
         
         // Auto-generate invoice number
         const randNum = Math.floor(100 + Math.random() * 900);
@@ -742,6 +775,26 @@ function editInvoice(index) {
         document.getElementById('formInvNum').value = inv.invoiceNumber;
         document.getElementById('formDate').value = inv.date || '';
 
+        // STRICT LOCK: Customer details cannot be changed on an existing invoice
+        const customerFields = ['formCustomerName', 'formCustomerMobile', 'formCustomerAddress', 'formCustomerGstin'];
+        customerFields.forEach(fId => {
+            const el = document.getElementById(fId);
+            if (el) {
+                el.readOnly = true;
+                el.style.backgroundColor = '#f1f5f9';
+                el.style.cursor = 'not-allowed';
+            }
+        });
+
+        // Hide prefill selector & show customer locked notice
+        const prefillBox = document.getElementById('prefillContainer');
+        if (prefillBox) prefillBox.style.display = 'none';
+        const prefillSel = document.getElementById('prefillSelector');
+        if (prefillSel) prefillSel.disabled = true;
+
+        const lockedNotice = document.getElementById('customerLockedNotice');
+        if (lockedNotice) lockedNotice.classList.remove('d-none');
+
         document.getElementById('formCustomerName').value = inv.customerName || '';
         document.getElementById('formCustomerMobile').value = inv.customerMobile || '';
         document.getElementById('formCustomerAddress').value = inv.customerAddress || '';
@@ -763,9 +816,9 @@ function editCurrentDocInvoice() {
     editInvoice(currentPreviewIndex);
 }
 
-// Delete Invoice with prompt
-async function deleteInvoicePrompt(invNum) {
-    if (!confirm('Are you sure you want to delete invoice ' + invNum + '?')) return;
+// Archive Invoice with prompt (No hard deletion)
+async function archiveInvoicePrompt(invNum) {
+    if (!confirm('Are you sure you want to archive invoice ' + invNum + '? Archived invoices are securely preserved in the database and audit trail.')) return;
     try {
         const csrfEl = document.querySelector('input[name="_csrf"]');
         const res = await fetch('/api/admin/invoices/delete', {
@@ -778,15 +831,16 @@ async function deleteInvoicePrompt(invNum) {
         });
         const d = await res.json();
         if (d.success) {
-            alert(d.message || 'Invoice deleted successfully.');
+            alert(d.message || 'Invoice archived successfully.');
             window.location.reload();
         } else {
-            alert(d.message || 'Error deleting invoice.');
+            alert(d.message || 'Error archiving invoice.');
         }
     } catch(e) {
         alert('Server error.');
     }
 }
+const deleteInvoicePrompt = archiveInvoicePrompt;
 
 // Handle Form Submission (Create or Edit)
 document.getElementById('invoiceForm')?.addEventListener('submit', async function(e) {

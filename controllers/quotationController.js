@@ -224,7 +224,12 @@ class QuotationController {
     static async getEmployeeQuotations(req, res) {
         try {
             const sessionUser = req.session.user;
-            const statusFilter = req.query.status || 'ALL';
+            const VALID_REQUEST_STATUSES = new Set([
+                'ALL', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED',
+                'QUOTATION_PREPARED', 'REVISION_REQUESTED', 'RESUBMITTED', 'DRAFT'
+            ]);
+            const rawStatus = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+            const statusFilter = VALID_REQUEST_STATUSES.has(rawStatus) ? rawStatus : 'ALL';
 
             const requestQuery = { assignedEmployee: sessionUser._id };
             if (statusFilter !== 'ALL') {
@@ -241,6 +246,7 @@ class QuotationController {
             const empRequestIds = allEmpRequests.map(r => r._id);
 
             const quotations = await Quotation.find({
+                isArchived: { $ne: true },
                 $or: [
                     { preparedBy: sessionUser._id },
                     { assignedEmployee: sessionUser._id },
@@ -418,37 +424,55 @@ class QuotationController {
     static async getManagerQuotations(req, res) {
         try {
             const sessionUser = req.session.user;
-            const statusFilter = req.query.status || 'ALL';
-            const employeeFilter = req.query.employee || 'ALL';
-            const search = req.query.search ? req.query.search.trim() : '';
-            const page = Math.max(1, parseInt(req.query.page) || 1);
+            const VALID_REQUEST_STATUSES = new Set([
+                'ALL', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED',
+                'QUOTATION_PREPARED', 'REVISION_REQUESTED', 'RESUBMITTED', 'DRAFT'
+            ]);
+            const rawStatus = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+            const statusFilter = VALID_REQUEST_STATUSES.has(rawStatus) ? rawStatus : 'ALL';
+
+            const rawEmployee = typeof req.query.employee === 'string' ? req.query.employee.trim() : '';
+            const employeeFilter = (rawEmployee !== 'ALL' && mongoose.isValidObjectId(rawEmployee)) ? rawEmployee : 'ALL';
+
+            const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
+            const cleanSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const page = Math.max(1, Math.min(1000, parseInt(req.query.page, 10) || 1));
             const limit = 15;
             const skip = (page - 1) * limit;
 
-            // Branch isolation for managers (Super Admin sees all)
-            const query = {};
+            // Strict Branch isolation for managers (Super Admin sees all)
+            const queryConditions = [];
             if (sessionUser.role !== 'SUPER_ADMIN') {
-                query.$or = [
-                    { assignedManager: sessionUser._id },
-                    { branch: sessionUser.branchId ? (sessionUser.branchId._id || sessionUser.branchId) : null }
-                ];
+                queryConditions.push({
+                    $or: [
+                        { assignedManager: sessionUser._id },
+                        { branch: sessionUser.branchId ? (sessionUser.branchId._id || sessionUser.branchId) : null }
+                    ]
+                });
             }
 
             if (statusFilter !== 'ALL') {
-                query.status = statusFilter;
+                queryConditions.push({ status: statusFilter });
             }
 
             if (employeeFilter !== 'ALL') {
-                query.assignedEmployee = employeeFilter;
+                queryConditions.push({ assignedEmployee: employeeFilter });
             }
 
-            if (search) {
-                query.$or = [
-                    { requestNumber: { $regex: search, $options: 'i' } },
-                    { customerName: { $regex: search, $options: 'i' } },
-                    { customerMobile: { $regex: search, $options: 'i' } }
-                ];
+            if (cleanSearch) {
+                queryConditions.push({
+                    $or: [
+                        { requestNumber: { $regex: cleanSearch, $options: 'i' } },
+                        { customerName: { $regex: cleanSearch, $options: 'i' } },
+                        { customerMobile: { $regex: cleanSearch, $options: 'i' } }
+                    ]
+                });
             }
+
+            const query = queryConditions.length > 1
+                ? { $and: queryConditions }
+                : (queryConditions[0] || {});
 
             const total = await QuotationRequest.countDocuments(query);
             const requests = await QuotationRequest.find(query)
@@ -464,13 +488,14 @@ class QuotationController {
                 ? await User.find({ role: 'EMPLOYEE', status: 'ACTIVE' }, 'name employeeId')
                 : await User.find({ managerId: sessionUser._id, status: 'ACTIVE' }, 'name employeeId');
 
-            // Calculate Manager KPI metrics
+            // Calculate Manager KPI metrics strictly scoped to branch
             const allBranchRequests = await QuotationRequest.find(sessionUser.role === 'SUPER_ADMIN' ? {} : {
                 $or: [{ assignedManager: sessionUser._id }, { branch: sessionUser.branchId }]
             });
 
-            const allBranchQuotes = await Quotation.find(sessionUser.role === 'SUPER_ADMIN' ? {} : {
-                branch: sessionUser.branchId
+            const allBranchQuotes = await Quotation.find(sessionUser.role === 'SUPER_ADMIN' ? { isArchived: { $ne: true } } : {
+                branch: sessionUser.branchId,
+                isArchived: { $ne: true }
             })
                 .populate('preparedBy', 'name employeeId role')
                 .populate('approvedBy', 'name role')
@@ -587,80 +612,92 @@ class QuotationController {
                 });
             }
 
-            // Pre-calculate standard pricing for suggested equipment
-            const kw = request.proposedCapacityKw || 3;
-            const panelCount = Math.ceil((kw * 1000) / 540);
-            const ratePerKw = kw <= 3 ? 58000 : 54000;
-            const estimatedGross = kw * ratePerKw;
-            const initialLineItems = [
-                {
-                    description: `Tier-1 Mono PERC DCR Solar PV Modules (${panelCount} x 540W)`,
-                    sku: 'SES-MOD-540W',
-                    quantity: panelCount,
-                    unit: 'Nos',
-                    unitPrice: 11000,
-                    discount: 0,
-                    taxableAmount: panelCount * 11000,
-                    gstRate: 12,
-                    lineTotal: Number((panelCount * 11000 * 1.12).toFixed(2))
-                },
-                {
-                    description: `${kw} kW On-Grid Dual MPPT Solar Inverter (IP65)`,
-                    sku: 'SES-INV-GRID',
-                    quantity: 1,
-                    unit: 'Set',
-                    unitPrice: kw <= 3 ? 28000 : 42000,
-                    discount: 0,
-                    taxableAmount: kw <= 3 ? 28000 : 42000,
-                    gstRate: 12,
-                    lineTotal: Number(((kw <= 3 ? 28000 : 42000) * 1.12).toFixed(2))
-                },
-                {
-                    description: `HDG Elevated Module Mounting Structure & Electrical BoS Kit`,
-                    sku: 'SES-BOS-STR',
-                    quantity: 1,
-                    unit: 'Set',
-                    unitPrice: kw * 5000,
-                    discount: 0,
-                    taxableAmount: kw * 5000,
-                    gstRate: 12,
-                    lineTotal: Number((kw * 5000 * 1.12).toFixed(2))
-                },
-                {
-                    description: `Turnkey Installation, Testing, Commissioning & Net Metering Liaison`,
-                    sku: 'SES-SRV-EPC',
-                    quantity: 1,
-                    unit: 'Job',
-                    unitPrice: kw * 4000,
-                    discount: 0,
-                    taxableAmount: kw * 4000,
-                    gstRate: 12,
-                    lineTotal: Number((kw * 4000 * 1.12).toFixed(2))
-                }
-            ];
+            // Check if revising an existing quotation (by quotationId query or linkedQuotation)
+            let existingQuotation = null;
+            const quoteId = req.query.quotationId || (request.linkedQuotation ? (request.linkedQuotation._id || request.linkedQuotation) : null);
+            if (quoteId && mongoose.isValidObjectId(quoteId)) {
+                existingQuotation = await Quotation.findById(quoteId).lean();
+            }
+
+            // If existing quotation exists and has line items, load them for revision!
+            const kw = (existingQuotation && existingQuotation.plantCapacityKw) || request.proposedCapacityKw || 3;
+            let initialLineItems = [];
+            if (existingQuotation && existingQuotation.lineItems && existingQuotation.lineItems.length > 0) {
+                initialLineItems = existingQuotation.lineItems;
+            } else {
+                const panelCount = Math.ceil((kw * 1000) / 540);
+                initialLineItems = [
+                    {
+                        description: `Tier-1 Mono PERC DCR Solar PV Modules (${panelCount} x 540W)`,
+                        sku: 'SES-MOD-540W',
+                        quantity: panelCount,
+                        unit: 'Nos',
+                        unitPrice: 11000,
+                        discount: 0,
+                        taxableAmount: panelCount * 11000,
+                        gstRate: 12,
+                        lineTotal: Number((panelCount * 11000 * 1.12).toFixed(2))
+                    },
+                    {
+                        description: `${kw} kW On-Grid Dual MPPT Solar Inverter (IP65)`,
+                        sku: 'SES-INV-GRID',
+                        quantity: 1,
+                        unit: 'Set',
+                        unitPrice: kw <= 3 ? 28000 : 42000,
+                        discount: 0,
+                        taxableAmount: kw <= 3 ? 28000 : 42000,
+                        gstRate: 12,
+                        lineTotal: Number(((kw <= 3 ? 28000 : 42000) * 1.12).toFixed(2))
+                    },
+                    {
+                        description: `HDG Elevated Module Mounting Structure & Electrical BoS Kit`,
+                        sku: 'SES-BOS-STR',
+                        quantity: 1,
+                        unit: 'Set',
+                        unitPrice: kw * 5000,
+                        discount: 0,
+                        taxableAmount: kw * 5000,
+                        gstRate: 12,
+                        lineTotal: Number((kw * 5000 * 1.12).toFixed(2))
+                    },
+                    {
+                        description: `Turnkey Installation, Testing, Commissioning & Net Metering Liaison`,
+                        sku: 'SES-SRV-EPC',
+                        quantity: 1,
+                        unit: 'Job',
+                        unitPrice: kw * 4000,
+                        discount: 0,
+                        taxableAmount: kw * 4000,
+                        gstRate: 12,
+                        lineTotal: Number((kw * 4000 * 1.12).toFixed(2))
+                    }
+                ];
+            }
 
             const previewFinancials = QuotationService.calculateFinancials({
                 lineItems: initialLineItems,
                 plantCapacityKw: kw,
                 customerType: request.customerType,
-                customerState: request.state
+                customerState: request.state,
+                specialDiscount: (existingQuotation && existingQuotation.specialDiscount) || 0
             });
 
             res.render('private/manager/quotation-prepare', {
-                title: `Prepare Quotation for ${request.customerName} | ${companyData.company.name}`,
+                title: `${existingQuotation ? 'Revise' : 'Prepare'} Quotation for ${request.customerName} | ${companyData.company.name}`,
                 company: companyData.company,
                 data: companyData,
                 user: sessionUser,
                 currentUser: sessionUser,
                 request,
+                existingQuotation,
                 initialLineItems,
                 previewFinancials,
                 activePage: 'manager-quotations',
-                pageTitle: 'Quotation Engine & Pricing',
+                pageTitle: existingQuotation ? `Revise Quotation (v${(existingQuotation.version || 1) + 1})` : 'Quotation Engine & Pricing',
                 breadcrumbs: [
                     { label: 'Requests', url: '/manager/quotations' },
                     { label: request.requestNumber, url: `/manager/quotations/${request._id}` },
-                    { label: 'Prepare Quotation' }
+                    { label: existingQuotation ? 'Revise Quotation' : 'Prepare Quotation' }
                 ]
             });
         } catch (err) {
@@ -669,6 +706,118 @@ class QuotationController {
                 title: 'Error | Shivay Energy Solutions',
                 message: 'Error opening quotation preparation builder.'
             });
+        }
+    }
+
+    /**
+     * Edit / Revise an existing quotation directly
+     */
+    static async getEditQuotationPage(req, res) {
+        try {
+            const { id } = req.params;
+            const sessionUser = req.session.user;
+
+            const quotation = await Quotation.findById(id).lean();
+            if (!quotation || quotation.isArchived) {
+                return res.status(404).render('private/errors/403', {
+                    title: 'Not Found | Shivay Energy Solutions',
+                    message: 'Quotation not found or has been archived.'
+                });
+            }
+
+            if (quotation.status === 'CUSTOMER_ACCEPTED') {
+                return res.status(400).render('private/errors/403', {
+                    title: 'Locked Proposal | Shivay Energy Solutions',
+                    message: 'This quotation has already been accepted by the client and cannot be revised. Phase 3 project execution is active.'
+                });
+            }
+
+            // Check Branch Isolation for Managers
+            if (sessionUser.role !== 'SUPER_ADMIN' && quotation.branch && sessionUser.branchId) {
+                if (String(quotation.branch) !== String(sessionUser.branchId._id || sessionUser.branchId)) {
+                    return res.status(403).render('private/errors/403', {
+                        title: 'Forbidden | Shivay Energy Solutions',
+                        message: 'You can only revise quotations belonging to your branch.'
+                    });
+                }
+            }
+
+            // If linked to a QuotationRequest, redirect to prepare page with quotationId param
+            if (quotation.quotationRequestId) {
+                const base = sessionUser.role === 'SUPER_ADMIN' ? '/admin/quotations/prepare/' : '/manager/quotations/prepare/';
+                return res.redirect(`${base}${quotation.quotationRequestId}?quotationId=${quotation._id}`);
+            }
+
+            // Standalone quotation mock request for the prepare builder
+            const mockRequest = {
+                _id: null,
+                requestNumber: quotation.quotationNumber,
+                customerName: quotation.customerName,
+                customerMobile: quotation.customerMobile,
+                siteAddress: quotation.customerAddress,
+                city: quotation.city || 'Raisen',
+                district: quotation.district || 'Raisen',
+                state: quotation.state || 'Madhya Pradesh',
+                pincode: quotation.pincode || '',
+                consumerNumber: quotation.consumerNumber || '',
+                discom: quotation.discom || 'MPPKVVCL',
+                customerType: 'RESIDENTIAL',
+                proposedCapacityKw: quotation.plantCapacityKw,
+                systemType: quotation.systemType || 'ON_GRID',
+                linkedQuotation: quotation._id
+            };
+
+            const previewFinancials = QuotationService.calculateFinancials({
+                lineItems: quotation.lineItems,
+                plantCapacityKw: quotation.plantCapacityKw,
+                customerType: 'RESIDENTIAL',
+                customerState: quotation.state || 'Madhya Pradesh',
+                specialDiscount: quotation.specialDiscount || 0
+            });
+
+            res.render('private/manager/quotation-prepare', {
+                title: `Revise Quotation ${quotation.quotationNumber} | ${companyData.company.name}`,
+                company: companyData.company,
+                data: companyData,
+                user: sessionUser,
+                currentUser: sessionUser,
+                request: mockRequest,
+                existingQuotation: quotation,
+                initialLineItems: quotation.lineItems,
+                previewFinancials,
+                activePage: sessionUser.role === 'SUPER_ADMIN' ? 'quotations' : 'manager-quotations',
+                pageTitle: `Revise Quotation ${quotation.quotationNumber} (v${(quotation.version || 1) + 1})`,
+                breadcrumbs: [
+                    { label: 'Quotations', url: sessionUser.role === 'SUPER_ADMIN' ? '/admin/quotations' : '/manager/quotations' },
+                    { label: quotation.quotationNumber, url: `${sessionUser.role === 'SUPER_ADMIN' ? '/admin/quotations/' : '/manager/quotations/'}${quotation._id}` },
+                    { label: 'Revise' }
+                ]
+            });
+        } catch (err) {
+            console.error('Edit quotation page error:', err);
+            res.status(500).render('private/errors/403', {
+                title: 'Error | Shivay Energy Solutions',
+                message: 'Unable to open quotation revision page.'
+            });
+        }
+    }
+
+    /**
+     * Archive a quotation (Soft-archive only - strict deletion prohibition)
+     */
+    static async postArchiveQuotation(req, res) {
+        try {
+            const { id } = req.params;
+            const sessionUser = req.session.user;
+            const archived = await QuotationService.archiveQuotation(id, sessionUser);
+            return res.json({
+                success: true,
+                message: `Quotation ${archived.quotationNumber} archived successfully. Records are safely preserved in the database.`,
+                quotation: archived
+            });
+        } catch (err) {
+            console.error('Archive Quotation Error:', err);
+            return res.status(400).json({ success: false, message: err.message || 'Error archiving quotation.' });
         }
     }
 
@@ -903,35 +1052,95 @@ class QuotationController {
     }
 
     /**
-     * Secure File Attachment Serving (Cloudinary CDN or Local Storage)
+     * Secure File Attachment Serving with Object-Level Authorization & Signed URLs
      */
     static async serveAttachment(req, res) {
         try {
-            const { filename } = req.params;
-            const fileId = filename || req.params.fileId;
-
-            // Redirect to secure Cloudinary CDN asset URL
-            if (mongoose.connection.readyState === 1 && fileId) {
-                const QuotationRequest = require('../models/QuotationRequest');
-                const reqDoc = await QuotationRequest.findOne({
-                    $or: [
-                        { 'attachments.fileId': fileId },
-                        { 'attachments.filename': fileId },
-                        { 'attachments.path': new RegExp(fileId, 'i') }
-                    ]
+            const sessionUser = req.session ? req.session.user : null;
+            if (!sessionUser) {
+                return res.status(401).render('private/errors/403', {
+                    title: 'Authentication Required',
+                    message: 'Please sign in to access confidential attachment documents.'
                 });
-                if (reqDoc) {
-                    const att = reqDoc.attachments.find(a => a.fileId === fileId || a.filename === fileId || (a.path && a.path.includes(fileId)));
-                    if (att && (att.cloudinaryUrl || (att.path && att.path.startsWith('http')))) {
-                        return res.redirect(att.cloudinaryUrl || att.path);
-                    }
-                }
             }
 
-            return res.status(404).send('Attachment not found or expired in cloud storage.');
+            const { filename } = req.params;
+            const fileId = filename || req.params.fileId;
+            const cleanFileId = typeof fileId === 'string' ? fileId.trim() : '';
+
+            if (!cleanFileId) {
+                return res.status(400).send('Attachment identifier is required.');
+            }
+
+            let reqDoc = null;
+            const QuotationRequest = require('../models/QuotationRequest');
+
+            if (mongoose.connection.readyState === 1) {
+                reqDoc = await QuotationRequest.findOne({
+                    $or: [
+                        { 'attachments.fileId': cleanFileId },
+                        { 'attachments.filename': cleanFileId },
+                        { 'attachments.path': new RegExp(cleanFileId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+                    ]
+                });
+            } else if (QuotationRequest && typeof QuotationRequest.findOne === 'function') {
+                reqDoc = await QuotationRequest.findOne({
+                    $or: [
+                        { 'attachments.fileId': cleanFileId },
+                        { 'attachments.filename': cleanFileId }
+                    ]
+                });
+            }
+
+            if (reqDoc) {
+                    // Object-Level Authorization Check
+                    if (sessionUser.role === 'EMPLOYEE') {
+                        const isAssigned = reqDoc.assignedEmployee && String(reqDoc.assignedEmployee._id || reqDoc.assignedEmployee) === String(sessionUser._id);
+                        const isCreator = reqDoc.createdBy && String(reqDoc.createdBy._id || reqDoc.createdBy) === String(sessionUser._id);
+
+                        if (!isAssigned && !isCreator) {
+                            AuditService.log({
+                                action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                                user: sessionUser._id,
+                                role: sessionUser.role,
+                                targetResource: `/attachments/${cleanFileId}`,
+                                details: { reason: 'Employee attempted to download attachment of another staff member\'s request', requestId: reqDoc._id }
+                            });
+                            return res.status(403).render('private/errors/403', {
+                                title: 'Access Denied | Shivay Energy Solutions',
+                                message: 'HTTP 403 Forbidden: You do not possess permission to access attachments from another staff member\'s quotation request.',
+                                currentUser: sessionUser
+                            });
+                        }
+                    }
+
+                    const att = reqDoc.attachments.find(a =>
+                        a.fileId === cleanFileId ||
+                        a.filename === cleanFileId ||
+                        (a.path && a.path.includes(cleanFileId))
+                    );
+
+                    if (att) {
+                        const { generateSignedAssetUrl } = require('../config/cloudinary');
+                        const isImage = att.mimeType && att.mimeType.startsWith('image/');
+                        const signedUrl = att.cloudinaryPublicId
+                            ? generateSignedAssetUrl(att.cloudinaryPublicId, { resourceType: isImage ? 'image' : 'raw' })
+                            : (att.cloudinaryUrl || att.path);
+
+                        if (signedUrl) {
+                            return res.redirect(signedUrl);
+                        }
+                    }
+                }
+
+            return res.status(404).render('public-site/404', {
+                title: 'Attachment Not Found',
+                message: 'The requested document attachment could not be located in secure cloud storage.',
+                company: companyData.company
+            });
         } catch (err) {
             console.error('Serve Attachment Error:', err);
-            res.status(500).send('Error serving file.');
+            return res.status(500).send('Error serving file.');
         }
     }
 
@@ -1019,23 +1228,48 @@ class QuotationController {
     static async getAdminQuotations(req, res) {
         try {
             const sessionUser = req.session.user;
-            const statusFilter = req.query.status || 'ALL';
-            const search = req.query.search ? req.query.search.trim() : '';
-            const page = Math.max(1, parseInt(req.query.page) || 1);
+            const VALID_QUOTATION_STATUSES = new Set([
+                'ALL', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED',
+                'SHARED', 'CUSTOMER_ACCEPTED', 'CUSTOMER_REJECTED', 'EXPIRED', 'SUPERSEDED'
+            ]);
+            const rawStatus = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+            const statusFilter = VALID_QUOTATION_STATUSES.has(rawStatus) ? rawStatus : 'ALL';
+
+            const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
+            const cleanSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const page = Math.max(1, Math.min(1000, parseInt(req.query.page, 10) || 1));
             const limit = 20;
             const skip = (page - 1) * limit;
 
-            const query = {};
+            const conditions = [{ isArchived: { $ne: true } }];
+            if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
+                if (sessionUser.branchId) {
+                    conditions.push({
+                        $or: [
+                            { branch: sessionUser.branchId },
+                            { preparedBy: sessionUser._id }
+                        ]
+                    });
+                } else {
+                    conditions.push({ preparedBy: sessionUser._id });
+                }
+            }
+
             if (statusFilter !== 'ALL') {
-                query.status = statusFilter;
+                conditions.push({ status: statusFilter });
             }
-            if (search) {
-                query.$or = [
-                    { quotationNumber: { $regex: search, $options: 'i' } },
-                    { customerName: { $regex: search, $options: 'i' } },
-                    { customerMobile: { $regex: search, $options: 'i' } }
-                ];
+            if (cleanSearch) {
+                conditions.push({
+                    $or: [
+                        { quotationNumber: { $regex: cleanSearch, $options: 'i' } },
+                        { customerName: { $regex: cleanSearch, $options: 'i' } },
+                        { customerMobile: { $regex: cleanSearch, $options: 'i' } }
+                    ]
+                });
             }
+
+            const query = conditions.length > 1 ? { $and: conditions } : (conditions[0] || {});
 
             const total = await Quotation.countDocuments(query);
             const quotations = await Quotation.find(query)
@@ -1048,13 +1282,43 @@ class QuotationController {
                 .skip(skip)
                 .limit(limit);
 
-            const allQuotes = await Quotation.find({})
+            const allQuotesConditions = [{ isArchived: { $ne: true } }];
+            if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
+                if (sessionUser.branchId) {
+                    allQuotesConditions.push({
+                        $or: [
+                            { branch: sessionUser.branchId },
+                            { preparedBy: sessionUser._id }
+                        ]
+                    });
+                } else {
+                    allQuotesConditions.push({ preparedBy: sessionUser._id });
+                }
+            }
+            const allQuotesQuery = allQuotesConditions.length > 1 ? { $and: allQuotesConditions } : allQuotesConditions[0];
+
+            const allQuotes = await Quotation.find(allQuotesQuery)
                 .populate('preparedBy', 'name employeeId role')
                 .populate('approvedBy', 'name role')
                 .populate('assignedEmployee', 'name employeeId role')
                 .populate({ path: 'quotationRequestId', select: 'requestNumber assignedEmployee', populate: { path: 'assignedEmployee', select: 'name employeeId' } });
 
-            const allRequests = await QuotationRequest.find({})
+            const reqConditions = [];
+            if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
+                if (sessionUser.branchId) {
+                    reqConditions.push({
+                        $or: [
+                            { branch: sessionUser.branchId },
+                            { assignedManager: sessionUser._id }
+                        ]
+                    });
+                } else {
+                    reqConditions.push({ assignedManager: sessionUser._id });
+                }
+            }
+            const reqQuery = reqConditions.length > 0 ? (reqConditions.length > 1 ? { $and: reqConditions } : reqConditions[0]) : {};
+
+            const allRequests = await QuotationRequest.find(reqQuery)
                 .populate('customer', 'name mobile city')
                 .populate('assignedEmployee', 'name employeeId mobile')
                 .populate('linkedQuotation')

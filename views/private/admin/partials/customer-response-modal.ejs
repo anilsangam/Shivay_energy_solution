@@ -1,10 +1,10 @@
-<!-- Reusable Modal: Record Customer Decision (Accepted / Rejected) -->
+<!-- Reusable Modal: Quotation Actions & Client Decision -->
 <div class="modal fade" id="customerResponseModal" tabindex="-1" aria-labelledby="custResponseLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
             <div class="modal-header text-white" style="background: linear-gradient(135deg, var(--admin-navy-primary, #0f172a), #1e3a8a); padding: 14px 18px;">
                 <h6 class="modal-title font-weight-bold mb-0" id="custResponseLabel">
-                    <i class="icofont-ui-user me-2 text-warning"></i> Record Client Decision
+                    <i class="icofont-navigation-menu me-2 text-warning"></i> Quotation Actions & Client Decision
                 </h6>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -20,8 +20,25 @@
                         </div>
                     </div>
 
+                    <!-- Direct Revision Action Button (Available until Client Accepted) -->
+                    <div id="modalRevisionBox" class="p-3 rounded-3 border mb-3" style="background: #fffbeb; border-color: #fde68a !important;">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div>
+                                <strong class="text-dark d-block" style="font-size: 13.5px;">
+                                    <i class="icofont-edit text-warning me-1"></i> Revise This Quotation
+                                </strong>
+                                <small class="text-muted" style="font-size: 11px;">
+                                    Adjust line items, plant capacity, or discounts before final client acceptance.
+                                </small>
+                            </div>
+                            <a href="#" id="modalReviseBtn" class="btn btn-sm btn-warning fw-bold px-3 shadow-sm text-dark">
+                                <i class="icofont-edit me-1"></i> Revise / Edit
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label class="form-label small font-weight-bold text-dark">Client Decision *</label>
+                        <label class="form-label small font-weight-bold text-dark">Record Client Decision *</label>
                         <select id="modalResponseStatus" class="form-select" required style="height: 40px; border-radius: 8px;">
                             <option value="ACCEPTED" selected>Client ACCEPTED Proposal (Ready for Project)</option>
                             <option value="REJECTED">Client REJECTED / Declined Proposal</option>
@@ -45,11 +62,27 @@
 </div>
 
 <script>
-function openCustomerResponseModal(quoteId, quoteNum) {
+function openCustomerResponseModal(quoteId, quoteNum, status = '', reqId = '') {
     const idInput = document.getElementById('modalQuoteId');
     const numDisplay = document.getElementById('modalQuoteNum');
     if (idInput) idInput.value = quoteId;
     if (numDisplay) numDisplay.innerText = quoteNum;
+
+    // Configure Revision Button
+    const reviseBox = document.getElementById('modalRevisionBox');
+    const reviseBtn = document.getElementById('modalReviseBtn');
+    if (reviseBox && reviseBtn) {
+        if (status === 'CUSTOMER_ACCEPTED') {
+            reviseBox.style.display = 'none';
+        } else {
+            reviseBox.style.display = 'block';
+            const isAdmin = window.location.pathname.startsWith('/admin');
+            const targetUrl = isAdmin
+                ? (reqId ? `/admin/quotations/prepare/${reqId}?quotationId=${quoteId}` : `/admin/quotations/${quoteId}/edit`)
+                : (reqId ? `/manager/quotations/prepare/${reqId}?quotationId=${quoteId}` : `/manager/quotations/${quoteId}/edit`);
+            reviseBtn.href = targetUrl;
+        }
+    }
 
     const modalEl = document.getElementById('customerResponseModal');
     if (modalEl) {

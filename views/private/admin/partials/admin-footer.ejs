@@ -72,7 +72,7 @@
 
             // 3. Native Bootstrap-Compatible Tabs Navigation
             document.addEventListener('click', function(e) {
-                const tabBtn = e.target.closest('[data-bs-toggle="tab"]');
+                const tabBtn = e.target.closest('[data-bs-toggle="tab"], [data-bs-toggle="pill"]');
                 if (!tabBtn) return;
                 e.preventDefault();
 
@@ -82,9 +82,9 @@
                 if (!targetPane) return;
 
                 // Deactivate sibling tabs in this tab list
-                const nav = tabBtn.closest('.nav') || tabBtn.closest('.workspace-tabs') || (tabBtn.parentElement && tabBtn.parentElement.parentElement);
+                const nav = tabBtn.closest('.nav') || tabBtn.closest('.workspace-tabs') || tabBtn.closest('.nav-pills') || (tabBtn.parentElement && tabBtn.parentElement.parentElement);
                 if (nav) {
-                    nav.querySelectorAll('[data-bs-toggle="tab"]').forEach(btn => {
+                    nav.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"]').forEach(btn => {
                         btn.classList.remove('active');
                         btn.setAttribute('aria-selected', 'false');
                     });
@@ -93,7 +93,7 @@
                 tabBtn.setAttribute('aria-selected', 'true');
 
                 // Switch tab-pane
-                const tabContent = targetPane.closest('.tab-content') || document.querySelector('#projectTabContent');
+                const tabContent = targetPane.closest('.tab-content') || document.querySelector('#projectTabContent') || document.querySelector('#settingsTabContent');
                 if (tabContent) {
                     tabContent.querySelectorAll('.tab-pane').forEach(pane => {
                         pane.classList.remove('show', 'active');

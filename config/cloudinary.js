@@ -51,9 +51,44 @@ function uploadBufferToCloudinary(buffer, options = {}) {
     });
 }
 
+/**
+ * Generate a short-lived signed delivery / download URL for a Cloudinary asset
+ * @param {string} publicId - Cloudinary asset public_id
+ * @param {Object} options - Options { resourceType, format, expiresIn, type }
+ * @returns {string|null} Signed URL or null if credentials missing
+ */
+function generateSignedAssetUrl(publicId, options = {}) {
+    if (!isConfigured || !publicId) return null;
+    const expiresIn = options.expiresIn || 300; // 5 minutes default validity
+    const expiresAt = Math.floor(Date.now() / 1000) + expiresIn;
+    const resourceType = options.resourceType || 'image';
+    const deliveryType = options.type || 'upload';
+
+    try {
+        if (deliveryType === 'authenticated') {
+            return cloudinary.utils.private_download_url(publicId, options.format || '', {
+                resource_type: resourceType,
+                type: 'authenticated',
+                expires_at: expiresAt
+            });
+        }
+        return cloudinary.url(publicId, {
+            secure: true,
+            resource_type: resourceType,
+            type: deliveryType,
+            sign_url: true,
+            expires_at: expiresAt
+        });
+    } catch (e) {
+        console.warn('Failed to generate Cloudinary signed URL:', e.message);
+        return null;
+    }
+}
+
 module.exports = {
     cloudinary,
     isConfigured,
     CLOUDINARY_FOLDER,
-    uploadBufferToCloudinary
+    uploadBufferToCloudinary,
+    generateSignedAssetUrl
 };

@@ -8,7 +8,10 @@
     <div class="admin-error-actions">
         <a href="/" class="btn btn-outline-secondary">Public website</a>
         <% if (typeof currentUser !== 'undefined' && currentUser) { %>
-            <a href="/auth/logout" class="btn btn-danger">Sign out</a>
+            <form action="/logout" method="POST" style="display: inline;">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <button type="submit" class="btn btn-danger">Sign out</button>
+            </form>
         <% } else { %>
             <a href="/admin/login" class="btn btn-primary">Portal sign in</a>
         <% } %>

@@ -539,7 +539,7 @@
                                     </a>
 
                                     <% if (['APPROVED', 'SHARED', 'CUSTOMER_ACCEPTED'].includes(q.status)) { %>
-                                        <button type="button" class="btn btn-share" onclick='openShareQuotationModal(<%- JSON.stringify({
+                                        <button type="button" class="btn btn-share btn-open-share-modal" data-quote="<%= JSON.stringify({
                                             id: q._id,
                                             quotationNumber: q.quotationNumber,
                                             customerName: q.customerName,
@@ -550,7 +550,7 @@
                                             subsidy: q.estimatedSubsidy,
                                             netPayable: q.netPayableAfterSubsidy,
                                             token: q.customerResponse ? q.customerResponse.acceptanceToken : ""
-                                        }) %>)' title="Share via WhatsApp & Copy Link">
+                                        }) %>" title="Share via WhatsApp & Copy Link">
                                             <i class="icofont-share"></i> Share
                                         </button>
                                     <% } else { %>
@@ -569,14 +569,20 @@
                                             <i class="icofont-check-circled"></i> Approve
                                         </button>
                                     <% } else if (q.status === 'APPROVED' || q.status === 'SHARED') { %>
-                                        <button type="button" class="btn btn-outline-success" onclick="openCustomerResponseModal('<%= q._id %>', '<%= q.quotationNumber %>')" title="Record Client Decision / Mark Accepted">
-                                            <i class="icofont-check-circled"></i> Decision
+                                        <button type="button" class="btn btn-outline-primary fw-bold" onclick="openCustomerResponseModal('<%= q._id %>', '<%= q.quotationNumber %>', '<%= q.status %>', '<%= (q.quotationRequestId && (q.quotationRequestId._id || q.quotationRequestId)) || '' %>')" title="Actions, Revision & Client Decision">
+                                            <i class="icofont-navigation-menu"></i> Actions
                                         </button>
+                                        <a href="/manager/quotations/<%= q._id %>/edit" class="btn btn-outline-warning" title="Revise Quotation Details & Pricing">
+                                            <i class="icofont-edit"></i> Revise
+                                        </a>
                                     <% } else if (q.status === 'CUSTOMER_ACCEPTED') { %>
-                                        <span class="action-pill-badge bg-success-subtle text-success border border-success-subtle" title="Customer Accepted">
+                                        <span class="action-pill-badge bg-success-subtle text-success border border-success-subtle" title="Customer Accepted - Project Active">
                                             <i class="icofont-check"></i> Accepted
                                         </span>
                                     <% } else if (q.status === 'CUSTOMER_REJECTED') { %>
+                                        <button type="button" class="btn btn-outline-warning" onclick="openCustomerResponseModal('<%= q._id %>', '<%= q.quotationNumber %>', '<%= q.status %>', '<%= (q.quotationRequestId && (q.quotationRequestId._id || q.quotationRequestId)) || '' %>')" title="Revise Declined Quotation">
+                                            <i class="icofont-edit"></i> Revise
+                                        </button>
                                         <span class="action-pill-badge bg-danger-subtle text-danger border border-danger-subtle" title="Customer Declined">
                                             <i class="icofont-close"></i> Declined
                                         </span>

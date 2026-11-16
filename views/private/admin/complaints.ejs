@@ -1,0 +1,296 @@
+<%- include('partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="complaintToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="complaintToastMsg">Complaint ticket updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('complaintToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-tools-alt-2 me-2 text-warning"></i> Solar Service & Customer Complaints Console
+        </h2>
+        <p class="text-muted small mb-0">
+            Track customer technical issues, inverter fault codes, generation drop, and assign field engineers for service.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/complaints" target="_blank" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> Public Complaint Portal
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Complaints</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= counts.total %></div>
+            <div class="small text-muted mt-1">All recorded service tickets</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Submitted / Pending</span>
+            <div class="h3 font-weight-bold text-danger mb-0 mt-1"><%= counts.submitted %></div>
+            <div class="small text-danger mt-1"><i class="icofont-clock-time me-1"></i>Awaiting engineer action</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">In Progress</span>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= counts.in_progress %></div>
+            <div class="small text-warning mt-1"><i class="icofont-wrench me-1"></i>Technician on-site</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Resolved & Closed</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= counts.resolved %></div>
+            <div class="small text-success mt-1"><i class="icofont-check-circled me-1"></i>Customer satisfied</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="bg-white border rounded-3 p-3 shadow-sm mb-4">
+    <form method="GET" action="/admin/complaints" class="row g-2 align-items-center">
+        <div class="col-12 col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" name="search" placeholder="Search ticket #, customer name, mobile..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="submitted" <%= currentStatus === 'submitted' ? 'selected' : '' %>>Submitted (Pending)</option>
+                <option value="in_progress" <%= currentStatus === 'in_progress' ? 'selected' : '' %>>In Progress</option>
+                <option value="resolved" <%= currentStatus === 'resolved' ? 'selected' : '' %>>Resolved</option>
+                <option value="closed" <%= currentStatus === 'closed' ? 'selected' : '' %>>Closed</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 font-weight-bold" style="background: var(--admin-navy-primary);">
+                Filter
+            </button>
+            <a href="/admin/complaints" class="btn btn-outline-secondary" title="Clear Filters">
+                <i class="icofont-refresh"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Complaints Table -->
+<div class="admin-card border shadow-sm bg-white rounded-3 mb-4">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="font-weight-bold text-dark mb-0" style="font-size: 16px;">
+            <i class="icofont-list me-2 text-primary"></i> Service Tickets Directory
+        </h5>
+        <span class="badge bg-light text-dark border font-monospace"><%= complaints.length %> tickets found</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="table-light">
+                <tr>
+                    <th style="padding: 12px 16px;">TICKET ID</th>
+                    <th>CUSTOMER</th>
+                    <th>CONTACT</th>
+                    <th>CATEGORY</th>
+                    <th>DESCRIPTION</th>
+                    <th>ASSIGNED ENGINEER</th>
+                    <th>STATUS</th>
+                    <th class="text-end" style="padding-right: 16px;">ACTION</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (complaints && complaints.length > 0) { %>
+                    <% complaints.forEach(c => { %>
+                        <tr>
+                            <td style="padding: 12px 16px;">
+                                <strong class="font-monospace text-primary fw-bold"><%= c.ticketId %></strong>
+                                <small class="text-muted d-block" style="font-size: 10.5px;">
+                                    <%= c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : '' %>
+                                </small>
+                            </td>
+                            <td>
+                                <strong class="text-dark d-block"><%= c.customerName %></strong>
+                                <% if (c.systemCapacity) { %>
+                                    <span class="badge bg-light text-dark border" style="font-size: 10.5px;"><%= c.systemCapacity %> kW Plant</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <a href="tel:<%= c.mobile %>" class="text-dark fw-bold text-decoration-none font-monospace">
+                                    <i class="icofont-phone text-success me-1"></i><%= c.mobile %>
+                                </a>
+                                <% if (c.email) { %>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 140px;"><%= c.email %></small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-primary border" style="font-size: 11px;">
+                                    <%= (c.category || 'general_service').replace(/_/g, ' ').toUpperCase() %>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 220px;" title="<%= c.description %>">
+                                    <%= c.description %>
+                                </div>
+                                <% if (c.resolutionNotes) { %>
+                                    <small class="text-success d-block text-truncate" style="max-width: 220px;" title="<%= c.resolutionNotes %>">
+                                        <i class="icofont-check me-1"></i><%= c.resolutionNotes %>
+                                    </small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (c.assignedEngineer && c.assignedEngineer.name) { %>
+                                    <strong class="text-dark d-block" style="font-size: 12px;"><%= c.assignedEngineer.name %></strong>
+                                    <small class="text-muted font-monospace"><%= c.assignedEngineer.employeeId %></small>
+                                <% } else { %>
+                                    <span class="text-muted small fst-italic">Unassigned</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (c.status === 'resolved' || c.status === 'closed') { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">RESOLVED</span>
+                                <% } else if (c.status === 'in_progress' || c.status === 'assigned') { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">IN PROGRESS</span>
+                                <% } else { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">SUBMITTED</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end" style="padding-right: 16px;">
+                                <button class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 4px 9px; border-radius: 6px;"
+                                    onclick="openUpdateModal('<%= c.ticketId %>', '<%= c.status %>', '<%= (c.resolutionNotes || '').replace(/'/g, '\\\'') %>', '<%= (c.assignedEngineer && c.assignedEngineer._id) ? c.assignedEngineer._id : '' %>')">
+                                    <i class="icofont-edit me-1"></i> Update
+                                </button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="icofont-ui-folder fs-1 d-block mb-2 text-muted"></i>
+                            <h6 class="fw-bold mb-1">No complaint tickets found</h6>
+                            <p class="small text-muted mb-0">Customer service requests submitted via the portal will appear here.</p>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Update Complaint Status -->
+<div class="modal fade" id="updateComplaintModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold text-dark" style="font-size: 16px;">
+                    <i class="icofont-tools text-warning me-2"></i> Update Service Ticket <span id="modalTicketId" class="text-primary font-monospace"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="updateComplaintForm" onsubmit="event.preventDefault(); submitComplaintUpdate();">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="complaintTicketId">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Ticket Status *</label>
+                        <select class="form-select" id="complaintStatus" required>
+                            <option value="submitted">Submitted (New / Pending)</option>
+                            <option value="assigned">Assigned to Field Engineer</option>
+                            <option value="in_progress">In Progress (Engineer On-Site)</option>
+                            <option value="waiting_for_parts">Waiting for Inverter / Spare Parts</option>
+                            <option value="resolved">Resolved (Issue Fixed)</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Assign Field Engineer / Technician</label>
+                        <select class="form-select" id="complaintEngineer">
+                            <option value="">-- Select Field Staff --</option>
+                            <% if (typeof engineers !== 'undefined' && engineers && engineers.length > 0) { %>
+                                <% engineers.forEach(eng => { %>
+                                    <option value="<%= eng._id %>"><%= eng.name %> (<%= eng.employeeId %> - <%= eng.designation || 'Technician' %>)</option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Resolution Notes / Action Taken</label>
+                        <textarea class="form-control" id="complaintNotes" rows="3" placeholder="Enter inspection findings, component replacements, inverter error code cleared, etc."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold" style="background: var(--admin-navy-primary);">
+                        Save Ticket Updates
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+function openUpdateModal(ticketId, status, notes, engineerId) {
+    document.getElementById('complaintTicketId').value = ticketId;
+    document.getElementById('modalTicketId').innerText = ticketId;
+    document.getElementById('complaintStatus').value = status || 'submitted';
+    document.getElementById('complaintNotes').value = notes || '';
+    if (document.getElementById('complaintEngineer')) {
+        document.getElementById('complaintEngineer').value = engineerId || '';
+    }
+    const modal = new bootstrap.Modal(document.getElementById('updateComplaintModal'));
+    modal.show();
+}
+
+async function submitComplaintUpdate() {
+    const ticketId = document.getElementById('complaintTicketId').value;
+    const status = document.getElementById('complaintStatus').value;
+    const resolutionNotes = document.getElementById('complaintNotes').value;
+    const assignedEngineer = document.getElementById('complaintEngineer') ? document.getElementById('complaintEngineer').value : '';
+
+    try {
+        const res = await fetch('/api/admin/complaints/status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({
+                ticketId,
+                status,
+                resolutionNotes,
+                assignedEngineer,
+                _csrf: CSRF_TOKEN
+            })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('updateComplaintModal')).hide();
+            const toast = document.getElementById('complaintToast');
+            const toastMsg = document.getElementById('complaintToastMsg');
+            toastMsg.innerText = data.message || 'Ticket updated.';
+            toast.classList.remove('d-none');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            alert(data.message || 'Error updating complaint.');
+        }
+    } catch (err) {
+        alert('Server connection error.');
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

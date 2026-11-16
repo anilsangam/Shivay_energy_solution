@@ -83,7 +83,7 @@
                                     <a href="/calculator#solar-calculator" class="btn-main btn-line fx-slide hover-white navbar-quote-btn"><span>Solar Calculator</span></a>
                                     <a href="/contact#enquiry-form" class="btn-main btn-line fx-slide hover-white ms-2 navbar-enquiry-btn"><span>Enquiry</span></a>
 
-                                    <span id="menu-btn"></span>
+                                    <button id="menu-btn" type="button" aria-label="Open navigation menu" aria-controls="mainmenu" aria-expanded="false"></button>
                                 </div>
                             </div>
                         </div>
@@ -140,4 +140,39 @@
                 }
             }
         </style>
+        <script>
+            (() => {
+                const header = document.querySelector('header.site-header-fixed');
+                const menuButton = header && header.querySelector('#menu-btn');
+                const menu = header && header.querySelector('#mainmenu');
+
+                if (!header || !menuButton || !menu) return;
+
+                const setMenuOpen = (isOpen) => {
+                    header.classList.toggle('menu-open', isOpen);
+                    menuButton.classList.toggle('menu-open', isOpen);
+                    menuButton.setAttribute('aria-expanded', String(isOpen));
+                    menuButton.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+                };
+
+                menuButton.addEventListener('click', () => {
+                    setMenuOpen(!header.classList.contains('menu-open'));
+                });
+
+                menu.addEventListener('click', (event) => {
+                    if (event.target.closest('a')) setMenuOpen(false);
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape' && header.classList.contains('menu-open')) {
+                        setMenuOpen(false);
+                        menuButton.focus();
+                    }
+                });
+
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 999) setMenuOpen(false);
+                });
+            })();
+        </script>
         <!-- header end -->

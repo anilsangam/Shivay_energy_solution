@@ -28,12 +28,14 @@ router.post('/manager/quotations/new', requireAuth, requireBranchManager, verify
 router.get(['/manager/quotations/request/:id', '/manager/quotations/requests/:id'], requireAuth, requireBranchManager, validateObjectId('id'), quotationController.getRequestDetails);
 router.post(['/manager/quotations/request/:id/status', '/manager/quotations/requests/:id/status'], requireAuth, requireBranchManager, verifyCsrf, validateObjectId('id'), quotationController.postUpdateRequestStatus);
 router.get('/manager/quotations/prepare/:requestId', requireAuth, requireBranchManager, validateObjectId('requestId'), quotationController.getPrepareQuotationPage);
-router.post('/manager/quotations/preview-financials', requireAuth, requireBranchManager, quotationController.previewFinancials);
+router.post('/manager/quotations/preview-financials', requireAuth, requireBranchManager, verifyCsrf, quotationController.previewFinancials);
 router.post('/manager/quotations/save-prepared', requireAuth, requireBranchManager, verifyCsrf, quotationController.postSavePreparedQuotation);
 router.get('/manager/quotations/:id', requireAuth, requireBranchManager, validateObjectId('id'), quotationController.getQuotationDetails);
+router.get('/manager/quotations/:id/edit', requireAuth, requireBranchManager, validateObjectId('id'), quotationController.getEditQuotationPage);
 router.get('/manager/quotations/:id/document', requireAuth, requireBranchManager, validateObjectId('id'), quotationController.getQuotationDocument);
 router.post('/manager/quotations/:id/approve', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('id'), quotationController.postApproveQuotation);
 router.post('/manager/quotations/:id/reject', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('id'), quotationController.postRejectQuotation);
+router.post('/manager/quotations/:id/archive', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('id'), quotationController.postArchiveQuotation);
 
 // Phase 3: Branch Project Execution & Commissioning
 router.get('/manager/projects', requireAuth, requireBranchManager, projectController.getProjectsPage);

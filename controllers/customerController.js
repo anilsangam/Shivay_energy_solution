@@ -56,6 +56,37 @@ class CustomerController {
                         message: `Customer is already registered and assigned to ${customer.assignedEmployee.name || 'another staff member'}.`
                     });
                 }
+            } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER') {
+                const managerBranchStr = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId).toString() : '';
+                const customerBranchStr = customer.assignedBranch ? (customer.assignedBranch._id || customer.assignedBranch).toString() : '';
+
+                let isMyJurisdiction = false;
+                if (managerBranchStr && customerBranchStr && managerBranchStr === customerBranchStr) {
+                    isMyJurisdiction = true;
+                }
+                if (!isMyJurisdiction && customer.assignedEmployee) {
+                    const empId = customer.assignedEmployee._id || customer.assignedEmployee;
+                    if (String(empId) === String(currentUser._id)) {
+                        isMyJurisdiction = true;
+                    } else if (mongoose.connection && mongoose.connection.readyState === 1) {
+                        try {
+                            const emp = await User.findById(empId).select('managerId branchId');
+                            if (emp && (String(emp.managerId) === String(currentUser._id) || (managerBranchStr && String(emp.branchId) === managerBranchStr))) {
+                                isMyJurisdiction = true;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // If customer belongs to a different branch, restrict cross-branch visibility
+                if (!isMyJurisdiction && customerBranchStr) {
+                    return res.json({
+                        success: true,
+                        found: true,
+                        restricted: true,
+                        message: 'Customer belongs to another branch/manager. Cross-branch access is restricted.'
+                    });
+                }
             }
 
             return res.json({
@@ -120,10 +151,47 @@ class CustomerController {
             // Check if customer already exists
             let customer = await Customer.findOne({
                 mobile: { $regex: cleanMobile + '$' }
-            });
+            }).populate('assignedEmployee', 'name employeeId mobile email');
 
             if (customer) {
-                // Update non-destructive profile fields if blank
+                // Check requesting user's authorization to access/modify this customer
+                if (currentUser.role === 'EMPLOYEE') {
+                    const isOwner = customer.assignedEmployee && String(customer.assignedEmployee._id || customer.assignedEmployee) === String(currentUser._id);
+                    const isCreator = customer.createdBy && String(customer.createdBy._id || customer.createdBy) === String(currentUser._id);
+                    const isUnassigned = !customer.assignedEmployee;
+
+                    if (!isOwner && !isCreator && !isUnassigned) {
+                        return res.status(403).json({
+                            success: false,
+                            restricted: true,
+                            message: `Customer is already registered and assigned to another staff member. Access restricted.`,
+                            customer: {
+                                _id: customer._id,
+                                name: customer.name,
+                                city: customer.city,
+                                customerType: customer.customerType
+                            }
+                        });
+                    }
+                } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER') {
+                    const managerBranchStr = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId).toString() : '';
+                    const customerBranchStr = customer.assignedBranch ? (customer.assignedBranch._id || customer.assignedBranch).toString() : '';
+                    if (managerBranchStr && customerBranchStr && managerBranchStr !== customerBranchStr) {
+                        return res.status(403).json({
+                            success: false,
+                            restricted: true,
+                            message: `Customer belongs to a different branch. Cross-branch customer modification is restricted.`,
+                            customer: {
+                                _id: customer._id,
+                                name: customer.name,
+                                city: customer.city,
+                                customerType: customer.customerType
+                            }
+                        });
+                    }
+                }
+
+                // Authorized update of non-destructive profile fields if blank
                 if (!customer.consumerNumber && consumerNumber) customer.consumerNumber = consumerNumber.trim();
                 if (!customer.email && email) customer.email = email.trim().toLowerCase();
                 if (!customer.address && address) customer.address = address.trim();
@@ -133,7 +201,22 @@ class CustomerController {
                 return res.json({
                     success: true,
                     existing: true,
-                    customer,
+                    customer: {
+                        _id: customer._id,
+                        name: customer.name,
+                        mobile: customer.mobile,
+                        alternateMobile: customer.alternateMobile || '',
+                        email: customer.email || '',
+                        address: customer.address || '',
+                        city: customer.city || 'Raisen',
+                        district: customer.district || 'Raisen',
+                        state: customer.state || 'Madhya Pradesh',
+                        pincode: customer.pincode || '',
+                        consumerNumber: customer.consumerNumber || '',
+                        discom: customer.discom || 'MPPKVVCL',
+                        customerType: customer.customerType || 'RESIDENTIAL',
+                        status: customer.status || 'ACTIVE'
+                    },
                     message: 'Existing customer record found and verified.'
                 });
             }
@@ -170,7 +253,22 @@ class CustomerController {
             return res.json({
                 success: true,
                 existing: false,
-                customer,
+                customer: {
+                    _id: customer._id,
+                    name: customer.name,
+                    mobile: customer.mobile,
+                    alternateMobile: customer.alternateMobile || '',
+                    email: customer.email || '',
+                    address: customer.address || '',
+                    city: customer.city || 'Raisen',
+                    district: customer.district || 'Raisen',
+                    state: customer.state || 'Madhya Pradesh',
+                    pincode: customer.pincode || '',
+                    consumerNumber: customer.consumerNumber || '',
+                    discom: customer.discom || 'MPPKVVCL',
+                    customerType: customer.customerType || 'RESIDENTIAL',
+                    status: customer.status || 'ACTIVE'
+                },
                 message: 'New customer profile registered successfully.'
             });
         } catch (err) {
@@ -184,28 +282,42 @@ class CustomerController {
      */
     static async getCustomersList(req, res) {
         try {
-            const page = Math.max(1, parseInt(req.query.page) || 1);
+            const page = Math.max(1, Math.min(1000, parseInt(req.query.page, 10) || 1));
             const limit = 15;
             const skip = (page - 1) * limit;
-            const search = req.query.search ? req.query.search.trim() : '';
+            const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 100) : '';
+            const cleanSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-            const filter = {};
-            if (search) {
-                filter.$or = [
-                    { name: { $regex: search, $options: 'i' } },
-                    { mobile: { $regex: search, $options: 'i' } },
-                    { city: { $regex: search, $options: 'i' } },
-                    { consumerNumber: { $regex: search, $options: 'i' } }
-                ];
+            const conditions = [];
+            if (req.session && req.session.user && req.session.user.role !== 'SUPER_ADMIN') {
+                if (req.session.user.branchId) {
+                    conditions.push({ assignedBranch: req.session.user.branchId });
+                }
+            }
+            if (cleanSearch) {
+                conditions.push({
+                    $or: [
+                        { name: { $regex: cleanSearch, $options: 'i' } },
+                        { mobile: { $regex: cleanSearch, $options: 'i' } },
+                        { city: { $regex: cleanSearch, $options: 'i' } },
+                        { consumerNumber: { $regex: cleanSearch, $options: 'i' } }
+                    ]
+                });
             }
 
-            const total = await Customer.countDocuments(filter);
-            const customers = await Customer.find(filter)
-                .populate('assignedEmployee', 'name employeeId mobile')
-                .populate('assignedBranch', 'name code')
-                .sort({ createdAt: -1 })
-                .skip(skip)
-                .limit(limit);
+            const filter = conditions.length > 1 ? { $and: conditions } : (conditions[0] || {});
+
+            let total = 0;
+            let customers = [];
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                total = await Customer.countDocuments(filter);
+                customers = await Customer.find(filter)
+                    .populate('assignedEmployee', 'name employeeId mobile')
+                    .populate('assignedBranch', 'name code')
+                    .sort({ createdAt: -1 })
+                    .skip(skip)
+                    .limit(limit);
+            }
 
             res.render('private/admin/customers', {
                 title: `Customer Management (CRM) | ${companyData.company.name}`,

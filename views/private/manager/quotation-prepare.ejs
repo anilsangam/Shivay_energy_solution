@@ -1,29 +1,45 @@
 <%- include('../admin/partials/admin-head') %>
 
+<% const isRevision = typeof existingQuotation !== 'undefined' && existingQuotation; %>
+
 <!-- Top Header & Back Link -->
 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
     <div>
         <div class="d-flex align-items-center gap-2 mb-1">
             <h2 class="font-weight-bold mb-0" style="color: var(--admin-navy-primary); font-size: 22px;">
-                Prepare Solar Commercial Quotation
+                <%= isRevision ? 'Revise Commercial Quotation' : 'Prepare Solar Commercial Quotation' %>
             </h2>
-            <span class="badge bg-primary px-2 py-1"><%= request.requestNumber %></span>
+            <% if (isRevision) { %>
+                <span class="badge bg-warning text-dark px-2 py-1"><%= existingQuotation.quotationNumber %> (v<%= (existingQuotation.version || 1) + 1 %>)</span>
+            <% } else { %>
+                <span class="badge bg-primary px-2 py-1"><%= request.requestNumber %></span>
+            <% } %>
         </div>
         <p class="text-muted small mb-0">
             Customer: <strong><%= request.customerName %></strong> (<%= request.customerMobile %>) • Branch: Raisen Central (M.P.)
         </p>
     </div>
     <div class="d-flex align-items-center gap-2 mt-3 mt-md-0">
-        <a href="/manager/quotations/request/<%= request._id %>" class="btn btn-sm btn-outline-secondary">
-            <i class="icofont-arrow-left me-1"></i> Back to Request Details
+        <a href="<%= request._id ? '/manager/quotations/request/' + request._id : '/manager/quotations' %>" class="btn btn-sm btn-outline-secondary">
+            <i class="icofont-arrow-left me-1"></i> Back
         </a>
     </div>
 </div>
 
+<% if (isRevision) { %>
+    <div class="alert alert-warning py-2 px-3 small mb-4 shadow-sm" style="border-left: 4px solid #f59e0b; border-radius: 8px;">
+        <i class="icofont-refresh me-1 fw-bold"></i> <strong>Quotation Revision Mode:</strong> You are revising <strong><%= existingQuotation.quotationNumber %></strong>. Saving will update this proposal to version <strong>v<%= (existingQuotation.version || 1) + 1 %></strong> and preserve history without generating duplicate records.
+    </div>
+<% } %>
+
 <form id="quotationPrepareForm">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <input type="hidden" name="requestId" value="<%= request._id %>">
-    <input type="hidden" name="quotationRequestId" value="<%= request._id %>">
+    <% if (isRevision) { %>
+        <input type="hidden" name="quotationId" value="<%= existingQuotation._id %>">
+        <input type="hidden" name="existingQuotationId" value="<%= existingQuotation._id %>">
+    <% } %>
+    <input type="hidden" name="requestId" value="<%= request._id || '' %>">
+    <input type="hidden" name="quotationRequestId" value="<%= request._id || (isRevision ? existingQuotation.quotationRequestId : '') %>">
     <input type="hidden" name="customerId" value="<%= request.customer ? (request.customer._id || request.customer) : '' %>">
     <input type="hidden" name="customerName" value="<%= request.customerName %>">
     <input type="hidden" name="customerMobile" value="<%= request.customerMobile %>">
@@ -53,7 +69,7 @@
                     <div class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">Plant Capacity (kW) *</label>
-                            <input type="number" step="0.5" min="1" max="500" class="form-control" name="plantCapacityKw" id="plantCapacityKw" value="<%= request.proposedCapacityKw %>" required onchange="recalculateTotals()">
+                            <input type="number" step="0.5" min="1" max="500" class="form-control" name="plantCapacityKw" id="plantCapacityKw" value="<%= (typeof existingQuotation !== 'undefined' && existingQuotation && existingQuotation.plantCapacityKw) || request.proposedCapacityKw %>" required onchange="recalculateTotals()">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold">System Configuration *</label>
@@ -216,7 +232,7 @@
                         <label class="form-label small fw-bold d-flex justify-content-between">
                             <span>Special Project Discount (₹):</span>
                         </label>
-                        <input type="number" step="500" min="0" class="form-control form-control-sm" name="specialDiscount" id="specialDiscount" value="0" onchange="recalculateTotals()">
+                        <input type="number" step="500" min="0" class="form-control form-control-sm" name="specialDiscount" id="specialDiscount" value="<%= (typeof existingQuotation !== 'undefined' && existingQuotation && existingQuotation.specialDiscount) || 0 %>" onchange="recalculateTotals()">
                     </div>
 
                     <!-- PM Surya Ghar Govt Subsidy -->
@@ -255,10 +271,10 @@
                     <!-- Actions: Direct Approve OR Save for Later -->
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-success py-2 fw-bold shadow-sm" id="btnApproveQuotation" onclick="submitQuotationForm(true)">
-                            <i class="icofont-check-circled me-1"></i> Approve & Issue Official Quotation
+                            <i class="icofont-check-circled me-1"></i> <%= isRevision ? 'Approve & Issue Revised Quotation' : 'Approve & Issue Official Quotation' %>
                         </button>
                         <button type="button" class="btn btn-outline-secondary py-2 small font-weight-bold" id="btnDraftQuotation" onclick="submitQuotationForm(false)">
-                            <i class="icofont-save me-1"></i> Save as Draft / Pending Approval
+                            <i class="icofont-save me-1"></i> <%= isRevision ? 'Save Revised Draft / Pending Review' : 'Save as Draft / Pending Approval' %>
                         </button>
                     </div>
                     <small class="text-muted d-block text-center mt-2" style="font-size: 11px;">
@@ -357,7 +373,10 @@ async function recalculateTotals() {
     try {
         const res = await fetch('/manager/quotations/preview-financials', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'CSRF-Token': document.querySelector('input[name="_csrf"]')?.value || '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+            },
             body: JSON.stringify({
                 lineItems: items,
                 plantCapacityKw: kw,

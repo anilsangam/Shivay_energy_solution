@@ -425,10 +425,6 @@ class QuotationService {
             advancePercentage: quotationData.advancePercentage
         });
 
-        const quotationNumber = await QuotationService.generateQuotationNumber();
-        const acceptanceToken = crypto.randomBytes(24).toString('hex');
-        const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 Days
-
         const reqId = quotationData.quotationRequestId || quotationData.requestId || null;
         let origRequest = null;
         if (reqId && typeof reqId === 'object' && reqId._id && reqId.status) {
@@ -439,6 +435,120 @@ class QuotationService {
 
         const isDirectApprove = quotationData.directApprove === true || quotationData.directApprove === 'true' || quotationData.action === 'APPROVE';
         const initialStatus = isDirectApprove ? 'APPROVED' : 'PENDING_APPROVAL';
+
+        // -------------------------------------------------------------
+        // IDEMPOTENCY & IN-PLACE REVISION CHECK
+        // If a quotation already exists for this request or quotationId,
+        // update existing or return it idempotently (Prevent duplicate IDs)
+        // -------------------------------------------------------------
+        let existingQuotation = null;
+        const targetQuoteId = quotationData.quotationId || quotationData.existingQuotationId;
+        if (targetQuoteId) {
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                existingQuotation = await Quotation.findById(targetQuoteId);
+            } else {
+                existingQuotation = QuotationService._memoryQuotes.get(String(targetQuoteId));
+            }
+        }
+        if (!existingQuotation && origRequest) {
+            const reqRef = origRequest._id || origRequest;
+            if (origRequest.linkedQuotation) {
+                const linkId = origRequest.linkedQuotation._id || origRequest.linkedQuotation;
+                if (mongoose.connection && mongoose.connection.readyState === 1) {
+                    existingQuotation = await Quotation.findById(linkId);
+                } else {
+                    existingQuotation = QuotationService._memoryQuotes.get(String(linkId));
+                }
+            }
+            if (!existingQuotation) {
+                if (mongoose.connection && mongoose.connection.readyState === 1) {
+                    existingQuotation = await Quotation.findOne({ quotationRequestId: reqRef, isArchived: { $ne: true } });
+                } else {
+                    existingQuotation = QuotationService._memoryQuotesByRequest.get(String(reqRef));
+                }
+            }
+        }
+
+        if (existingQuotation) {
+            // Cannot revise if customer already accepted and project is onboarded
+            if (existingQuotation.status === 'CUSTOMER_ACCEPTED') {
+                throw new Error('Cannot revise quotation: This proposal has already been accepted by the customer and transitioned to project execution.');
+            }
+
+            // Back-button idempotency: if already approved and exact same approval is resubmitted
+            const isKwSame = Math.abs((existingQuotation.plantCapacityKw || 0) - (quotationData.plantCapacityKw || 0)) < 0.01;
+            if (existingQuotation.status === 'APPROVED' && isDirectApprove && isKwSame) {
+                return existingQuotation;
+            }
+
+            // In-place revision: increment version and update line items & financials
+            const prevVersionNumber = existingQuotation.version || 1;
+            existingQuotation.version = prevVersionNumber + 1;
+            existingQuotation.lineItems = quotationData.lineItems || existingQuotation.lineItems;
+            existingQuotation.plantCapacityKw = quotationData.plantCapacityKw || existingQuotation.plantCapacityKw;
+            existingQuotation.specialDiscount = parseFloat(quotationData.specialDiscount) || 0;
+            existingQuotation.systemType = quotationData.systemType || existingQuotation.systemType;
+            existingQuotation.panelSpecs = quotationData.panelSpecs || existingQuotation.panelSpecs;
+            existingQuotation.panelQty = quotationData.panelQty || existingQuotation.panelQty;
+            existingQuotation.inverterSpecs = quotationData.inverterSpecs || existingQuotation.inverterSpecs;
+            existingQuotation.structureSpecs = quotationData.structureSpecs || existingQuotation.structureSpecs;
+            existingQuotation.validUntil = quotationData.validUntil || existingQuotation.validUntil;
+            existingQuotation.paymentTerms = quotationData.paymentTerms || existingQuotation.paymentTerms;
+            existingQuotation.deliveryTerms = quotationData.deliveryTerms || existingQuotation.deliveryTerms;
+            existingQuotation.warrantyTerms = quotationData.warrantyTerms || existingQuotation.warrantyTerms;
+            existingQuotation.notes = quotationData.notes || existingQuotation.notes;
+
+            // Apply calculated authoritative financials
+            Object.assign(existingQuotation, financials);
+
+            if (isDirectApprove) {
+                existingQuotation.status = 'APPROVED';
+                existingQuotation.approvedBy = preparerUser._id;
+                existingQuotation.approvedAt = new Date();
+                existingQuotation.approvalComments = (quotationData.approvalComments || 'Approved revision by branch management').trim();
+            } else {
+                existingQuotation.status = 'PENDING_APPROVAL';
+            }
+
+            QuotationService._memoryQuotes.set(String(existingQuotation._id), existingQuotation);
+            if (existingQuotation.quotationRequestId) {
+                QuotationService._memoryQuotesByRequest.set(String(existingQuotation.quotationRequestId._id || existingQuotation.quotationRequestId), existingQuotation);
+            }
+
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                await existingQuotation.save();
+
+                if (origRequest) {
+                    origRequest.status = 'QUOTATION_PREPARED';
+                    origRequest.linkedQuotation = existingQuotation._id;
+                    await origRequest.save();
+                }
+
+                await QuotationStatusHistory.create({
+                    recordType: 'QUOTATION',
+                    quotation: existingQuotation._id,
+                    documentNumber: existingQuotation.quotationNumber,
+                    previousStatus: existingQuotation.status,
+                    newStatus: isDirectApprove ? 'APPROVED' : 'PENDING_APPROVAL',
+                    changedBy: preparerUser._id,
+                    role: preparerUser.role,
+                    comments: `Quotation revised to version v${existingQuotation.version}. Total: ₹${existingQuotation.grandTotal}`
+                });
+
+                AuditService.log({
+                    action: 'QUOTATION_REVISED',
+                    user: preparerUser._id,
+                    role: preparerUser.role,
+                    details: { quotationNumber: existingQuotation.quotationNumber, version: existingQuotation.version, grandTotal: existingQuotation.grandTotal }
+                });
+            }
+
+            return existingQuotation;
+        }
+
+        const quotationNumber = await QuotationService.generateQuotationNumber();
+        const acceptanceToken = crypto.randomBytes(24).toString('hex');
+        const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 Days
 
         const assignedEmp = origRequest ? origRequest.assignedEmployee : (quotationData.assignedEmployee || null);
 
@@ -512,6 +622,11 @@ class QuotationService {
             origRequest.linkedQuotation = quotation._id;
         }
 
+        QuotationService._memoryQuotes.set(String(quotation._id), quotation);
+        if (quotation.quotationRequestId) {
+            QuotationService._memoryQuotesByRequest.set(String(quotation.quotationRequestId._id || quotation.quotationRequestId), quotation);
+        }
+
         return quotation;
     }
 
@@ -519,15 +634,25 @@ class QuotationService {
      * Approve a Quotation (Enforces Maker-Checker & Role Boundaries)
      */
     static async approveQuotation(quotationId, approverUser, comments = '') {
-        const quotation = await Quotation.findById(quotationId);
+        let quotation = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            quotation = await Quotation.findById(quotationId);
+        } else {
+            quotation = QuotationService._memoryQuotes.get(String(quotationId));
+        }
         if (!quotation) throw new Error('Quotation not found.');
+
+        // Idempotency: If already approved, return immediately without re-approving or erroring
+        if (quotation.status === 'APPROVED') {
+            return quotation;
+        }
 
         if (quotation.status !== 'PENDING_APPROVAL' && quotation.status !== 'DRAFT') {
             throw new Error(`Quotation is already in status "${quotation.status}" and cannot be approved.`);
         }
 
-        // Maker-Checker Separation: Creator cannot approve their own quotation (unless Super Admin)
-        if (String(quotation.preparedBy) === String(approverUser._id) && approverUser.role !== 'SUPER_ADMIN') {
+        // Maker-Checker Separation: Creator cannot approve their own quotation (unless Single Manager or Super Admin per Business Rule 1.1)
+        if (String(quotation.preparedBy) === String(approverUser._id) && approverUser.role !== 'SUPER_ADMIN' && approverUser.role !== 'MANAGER' && approverUser.role !== 'BRANCH_MANAGER') {
             throw new Error('Maker-Checker Violation: You cannot approve a quotation that you prepared. Another manager or Super Admin must review it.');
         }
 
@@ -569,6 +694,39 @@ class QuotationService {
     }
 
     /**
+     * Archive a Quotation (Soft-Archive only - strict deletion prohibition)
+     */
+    static async archiveQuotation(quotationId, user) {
+        let quotation = null;
+        if (QuotationService._memoryQuotes && QuotationService._memoryQuotes.has(String(quotationId))) {
+            quotation = QuotationService._memoryQuotes.get(String(quotationId));
+        } else {
+            try {
+                quotation = await Quotation.findById(quotationId);
+            } catch (e) {}
+        }
+        if (!quotation) throw new Error('Quotation not found.');
+        if (quotation.status === 'CUSTOMER_ACCEPTED') {
+            throw new Error('Cannot archive quotation: This quotation has already been accepted by the customer and transitioned to project execution.');
+        }
+        quotation.isArchived = true;
+        quotation.archivedAt = new Date();
+        quotation.archivedBy = user._id;
+        quotation.status = 'ARCHIVED';
+        if (quotation.save) {
+            await quotation.save();
+        }
+
+        AuditService.log({
+            action: 'QUOTATION_ARCHIVED',
+            user: user._id,
+            role: user.role,
+            details: { quotationNumber: quotation.quotationNumber, archivedAt: new Date() }
+        });
+        return quotation;
+    }
+
+    /**
      * Reject a Quotation
      */
     static async rejectQuotation(quotationId, rejectorUser, reason) {
@@ -576,7 +734,14 @@ class QuotationService {
             throw new Error('A specific rejection reason is required.');
         }
 
-        const quotation = await Quotation.findById(quotationId);
+        let quotation = null;
+        if (QuotationService._memoryQuotes && QuotationService._memoryQuotes.has(String(quotationId))) {
+            quotation = QuotationService._memoryQuotes.get(String(quotationId));
+        } else {
+            try {
+                quotation = await Quotation.findById(quotationId);
+            } catch (e) {}
+        }
         if (!quotation) throw new Error('Quotation not found.');
 
         if (quotation.status === 'APPROVED' || quotation.status === 'CUSTOMER_ACCEPTED') {
@@ -676,8 +841,21 @@ class QuotationService {
      * Record customer response (Acceptance / Rejection)
      */
     static async recordCustomerResponse(quotationId, responseStatus, remarks = '', recordedByUser = null) {
-        const quotation = await Quotation.findById(quotationId);
+        let quotation = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            quotation = await Quotation.findById(quotationId);
+        } else {
+            quotation = QuotationService._memoryQuotes.get(String(quotationId));
+        }
         if (!quotation) throw new Error('Quotation not found.');
+
+        // Idempotency: if quotation is already in the requested state, return immediately
+        if (quotation.status === 'CUSTOMER_ACCEPTED' && responseStatus === 'ACCEPTED') {
+            return quotation;
+        }
+        if (quotation.status === 'CUSTOMER_REJECTED' && responseStatus === 'REJECTED') {
+            return quotation;
+        }
 
         if (quotation.status !== 'APPROVED' && quotation.status !== 'SHARED') {
             throw new Error(`Customer response can only be recorded on approved or shared quotations (Current: ${quotation.status}).`);
@@ -755,6 +933,9 @@ class QuotationService {
         return QuotationService.recordCustomerResponse(quotation._id, 'ACCEPTED', customerRemarks || 'Accepted via online portal link.');
     }
 }
+
+QuotationService._memoryQuotes = new Map();
+QuotationService._memoryQuotesByRequest = new Map();
 
 module.exports = QuotationService;
 

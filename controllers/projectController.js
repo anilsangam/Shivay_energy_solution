@@ -107,10 +107,22 @@ class ProjectController {
             let branchEmployees = [];
             if (user.role !== 'EMPLOYEE' && mongoose.connection && mongoose.connection.readyState === 1) {
                 const empQuery = { role: 'EMPLOYEE', status: 'ACTIVE' };
-                if (user.role === 'MANAGER' && user.branchId) {
-                    empQuery.branchId = user.branchId;
+                if (['MANAGER', 'BRANCH_MANAGER'].includes(user.role)) {
+                    const orFilters = [{ managerId: user._id }];
+                    if (user.branchId) {
+                        orFilters.push({ branchId: user.branchId });
+                    }
+                    empQuery.$or = orFilters;
                 }
                 branchEmployees = await User.find(empQuery).select('_id name email employeeId role').lean();
+            } else if (user.role !== 'EMPLOYEE') {
+                const DataStore = require('../services/dataStore');
+                if (['MANAGER', 'BRANCH_MANAGER'].includes(user.role)) {
+                    branchEmployees = await DataStore.getEmployeesByManager(user._id, user.branchId);
+                } else {
+                    const allUsers = await DataStore.getUsers();
+                    branchEmployees = allUsers.filter(u => u.role === 'EMPLOYEE' && u.status === 'ACTIVE');
+                }
             }
 
             const activePage = user.role === 'SUPER_ADMIN' ? 'projects' : (user.role === 'EMPLOYEE' ? 'employee-projects' : 'manager-projects');
@@ -448,9 +460,15 @@ class ProjectController {
                 });
             }
 
-            // Redirect to secure Cloudinary CDN asset URL
-            if (doc.cloudinaryUrl || (doc.path && doc.path.startsWith('http'))) {
-                return res.redirect(doc.cloudinaryUrl || doc.path);
+            // Redirect to secure Cloudinary CDN asset URL (signed time-limited URL where applicable)
+            const { generateSignedAssetUrl } = require('../config/cloudinary');
+            const isImage = doc.mimeType && doc.mimeType.startsWith('image/');
+            const signedUrl = doc.cloudinaryPublicId
+                ? generateSignedAssetUrl(doc.cloudinaryPublicId, { resourceType: isImage ? 'image' : 'raw' })
+                : (doc.cloudinaryUrl || doc.path);
+
+            if (signedUrl) {
+                return res.redirect(signedUrl);
             }
 
             return res.status(404).render('public-site/404', {

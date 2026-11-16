@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const User = require('../models/User');
+const DataStore = require('../services/dataStore');
 const AuditService = require('../services/auditService');
 
 /**
@@ -24,21 +26,26 @@ const verifyCsrf = (req, res, next) => {
         return next();
     }
 
-    // Exempt specific public forms where external users don't have a prior session
-    const publicExemptions = [
+    // Exempt specific public forms where external users don't have a prior session (exact match only)
+    const publicExemptions = new Set([
         '/api/enquiry',
         '/api/complaints',
         '/api/franchise',
+        '/login',
         '/admin/login',
         '/manager/login',
         '/employee/login'
-    ];
+    ]);
 
-    if (publicExemptions.some(p => (req.path && req.path === p) || (req.originalUrl && req.originalUrl.startsWith(p)) || (req.path && req.path.startsWith(p)))) {
+    const currentPath = (req.path || '').toLowerCase();
+    const fullPath = ((req.baseUrl || '') + currentPath).toLowerCase();
+
+    if (publicExemptions.has(currentPath) || publicExemptions.has(fullPath)) {
         return next();
     }
 
-    const token = req.headers['x-csrf-token'] || req.headers['csrf-token'] || (req.body && req.body._csrf) || (req.query && req.query._csrf);
+    // Token must be delivered strictly via HTTP header or POST request body (NEVER query string)
+    const token = req.headers['x-csrf-token'] || req.headers['csrf-token'] || (req.body && req.body._csrf);
 
     if (!token || !req.session || token !== req.session.csrfToken) {
         return res.status(403).json({
@@ -50,10 +57,10 @@ const verifyCsrf = (req, res, next) => {
     next();
 };
 
-// Ensure user is logged in
+// Ensure user is logged in and account is currently active
 const requireAuth = (req, res, next) => {
     if (!req.session || !req.session.user) {
-        if (req.xhr || req.path.startsWith('/api/') || (req.headers.accept && req.headers.accept.includes('application/json'))) {
+        if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
             return res.status(401).json({
                 success: false,
                 message: 'Authentication required. Please sign in to continue.'
@@ -61,36 +68,96 @@ const requireAuth = (req, res, next) => {
         }
 
         // Determine appropriate login screen
-        if (req.originalUrl.startsWith('/admin')) {
-            return res.redirect(`/admin/login?returnUrl=${encodeURIComponent(req.originalUrl)}`);
-        } else if (req.originalUrl.startsWith('/manager')) {
-            return res.redirect(`/manager/login?returnUrl=${encodeURIComponent(req.originalUrl)}`);
+        const origUrl = req.originalUrl || req.url || '';
+        if (origUrl.startsWith('/admin')) {
+            return res.redirect(`/admin/login?returnUrl=${encodeURIComponent(origUrl)}`);
+        } else if (origUrl.startsWith('/manager')) {
+            return res.redirect(`/manager/login?returnUrl=${encodeURIComponent(origUrl)}`);
         } else {
-            return res.redirect(`/employee/login?returnUrl=${encodeURIComponent(req.originalUrl)}`);
+            return res.redirect(`/employee/login?returnUrl=${encodeURIComponent(origUrl)}`);
         }
     }
 
-    // Verify account status
-    if (req.session.user.status === 'SUSPENDED' || req.session.user.status === 'INACTIVE') {
-        req.session.destroy(() => {});
-        if (req.xhr || req.path.startsWith('/api/')) {
-            return res.status(403).json({ success: false, message: 'Your account is inactive or suspended. Contact Super Admin.' });
+    const handleInactiveUser = (status) => {
+        if (typeof req.session.destroy === 'function') {
+            req.session.destroy(() => {});
+        }
+        if (typeof res.clearCookie === 'function') {
+            res.clearCookie('connect.sid');
+        }
+        if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
+            return res.status(403).json({ success: false, message: `Your account has been ${status.toLowerCase()}. Active session expired.` });
         }
         return res.status(403).render('private/errors/403', {
             title: 'Account Inactive | Shivay Energy Solutions',
-            message: 'Your account has been deactivated or suspended by management. Please contact Deepak Kushwaha / Rahul Saini.'
+            message: `Your account has been ${status.toLowerCase()} by management. Please contact Super Admin.`
         });
-    }
+    };
 
-    if (req.session.user.status === 'PENDING') {
-        req.session.destroy(() => {});
-        if (req.xhr || req.path.startsWith('/api/')) {
+    const handlePendingUser = () => {
+        if (typeof req.session.destroy === 'function') {
+            req.session.destroy(() => {});
+        }
+        if (typeof res.clearCookie === 'function') {
+            res.clearCookie('connect.sid');
+        }
+        if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
             return res.status(403).json({ success: false, message: 'Account approval pending. Please wait for Super Admin approval.' });
         }
         return res.status(403).render('private/errors/403', {
             title: 'Account Pending Approval | Shivay Energy Solutions',
             message: 'Your registration is currently pending verification. You will be notified once activated.'
         });
+    };
+
+    // 1. Fast check against cached session status
+    const cachedStatus = req.session.user.status;
+    if (['SUSPENDED', 'INACTIVE', 'REJECTED'].includes(cachedStatus)) {
+        return handleInactiveUser(cachedStatus);
+    }
+    if (cachedStatus === 'PENDING') {
+        return handlePendingUser();
+    }
+
+    // 2. Fast synchronous in-memory check (for development & offline testing)
+    const memUser = DataStore.getUserByIdSync ? DataStore.getUserByIdSync(req.session.user._id) : null;
+    if (memUser) {
+        if (['SUSPENDED', 'INACTIVE', 'REJECTED'].includes(memUser.status)) {
+            req.session.user.status = memUser.status;
+            return handleInactiveUser(memUser.status);
+        }
+        if (memUser.status === 'PENDING') {
+            req.session.user.status = memUser.status;
+            return handlePendingUser();
+        }
+    }
+
+    // 3. Live MongoDB check when database connection is active (Defense-in-depth)
+    if (mongoose.connection && mongoose.connection.readyState === 1 && req.session.user._id && mongoose.isValidObjectId(req.session.user._id)) {
+        User.findById(req.session.user._id).select('status role branchId').lean()
+            .then(liveUser => {
+                if (!liveUser) {
+                    if (typeof req.session.destroy === 'function') req.session.destroy(() => {});
+                    if (typeof res.clearCookie === 'function') res.clearCookie('connect.sid');
+                    return res.status(401).json({ success: false, message: 'Account no longer exists.' });
+                }
+                if (['SUSPENDED', 'INACTIVE', 'REJECTED'].includes(liveUser.status)) {
+                    req.session.user.status = liveUser.status;
+                    return handleInactiveUser(liveUser.status);
+                }
+                if (liveUser.status === 'PENDING') {
+                    req.session.user.status = liveUser.status;
+                    return handlePendingUser();
+                }
+                req.session.user.status = liveUser.status;
+                req.session.user.role = liveUser.role;
+                req.session.user.branchId = liveUser.branchId;
+                next();
+            })
+            .catch(() => {
+                next();
+            });
+        return;
     }
 
     next();
@@ -138,7 +205,7 @@ const requireRole = (...roles) => {
             });
         }
 
-        next();
+        return requireAuth(req, res, next);
     };
 };
 

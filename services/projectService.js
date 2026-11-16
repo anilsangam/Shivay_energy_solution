@@ -250,41 +250,53 @@ class ProjectService {
     // 3. PROJECT QUERYING WITH STRICT RBAC ENFORCEMENT
     // -------------------------------------------------------------
     static async getProjects(user, query = {}) {
-        const filter = {};
+        const conditions = [];
 
-        // RBAC Boundary Isolation
+        // RBAC Boundary Isolation: Managers only see projects in their branch/jurisdiction
         if (user.role === 'EMPLOYEE') {
-            filter.$or = [
-                { assignedEngineer: user._id },
-                { 'assignedEmployees.user': user._id },
-                { 'siteVisit.assignedTo': user._id }
-            ];
+            conditions.push({
+                $or: [
+                    { assignedEngineer: user._id },
+                    { 'assignedEmployees.user': user._id },
+                    { 'siteVisit.assignedTo': user._id }
+                ]
+            });
         } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER') {
             if (user.branchId) {
-                filter.$or = [
-                    { branch: user.branchId },
-                    { assignedManager: user._id }
-                ];
+                conditions.push({
+                    $or: [
+                        { branch: user.branchId },
+                        { assignedManager: user._id }
+                    ]
+                });
             } else {
-                filter.assignedManager = user._id;
+                conditions.push({ assignedManager: user._id });
             }
         } // SUPER_ADMIN views all
 
-        // Status Filter
-        if (query.status && query.status !== 'ALL') {
-            filter.status = query.status;
+        // Status Filter (allowlist validated primitive strings only)
+        const VALID_PROJECT_STATUSES = new Set([
+            'NOT_STARTED', 'SITE_VISIT_PENDING', 'SITE_VISIT_COMPLETED',
+            'MATERIAL_PLANNING', 'INSTALLATION_IN_PROGRESS', 'TESTING_COMMISSIONING',
+            'DISCOM_INSPECTION', 'METERING_COMPLETED', 'SUBSIDY_APPLIED',
+            'PROJECT_COMPLETED', 'ON_HOLD', 'CANCELLED'
+        ]);
+        const VALID_PRIORITIES = new Set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+
+        if (typeof query.status === 'string' && VALID_PROJECT_STATUSES.has(query.status.trim())) {
+            conditions.push({ status: query.status.trim() });
         }
 
         // Priority Filter
-        if (query.priority && query.priority !== 'ALL') {
-            filter.priority = query.priority;
+        if (typeof query.priority === 'string' && VALID_PRIORITIES.has(query.priority.trim())) {
+            conditions.push({ priority: query.priority.trim() });
         }
 
-        // Search Filter (Project #, Customer Name, Mobile, City)
-        if (query.search && query.search.trim()) {
-            const regex = new RegExp(query.search.trim(), 'i');
-            filter.$and = filter.$and || [];
-            filter.$and.push({
+        // Search Filter (Project #, Customer Name, Mobile, City) with regex escaping
+        if (typeof query.search === 'string' && query.search.trim()) {
+            const cleanSearch = query.search.trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(cleanSearch, 'i');
+            conditions.push({
                 $or: [
                     { projectNumber: regex },
                     { title: regex },
@@ -294,6 +306,8 @@ class ProjectService {
                 ]
             });
         }
+
+        const filter = conditions.length > 1 ? { $and: conditions } : (conditions[0] || {});
 
         const page = Math.max(1, parseInt(query.page, 10) || 1);
         const limit = Math.max(1, Math.min(100, parseInt(query.limit, 10) || 20));
