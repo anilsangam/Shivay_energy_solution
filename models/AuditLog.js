@@ -23,7 +23,17 @@ const auditLogSchema = new mongoose.Schema({
             'UNAUTHORIZED_ACCESS_ATTEMPT',
             'MANAGER_ASSIGNED',
             'PROFILE_UPDATED',
-            'STATUS_CHANGE'
+            'STATUS_CHANGE',
+            'MATERIAL_CREATED',
+            'MATERIAL_UPDATED',
+            'MATERIAL_STATUS_CHANGED',
+            'SUPPLIER_CREATED',
+            'SUPPLIER_UPDATED',
+            'PURCHASE_CREATED',
+            'PURCHASE_RECEIVED',
+            'PURCHASE_CANCELLED',
+            'STOCK_ADJUSTED',
+            'SELLING_PRICE_UPDATED'
         ]
     },
     user: {

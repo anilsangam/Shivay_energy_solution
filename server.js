@@ -25,7 +25,7 @@ app.use(helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
             imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
-            mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com"],
+            mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com", "https://media.istockphoto.com"],
             connectSrc: ["'self'", "https://res.cloudinary.com", "https://api.cloudinary.com"],
             frameSrc: ["'self'"],
             objectSrc: ["'none'"],

@@ -3,12 +3,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!video) return;
 
     video.muted = true;
-    const playAttempt = video.play();
-    if (playAttempt && typeof playAttempt.catch === 'function') {
-        playAttempt.catch(function () {
-            document.body.addEventListener('click', function () {
-                video.play().catch(function () {});
-            }, { once: true });
-        });
-    }
+    video.play().catch(function () {
+        video.controls = true;
+    });
+
+    video.addEventListener('error', function () {
+        video.controls = true;
+        video.setAttribute('poster', '/images/background/2.webp');
+    });
 });
