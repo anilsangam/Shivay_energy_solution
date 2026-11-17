@@ -63,11 +63,82 @@
                     <span>Reports & Analytics</span>
                 </a>
             </li>
-            <li class="admin-nav-item">
-                <a href="/admin/complaints" class="admin-nav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
-                    <i class="icofont-tools-alt-2"></i>
-                    <span>Service Complaints</span>
+
+            <!-- Website Enquiries & Lead Console -->
+            <% const isEnquiryActive = currentActive === 'admin-surveys' || currentActive === 'admin-franchise' || currentActive === 'admin-complaints'; %>
+            <li class="admin-nav-item has-submenu <%= isEnquiryActive ? 'open' : '' %>" id="enquiriesNavParent">
+                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="enquiriesNavToggle" role="button" aria-expanded="<%= isEnquiryActive ? 'true' : 'false' %>">
+                    <i class="icofont-ui-messaging text-info"></i>
+                    <span>Website Enquiries</span>
+                    <i class="icofont-rounded-right admin-nav-arrow"></i>
                 </a>
+                <ul class="admin-nav-submenu" id="enquiriesNavSubmenu">
+                    <li>
+                        <a href="/admin/enquiries/surveys" class="admin-subnav-link <%= currentActive === 'admin-surveys' ? 'active' : '' %>">
+                            <i class="icofont-sun-alt"></i>
+                            <span>Free Solar Site Surveys</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/enquiries/franchise" class="admin-subnav-link <%= currentActive === 'admin-franchise' ? 'active' : '' %>">
+                            <i class="icofont-handshake-deal"></i>
+                            <span>Franchise / Dealer Apps</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/complaints" class="admin-subnav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
+                            <i class="icofont-tools-alt-2"></i>
+                            <span>Service Complaints</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="admin-sidebar-heading">Inventory & Supplies</li>
+            <li class="admin-nav-item has-submenu <%= (currentActive && currentActive.startsWith('material-')) ? 'open' : '' %>" id="materialNavParent">
+                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="materialNavToggle" role="button" aria-expanded="<%= (currentActive && currentActive.startsWith('material-')) ? 'true' : 'false' %>">
+                    <i class="icofont-box"></i>
+                    <span>Material Management</span>
+                    <i class="icofont-rounded-right admin-nav-arrow"></i>
+                </a>
+                <ul class="admin-nav-submenu" id="materialNavSubmenu">
+                    <li>
+                        <a href="/admin/inventory" class="admin-subnav-link <%= (currentActive === 'material-inventory' || currentActive === 'material-list') ? 'active' : '' %>">
+                            <i class="icofont-database"></i>
+                            <span>Stock Inventory</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/purchases" class="admin-subnav-link <%= (currentActive === 'material-purchases' || currentActive === 'material-suppliers') ? 'active' : '' %>">
+                            <i class="icofont-cart-alt"></i>
+                            <span>Purchase / Stock In</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/sales-out" class="admin-subnav-link <%= currentActive === 'material-sales-out' ? 'active' : '' %>">
+                            <i class="icofont-truck-loaded"></i>
+                            <span>Sales / Stock Out</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/dispatch" class="admin-subnav-link <%= currentActive === 'material-dispatch' ? 'active' : '' %>">
+                            <i class="icofont-delivery-time"></i>
+                            <span>Dispatch Management</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/returns" class="admin-subnav-link <%= currentActive === 'material-returns' ? 'active' : '' %>">
+                            <i class="icofont-exchange"></i>
+                            <span>Returns</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/inventory/reports" class="admin-subnav-link <%= currentActive === 'material-reports' ? 'active' : '' %>">
+                            <i class="icofont-chart-histogram"></i>
+                            <span>Stock Reports</span>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
             <li class="admin-sidebar-heading">Team Management</li>
@@ -103,6 +174,54 @@
                     <span>Activity Logs</span>
                 </a>
             </li>
+            <!-- Dynamic Website CMS -->
+            <% const isCmsActive = currentActive && currentActive.startsWith('cms-'); %>
+            <li class="admin-nav-item has-submenu <%= isCmsActive ? 'open' : '' %>" id="websiteNavParent">
+                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="websiteNavToggle" role="button" aria-expanded="<%= isCmsActive ? 'true' : 'false' %>">
+                    <i class="icofont-globe text-warning"></i>
+                    <span>Website Management</span>
+                    <i class="icofont-rounded-right admin-nav-arrow"></i>
+                </a>
+                <ul class="admin-nav-submenu" id="websiteNavSubmenu">
+                    <li>
+                        <a href="/admin/website/projects" class="admin-subnav-link <%= currentActive === 'cms-projects' ? 'active' : '' %>">
+                            <i class="icofont-energy-solar"></i>
+                            <span>Recent Projects</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/website/products" class="admin-subnav-link <%= currentActive === 'cms-products' ? 'active' : '' %>">
+                            <i class="icofont-box"></i>
+                            <span>Products & Inverters</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/website/services" class="admin-subnav-link <%= currentActive === 'cms-services' ? 'active' : '' %>">
+                            <i class="icofont-tasks-alt"></i>
+                            <span>Services Master</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/website/team" class="admin-subnav-link <%= currentActive === 'cms-team' ? 'active' : '' %>">
+                            <i class="icofont-users-alt-5"></i>
+                            <span>Founders & Team</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/website/testimonials" class="admin-subnav-link <%= currentActive === 'cms-testimonials' ? 'active' : '' %>">
+                            <i class="icofont-star"></i>
+                            <span>Customer Testimonials</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/admin/website/contact" class="admin-subnav-link <%= currentActive === 'cms-contact' ? 'active' : '' %>">
+                            <i class="icofont-address-book"></i>
+                            <span>Contact & Company Info</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <li class="admin-nav-item">
                 <a href="/admin/settings" class="admin-nav-link <%= currentActive === 'admin-settings' ? 'active' : '' %>">
                     <i class="icofont-gear"></i>
@@ -213,6 +332,33 @@
             var m = document.querySelector('.admin-sidebar-menu');
             var s = sessionStorage.getItem('admin_sidebar_scroll_top');
             if (m && s !== null) { m.scrollTop = parseInt(s, 10); }
+
+            function setupSubmenu(toggleId, parentId, storageKey) {
+                var toggle = document.getElementById(toggleId);
+                var parent = document.getElementById(parentId);
+                if (!toggle || !parent) return;
+
+                var savedOpen = sessionStorage.getItem(storageKey);
+                if (savedOpen === '1') {
+                    parent.classList.add('open');
+                    toggle.setAttribute('aria-expanded', 'true');
+                } else if (savedOpen === '0' && !parent.querySelector('.admin-subnav-link.active')) {
+                    parent.classList.remove('open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var isOpen = parent.classList.toggle('open');
+                    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                    sessionStorage.setItem(storageKey, isOpen ? '1' : '0');
+                });
+            }
+
+            setupSubmenu('materialNavToggle', 'materialNavParent', 'material_menu_open');
+            setupSubmenu('enquiriesNavToggle', 'enquiriesNavParent', 'enquiries_menu_open');
+            setupSubmenu('websiteNavToggle', 'websiteNavParent', 'website_menu_open');
         } catch(e) {}
     })();
     </script>

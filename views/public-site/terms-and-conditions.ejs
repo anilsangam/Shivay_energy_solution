@@ -1,0 +1,163 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader Banner -->
+    <section id="subheader" class="bg-dark text-light relative py-5" style="background: linear-gradient(135deg, rgba(22, 53, 99, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%), url('/images/background/2.webp') center/cover no-repeat;">
+        <div class="container py-3">
+            <div class="row align-items-center">
+                <div class="col-lg-9">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-warning bg-opacity-20 text-warning small font-weight-bold mb-3">
+                        <i class="icofont-law-order"></i> Commercial &amp; EPC Service Agreement
+                    </div>
+                    <h1 class="text-white font-weight-bold mb-2">Terms &amp; Conditions</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 16px;">
+                        <%= company.name %> • Turnkey Solar EPC &amp; PM Surya Ghar Subsidies (Raisen, M.P.)
+                    </p>
+                    <div class="small text-white-50 mt-2">
+                        <i class="icofont-clock-time me-1 text-warning"></i>
+                        Last Updated: <strong><%= new Date(lastUpdated).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row gy-4">
+                
+                <!-- Left Quick Navigation Sidebar (Desktop) -->
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="bg-white p-4 rounded-3 shadow-sm border sticky-top" style="top: 100px;">
+                        <h6 class="font-weight-bold text-dark text-uppercase small mb-3">
+                            <i class="icofont-list me-1 text-primary"></i> Agreement Sections
+                        </h6>
+                        <ul class="list-unstyled small mb-4" style="line-height: 2;">
+                            <li><i class="icofont-check-circled text-success me-1"></i> Turnkey EPC Scope</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Site Survey &amp; Feasibility</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Milestones (20/60/20)</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> PM Surya Ghar Subsidy</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> 25-Year Panel Warranty</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> MPPKVVCL Net-Metering</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Jurisdiction (Raisen, MP)</li>
+                        </ul>
+
+                        <div class="p-3 rounded-3 bg-light border">
+                            <span class="font-weight-bold text-dark d-block small mb-1">
+                                <i class="icofont-support text-warning me-1"></i> Need Clarification?
+                            </span>
+                            <small class="text-muted d-block mb-2">Speak directly with our technical support team in Raisen.</small>
+                            <a href="tel:<%= company.contact.phone.replace(/[^0-9+]/g, '') %>" class="btn btn-sm btn-primary w-100 font-weight-bold" style="background: var(--admin-navy-primary, #163563); border-radius: 6px;">
+                                <i class="icofont-phone me-1"></i> Call Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Terms Document Content -->
+                <div class="col-lg-9">
+                    <div class="bg-white p-4 p-md-5 rounded-3 shadow-sm border legal-content-card">
+                        
+                        <!-- Trust Highlight Banner -->
+                        <div class="alert alert-primary border-0 bg-primary bg-opacity-10 d-flex align-items-center gap-3 p-3 rounded-3 mb-4">
+                            <i class="icofont-certificate-alt-1 text-primary fs-2"></i>
+                            <div class="small">
+                                <strong class="text-dark d-block mb-1">Turnkey Rooftop EPC Standards &amp; Central Subsidy Compliance</strong>
+                                <span class="text-muted">
+                                    All installations conform to MNRE DCR standards, MPPKVVCL bidirectional net-metering norms, and national electrical codes. Formal quotation pricing includes statutory liaisoning and Tier-1 manufacturer warranties.
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic / Formatted Terms Content -->
+                        <div class="legal-body-text">
+                            <% if (termsContent && (termsContent.includes('<p>') || termsContent.includes('<h3>') || termsContent.includes('<div>'))) { %>
+                                <%- termsContent %>
+                            <% } else { %>
+                                <% 
+                                    const paragraphs = (termsContent || '').split(/\n\s*\n/);
+                                    paragraphs.forEach(p => {
+                                        if (p.trim()) { 
+                                %>
+                                    <p><%= p.trim() %></p>
+                                <% 
+                                        }
+                                    }); 
+                                %>
+                            <% } %>
+                        </div>
+
+                        <!-- Footer Legal Notice Box -->
+                        <div class="mt-5 pt-4 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <span class="small font-weight-bold text-dark d-block mb-1">
+                                        <%= company.name %> — Official Terms of Service
+                                    </span>
+                                    <small class="text-muted">
+                                        <%= company.address.full %>
+                                    </small>
+                                </div>
+                                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                    <a href="/privacy-policy" class="btn btn-outline-secondary btn-sm font-weight-bold" style="border-radius: 6px;">
+                                        <i class="icofont-shield-alt me-1"></i> View Privacy Policy
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.legal-content-card h3 {
+    color: #163563;
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 32px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+.legal-content-card h4 {
+    color: #334155;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.legal-content-card p {
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+.legal-content-card ul, .legal-content-card ol {
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    padding-left: 24px;
+}
+.legal-content-card li {
+    margin-bottom: 8px;
+}
+.legal-content-card strong {
+    color: #0f172a;
+}
+.legal-content-card a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+</style>
+
+<%- include('partials/footer') %>

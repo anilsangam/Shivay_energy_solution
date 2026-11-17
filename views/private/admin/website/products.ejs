@@ -1,0 +1,391 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-box me-2 text-warning"></i> Website Products & Inverters Master
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage solar panels, inverters, and battery storage units displayed on the public product catalog.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/products" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live Products Page
+        </a>
+        <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;" onclick="openCreateModal()">
+            <i class="icofont-plus-circle me-1"></i> Add New Product
+        </button>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Website CMS:</span>
+            <a href="/admin/website/projects" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-energy-solar me-1 text-warning"></i> Projects
+            </a>
+            <a href="/admin/website/products" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-warning"></i> Products (Active)
+            </a>
+            <a href="/admin/website/services" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-tasks-alt me-1 text-primary"></i> Services
+            </a>
+            <a href="/admin/website/team" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-users-alt-5 me-1 text-info"></i> Founders & Team
+            </a>
+            <a href="/admin/website/testimonials" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-star me-1 text-warning"></i> Testimonials
+            </a>
+            <a href="/admin/website/contact" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-address-book me-1 text-success"></i> Contact Info
+            </a>
+        </div>
+        <span class="badge bg-light text-muted border">Total Products: <%= products.length %></span>
+    </div>
+</div>
+
+<!-- Products Grid -->
+<div class="row g-4 mb-5">
+    <% if (products && products.length > 0) { %>
+        <% products.forEach(p => { %>
+            <div class="col-lg-4 col-md-6" id="product-card-<%= p._id %>">
+                <div class="card border-0 shadow-sm rounded-3 h-100 overflow-hidden bg-white d-flex flex-column">
+                    <div style="height: 180px; position: relative; background: #eaedf2; overflow: hidden;">
+                        <img src="<%= p.image && (p.image.startsWith('http') || p.image.startsWith('/')) ? p.image : '/' + p.image %>" 
+                             alt="<%= p.name %>" 
+                             style="width: 100%; height: 100%; object-fit: cover;"
+                             onerror="this.src='/images/slider/4.webp'">
+                        <span class="badge position-absolute top-0 start-0 m-2 bg-primary">
+                            <%= p.category %>
+                        </span>
+                        <span class="badge position-absolute top-0 end-0 m-2 <%= p.isActive ? 'bg-success' : 'bg-secondary' %>">
+                            <%= p.isActive ? 'Active' : 'Draft / Hidden' %>
+                        </span>
+                        <span class="badge position-absolute bottom-0 end-0 m-2 bg-dark text-white opacity-75">
+                            Order: <%= p.order %>
+                        </span>
+                    </div>
+
+                    <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="font-weight-bold text-dark mb-0 fs-6 text-truncate" title="<%= p.name %>" style="max-width: 70%;">
+                                <%= p.name %>
+                            </h5>
+                            <span class="badge bg-warning text-dark font-monospace fw-bold">
+                                <%= p.startingPrice %>
+                            </span>
+                        </div>
+
+                        <p class="text-muted small mb-2 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                            <%= p.description %>
+                        </p>
+
+                        <div class="p-2 bg-light rounded-2 mb-3 small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Capacity:</span>
+                                <strong><%= p.capacityRange %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Efficiency:</span>
+                                <strong><%= p.efficiency %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Warranty:</span>
+                                <strong><%= p.warranty %></strong>
+                            </div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
+                            <span class="font-monospace small text-muted">ID: <%= p.productId %></span>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" onclick='openEditModal(<%= JSON.stringify(p) %>)'>
+                                    <i class="icofont-edit me-1"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteProduct('<%= p._id %>', '<%= p.name.replace(/'/g, "\\'") %>')">
+                                    <i class="icofont-ui-delete me-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3 p-5 text-center bg-white">
+                <i class="icofont-box text-muted" style="font-size: 48px;"></i>
+                <h5 class="mt-3 font-weight-bold">No Products In Catalog</h5>
+                <p class="text-muted small">Add your first solar hardware product or inverter.</p>
+                <div>
+                    <button type="button" class="btn btn-warning font-weight-bold" onclick="openCreateModal()">
+                        <i class="icofont-plus me-1"></i> Add Product
+                    </button>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Create / Edit Product -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title font-weight-bold" id="modalTitle">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="productForm" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="productEditId" value="">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label font-weight-bold small">Product Name *</label>
+                            <input type="text" id="productName" class="form-control" required placeholder="e.g. On-Grid Solar Inverter Dual MPPT">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Category *</label>
+                            <select id="productCategory" class="form-select" required>
+                                <option value="Inverters">Inverters</option>
+                                <option value="Solar Panels">Solar Panels</option>
+                                <option value="Energy Storage">Energy Storage / Batteries</option>
+                                <option value="Solar Water Pumps">Solar Water Pumps</option>
+                                <option value="EV Chargers">EV Chargers</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Capacity Range</label>
+                            <input type="text" id="productCapacity" class="form-control" placeholder="1 kW - 100 kW">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Efficiency</label>
+                            <input type="text" id="productEfficiency" class="form-control" placeholder="Up to 98.6%">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Warranty</label>
+                            <input type="text" id="productWarranty" class="form-control" placeholder="5 to 10 Years Warranty">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Starting Price</label>
+                            <input type="text" id="productPrice" class="form-control" placeholder="₹24,500 or Ask for Quote">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Display Order</label>
+                            <input type="number" id="productOrder" class="form-control" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-bold small">Status</label>
+                            <select id="productActive" class="form-select">
+                                <option value="true">Active (Visible)</option>
+                                <option value="false">Hidden / Draft</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold small">Description *</label>
+                            <textarea id="productDescription" class="form-control" rows="2" required placeholder="Comprehensive description..."></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Best Suited For</label>
+                            <input type="text" id="productBestFor" class="form-control" placeholder="Homes, offices, and factories...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Key Features (One per line)</label>
+                            <textarea id="productFeatures" class="form-control" rows="2" placeholder="MNRE & BIS Certified&#10;Dual MPPT Support&#10;IP65 Weatherproof"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Image File (Upload to Cloudinary)</label>
+                            <input type="file" id="productFile" class="form-control" accept="image/*" onchange="previewSelectedImage(this)">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Or Image URL / Path</label>
+                            <input type="text" id="productImageUrl" class="form-control" placeholder="/images/slider/4.webp or https://...">
+                        </div>
+                        <div class="col-12" id="imagePreviewContainer" style="display: none;">
+                            <label class="form-label font-weight-bold small">Image Preview</label>
+                            <div style="height: 120px; width: 220px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd;">
+                                <img id="productImagePreview" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveProductBtn" class="btn btn-warning font-weight-bold text-dark px-4">
+                        Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedImageData = null;
+let selectedImageName = null;
+let selectedImageType = null;
+let productModalInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    productModalInstance = new bootstrap.Modal(document.getElementById('productModal'));
+});
+
+function previewSelectedImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        selectedImageName = file.name;
+        selectedImageType = file.type;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            selectedImageData = e.target.result;
+            document.getElementById('productImagePreview').src = selectedImageData;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function openCreateModal() {
+    document.getElementById('modalTitle').innerText = 'Add New Solar Product';
+    document.getElementById('productEditId').value = '';
+    document.getElementById('productName').value = '';
+    document.getElementById('productCategory').value = 'Inverters';
+    document.getElementById('productCapacity').value = '1 kW - 100 kW';
+    document.getElementById('productEfficiency').value = 'Up to 98.6%';
+    document.getElementById('productWarranty').value = '5 to 10 Years Warranty';
+    document.getElementById('productPrice').value = 'Ask for quote';
+    document.getElementById('productOrder').value = '0';
+    document.getElementById('productActive').value = 'true';
+    document.getElementById('productDescription').value = '';
+    document.getElementById('productBestFor').value = '';
+    document.getElementById('productFeatures').value = '';
+    document.getElementById('productImageUrl').value = '/images/slider/4.webp';
+    document.getElementById('productFile').value = '';
+    selectedImageData = null;
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+    productModalInstance.show();
+}
+
+function openEditModal(prod) {
+    document.getElementById('modalTitle').innerText = 'Edit Product: ' + prod.name;
+    document.getElementById('productEditId').value = prod._id;
+    document.getElementById('productName').value = prod.name || '';
+    document.getElementById('productCategory').value = prod.category || 'Inverters';
+    document.getElementById('productCapacity').value = prod.capacityRange || '';
+    document.getElementById('productEfficiency').value = prod.efficiency || '';
+    document.getElementById('productWarranty').value = prod.warranty || '';
+    document.getElementById('productPrice').value = prod.startingPrice || '';
+    document.getElementById('productOrder').value = prod.order || 0;
+    document.getElementById('productActive').value = prod.isActive ? 'true' : 'false';
+    document.getElementById('productDescription').value = prod.description || '';
+    document.getElementById('productBestFor').value = prod.bestFor || '';
+    document.getElementById('productFeatures').value = (prod.features || []).join('\n');
+    document.getElementById('productImageUrl').value = prod.image || '';
+    document.getElementById('productFile').value = '';
+    selectedImageData = null;
+
+    if (prod.image) {
+        document.getElementById('productImagePreview').src = (prod.image.startsWith('http') || prod.image.startsWith('/')) ? prod.image : '/' + prod.image;
+        document.getElementById('imagePreviewContainer').style.display = 'block';
+    } else {
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+    }
+
+    productModalInstance.show();
+}
+
+async function handleProductSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveProductBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    const editId = document.getElementById('productEditId').value;
+    const url = editId ? `/api/admin/website/products/${editId}/update` : '/api/admin/website/products';
+
+    const payload = {
+        _csrf: '<%= csrfToken %>',
+        name: document.getElementById('productName').value,
+        category: document.getElementById('productCategory').value,
+        capacityRange: document.getElementById('productCapacity').value,
+        efficiency: document.getElementById('productEfficiency').value,
+        warranty: document.getElementById('productWarranty').value,
+        startingPrice: document.getElementById('productPrice').value,
+        order: document.getElementById('productOrder').value,
+        isActive: document.getElementById('productActive').value === 'true',
+        description: document.getElementById('productDescription').value,
+        bestFor: document.getElementById('productBestFor').value,
+        features: document.getElementById('productFeatures').value,
+        image: document.getElementById('productImageUrl').value,
+        imageData: selectedImageData,
+        imageName: selectedImageName,
+        imageType: selectedImageType
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            productModalInstance.hide();
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving product.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Save Product';
+    }
+}
+
+async function deleteProduct(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/website/products/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _csrf: '<%= csrfToken %>' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const card = document.getElementById(`product-card-${id}`);
+            if (card) card.remove();
+            showToast('Product deleted successfully.');
+        } else {
+            alert(data.message || 'Error deleting product.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('actionToast');
+    document.getElementById('actionToastMsg').innerText = msg;
+    toast.classList.remove('d-none');
+}
+</script>
+
+<%- include('../partials/admin-footer') %>

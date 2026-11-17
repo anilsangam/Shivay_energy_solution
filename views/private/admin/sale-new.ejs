@@ -1,0 +1,608 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const materialsList = (typeof materials !== 'undefined' && Array.isArray(materials)) ? materials : [];
+    const customersList = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers : [];
+    const projectsList = (typeof projects !== 'undefined' && Array.isArray(projects)) ? projects : [];
+%>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <div class="mb-1">
+            <a href="/admin/sales-out" class="text-muted small text-decoration-none">
+                <i class="icofont-rounded-left me-1"></i> Back to Sales List
+            </a>
+        </div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-truck-loaded me-2 text-warning"></i> New Material Sale & Stock Out
+        </h2>
+        <p class="text-muted small mb-0">
+            Bill materials to customers, businesses, or contractors with custom prices, GST rates, and live stock validation.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/inventory" target="_blank" class="btn btn-outline-secondary" style="border-radius: 8px;">
+            <i class="icofont-database me-1"></i> Check Live Stock
+        </a>
+    </div>
+</div>
+
+<form id="newSaleForm" onsubmit="handleSaleSubmit(event)">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" id="formSubmitStatus" name="status" value="CONFIRMED">
+
+    <!-- Card 1: Customer & Buyer Information -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                <i class="icofont-user-suited text-warning me-2"></i> 1. Buyer & Customer Details
+            </h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="buyerTypeRadio" id="buyerTypeExisting" value="EXISTING_CUSTOMER" checked onchange="switchBuyerMode('EXISTING')">
+                <label class="btn btn-outline-secondary" for="buyerTypeExisting">Existing CRM Customer</label>
+
+                <input type="radio" class="btn-check" name="buyerTypeRadio" id="buyerTypeNew" value="NEW_CUSTOMER" onchange="switchBuyerMode('NEW')">
+                <label class="btn btn-outline-secondary" for="buyerTypeNew">+ New Customer</label>
+
+                <input type="radio" class="btn-check" name="buyerTypeRadio" id="buyerTypeB2B" value="BUSINESS_DEALER" onchange="switchBuyerMode('B2B')">
+                <label class="btn btn-outline-secondary" for="buyerTypeB2B">Contractor / Dealer (B2B)</label>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <!-- Mode 1: Existing Customer Selector -->
+            <div id="existingCustomerSection" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label font-weight-semibold small">Select Registered Customer <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <select name="customerId" id="customerSelect" class="form-select" onchange="onExistingCustomerSelect(this)">
+                            <option value="">-- Choose Existing CRM Customer --</option>
+                            <% customersList.forEach(c => { %>
+                                <option value="<%= c._id %>" data-name="<%= c.name %>" data-mobile="<%= c.mobile %>" data-city="<%= c.city || 'Raisen' %>" data-gstin="<%= c.gstin || '' %>" data-address="<%= c.address || '' %>" data-type="<%= c.customerType || 'INDIVIDUAL' %>">
+                                    <%= c.name %> (<%= c.mobile %>) - <%= c.city || 'Raisen' %>
+                                </option>
+                            <% }) %>
+                        </select>
+                        <button type="button" class="btn btn-outline-warning" onclick="switchBuyerMode('NEW')">
+                            <i class="icofont-plus"></i> New
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label font-weight-semibold small">Link to Solar Project <small class="text-muted">(Optional)</small></label>
+                    <select name="projectId" id="projectSelect" class="form-select">
+                        <option value="">-- Standalone Material Sale (No Project Link) --</option>
+                        <% projectsList.forEach(p => { %>
+                            <option value="<%= p._id %>"><%= p.projectNumber %> - <%= p.title %> (<%= p.capacityKw || 0 %> kW)</option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Customer Details Inputs (Used in all modes, auto-filled or entered manually) -->
+            <div class="row g-3 mt-2" id="customerFieldsWrap">
+                <div class="col-md-4">
+                    <label class="form-label font-weight-semibold small">Customer / Firm Name <span class="text-danger">*</span></label>
+                    <input type="text" name="customerName" id="custNameInput" class="form-control" required placeholder="e.g. Ramesh Patel">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label font-weight-semibold small">Mobile Number <span class="text-danger">*</span></label>
+                    <input type="tel" name="customerMobile" id="custMobileInput" class="form-control" required placeholder="e.g. 9826012345">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label font-weight-semibold small">Customer Category</label>
+                    <select name="customerType" id="custTypeSelect" class="form-select">
+                        <option value="INDIVIDUAL" selected>INDIVIDUAL / RESIDENTIAL</option>
+                        <option value="BUSINESS">BUSINESS / COMMERCIAL</option>
+                        <option value="CONTRACTOR">EPC CONTRACTOR / INSTALLER</option>
+                        <option value="DEALER">EQUIPMENT DEALER / DISTRIBUTOR</option>
+                        <option value="OTHER">OTHER</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">Email Address</label>
+                    <input type="email" name="customerEmail" id="custEmailInput" class="form-control" placeholder="client@example.com">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">GSTIN Number <small class="text-muted">(if applicable)</small></label>
+                    <input type="text" name="customerGstin" id="custGstinInput" class="form-control text-uppercase font-monospace" placeholder="23AAAAA0000A1Z5" maxlength="15">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">Company / Trading Name</label>
+                    <input type="text" name="companyName" id="custCompanyInput" class="form-control" placeholder="e.g. Patel Solar Enterprises">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">Contact Person</label>
+                    <input type="text" name="contactPerson" id="custContactPersonInput" class="form-control" placeholder="e.g. Site Supervisor">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label font-weight-semibold small">Delivery / Billing Address</label>
+                    <input type="text" name="customerAddress" id="custAddressInput" class="form-control" placeholder="Street, landmark, site location...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">City</label>
+                    <input type="text" name="city" id="custCityInput" class="form-control" value="Raisen">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">State</label>
+                    <input type="text" name="state" id="custStateInput" class="form-control" value="Madhya Pradesh">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Line Items Cart -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                <i class="icofont-box text-warning me-2"></i> 2. Materials to Sell & Stock Out
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSaleItemRow()">
+                <i class="icofont-plus-circle me-1"></i> Add Another Material
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="saleItemsTable">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th style="min-width: 250px;">Material Item <span class="text-danger">*</span></th>
+                            <th style="width: 130px;" class="text-center">Live Stock</th>
+                            <th style="width: 120px;" class="text-end">Quantity <span class="text-danger">*</span></th>
+                            <th style="width: 150px;" class="text-end">Selling Price (₹) <span class="text-danger">*</span></th>
+                            <th style="width: 110px;" class="text-end">GST %</th>
+                            <th style="width: 130px;" class="text-end">Tax (₹)</th>
+                            <th style="width: 160px;" class="text-end">Line Total (₹)</th>
+                            <th style="width: 50px;" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saleItemsBody">
+                        <!-- Dynamic Rows Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSaleItemRow()">
+                <i class="icofont-plus-circle me-1"></i> Add Another Material
+            </button>
+            <small class="text-muted"><i class="icofont-info-circle me-1"></i> Prices below default price or purchase cost will prompt for an authorized override reason.</small>
+        </div>
+    </div>
+
+    <!-- Card 3: Financial Summary & Landed Charges -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="icofont-credit-card text-warning me-2"></i> Payment & Commercial Notes
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Payment Status</label>
+                            <select name="paymentStatus" class="form-select">
+                                <option value="PAID" selected>PAID (Full Settlement)</option>
+                                <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
+                                <option value="UNPAID">UNPAID (Pending Payment)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Payment Method</label>
+                            <select name="paymentMethod" class="form-select">
+                                <option value="Bank Transfer (NEFT/RTGS/UPI)" selected>Bank Transfer (NEFT/RTGS/UPI)</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Cheque">Cheque</option>
+                                <option value="Credit / Khata">Credit / Khata</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Special Discount (₹)</label>
+                            <input type="number" step="0.01" min="0" id="discountInput" name="discount" class="form-control calc-trigger" value="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Freight / Packaging Charges (₹)</label>
+                            <input type="number" step="0.01" min="0" id="additionalInput" name="additionalCharges" class="form-control calc-trigger" value="0.00">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Sale Memo / Delivery Instructions</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Optional delivery instructions, site contact, or warranty notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="icofont-calculator text-warning me-2"></i> Order Financial Summary
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tr>
+                            <td class="text-muted">Subtotal (Excl. Tax):</td>
+                            <td class="text-end fw-bold fs-6">₹<span id="displaySubtotal">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">GST / Tax Amount:</td>
+                            <td class="text-end fw-bold text-dark">₹<span id="displayTaxTotal">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Freight / Packaging:</td>
+                            <td class="text-end text-primary fw-bold">+₹<span id="displayAdditional">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Discount Applied:</td>
+                            <td class="text-end text-danger fw-bold">-₹<span id="displayDiscount">0.00</span></td>
+                        </tr>
+                        <tr class="border-top">
+                            <td class="pt-3 h5 font-weight-bold text-dark">Net Payable Total:</td>
+                            <td class="pt-3 text-end h4 font-weight-bold" style="color: var(--admin-navy-primary);">
+                                ₹<span id="displayGrandTotal">0.00</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Actions -->
+    <div class="card border-0 shadow-sm rounded-3 mb-5">
+        <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="text-muted small">Choose your sales order workflow:</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="submitSaleAs('DRAFT')">
+                    <i class="icofont-save me-1"></i> Save as Draft (No Stock Deduction)
+                </button>
+                <button type="button" class="btn btn-success font-weight-bold px-4 py-2" onclick="submitSaleAs('CONFIRMED')">
+                    <i class="icofont-check-circled me-1"></i> Confirm & Deduct Stock Immediately
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+const MATERIALS_CATALOG = <%- JSON.stringify(materialsList || []) %>;
+
+let saleRowCounter = 0;
+
+function switchBuyerMode(mode) {
+    const custSelect = document.getElementById('customerSelect');
+    if (mode === 'EXISTING') {
+        custSelect.disabled = false;
+    } else {
+        custSelect.value = '';
+        custSelect.disabled = true;
+        if (mode === 'NEW') {
+            document.getElementById('custTypeSelect').value = 'INDIVIDUAL';
+        } else if (mode === 'B2B') {
+            document.getElementById('custTypeSelect').value = 'CONTRACTOR';
+        }
+        document.getElementById('custNameInput').value = '';
+        document.getElementById('custMobileInput').value = '';
+        document.getElementById('custGstinInput').value = '';
+    }
+}
+
+function onExistingCustomerSelect(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    document.getElementById('custNameInput').value = opt.getAttribute('data-name') || '';
+    document.getElementById('custMobileInput').value = opt.getAttribute('data-mobile') || '';
+    document.getElementById('custCityInput').value = opt.getAttribute('data-city') || 'Raisen';
+    document.getElementById('custGstinInput').value = opt.getAttribute('data-gstin') || '';
+    document.getElementById('custAddressInput').value = opt.getAttribute('data-address') || '';
+    if (opt.getAttribute('data-type')) {
+        document.getElementById('custTypeSelect').value = opt.getAttribute('data-type');
+    }
+}
+
+function addSaleItemRow() {
+    saleRowCounter++;
+    const rowId = `saleRow_${saleRowCounter}`;
+    const tbody = document.getElementById('saleItemsBody');
+
+    let optionsHtml = '<option value="">-- Select Material --</option>';
+    MATERIALS_CATALOG.forEach(m => {
+        const stock = m.currentStock || 0;
+        optionsHtml += `<option value="${m._id}" data-sku="${m.sku}" data-unit="${m.unit || 'Piece'}" data-stock="${stock}" data-price="${m.defaultSellingPrice || 0}" data-wac="${m.weightedAverageCost || 0}">
+            ${m.name} (${m.sku}) — Stock: ${stock} ${m.unit || 'Piece'}
+        </option>`;
+    });
+
+    const tr = document.createElement('tr');
+    tr.id = rowId;
+    tr.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm material-selector" onchange="onMaterialChange('${rowId}', this)" required>
+                ${optionsHtml}
+            </select>
+            <div id="${rowId}_overrideWrap" class="mt-1 d-none">
+                <span class="badge bg-warning text-dark me-1"><i class="icofont-warning"></i> Price Override</span>
+                <input type="text" class="form-control form-control-sm mt-1 override-reason" placeholder="Mandatory reason for price below catalog/cost...">
+            </div>
+        </td>
+        <td class="text-center">
+            <span class="badge bg-light text-dark border font-monospace" id="${rowId}_stockBadge">0</span>
+        </td>
+        <td>
+            <input type="number" step="1" min="1" class="form-control form-control-sm text-end qty-input calc-trigger" value="1" oninput="calcRow('${rowId}')" required>
+        </td>
+        <td>
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end price-input calc-trigger" value="0.00" oninput="calcRow('${rowId}')" required>
+        </td>
+        <td>
+            <select class="form-select form-select-sm text-end tax-input calc-trigger" onchange="calcRow('${rowId}')">
+                <option value="0" selected>0%</option>
+                <option value="5">5%</option>
+                <option value="12">12%</option>
+                <option value="18">18%</option>
+                <option value="28">28%</option>
+            </select>
+        </td>
+        <td class="text-end">
+            ₹<span id="${rowId}_taxDisplay">0.00</span>
+        </td>
+        <td class="text-end fw-bold">
+            ₹<span id="${rowId}_totalDisplay">0.00</span>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1" onclick="removeSaleRow('${rowId}')" title="Remove Item">
+                <i class="icofont-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    calcAll();
+}
+
+function removeSaleRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) row.remove();
+    calcAll();
+}
+
+function onMaterialChange(rowId, selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const row = document.getElementById(rowId);
+    if (!opt || !opt.value) {
+        document.getElementById(`${rowId}_stockBadge`).textContent = '0';
+        return;
+    }
+
+    const stock = Number(opt.getAttribute('data-stock') || 0);
+    const defaultPrice = Number(opt.getAttribute('data-price') || 0);
+    const wac = Number(opt.getAttribute('data-wac') || 0);
+    const unit = opt.getAttribute('data-unit') || 'Piece';
+
+    const stockBadge = document.getElementById(`${rowId}_stockBadge`);
+    stockBadge.textContent = `${stock} ${unit}`;
+    stockBadge.className = stock > 0 ? 'badge bg-success-subtle text-success border font-monospace' : 'badge bg-danger-subtle text-danger border font-monospace';
+
+    const priceInput = row.querySelector('.price-input');
+    if (priceInput && defaultPrice > 0) {
+        priceInput.value = defaultPrice.toFixed(2);
+    } else if (priceInput && wac > 0) {
+        priceInput.value = wac.toFixed(2);
+    }
+
+    calcRow(rowId);
+}
+
+function calcRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+
+    const selectEl = row.querySelector('.material-selector');
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const qty = Math.max(0, Number(row.querySelector('.qty-input').value) || 0);
+    const unitPrice = Math.max(0, Number(row.querySelector('.price-input').value) || 0);
+    const taxRate = Math.max(0, Number(row.querySelector('.tax-input').value) || 0);
+
+    // Price override check
+    if (opt && opt.value) {
+        const defaultPrice = Number(opt.getAttribute('data-price') || 0);
+        const wac = Number(opt.getAttribute('data-wac') || 0);
+        const isOverridden = (defaultPrice > 0 && unitPrice < defaultPrice) || (wac > 0 && unitPrice < wac);
+        const overrideWrap = document.getElementById(`${rowId}_overrideWrap`);
+        if (overrideWrap) {
+            if (isOverridden) {
+                overrideWrap.classList.remove('d-none');
+            } else {
+                overrideWrap.classList.add('d-none');
+            }
+        }
+    }
+
+    const lineSubtotal = qty * unitPrice;
+    const lineTax = lineSubtotal * (taxRate / 100);
+    const lineTotal = lineSubtotal + lineTax;
+
+    document.getElementById(`${rowId}_taxDisplay`).textContent = lineTax.toFixed(2);
+    document.getElementById(`${rowId}_totalDisplay`).textContent = lineTotal.toFixed(2);
+
+    calcAll();
+}
+
+function calcAll() {
+    let subtotal = 0;
+    let taxTotal = 0;
+
+    const rows = document.querySelectorAll('#saleItemsBody tr');
+    rows.forEach(r => {
+        const qty = Math.max(0, Number(r.querySelector('.qty-input').value) || 0);
+        const unitPrice = Math.max(0, Number(r.querySelector('.price-input').value) || 0);
+        const taxRate = Math.max(0, Number(r.querySelector('.tax-input').value) || 0);
+
+        const lSub = qty * unitPrice;
+        const lTax = lSub * (taxRate / 100);
+
+        subtotal += lSub;
+        taxTotal += lTax;
+    });
+
+    const discount = Math.max(0, Number(document.getElementById('discountInput').value) || 0);
+    const additional = Math.max(0, Number(document.getElementById('additionalInput').value) || 0);
+    const grandTotal = Math.max(0, subtotal + taxTotal + additional - discount);
+
+    document.getElementById('displaySubtotal').textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayTaxTotal').textContent = taxTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayDiscount').textContent = discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayAdditional').textContent = additional.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayGrandTotal').textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+document.querySelectorAll('.calc-trigger').forEach(el => {
+    el.addEventListener('input', calcAll);
+});
+
+function submitSaleAs(status) {
+    document.getElementById('formSubmitStatus').value = status;
+    document.getElementById('newSaleForm').requestSubmit();
+}
+
+async function handleSaleSubmit(e) {
+    e.preventDefault();
+
+    const form = e.target;
+    const status = document.getElementById('formSubmitStatus').value;
+
+    const customerName = document.getElementById('custNameInput').value.trim();
+    const customerMobile = document.getElementById('custMobileInput').value.trim();
+    if (!customerName || !customerMobile) {
+        alert('Customer / Buyer name and mobile number are required.');
+        return;
+    }
+
+    const rows = document.querySelectorAll('#saleItemsBody tr');
+    if (rows.length === 0) {
+        alert('Please add at least one material item to the sale.');
+        return;
+    }
+
+    const items = [];
+    const matSet = new Set();
+    let hasValidationError = false;
+
+    rows.forEach(r => {
+        const selectEl = r.querySelector('.material-selector');
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const mId = selectEl.value;
+
+        if (!mId) {
+            alert('Please select a material for all rows.');
+            hasValidationError = true;
+            return;
+        }
+
+        if (matSet.has(mId)) {
+            alert('Duplicate material in cart. Please merge quantities into a single row.');
+            hasValidationError = true;
+            return;
+        }
+        matSet.add(mId);
+
+        const qty = Number(r.querySelector('.qty-input').value);
+        const unitPrice = Number(r.querySelector('.price-input').value);
+        const gstRate = Number(r.querySelector('.tax-input').value) || 0;
+        const availableStock = Number(opt.getAttribute('data-stock') || 0);
+
+        if (qty <= 0) {
+            alert('Item quantity must be greater than 0.');
+            hasValidationError = true;
+            return;
+        }
+
+        if (status === 'CONFIRMED' && qty > availableStock) {
+            alert(`Requested quantity (${qty}) exceeds available stock (${availableStock}) for ${opt.text}.`);
+            hasValidationError = true;
+            return;
+        }
+
+        const overrideWrap = r.querySelector('.override-reason');
+        const overrideReason = overrideWrap ? overrideWrap.value.trim() : '';
+
+        const defaultPrice = Number(opt.getAttribute('data-price') || 0);
+        const wac = Number(opt.getAttribute('data-wac') || 0);
+        const isOverridden = (defaultPrice > 0 && unitPrice < defaultPrice) || (wac > 0 && unitPrice < wac);
+
+        if (isOverridden && !overrideReason) {
+            alert(`Price override reason is mandatory for material "${opt.text}" because selling price is below catalog/cost.`);
+            hasValidationError = true;
+            return;
+        }
+
+        items.push({
+            materialId: mId,
+            quantity: qty,
+            unitPrice: unitPrice,
+            gstRate: gstRate,
+            overrideReason: overrideReason
+        });
+    });
+
+    if (hasValidationError) return;
+
+    const payload = {
+        _csrf: CSRF_TOKEN,
+        status,
+        buyerType: document.querySelector('input[name="buyerTypeRadio"]:checked').value,
+        customerId: document.getElementById('customerSelect').value || null,
+        customerName,
+        customerMobile,
+        customerEmail: document.getElementById('custEmailInput').value.trim(),
+        customerAddress: document.getElementById('custAddressInput').value.trim(),
+        city: document.getElementById('custCityInput').value.trim(),
+        state: document.getElementById('custStateInput').value.trim(),
+        customerGstin: document.getElementById('custGstinInput').value.trim(),
+        companyName: document.getElementById('custCompanyInput').value.trim(),
+        contactPerson: document.getElementById('custContactPersonInput').value.trim(),
+        customerType: document.getElementById('custTypeSelect').value,
+        projectId: document.getElementById('projectSelect').value || null,
+        items,
+        discount: Number(document.getElementById('discountInput').value) || 0,
+        additionalCharges: Number(document.getElementById('additionalInput').value) || 0,
+        paymentStatus: form.paymentStatus.value,
+        paymentMethod: form.paymentMethod.value,
+        notes: form.notes.value.trim()
+    };
+
+    try {
+        const res = await fetch('/api/admin/sales', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Sale recorded successfully!');
+            window.location.href = `/admin/sales-out/${data.saleId}`;
+        } else {
+            alert(data.message || 'Error creating material sale.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+// Add first row on load
+document.addEventListener('DOMContentLoaded', () => {
+    addSaleItemRow();
+});
+</script>
+
+<%- include('partials/admin-footer') %>

@@ -62,6 +62,5 @@ const supplierSchema = new mongoose.Schema({
 
 supplierSchema.index({ name: 1 });
 supplierSchema.index({ mobile: 1 });
-supplierSchema.index({ status: 1 });
 
 module.exports = mongoose.models.Supplier || mongoose.model('Supplier', supplierSchema);

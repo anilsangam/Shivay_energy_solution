@@ -22,6 +22,8 @@ router.get(['/schemes', '/schemes.html'], (req, res) => res.redirect(301, '/#gov
 router.get(['/contact', '/contact.html'], pageController.getContact);
 router.get(['/complaints', '/complaints.html'], complaintController.getComplaintPage);
 router.get(['/franchise', '/franchise.html'], franchiseController.getFranchisePage);
+router.get(['/privacy-policy', '/privacy', '/privacy.html'], pageController.getPrivacyPolicy);
+router.get(['/terms-and-conditions', '/terms', '/terms.html'], pageController.getTermsConditions);
 
 // ==========================================
 // 2. PUBLIC CUSTOMER ACCEPTANCE (Crypto Token Gated)

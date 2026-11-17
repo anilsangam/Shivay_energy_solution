@@ -1,0 +1,522 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const suppliersList = (typeof suppliers !== 'undefined' && Array.isArray(suppliers)) ? suppliers : [];
+    const materialsList = (typeof materials !== 'undefined' && Array.isArray(materials)) ? materials : [];
+%>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <div class="mb-1">
+            <a href="/admin/purchases" class="text-muted small text-decoration-none">
+                <i class="icofont-rounded-left me-1"></i> Back to Purchase List
+            </a>
+        </div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-cart-alt me-2 text-warning"></i> New Purchase Order / Stock Inward
+        </h2>
+        <p class="text-muted small mb-0">
+            Record material purchases from suppliers with line-item tax details and landed cost freight allocations.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/materials" target="_blank" class="btn btn-outline-secondary" style="border-radius: 8px;">
+            <i class="icofont-box me-1"></i> Open Materials Catalog
+        </a>
+    </div>
+</div>
+
+<form id="newPurchaseForm" onsubmit="handlePurchaseSubmit(event)">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <input type="hidden" id="formSubmitStatus" name="status" value="RECEIVED">
+
+    <!-- Card 1: Supplier & Invoice Information -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                <i class="icofont-user-suited text-warning me-2"></i> 1. Supplier & Invoice Details
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label font-weight-semibold small">Supplier / Vendor <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <select name="supplierId" id="supplierSelect" class="form-select" required>
+                            <option value="">-- Choose Supplier --</option>
+                            <% suppliersList.forEach(s => { %>
+                                <option value="<%= s._id %>"><%= s.supplierName %> <%= s.gstin ? `(${s.gstin})` : '' %></option>
+                            <% }) %>
+                        </select>
+                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#quickAddSupplierModal" title="Add New Supplier">
+                            <i class="icofont-plus"></i> New
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">Vendor Invoice Number</label>
+                    <input type="text" name="supplierInvoiceNumber" class="form-control" placeholder="e.g. INV-2026-998">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label font-weight-semibold small">Vendor Invoice Date</label>
+                    <input type="date" name="supplierInvoiceDate" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label font-weight-semibold small">Payment Terms / Status</label>
+                    <select name="paymentStatus" class="form-select">
+                        <option value="UNPAID" selected>UNPAID (Pending)</option>
+                        <option value="PARTIAL">PARTIAL (Advance Paid)</option>
+                        <option value="PAID">PAID (Full Settlement)</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label font-weight-semibold small">Procurement Notes / Reference</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Optional notes, delivery vehicle number, or special instructions...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Line Items -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                <i class="icofont-listine-dots text-warning me-2"></i> 2. Purchased Items & Quantities
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLineItemRow()">
+                <i class="icofont-plus-circle me-1"></i> Add Another Item
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="lineItemsTable">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th style="min-width: 250px;">Material Item <span class="text-danger">*</span></th>
+                            <th style="width: 110px;" class="text-center">Unit</th>
+                            <th style="width: 130px;" class="text-end">Quantity <span class="text-danger">*</span></th>
+                            <th style="width: 150px;" class="text-end">Unit Price (₹) <span class="text-danger">*</span></th>
+                            <th style="width: 120px;" class="text-end">Tax %</th>
+                            <th style="width: 140px;" class="text-end">Tax Amount (₹)</th>
+                            <th style="width: 160px;" class="text-end">Line Total (₹)</th>
+                            <th style="width: 60px;" class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemsBody">
+                        <!-- Dynamic Rows Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-light py-2 px-3">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addLineItemRow()">
+                <i class="icofont-plus-circle me-1"></i> Add Another Item
+            </button>
+        </div>
+    </div>
+
+    <!-- Card 3: Landed Cost & Financial Summary -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="icofont-truck-alt text-warning me-2"></i> Landed Cost Adjustments
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted small">
+                        Additional charges (such as transportation, freight, unloading, insurance) will be <strong>prorated across purchased materials</strong> according to their purchase value for precise Weighted Average Cost (WAC) tracking.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Freight / Transport Charges (₹)</label>
+                            <input type="number" step="0.01" min="0" id="freightCharges" class="form-control calc-trigger" value="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Loading / Other Charges (₹)</label>
+                            <input type="number" step="0.01" min="0" id="otherCharges" class="form-control calc-trigger" value="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Overall Discount (₹)</label>
+                            <input type="number" step="0.01" min="0" id="discountAmount" name="discount" class="form-control calc-trigger" value="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Total Additional Charges (₹)</label>
+                            <input type="number" step="0.01" min="0" id="additionalChargesTotal" name="additionalCharges" class="form-control bg-light" readonly value="0.00">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+                        <i class="icofont-calculator text-warning me-2"></i> Inward Financial Summary
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tr>
+                            <td class="text-muted">Subtotal (Excl. Tax & Charges):</td>
+                            <td class="text-end fw-bold fs-6">₹<span id="displaySubtotal">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">GST / Tax Amount:</td>
+                            <td class="text-end fw-bold text-dark">₹<span id="displayTaxTotal">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Additional Charges (Freight/Loading):</td>
+                            <td class="text-end text-primary fw-bold">+₹<span id="displayAdditional">0.00</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Discount Applied:</td>
+                            <td class="text-end text-danger fw-bold">-₹<span id="displayDiscount">0.00</span></td>
+                        </tr>
+                        <tr class="border-top">
+                            <td class="pt-3 h5 font-weight-bold text-dark">Grand Landed Total:</td>
+                            <td class="pt-3 text-end h4 font-weight-bold" style="color: var(--admin-navy-primary);">
+                                ₹<span id="displayGrandTotal">0.00</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submission Actions -->
+    <div class="card border-0 shadow-sm rounded-3 mb-5">
+        <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <span class="text-muted small">Choose your inward workflow:</span>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" onclick="submitAs('DRAFT')">
+                    <i class="icofont-save me-1"></i> Save as Draft (Pending Inward)
+                </button>
+                <button type="button" class="btn btn-success font-weight-bold px-4 py-2" onclick="submitAs('RECEIVED')">
+                    <i class="icofont-check-circled me-1"></i> Confirm & Inward Stock Immediately
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Modal: Quick Add Supplier -->
+<div class="modal fade" id="quickAddSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="quickSupplierForm" onsubmit="handleQuickSupplier(event)">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-plus-circle me-2 text-warning"></i> Quick Add Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Supplier / Firm Name <span class="text-danger">*</span></label>
+                        <input type="text" id="quickSupplierName" class="form-control" required placeholder="e.g. Havells India Ltd">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Contact Person</label>
+                        <input type="text" id="quickContactPerson" class="form-control" placeholder="e.g. Amit Verma">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Mobile / Phone</label>
+                        <input type="tel" id="quickMobile" class="form-control" placeholder="e.g. 9826012345">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">GSTIN Number</label>
+                        <input type="text" id="quickGstin" class="form-control text-uppercase" placeholder="23AAAAA0000A1Z5">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning font-weight-bold text-dark px-4" id="quickSaveSupplierBtn">Save Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+const MATERIALS_CATALOG = <%- JSON.stringify(materialsList || []) %>;
+
+let lineItemCounter = 0;
+
+function addLineItemRow() {
+    lineItemCounter++;
+    const rowId = `itemRow_${lineItemCounter}`;
+    const tbody = document.getElementById('lineItemsBody');
+
+    const tr = document.createElement('tr');
+    tr.id = rowId;
+    tr.innerHTML = `
+        <td>
+            <select name="items[${lineItemCounter}][materialId]" class="form-select material-picker" onchange="onMaterialSelected('${rowId}')" required>
+                <option value="">-- Select Material --</option>
+                ${MATERIALS_CATALOG.map(m => `
+                    <option value="${m._id}" data-sku="${m.sku}" data-unit="${m.unitOfMeasurement}" data-price="${m.weightedAverageCost || m.defaultSellingPrice || 0}">
+                        [${m.sku}] ${m.name} (${(m.category || '').replace(/_/g, ' ')})
+                    </option>
+                `).join('')}
+            </select>
+        </td>
+        <td class="text-center">
+            <span class="badge bg-light text-dark border unit-badge">—</span>
+        </td>
+        <td>
+            <input type="number" step="0.01" min="0.01" name="items[${lineItemCounter}][quantity]" class="form-control text-end row-calc-trigger qty-input" value="1.00" required>
+        </td>
+        <td>
+            <input type="number" step="0.01" min="0" name="items[${lineItemCounter}][unitPrice]" class="form-control text-end row-calc-trigger price-input" value="0.00" required>
+        </td>
+        <td>
+            <select name="items[${lineItemCounter}][taxRate]" class="form-select text-end row-calc-trigger tax-rate-select">
+                <option value="0">0%</option>
+                <option value="5">5%</option>
+                <option value="12">12%</option>
+                <option value="18" selected>18%</option>
+                <option value="28">28%</option>
+            </select>
+        </td>
+        <td class="text-end fw-semibold text-muted">
+            ₹<span class="row-tax-amount">0.00</span>
+        </td>
+        <td class="text-end fw-bold text-dark">
+            ₹<span class="row-total-amount">0.00</span>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLineItemRow('${rowId}')" title="Remove line item">
+                <i class="icofont-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+
+    // Attach listeners
+    tr.querySelectorAll('.row-calc-trigger').forEach(input => {
+        input.addEventListener('input', calculateTotals);
+        input.addEventListener('change', calculateTotals);
+    });
+
+    calculateTotals();
+}
+
+function removeLineItemRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const tbody = document.getElementById('lineItemsBody');
+    if (tbody.children.length <= 1) {
+        alert('At least one material item is required in a purchase order.');
+        return;
+    }
+    row.remove();
+    calculateTotals();
+}
+
+function onMaterialSelected(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const select = row.querySelector('.material-picker');
+    const selectedOpt = select.options[select.selectedIndex];
+    const unitBadge = row.querySelector('.unit-badge');
+    const priceInput = row.querySelector('.price-input');
+
+    if (selectedOpt && selectedOpt.value) {
+        unitBadge.textContent = selectedOpt.getAttribute('data-unit') || 'NOS';
+        const defaultP = parseFloat(selectedOpt.getAttribute('data-price')) || 0;
+        if (parseFloat(priceInput.value) === 0 && defaultP > 0) {
+            priceInput.value = defaultP.toFixed(2);
+        }
+    } else {
+        unitBadge.textContent = '—';
+    }
+    calculateTotals();
+}
+
+function calculateTotals() {
+    let subtotal = 0;
+    let taxTotal = 0;
+
+    const rows = document.querySelectorAll('#lineItemsBody tr');
+    rows.forEach(r => {
+        const qty = parseFloat(r.querySelector('.qty-input').value) || 0;
+        const price = parseFloat(r.querySelector('.price-input').value) || 0;
+        const taxRate = parseFloat(r.querySelector('.tax-rate-select').value) || 0;
+
+        const lineBase = qty * price;
+        const lineTax = lineBase * (taxRate / 100);
+        const lineTotal = lineBase + lineTax;
+
+        r.querySelector('.row-tax-amount').textContent = lineTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        r.querySelector('.row-total-amount').textContent = lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        subtotal += lineBase;
+        taxTotal += lineTax;
+    });
+
+    const freight = parseFloat(document.getElementById('freightCharges').value) || 0;
+    const other = parseFloat(document.getElementById('otherCharges').value) || 0;
+    const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+
+    const additionalTotal = freight + other;
+    document.getElementById('additionalChargesTotal').value = additionalTotal.toFixed(2);
+
+    const grandTotal = Math.max(0, subtotal + taxTotal + additionalTotal - discount);
+
+    document.getElementById('displaySubtotal').textContent = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayTaxTotal').textContent = taxTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayAdditional').textContent = additionalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayDiscount').textContent = discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('displayGrandTotal').textContent = grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Attach landed cost calc triggers
+document.querySelectorAll('.calc-trigger').forEach(el => {
+    el.addEventListener('input', calculateTotals);
+    el.addEventListener('change', calculateTotals);
+});
+
+function submitAs(status) {
+    document.getElementById('formSubmitStatus').value = status;
+    const form = document.getElementById('newPurchaseForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+}
+
+async function handlePurchaseSubmit(e) {
+    e.preventDefault();
+
+    const supplierId = document.getElementById('supplierSelect').value;
+    if (!supplierId) {
+        alert('Please choose a supplier.');
+        return;
+    }
+
+    const rows = document.querySelectorAll('#lineItemsBody tr');
+    if (rows.length === 0) {
+        alert('Please add at least one material item.');
+        return;
+    }
+
+    const items = [];
+    for (let r of rows) {
+        const materialId = r.querySelector('.material-picker').value;
+        const qty = parseFloat(r.querySelector('.qty-input').value) || 0;
+        const price = parseFloat(r.querySelector('.price-input').value) || 0;
+        const taxRate = parseFloat(r.querySelector('.tax-rate-select').value) || 0;
+
+        if (!materialId) {
+            alert('Please select a material for all line items.');
+            return;
+        }
+        if (qty <= 0) {
+            alert('Quantity must be greater than zero for all items.');
+            return;
+        }
+
+        items.push({
+            material: materialId,
+            quantity: qty,
+            unitPurchasePrice: price,
+            taxRate: taxRate
+        });
+    }
+
+    const payload = {
+        _csrf: CSRF_TOKEN,
+        supplierId: supplierId,
+        supplierInvoiceNumber: document.querySelector('[name="supplierInvoiceNumber"]').value,
+        supplierInvoiceDate: document.querySelector('[name="supplierInvoiceDate"]').value,
+        paymentStatus: document.querySelector('[name="paymentStatus"]').value,
+        notes: document.querySelector('[name="notes"]').value,
+        additionalCharges: parseFloat(document.getElementById('additionalChargesTotal').value) || 0,
+        discount: parseFloat(document.getElementById('discountAmount').value) || 0,
+        status: document.getElementById('formSubmitStatus').value,
+        items: items
+    };
+
+    const isDirectReceive = payload.status === 'RECEIVED';
+    if (isDirectReceive && !confirm('Confirm and inward this purchase order to live stock?\n\nThis will immediately increment on-hand inventory levels and recalculate Weighted Average Cost (WAC).')) {
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/admin/purchases', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Purchase order processed successfully!');
+            window.location.href = data.purchaseId ? `/admin/purchases/${data.purchaseId}` : '/admin/purchases';
+        } else {
+            alert(data.message || 'Error processing purchase order.');
+        }
+    } catch (err) {
+        alert('Network communication error.');
+    }
+}
+
+async function handleQuickSupplier(e) {
+    e.preventDefault();
+    const btn = document.getElementById('quickSaveSupplierBtn');
+    btn.disabled = true;
+
+    const payload = {
+        _csrf: CSRF_TOKEN,
+        supplierName: document.getElementById('quickSupplierName').value,
+        contactPerson: document.getElementById('quickContactPerson').value,
+        mobile: document.getElementById('quickMobile').value,
+        gstin: document.getElementById('quickGstin').value,
+        status: 'ACTIVE'
+    };
+
+    try {
+        const res = await fetch('/api/admin/suppliers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success && data.supplier) {
+            const select = document.getElementById('supplierSelect');
+            const opt = document.createElement('option');
+            opt.value = data.supplier._id;
+            opt.textContent = `${data.supplier.supplierName} (${data.supplier.gstin || 'Unregistered'})`;
+            opt.selected = true;
+            select.appendChild(opt);
+
+            const m = bootstrap.Modal.getInstance(document.getElementById('quickAddSupplierModal'));
+            if (m) m.hide();
+            document.getElementById('quickSupplierForm').reset();
+            alert('Supplier added and selected!');
+        } else {
+            alert(data.message || 'Error adding supplier.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// Initialize with one empty line item on load
+document.addEventListener('DOMContentLoaded', function() {
+    addLineItemRow();
+});
+</script>
+
+<%- include('partials/admin-footer') %>

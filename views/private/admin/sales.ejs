@@ -1,0 +1,281 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const salesStats = (typeof stats !== 'undefined' && stats) ? stats : {
+        totalSales: 0,
+        confirmedSales: 0,
+        draftSales: 0,
+        totalRevenue: 0,
+        totalUnitsSold: 0
+    };
+    const totalP = (typeof totalPages !== 'undefined') ? totalPages : ((typeof pagination !== 'undefined' && pagination.totalPages) ? pagination.totalPages : 1);
+    const currP = (typeof currentPage !== 'undefined') ? currentPage : ((typeof pagination !== 'undefined' && pagination.page) ? pagination.page : 1);
+    const totalItms = (typeof totalItems !== 'undefined') ? totalItems : ((typeof pagination !== 'undefined' && pagination.total) ? pagination.total : 0);
+    const filterObj = (typeof filters !== 'undefined' && filters) ? filters : {};
+    const salesList = (typeof sales !== 'undefined' && Array.isArray(sales)) ? sales : [];
+%>
+
+<!-- Action Feedback Alert Banner -->
+<div id="salesToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="salesToastMsg">Action completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('salesToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-truck-loaded me-2 text-warning"></i> Material Sales & Stock Out
+        </h2>
+        <p class="text-muted small mb-0">
+            Commercial material sales, client billing, custom price overrides, and verified inventory stock-out ledger tracking.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/api/admin/sales/export" class="btn btn-outline-secondary" style="border-radius: 8px;" title="Export Sales Records">
+            <i class="icofont-download me-1"></i> Export Sales CSV
+        </a>
+        <a href="/admin/sales-out/new" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Create New Sale
+        </a>
+        <a href="/admin/inventory" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-database me-1"></i> View Stock
+        </a>
+    </div>
+</div>
+
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Sales Orders</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= salesStats.totalSales %></div>
+            <div class="small text-muted mt-1">Orders generated</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Confirmed / Processing</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= salesStats.confirmedSales %></div>
+            <div class="small text-muted mt-1">Stock deducted orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Draft Sales</span>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= salesStats.draftSales %></div>
+            <div class="small text-muted mt-1">Pending confirmation</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Confirmed Sales Revenue</span>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-1">₹<%= Number(salesStats.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></div>
+            <div class="small text-muted mt-1"><%= Number(salesStats.totalUnitsSold || 0).toLocaleString('en-IN') %> units fulfilled</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/sales-out" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-5 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Sale #, Customer Name, Mobile or Invoice..." value="<%= filterObj.search || '' %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-3 p-0 pe-1">
+            <select name="status" class="form-select">
+                <option value="">All Order Statuses</option>
+                <option value="CONFIRMED" <%= filterObj.status === 'CONFIRMED' ? 'selected' : '' %>>CONFIRMED (Stock Deducted)</option>
+                <option value="PROCESSING" <%= filterObj.status === 'PROCESSING' ? 'selected' : '' %>>PROCESSING (Partial Dispatch)</option>
+                <option value="DRAFT" <%= filterObj.status === 'DRAFT' ? 'selected' : '' %>>DRAFT (Pending)</option>
+                <option value="CANCELLED" <%= filterObj.status === 'CANCELLED' ? 'selected' : '' %>>CANCELLED</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 p-0 px-1">
+            <select name="paymentStatus" class="form-select">
+                <option value="">All Payments</option>
+                <option value="PAID" <%= filterObj.paymentStatus === 'PAID' ? 'selected' : '' %>>PAID</option>
+                <option value="PARTIALLY_PAID" <%= filterObj.paymentStatus === 'PARTIALLY_PAID' ? 'selected' : '' %>>PARTIALLY PAID</option>
+                <option value="UNPAID" <%= filterObj.paymentStatus === 'UNPAID' ? 'selected' : '' %>>UNPAID</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 p-0 ps-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);"><i class="icofont-filter me-1"></i> Filter</button>
+            <a href="/admin/sales-out" class="btn btn-outline-secondary" title="Reset Filters"><i class="icofont-refresh"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Sales Orders Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Material Sales Orders (<%= totalItms %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Outward stock, customer billing & fulfillment status</div>
+        </div>
+        <span class="badge bg-light text-dark border">Outward Sales</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3" style="width: 150px;">Sale # / Date</th>
+                    <th class="py-3">Customer / Buyer</th>
+                    <th class="py-3 text-center">Items</th>
+                    <th class="py-3 text-end">Grand Total</th>
+                    <th class="py-3 text-center">Order Status</th>
+                    <th class="py-3 text-center">Dispatch Status</th>
+                    <th class="py-3 text-center">Payment</th>
+                    <th class="pe-3 py-3 text-end">Actions</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <% if (salesList && salesList.length > 0) { %>
+                        <% salesList.forEach(s => { %>
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="/admin/sales-out/<%= s._id %>" class="fw-bold font-monospace text-primary text-decoration-none" style="font-size: 12px;">
+                                        <%= s.saleNumber %>
+                                    </a>
+                                    <div class="text-muted" style="font-size: 11px;"><%= new Date(s.saleDate || s.createdAt).toLocaleDateString('en-IN') %></div>
+                                    <% if (s.projectNumber) { %>
+                                        <span class="badge bg-light text-primary border font-monospace mt-1" style="font-size: 10px;">
+                                            <i class="icofont-sun me-1"></i><%= s.projectNumber %>
+                                        </span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><%= s.customerName %></div>
+                                    <div class="small text-muted">
+                                        <i class="icofont-phone me-1"></i><%= s.customerMobile %>
+                                        <span class="badge bg-light text-secondary border ms-1" style="font-size: 9px;"><%= s.customerType || 'INDIVIDUAL' %></span>
+                                    </div>
+                                    <% if (s.companyName) { %>
+                                        <div class="small text-muted"><i class="icofont-building me-1"></i><%= s.companyName %></div>
+                                    <% } %>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border">
+                                        <%= (s.items || []).length %> item<%= (s.items || []).length === 1 ? '' : 's' %>
+                                    </span>
+                                </td>
+                                <td class="text-end fw-bold text-dark fs-6">
+                                    ₹<%= Number(s.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="text-center">
+                                    <% if (s.status === 'CONFIRMED') { %>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="icofont-check-circled me-1"></i>CONFIRMED</span>
+                                    <% } else if (s.status === 'PROCESSING') { %>
+                                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1"><i class="icofont-sand-clock me-1"></i>PROCESSING</span>
+                                    <% } else if (s.status === 'DRAFT') { %>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"><i class="icofont-edit-alt me-1"></i>DRAFT</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary-subtle text-secondary border px-2 py-1"><%= s.status %></span>
+                                    <% } %>
+                                </td>
+                                <td class="text-center">
+                                    <% if (s.dispatchStatus === 'DELIVERED') { %>
+                                        <span class="badge bg-success text-white px-2 py-1"><i class="icofont-check me-1"></i>DELIVERED</span>
+                                    <% } else if (s.dispatchStatus === 'DISPATCHED') { %>
+                                        <span class="badge bg-primary text-white px-2 py-1"><i class="icofont-truck me-1"></i>DISPATCHED</span>
+                                    <% } else if (s.dispatchStatus === 'PARTIALLY_DISPATCHED') { %>
+                                        <span class="badge bg-warning text-dark px-2 py-1"><i class="icofont-clock-time me-1"></i>PARTIAL</span>
+                                    <% } else { %>
+                                        <span class="badge bg-light text-muted border px-2 py-1">NOT DISPATCHED</span>
+                                    <% } %>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge <%= s.paymentStatus === 'PAID' ? 'bg-success-subtle text-success' : (s.paymentStatus === 'PARTIALLY_PAID' ? 'bg-warning-subtle text-warning' : 'bg-danger-subtle text-danger') %> border px-2 py-1">
+                                        <%= s.paymentStatus || 'UNPAID' %>
+                                    </span>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="/admin/sales-out/<%= s._id %>" class="btn btn-outline-secondary" title="View Sale Order">
+                                            <i class="icofont-eye-alt"></i>
+                                        </a>
+                                        <% if (s.status === 'CONFIRMED' || s.status === 'PROCESSING') { %>
+                                            <a href="/admin/sales-out/<%= s._id %>/invoice" class="btn btn-outline-primary" title="View Tax Invoice" target="_blank">
+                                                <i class="icofont-print"></i>
+                                            </a>
+                                        <% } else if (s.status === 'DRAFT') { %>
+                                            <button class="btn btn-success" title="Confirm Sale Order" onclick="confirmSaleNow('<%= s._id %>', '<%= s.saleNumber %>')">
+                                                <i class="icofont-check"></i> Confirm
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="icofont-truck-loaded text-muted" style="font-size: 40px;"></i>
+                                <p class="text-muted mt-2 mb-0">No material sales records found.</p>
+                                <a href="/admin/sales-out/new" class="btn btn-sm btn-warning mt-2">
+                                    <i class="icofont-plus-circle me-1"></i> Create First Sale Order
+                                </a>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    
+    <% if (totalP > 1) { %>
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Showing page <%= currP %> of <%= totalP %> (<%= totalItms %> sales orders)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <% for (let p = 1; p <= totalP; p++) { %>
+                    <li class="page-item <%= p === currP ? 'active' : '' %>">
+                        <a class="page-link" href="/admin/sales-out?page=<%= p %>&search=<%= filterObj.search || '' %>&status=<%= filterObj.status || '' %>&paymentStatus=<%= filterObj.paymentStatus || '' %>"><%= p %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('salesToast');
+    const m = document.getElementById('salesToastMsg');
+    t.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show mb-4`;
+    m.textContent = msg;
+    t.classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function confirmSaleNow(saleId, saleNum) {
+    if (!confirm(`Are you sure you want to CONFIRM sale order "${saleNum}"?\n\nThis will validate live inventory, atomically deduct stock, and generate the sales tax invoice.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/admin/sales/${saleId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Sale confirmed successfully.');
+            setTimeout(() => location.reload(), 800);
+        } else {
+            showToast(data.message || 'Failed to confirm sale order.', true);
+        }
+    } catch (err) {
+        showToast('Server communication error.', true);
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

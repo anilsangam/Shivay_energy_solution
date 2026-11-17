@@ -1,0 +1,480 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const supplierStats = (typeof stats !== 'undefined' && stats) ? stats : {
+        totalSuppliers: 0,
+        activeSuppliers: 0,
+        inactiveSuppliers: 0
+    };
+    const totalP = (typeof totalPages !== 'undefined') ? totalPages : ((typeof pagination !== 'undefined' && pagination.totalPages) ? pagination.totalPages : 1);
+    const currP = (typeof currentPage !== 'undefined') ? currentPage : ((typeof pagination !== 'undefined' && pagination.page) ? pagination.page : 1);
+    const totalItms = (typeof totalItems !== 'undefined') ? totalItems : ((typeof pagination !== 'undefined' && pagination.total) ? pagination.total : 0);
+    const filterObj = (typeof filters !== 'undefined' && filters) ? filters : {};
+    const suppliersList = (typeof suppliers !== 'undefined' && Array.isArray(suppliers)) ? suppliers : [];
+%>
+
+<!-- Action Feedback Alert Banner -->
+<div id="supplierToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="supplierToastMsg">Supplier saved successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('supplierToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-users me-2 text-warning"></i> Suppliers & Vendors
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage authorized manufacturers, distributors, fabricators, and hardware vendors for inward inventory procurement.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-warning font-weight-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#createSupplierModal" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Add New Supplier
+        </button>
+        <a href="/admin/inventory" class="btn btn-outline-primary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-database me-1"></i> Stock Inventory
+        </a>
+        <a href="/admin/materials" class="btn btn-outline-dark font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-box me-1 text-warning"></i> Material Master
+        </a>
+        <a href="/admin/purchases/new" class="btn btn-outline-secondary font-weight-bold" style="border-radius: 8px;">
+            <i class="icofont-cart-alt me-1"></i> New Purchase Order
+        </a>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Inventory Hub:</span>
+            <a href="/admin/inventory" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-database me-1"></i> Stock Inventory
+            </a>
+            <a href="/admin/materials" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-warning"></i> Material Master / Items
+            </a>
+            <a href="/admin/suppliers" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-users me-1 text-info"></i> Suppliers & Vendors (Active)
+            </a>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/admin/purchases" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-cart-alt me-1"></i> Purchases / Inward
+            </a>
+            <a href="/admin/sales-out" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-truck-loaded me-1"></i> Sales / Outward
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-4">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Vendors</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= supplierStats.totalSuppliers %></div>
+            <div class="small text-muted mt-1">Registered suppliers</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-4">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Active Suppliers</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= supplierStats.activeSuppliers %></div>
+            <div class="small text-muted mt-1">Available for PO generation</div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-4">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Inactive / On Hold</span>
+            <div class="h3 font-weight-bold text-secondary mb-0 mt-1"><%= supplierStats.inactiveSuppliers %></div>
+            <div class="small text-muted mt-1">Temporarily paused vendors</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/suppliers" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-6 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Supplier Name, Contact Person, Phone or GSTIN..." value="<%= filterObj.search || '' %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-4 p-0 px-1">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE" <%= filterObj.status === 'ACTIVE' ? 'selected' : '' %>>Active Vendors Only</option>
+                <option value="INACTIVE" <%= filterObj.status === 'INACTIVE' ? 'selected' : '' %>>Inactive / On-Hold Only</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 p-0 ps-1 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);"><i class="icofont-filter me-1"></i> Search</button>
+            <a href="/admin/suppliers" class="btn btn-outline-secondary" title="Reset Filters"><i class="icofont-refresh"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Suppliers Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Supplier & Vendor Directory (<%= totalItms %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Registered manufacturers, distributors & hardware vendors</div>
+        </div>
+        <span class="badge bg-light text-dark border">Vendor Master</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3">Vendor / Firm Name</th>
+                    <th class="py-3">Contact Person</th>
+                    <th class="py-3">Contact Details</th>
+                    <th class="py-3">GSTIN / Tax ID</th>
+                    <th class="py-3">City / Address</th>
+                    <th class="py-3 text-center">Status</th>
+                    <th class="pe-3 py-3 text-end">Actions</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <% if (suppliersList && suppliersList.length > 0) { %>
+                        <% suppliersList.forEach(sup => { %>
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark"><%= sup.supplierName %></div>
+                                    <% if (sup.notes) { %>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 220px;"><%= sup.notes %></small>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <div class="text-dark fw-medium"><%= sup.contactPerson || '—' %></div>
+                                </td>
+                                <td>
+                                    <% if (sup.mobile) { %>
+                                        <div><i class="icofont-phone text-muted me-1"></i> <a href="tel:<%= sup.mobile %>" class="text-dark text-decoration-none small"><%= sup.mobile %></a></div>
+                                    <% } %>
+                                    <% if (sup.email) { %>
+                                        <div><i class="icofont-email text-muted me-1"></i> <a href="mailto:<%= sup.email %>" class="text-muted text-decoration-none small"><%= sup.email %></a></div>
+                                    <% } %>
+                                    <% if (!sup.mobile && !sup.email) { %>
+                                        <span class="text-muted small">—</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (sup.gstin) { %>
+                                        <span class="badge bg-light text-dark border font-monospace" style="font-size: 11px;"><%= sup.gstin %></span>
+                                    <% } else { %>
+                                        <span class="text-muted small">Unregistered</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block text-truncate" style="max-width: 220px;"><%= sup.address || '—' %></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill <%= sup.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary' %>" style="font-size: 10px;">
+                                        <%= sup.status %>
+                                    </span>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="openEditSupplierModal('<%= sup._id %>')" title="Edit Supplier">
+                                            <i class="icofont-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-<%= sup.status === 'ACTIVE' ? 'warning' : 'success' %>" onclick="toggleSupplierStatus('<%= sup._id %>', '<%= sup.status %>')" title="<%= sup.status === 'ACTIVE' ? 'Deactivate' : 'Activate' %>">
+                                            <i class="icofont-<%= sup.status === 'ACTIVE' ? 'ban' : 'check' %>"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="icofont-users text-muted" style="font-size: 40px;"></i>
+                                <p class="text-muted mt-2 mb-0">No suppliers found.</p>
+                                <button class="btn btn-sm btn-warning mt-2" data-bs-toggle="modal" data-bs-target="#createSupplierModal">
+                                    <i class="icofont-plus-circle me-1"></i> Register First Supplier
+                                </button>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    
+    <% if (totalP > 1) { %>
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Showing page <%= currP %> of <%= totalP %> (<%= totalItms %> suppliers)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <% for (let p = 1; p <= totalP; p++) { %>
+                    <li class="page-item <%= p === currP ? 'active' : '' %>">
+                        <a class="page-link" href="/admin/suppliers?page=<%= p %>&search=<%= filterObj.search || '' %>&status=<%= filterObj.status || '' %>"><%= p %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Add New Supplier -->
+<div class="modal fade" id="createSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="createSupplierForm" onsubmit="handleCreateSupplier(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-users me-2 text-warning"></i> Add New Supplier / Vendor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label font-weight-semibold small">Supplier / Firm Name <span class="text-danger">*</span></label>
+                            <input type="text" name="supplierName" class="form-control" placeholder="e.g. Adani Solar Distribution Pvt Ltd" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-semibold small">GSTIN Number</label>
+                            <input type="text" name="gstin" class="form-control font-monospace text-uppercase" placeholder="23AAAAA0000A1Z5" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Contact Person</label>
+                            <input type="text" name="contactPerson" class="form-control" placeholder="e.g. Rajesh Kumar (Regional Sales)">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Mobile / Phone Number</label>
+                            <input type="tel" name="mobile" class="form-control" placeholder="e.g. +91 98765 43210">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="e.g. sales@adanisolar.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="ACTIVE" selected>ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE / ON HOLD</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Office / Warehouse Address</label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="Full address, city, state, pincode..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Notes / Payment Terms</label>
+                            <input type="text" name="notes" class="form-control" placeholder="e.g. 30 days net credit, 18% GST applicable">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning font-weight-bold text-dark px-4" id="saveSupplierBtn">
+                        <i class="icofont-check-circled me-1"></i> Save Supplier
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Supplier -->
+<div class="modal fade" id="editSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="editSupplierForm" onsubmit="handleUpdateSupplier(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" id="editSupplierId" name="supplierId">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-edit me-2 text-warning"></i> Edit Supplier</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label font-weight-semibold small">Supplier Name <span class="text-danger">*</span></label>
+                            <input type="text" id="editSupplierName" name="supplierName" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-semibold small">GSTIN Number</label>
+                            <input type="text" id="editGstin" name="gstin" class="form-control font-monospace text-uppercase" maxlength="15">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Contact Person</label>
+                            <input type="text" id="editContactPerson" name="contactPerson" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Mobile / Phone</label>
+                            <input type="tel" id="editMobile" name="mobile" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Email Address</label>
+                            <input type="email" id="editEmail" name="email" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Status</label>
+                            <select id="editStatus" name="status" class="form-select">
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Address</label>
+                            <textarea id="editAddress" name="address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Notes / Terms</label>
+                            <input type="text" id="editNotes" name="notes" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary font-weight-bold px-4" id="updateSupplierBtn">
+                        <i class="icofont-check-circled me-1"></i> Update Supplier
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('supplierToast');
+    const m = document.getElementById('supplierToastMsg');
+    t.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show mb-4`;
+    m.textContent = msg;
+    t.classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function handleCreateSupplier(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveSupplierBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/api/admin/suppliers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Supplier created successfully.');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Failed to create supplier.', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Save Supplier';
+        }
+    } catch (err) {
+        showToast('Network error while saving supplier.', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Save Supplier';
+    }
+}
+
+async function openEditSupplierModal(id) {
+    try {
+        const res = await fetch(`/admin/suppliers/${id}`);
+        const data = await res.json();
+        if (!data.success || !data.supplier) {
+            return alert(data.message || 'Error fetching supplier details.');
+        }
+
+        const s = data.supplier;
+        document.getElementById('editSupplierId').value = s._id;
+        document.getElementById('editSupplierName').value = s.supplierName || '';
+        document.getElementById('editGstin').value = s.gstin || '';
+        document.getElementById('editContactPerson').value = s.contactPerson || '';
+        document.getElementById('editMobile').value = s.mobile || '';
+        document.getElementById('editEmail').value = s.email || '';
+        document.getElementById('editStatus').value = s.status || 'ACTIVE';
+        document.getElementById('editAddress').value = s.address || '';
+        document.getElementById('editNotes').value = s.notes || '';
+
+        const editModal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+        editModal.show();
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+async function handleUpdateSupplier(e) {
+    e.preventDefault();
+    const btn = document.getElementById('updateSupplierBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+
+    const id = document.getElementById('editSupplierId').value;
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch(`/api/admin/suppliers/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Supplier updated successfully.');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Failed to update supplier.', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Update Supplier';
+        }
+    } catch (err) {
+        showToast('Network error while updating supplier.', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Update Supplier';
+    }
+}
+
+async function toggleSupplierStatus(id, currentStatus) {
+    const action = currentStatus === 'ACTIVE' ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this supplier?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/suppliers/${id}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Error toggling supplier status.', true);
+        }
+    } catch (err) {
+        showToast('Server communication error.', true);
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

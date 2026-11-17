@@ -519,6 +519,44 @@ class DataStore {
         inMemoryUsers.unshift(userObj);
         return userObj;
     }
+
+    static deleteEnquiry(id) {
+        const idx = enquiries.findIndex(e => e.id === id || e.enquiryId === id);
+        if (idx !== -1) {
+            enquiries.splice(idx, 1);
+            return true;
+        }
+        return false;
+    }
+
+    static getAllFranchiseApplications() {
+        const franchiseController = require('../controllers/franchiseController');
+        return franchiseController.getMemFranchise ? franchiseController.getMemFranchise() : [];
+    }
+
+    static updateFranchiseStatus(id, newStatus, note = '') {
+        const apps = this.getAllFranchiseApplications();
+        const item = apps.find(a => (a.applicationId === id || (a._id && a._id.toString() === id.toString())));
+        if (item) {
+            item.status = newStatus;
+            if (note) {
+                if (!item.notes) item.notes = [];
+                item.notes.push({ author: 'Admin', note, date: new Date() });
+            }
+            return true;
+        }
+        return false;
+    }
+
+    static deleteFranchiseApplication(id) {
+        const apps = this.getAllFranchiseApplications();
+        const idx = apps.findIndex(a => (a.applicationId === id || (a._id && a._id.toString() === id.toString())));
+        if (idx !== -1) {
+            apps.splice(idx, 1);
+            return true;
+        }
+        return false;
+    }
 }
 
 module.exports = DataStore;

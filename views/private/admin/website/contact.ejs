@@ -1,0 +1,298 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Company profile and contact details updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-address-book me-2 text-warning"></i> Website Contact & Master Profile
+        </h2>
+        <p class="text-muted small mb-0">
+            Edit office address, phones, email, working hours, and social links. Changes synchronize across the entire website instantly.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/contact" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live Contact Page
+        </a>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Website CMS:</span>
+            <a href="/admin/website/projects" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-energy-solar me-1 text-warning"></i> Projects
+            </a>
+            <a href="/admin/website/products" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-primary"></i> Products
+            </a>
+            <a href="/admin/website/services" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-tasks-alt me-1 text-primary"></i> Services
+            </a>
+            <a href="/admin/website/team" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-users-alt-5 me-1 text-info"></i> Founders & Team
+            </a>
+            <a href="/admin/website/testimonials" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-star me-1 text-warning"></i> Testimonials
+            </a>
+            <a href="/admin/website/contact" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-address-book me-1 text-warning"></i> Contact Info (Active)
+            </a>
+        </div>
+        <span class="badge bg-success bg-opacity-10 text-success fw-bold">Live Synchronized</span>
+    </div>
+</div>
+
+<form id="contactForm" onsubmit="handleContactSubmit(event)">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="row g-4">
+        <!-- Section 1: Brand & Basic Identity -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                        <i class="icofont-building me-2 text-primary"></i> Company & Brand Details
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label font-weight-bold small">Company Full Legal Name *</label>
+                            <input type="text" name="companyName" class="form-control" value="<%= setting.companyName || company.name %>" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label font-weight-bold small">Short Brand Name</label>
+                            <input type="text" name="shortName" class="form-control" value="<%= setting.shortName || company.shortName %>">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold small">Brand Tagline</label>
+                            <input type="text" name="tagline" class="form-control" value="<%= setting.tagline || company.tagline %>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">GSTIN Number</label>
+                            <input type="text" name="gstin" class="form-control" value="<%= setting.gstin || company.gstin || '' %>" placeholder="23AAAAA0000A1Z5">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Website Domain</label>
+                            <input type="text" name="website" class="form-control" value="<%= setting.website || company.website || '' %>" placeholder="www.shivayenergysolutions.com">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Contact Numbers & Email -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                        <i class="icofont-phone me-2 text-success"></i> Primary Phone Numbers & Email
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Primary Phone (Navbar & Topbar) *</label>
+                            <input type="text" name="primaryPhone" class="form-control" value="<%= setting.primaryPhone || company.contact.phone %>" required>
+                            <small class="text-muted">Displayed in header top-bar and call buttons</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Alternate / Office Phone</label>
+                            <input type="text" name="alternatePhone" class="form-control" value="<%= setting.alternatePhone || company.contact.alternatePhone %>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Official Email Address *</label>
+                            <input type="email" name="officialEmail" class="form-control" value="<%= setting.officialEmail || company.email %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">WhatsApp Helpline Number</label>
+                            <input type="text" name="whatsappNumber" class="form-control" value="<%= setting.whatsappNumber || company.contact.whatsapp %>">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Working Days</label>
+                            <input type="text" name="workingDays" class="form-control" value="<%= setting.workingDays || company.workingHours.days %>" placeholder="Monday - Saturday">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Working Hours</label>
+                            <input type="text" name="workingTime" class="form-control" value="<%= setting.workingTime || company.workingHours.time %>" placeholder="9:00 AM - 7:00 PM">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Registered Physical Address -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                        <i class="icofont-location-pin me-2 text-danger"></i> Registered Physical Address
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold small">Address Line 1 (Street/Ward) *</label>
+                            <input type="text" name="addressLine" class="form-control" value="<%= setting.addressLine || company.address.line1 %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">City / Town *</label>
+                            <input type="text" name="city" class="form-control" value="<%= setting.city || company.address.city %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">District *</label>
+                            <input type="text" name="district" class="form-control" value="<%= setting.district || company.address.district %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">State *</label>
+                            <input type="text" name="state" class="form-control" value="<%= setting.state || company.address.state %>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">PIN Code *</label>
+                            <input type="text" name="pincode" class="form-control" value="<%= setting.pincode || company.address.pincode %>" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Social Media Links -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3 h-100 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                        <i class="icofont-share me-2 text-warning"></i> Social Media & Messaging Links
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small"><i class="icofont-brand-whatsapp text-success me-1"></i> WhatsApp URL</label>
+                            <input type="text" name="whatsappUrl" class="form-control" value="<%= setting.whatsappUrl || company.social.whatsapp %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small"><i class="icofont-facebook text-primary me-1"></i> Facebook URL</label>
+                            <input type="text" name="facebookUrl" class="form-control" value="<%= setting.facebookUrl || company.social.facebook %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small"><i class="icofont-instagram text-danger me-1"></i> Instagram URL</label>
+                            <input type="text" name="instagramUrl" class="form-control" value="<%= setting.instagramUrl || company.social.instagram %>">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small"><i class="icofont-youtube text-danger me-1"></i> YouTube URL</label>
+                            <input type="text" name="youtubeUrl" class="form-control" value="<%= setting.youtubeUrl || company.social.youtube %>">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Direct Founder Contacts on Contact Page -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3 bg-white">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                        <i class="icofont-users-alt-2 me-2 text-info"></i> Direct Contact Persons (Rendered on Contact Page Cards)
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6 p-3 bg-light rounded-3">
+                            <h6 class="font-weight-bold text-dark mb-3"><i class="icofont-ui-user me-1 text-primary"></i> Contact Person 1</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small">Full Name</label>
+                                    <input type="text" name="founder1Name" class="form-control" value="<%= setting.founder1Name || 'Deepak Kushwaha' %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small">Designation</label>
+                                    <input type="text" name="founder1Designation" class="form-control" value="<%= setting.founder1Designation || 'Managing Director & Technical Head' %>">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label font-weight-bold small">Direct Mobile Number</label>
+                                    <input type="text" name="founder1Mobile" class="form-control" value="<%= setting.founder1Mobile || '+91 70005 75496' %>">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 p-3 bg-light rounded-3">
+                            <h6 class="font-weight-bold text-dark mb-3"><i class="icofont-ui-user me-1 text-success"></i> Contact Person 2</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small">Full Name</label>
+                                    <input type="text" name="founder2Name" class="form-control" value="<%= setting.founder2Name || 'Rahul Saini' %>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label font-weight-bold small">Designation</label>
+                                    <input type="text" name="founder2Designation" class="form-control" value="<%= setting.founder2Designation || 'Operations & Customer Support Head' %>">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label font-weight-bold small">Direct Mobile Number</label>
+                                    <input type="text" name="founder2Mobile" class="form-control" value="<%= setting.founder2Mobile || '+91 93997 61750' %>">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="col-12 text-end mb-5">
+            <button type="submit" id="saveContactBtn" class="btn btn-warning font-weight-bold text-dark px-5 py-2 shadow" style="border-radius: 8px;">
+                <i class="icofont-save me-2"></i> Save &amp; Synchronize Across Entire Website
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+async function handleContactSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveContactBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Updating Entire Website...';
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = {};
+    formData.forEach((value, key) => { payload[key] = value; });
+
+    try {
+        const res = await fetch('/api/admin/website/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            const toast = document.getElementById('actionToast');
+            document.getElementById('actionToastMsg').innerText = data.message || 'Contact details updated successfully.';
+            toast.classList.remove('d-none');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            alert(data.message || 'Failed to update contact info.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-save me-2"></i> Save &amp; Synchronize Across Entire Website';
+    }
+}
+</script>
+
+<%- include('../partials/admin-footer') %>

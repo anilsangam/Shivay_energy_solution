@@ -1,0 +1,555 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const invStats = (typeof stats !== 'undefined' && stats) ? stats : {
+        totalItems: 0,
+        totalStockUnits: 0,
+        totalInventoryValuation: 0,
+        lowStockCount: 0
+    };
+    const itemsList = (typeof materials !== 'undefined' && materials) ? materials : ((typeof inventory !== 'undefined' && inventory) ? inventory : []);
+    const totalP = (typeof totalPages !== 'undefined') ? totalPages : ((typeof pagination !== 'undefined' && pagination.totalPages) ? pagination.totalPages : 1);
+    const currP = (typeof currentPage !== 'undefined') ? currentPage : ((typeof pagination !== 'undefined' && pagination.page) ? pagination.page : 1);
+    const totalItms = (typeof totalItems !== 'undefined') ? totalItems : ((typeof pagination !== 'undefined' && pagination.total) ? pagination.total : 0);
+    const filterObj = (typeof filters !== 'undefined' && filters) ? filters : {};
+    const categoriesList = (typeof categories !== 'undefined' && Array.isArray(categories)) ? categories : ['Solar Panels', 'Inverters', 'Batteries', 'Mounting Structures', 'DC Cables', 'AC Cables', 'Protection & Switchgear', 'Accessories'];
+%>
+
+<!-- Action Feedback Alert Banner -->
+<div id="inventoryToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="inventoryToastMsg">Action completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('inventoryToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-database me-2 text-warning"></i> Stock Inventory & Valuation Matrix
+        </h2>
+        <p class="text-muted small mb-0">
+            Real-time material on-hand balances, Weighted Average Cost (WAC), inventory valuation, and controlled stock adjustments.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/admin/materials" class="btn btn-outline-dark font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-box me-1 text-warning"></i> Material Master / Items
+        </a>
+        <a href="/admin/suppliers" class="btn btn-outline-info font-weight-bold text-dark shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-users me-1 text-info"></i> Suppliers
+        </a>
+        <a href="/admin/purchases/new" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Inward New Stock
+        </a>
+        <a href="/admin/inventory/reports" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-chart-histogram me-1"></i> Reports
+        </a>
+        <a href="/api/admin/inventory/export/stock" class="btn btn-outline-secondary" style="border-radius: 8px;" title="Export current stock snapshot as CSV">
+            <i class="icofont-download me-1"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Inventory Hub:</span>
+            <a href="/admin/inventory" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-database me-1 text-warning"></i> Stock Inventory (Active)
+            </a>
+            <a href="/admin/materials" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-warning"></i> Material Master / Items
+            </a>
+            <a href="/admin/suppliers" class="btn btn-sm btn-outline-info font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-users me-1"></i> Suppliers & Vendors
+            </a>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/admin/purchases" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-cart-alt me-1"></i> Purchases / Inward
+            </a>
+            <a href="/admin/sales-out" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-truck-loaded me-1"></i> Sales / Outward
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Catalog Items</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= invStats.totalItems %></div>
+            <div class="small text-muted mt-1">Active & tracked materials</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Physical Units</span>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-1"><%= Number(invStats.totalStockUnits || 0).toLocaleString('en-IN') %></div>
+            <div class="small text-muted mt-1">Aggregated physical units</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Inventory Valuation</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1">₹<%= Number(invStats.totalInventoryValuation || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></div>
+            <div class="small text-muted mt-1">Based on Weighted Avg Cost</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Low Stock Warnings</span>
+            <div class="h3 font-weight-bold <%= invStats.lowStockCount > 0 ? 'text-danger' : 'text-success' %> mb-0 mt-1"><%= invStats.lowStockCount %></div>
+            <div class="small text-muted mt-1">Require procurement reorder</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/inventory" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-5 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by SKU, Name or Brand..." value="<%= filterObj.search || '' %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-3 p-0 pe-1">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                <% categoriesList.forEach(cat => { %>
+                    <option value="<%= cat %>" <%= filterObj.category === cat ? 'selected' : '' %>><%= cat.replace(/_/g, ' ') %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 p-0 px-1">
+            <select name="lowStock" class="form-select">
+                <option value="">All Stock Levels</option>
+                <option value="true" <%= filterObj.lowStock === 'true' ? 'selected' : '' %>>Low Stock Only</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 p-0 ps-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);"><i class="icofont-filter me-1"></i> Filter</button>
+            <a href="/admin/inventory" class="btn btn-outline-secondary" title="Reset Filters"><i class="icofont-refresh"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Inventory Matrix Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Live Stock Inventory (<%= totalItms %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Real-time balances, Weighted Average Cost (WAC) & valuation</div>
+        </div>
+        <span class="badge bg-light text-dark border">Stock Matrix</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3" style="width: 130px;">SKU / Code</th>
+                        <th class="py-3">Material Name & Category</th>
+                        <th class="py-3 text-center">Unit</th>
+                        <th class="py-3 text-end">On-Hand Stock</th>
+                        <th class="py-3 text-end">Min Threshold</th>
+                        <th class="py-3 text-end" title="Weighted Average Cost based on verified purchase receipts">Avg Cost (WAC)</th>
+                        <th class="py-3 text-end">Default Price</th>
+                        <th class="py-3 text-end">Stock Value (₹)</th>
+                        <th class="pe-3 py-3 text-end">Inventory Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (itemsList && itemsList.length > 0) { %>
+                        <% itemsList.forEach(item => { %>
+                            <% 
+                                const isLow = (item.currentStock || 0) <= (item.minStockAlert || 0); 
+                                const wac = item.weightedAverageCost || 0;
+                                const stockVal = (item.currentStock || 0) * wac;
+                            %>
+                            <tr>
+                                <td class="ps-3">
+                                    <span class="badge bg-dark font-monospace" style="font-size: 11px;"><%= item.sku %></span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark"><%= item.name %></div>
+                                    <div class="d-flex align-items-center gap-2 mt-1">
+                                        <span class="badge bg-light text-dark border font-weight-normal" style="font-size: 10px;">
+                                            <%= (item.category || '').replace(/_/g, ' ') %>
+                                        </span>
+                                        <% if (item.brand) { %>
+                                            <span class="text-muted small">Brand: <strong><%= item.brand %></strong></span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-subtle text-secondary small"><%= item.unitOfMeasurement %></span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="fw-bold fs-6 <%= isLow ? 'text-danger' : 'text-success' %>">
+                                        <%= Number(item.currentStock || 0).toLocaleString('en-IN') %>
+                                        <% if (isLow) { %>
+                                            <span class="badge bg-danger ms-1" style="font-size: 9px;">LOW</span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="text-end text-muted small">
+                                    <%= Number(item.minStockAlert || 0).toLocaleString('en-IN') %>
+                                </td>
+                                <td class="text-end fw-semibold text-dark">
+                                    ₹<%= Number(wac).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex align-items-center justify-content-end gap-1">
+                                        <span class="fw-semibold text-dark">₹<%= Number(item.defaultSellingPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></span>
+                                        <button class="btn btn-sm btn-link text-muted p-0" onclick="openSellingPriceModal('<%= item._id %>', '<%= item.name %>', '<%= item.sku %>', <%= item.defaultSellingPrice || 0 %>, <%= wac %>)" title="Edit default selling price">
+                                            <i class="icofont-edit small"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="text-end fw-bold text-success">
+                                    ₹<%= Number(stockVal).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-warning text-dark font-weight-semibold" onclick="openAdjustStockModal('<%= item._id %>', '<%= item.name %>', '<%= item.sku %>', <%= item.currentStock || 0 %>, '<%= item.unitOfMeasurement %>')" title="Controlled stock adjustment">
+                                            <i class="icofont-sliders"></i> Adjust
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="openLedgerHistoryModal('<%= item._id %>', '<%= item.name %>', '<%= item.sku %>')" title="View complete stock movement ledger">
+                                            <i class="icofont-history"></i> Ledger
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="9" class="text-center py-5">
+                                <i class="icofont-database text-muted" style="font-size: 40px;"></i>
+                                <p class="text-muted mt-2 mb-0">No materials match the filter criteria.</p>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    
+    <% if (totalP > 1) { %>
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Showing page <%= currP %> of <%= totalP %> (<%= totalItms %> items)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <% for (let p = 1; p <= totalP; p++) { %>
+                    <li class="page-item <%= p === currP ? 'active' : '' %>">
+                        <a class="page-link" href="/admin/inventory?page=<%= p %>&search=<%= filterObj.search || '' %>&category=<%= filterObj.category || '' %>&lowStock=<%= filterObj.lowStock || '' %>"><%= p %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Controlled Stock Adjustment -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="adjustStockForm" onsubmit="handleAdjustStock(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" id="adjustMaterialId" name="materialId">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-sliders me-2 text-warning"></i> Controlled Stock Adjustment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning py-2 px-3 small mb-3">
+                        <i class="icofont-warning-alt me-1"></i> <strong>Audit Enforced:</strong> All manual adjustments create immutable stock ledger entries, update running balance, and are logged in the system security audit trail. Negative inventory is strictly blocked.
+                    </div>
+
+                    <div class="mb-3 p-3 bg-light rounded-3">
+                        <div class="text-muted small">Target Material:</div>
+                        <div class="fw-bold text-dark fs-6" id="adjustMaterialName">—</div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="font-monospace text-muted small" id="adjustMaterialSku">SKU: —</span>
+                            <span class="badge bg-secondary" id="adjustCurrentStockBadge">Current Stock: 0</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Adjustment Operation <span class="text-danger">*</span></label>
+                        <select name="adjustmentType" id="adjustmentTypeSelect" class="form-select" required>
+                            <option value="ADD">ADD (+ Increment on-hand stock)</option>
+                            <option value="REMOVE">REMOVE (- Decrement on-hand stock)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Adjustment Quantity <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" min="0.01" name="quantity" id="adjustQuantityInput" class="form-control" required placeholder="0.00">
+                            <span class="input-group-text" id="adjustUnitSpan">NOS</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Authorized Reason <span class="text-danger">*</span></label>
+                        <select name="reason" class="form-select" required>
+                            <option value="Physical count discrepancy">Physical count discrepancy (Physical audit variance)</option>
+                            <option value="Damaged during storage/handling">Damaged during storage/handling</option>
+                            <option value="Written-off / Scrap">Written-off / Scrap</option>
+                            <option value="Customer / Project excess return">Customer / Project excess return</option>
+                            <option value="Initial stock calibration">Initial stock calibration</option>
+                            <option value="Other">Other authorized variance</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Detailed Audit Remarks <span class="text-danger">*</span></label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Explain the root cause of this adjustment for auditor review..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning font-weight-bold text-dark px-4" id="submitAdjustBtn">
+                        <i class="icofont-check-circled me-1"></i> Apply Adjustment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Selling Price -->
+<div class="modal fade" id="sellingPriceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="sellingPriceForm" onsubmit="handleUpdateSellingPrice(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" id="priceMaterialId" name="materialId">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-price me-2 text-warning"></i> Update Default Selling Price</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small">
+                        Updating the default selling price sets the benchmark quotation rate. It does <strong>not</strong> alter historical purchase costs, past invoices, or historical quotations.
+                    </p>
+                    <div class="mb-3 p-3 bg-light rounded-3">
+                        <div class="text-muted small">Material:</div>
+                        <div class="fw-bold text-dark" id="priceMaterialName">—</div>
+                        <div class="small text-muted mt-1">Weighted Average Cost (WAC): <strong class="text-dark" id="priceWacSpan">₹0.00</strong></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label font-weight-semibold small">Default Selling Price (₹) <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0" id="newDefaultPrice" name="defaultSellingPrice" class="form-control font-weight-bold" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary font-weight-bold px-4" id="savePriceBtn">
+                        Update Price
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Stock Movement Ledger History -->
+<div class="modal fade" id="ledgerHistoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                <h5 class="modal-title font-weight-bold text-white"><i class="icofont-history me-2 text-warning"></i> Stock Movement Ledger</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0" id="ledgerMatName">—</h6>
+                        <small class="text-muted font-monospace" id="ledgerMatSku">SKU: —</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary fs-6 py-2 px-3" id="ledgerMatBalance">Current Stock: 0</span>
+                    </div>
+                </div>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover align-middle mb-0" id="ledgerHistoryTable">
+                        <thead class="bg-light text-muted small text-uppercase">
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Txn #</th>
+                                <th>Type</th>
+                                <th class="text-end">Qty In</th>
+                                <th class="text-end">Qty Out</th>
+                                <th class="text-end">Balance After</th>
+                                <th class="text-end">Unit Cost (₹)</th>
+                                <th>Reference / Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerHistoryBody">
+                            <!-- Injected by AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('inventoryToast');
+    const m = document.getElementById('inventoryToastMsg');
+    t.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show mb-4`;
+    m.textContent = msg;
+    t.classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let activeCurrentStock = 0;
+
+function openAdjustStockModal(id, name, sku, currentStock, unit) {
+    activeCurrentStock = currentStock;
+    document.getElementById('adjustMaterialId').value = id;
+    document.getElementById('adjustMaterialName').textContent = name;
+    document.getElementById('adjustMaterialSku').textContent = `SKU: ${sku}`;
+    document.getElementById('adjustCurrentStockBadge').textContent = `Current Stock: ${currentStock} ${unit}`;
+    document.getElementById('adjustUnitSpan').textContent = unit || 'NOS';
+    document.getElementById('adjustQuantityInput').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('adjustStockModal'));
+    modal.show();
+}
+
+async function handleAdjustStock(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitAdjustBtn');
+    btn.disabled = true;
+
+    const id = document.getElementById('adjustMaterialId').value;
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    const qty = parseFloat(payload.quantity) || 0;
+    if (payload.adjustmentType === 'REMOVE' && qty > activeCurrentStock) {
+        alert(`Cannot remove ${qty} units. Current stock is only ${activeCurrentStock}. Negative stock is prohibited.`);
+        btn.disabled = false;
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/admin/inventory/${id}/adjust`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Stock successfully adjusted!');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Error adjusting stock.', true);
+            btn.disabled = false;
+        }
+    } catch (err) {
+        showToast('Server communication error.', true);
+        btn.disabled = false;
+    }
+}
+
+function openSellingPriceModal(id, name, sku, currentPrice, wac) {
+    document.getElementById('priceMaterialId').value = id;
+    document.getElementById('priceMaterialName').textContent = `${name} (${sku})`;
+    document.getElementById('priceWacSpan').textContent = `₹${parseFloat(wac || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('newDefaultPrice').value = currentPrice || 0;
+
+    const modal = new bootstrap.Modal(document.getElementById('sellingPriceModal'));
+    modal.show();
+}
+
+async function handleUpdateSellingPrice(e) {
+    e.preventDefault();
+    const btn = document.getElementById('savePriceBtn');
+    btn.disabled = true;
+
+    const id = document.getElementById('priceMaterialId').value;
+    const newPrice = parseFloat(document.getElementById('newDefaultPrice').value) || 0;
+
+    try {
+        const res = await fetch(`/api/admin/inventory/${id}/selling-price`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ defaultSellingPrice: newPrice, _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Default selling price updated.');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Error updating price.', true);
+            btn.disabled = false;
+        }
+    } catch (err) {
+        showToast('Server communication error.', true);
+        btn.disabled = false;
+    }
+}
+
+async function openLedgerHistoryModal(id, name, sku) {
+    document.getElementById('ledgerMatName').textContent = name;
+    document.getElementById('ledgerMatSku').textContent = `SKU: ${sku}`;
+    const tbody = document.getElementById('ledgerHistoryBody');
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span> Loading ledger transactions...</td></tr>';
+
+    const modal = new bootstrap.Modal(document.getElementById('ledgerHistoryModal'));
+    modal.show();
+
+    try {
+        const res = await fetch(`/api/admin/inventory/${id}/history`);
+        const data = await res.json();
+        if (data.success && data.transactions) {
+            document.getElementById('ledgerMatBalance').textContent = `Live Balance: ${data.material.currentStock} ${data.material.unitOfMeasurement}`;
+            if (data.transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No stock movement recorded yet for this material.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.transactions.map(t => {
+                const isPositive = (t.quantityIn || 0) > 0;
+                return `
+                    <tr>
+                        <td class="small text-muted">${new Date(t.createdAt).toLocaleString('en-IN')}</td>
+                        <td><span class="badge bg-light text-dark border font-monospace" style="font-size: 10px;">${t.transactionNumber}</span></td>
+                        <td><span class="badge ${isPositive ? 'bg-success' : 'bg-warning text-dark'}" style="font-size: 10px;">${t.transactionType}</span></td>
+                        <td class="text-end fw-bold text-success">${t.quantityIn > 0 ? `+${t.quantityIn}` : '—'}</td>
+                        <td class="text-end fw-bold text-danger">${t.quantityOut > 0 ? `-${t.quantityOut}` : '—'}</td>
+                        <td class="text-end fw-bold text-dark">${t.balanceAfter}</td>
+                        <td class="text-end text-muted small">₹${Number(t.unitCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td class="small text-muted text-truncate" style="max-width: 250px;">${t.notes || t.reason || t.sourceReferenceType || '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-danger">${data.message || 'Failed to load ledger.'}</td></tr>`;
+        }
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">Server communication error.</td></tr>';
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

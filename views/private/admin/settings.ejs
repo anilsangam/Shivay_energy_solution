@@ -54,6 +54,11 @@
                     <i class="icofont-flash me-1"></i> DISCOM Net-Metering
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold btn-sm py-2 px-3" id="legal-tab" data-bs-toggle="tab" data-bs-target="#legal-pane" type="button" role="tab" style="border-radius: 8px;">
+                    <i class="icofont-law-document me-1"></i> Privacy Policy &amp; Terms
+                </button>
+            </li>
         </ul>
     </div>
 
@@ -318,6 +323,82 @@
                     </div>
                 </div>
 
+                <!-- TAB 6: PRIVACY POLICY & TERMS -->
+                <div class="tab-pane fade" id="legal-pane" role="tabpanel">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">
+                                <i class="icofont-law-document text-primary me-1"></i> Public Privacy Policy &amp; Terms &amp; Conditions
+                            </h5>
+                            <p class="text-muted small mb-0">
+                                Edit or paste your company's official Privacy Policy and Terms &amp; Conditions. Content updates immediately on the public website.
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2 mt-2 mt-sm-0">
+                            <a href="/privacy-policy" target="_blank" class="btn btn-outline-primary btn-sm" style="border-radius: 6px;">
+                                <i class="icofont-external-link me-1"></i> View Live Privacy Policy
+                            </a>
+                            <a href="/terms-and-conditions" target="_blank" class="btn btn-outline-primary btn-sm" style="border-radius: 6px;">
+                                <i class="icofont-external-link me-1"></i> View Live Terms &amp; Conditions
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Privacy Policy Section -->
+                    <div class="card border mb-4 rounded-3 shadow-none">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3">
+                            <span class="font-weight-bold text-dark small">
+                                <i class="icofont-shield-alt text-success me-1"></i> 1. Public Privacy Policy Content
+                            </span>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="pasteToField('privacyPolicyTextarea')">
+                                    <i class="icofont-ui-copy me-1"></i> Paste from Clipboard
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="loadDefaultPolicy()">
+                                    <i class="icofont-refresh me-1"></i> Load Default Policy
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearField('privacyPolicyTextarea')">
+                                    <i class="icofont-close-line"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <p class="text-muted small mb-2">
+                                <i class="icofont-info-circle text-info me-1"></i>
+                                Covers customer inquiries, site surveys, PM Surya Ghar subsidy KYC, complaints, dealership forms, and data protection rules. Supports standard HTML or plain formatted text.
+                            </p>
+                            <textarea class="form-control font-monospace small" id="privacyPolicyTextarea" name="privacyPolicy" rows="10" placeholder="Paste your complete Privacy Policy text or HTML here..."><%= setting.privacyPolicy || "" %></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Terms & Conditions Section -->
+                    <div class="card border rounded-3 shadow-none">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3">
+                            <span class="font-weight-bold text-dark small">
+                                <i class="icofont-law-order text-primary me-1"></i> 2. Public Terms &amp; Conditions Content
+                            </span>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="pasteToField('termsTextarea')">
+                                    <i class="icofont-ui-copy me-1"></i> Paste from Clipboard
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="loadDefaultTerms()">
+                                    <i class="icofont-refresh me-1"></i> Load Default T&amp;C
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearField('termsTextarea')">
+                                    <i class="icofont-close-line"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-3">
+                            <p class="text-muted small mb-2">
+                                <i class="icofont-info-circle text-info me-1"></i>
+                                Covers site survey feasibility, quotation validity, milestone payments (20/60/20), PM Surya Ghar subsidy processing, equipment warranties, and DISCOM net-metering. Supports standard HTML or plain formatted text.
+                            </p>
+                            <textarea class="form-control font-monospace small" id="termsTextarea" name="termsAndConditions" rows="10" placeholder="Paste your complete Terms & Conditions text or HTML here..."><%= setting.termsAndConditions || "" %></textarea>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -407,6 +488,44 @@ async function submitSettingsForm() {
         errBox.innerText = 'Server error while communicating with system settings API.';
         errBox.classList.remove('d-none');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// Legal Policies Helper Functions
+const DEFAULT_POLICY_TEMPLATE = <%- JSON.stringify(typeof defaultPrivacyPolicy !== 'undefined' ? defaultPrivacyPolicy : '') %>;
+const DEFAULT_TERMS_TEMPLATE = <%- JSON.stringify(typeof defaultTermsConditions !== 'undefined' ? defaultTermsConditions : '') %>;
+
+async function pasteToField(fieldId) {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+            document.getElementById(fieldId).value = text.trim();
+            showToast('Content successfully pasted from clipboard!');
+        } else {
+            alert('Clipboard is empty. Please copy text first.');
+        }
+    } catch (err) {
+        alert('Clipboard permission denied by browser. Please paste directly using Ctrl+V inside the box.');
+    }
+}
+
+function clearField(fieldId) {
+    if (confirm('Are you sure you want to clear this policy content?')) {
+        document.getElementById(fieldId).value = '';
+    }
+}
+
+function loadDefaultPolicy() {
+    if (confirm('Load standard Shivay Energy Solutions personalized Privacy Policy into editor?')) {
+        document.getElementById('privacyPolicyTextarea').value = DEFAULT_POLICY_TEMPLATE;
+        showToast('Default Privacy Policy loaded into editor.');
+    }
+}
+
+function loadDefaultTerms() {
+    if (confirm('Load standard Shivay Energy Solutions personalized Terms & Conditions into editor?')) {
+        document.getElementById('termsTextarea').value = DEFAULT_TERMS_TEMPLATE;
+        showToast('Default Terms & Conditions loaded into editor.');
     }
 }
 </script>

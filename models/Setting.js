@@ -16,6 +16,22 @@ const settingSchema = new mongoose.Schema({
     state: { type: String, default: "Madhya Pradesh" },
     pincode: { type: String, default: "464551" },
 
+    // Working Hours & Socials
+    workingDays: { type: String, default: "Monday - Saturday" },
+    workingTime: { type: String, default: "09:00 AM - 07:00 PM (IST)" },
+    facebookUrl: { type: String, default: "https://facebook.com/shivayenergysolutions" },
+    instagramUrl: { type: String, default: "https://instagram.com/shivayenergysolutions" },
+    youtubeUrl: { type: String, default: "https://youtube.com/@shivayenergysolutions" },
+    whatsappUrl: { type: String, default: "https://wa.me/917000575496" },
+
+    // Direct Leadership Contacts
+    founder1Name: { type: String, default: "Deepak Kushwaha" },
+    founder1Designation: { type: String, default: "Managing Director & Technical Head" },
+    founder1Mobile: { type: String, default: "+91 70005 75496" },
+    founder2Name: { type: String, default: "Rahul Saini" },
+    founder2Designation: { type: String, default: "Operations & Customer Support Head" },
+    founder2Mobile: { type: String, default: "+91 93997 61750" },
+
     // Solar Pricing & Subsidy Slabs
     defaultRatePerKw: { type: Number, default: 58000 },
     subsidy1Kw: { type: Number, default: 30000 },
@@ -37,7 +53,13 @@ const settingSchema = new mongoose.Schema({
     // DISCOM & Net-metering
     primaryDiscom: { type: String, default: "MPPKVVCL (Madhya Kshetra)" },
     discomPortalUrl: { type: String, default: "https://portal.mpcz.in/" },
-    discomHelpline: { type: String, default: "1912" }
+    discomHelpline: { type: String, default: "1912" },
+
+    // Legal & Public Policies
+    privacyPolicy: { type: String, default: "" },
+    termsAndConditions: { type: String, default: "" },
+    privacyPolicyUpdatedAt: { type: Date, default: Date.now },
+    termsAndConditionsUpdatedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Setting || mongoose.model('Setting', settingSchema);

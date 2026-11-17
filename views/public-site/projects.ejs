@@ -55,7 +55,7 @@
     <section class="py-5 text-white" style="background: #0f2647;">
         <div class="container text-center py-3">
             <h2 class="text-white font-weight-bold mb-2" style="font-size: 32px;">Ready to Power Your Rooftop with Solar?</h2>
-            <p class="text-white-50 mb-4">Contact Deepak Kushwaha (+91 70005 75496) &amp; Rahul Saini (+91 93997 61750) for a free site assessment.</p>
+            <p class="text-white-50 mb-4">Contact <%= (company.contacts && company.contacts.length >= 2) ? `${company.contacts[0].name} (${company.contacts[0].mobile}) & ${company.contacts[1].name} (${company.contacts[1].mobile})` : company.contact.phone %> for a free site assessment.</p>
             <div class="d-flex flex-wrap justify-content-center gap-3">
                 <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 12px 30px; font-weight: 700;">
                     <span>Calculate Solar Savings</span>

@@ -1,0 +1,230 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const reportSummary = (typeof summary !== 'undefined' && summary) ? summary : {
+        totalValuation: 0,
+        totalUnits: 0,
+        totalItems: 0,
+        lowStockCount: 0
+    };
+    const catStats = (typeof categoryStats !== 'undefined' && categoryStats) ? categoryStats : [];
+    const lowStock = (typeof lowStockList !== 'undefined' && lowStockList) ? lowStockList : [];
+%>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-chart-histogram me-2 text-warning"></i> Stock Reports & Valuation Analytics
+        </h2>
+        <p class="text-muted small mb-0">
+            Audit inventory valuation, category breakdown, stock health, and export ledger records for accounting and compliance.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/api/admin/sales/export" class="btn btn-outline-secondary" style="border-radius: 8px;">
+            <i class="icofont-download me-1"></i> Export Sales CSV
+        </a>
+        <a href="/api/admin/inventory/export/stock" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-download me-1"></i> Export Stock Summary (CSV)
+        </a>
+        <a href="/api/admin/inventory/export/ledger" class="btn btn-primary" style="border-radius: 8px;">
+            <i class="icofont-file-excel me-1"></i> Export Movement Ledger (CSV)
+        </a>
+    </div>
+</div>
+
+<!-- Executive Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Inventory Value</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1">₹<%= Number(reportSummary.totalValuation || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></div>
+            <div class="small text-muted mt-1">Calculated via Weighted Avg Cost</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total On-Hand Units</span>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-1"><%= Number(reportSummary.totalUnits || 0).toLocaleString('en-IN') %></div>
+            <div class="small text-muted mt-1">Across all categories</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Catalog Items</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= reportSummary.totalItems || 0 %></div>
+            <div class="small text-muted mt-1">Tracked SKU items</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Low Stock Reorders</span>
+            <div class="h3 font-weight-bold <%= (reportSummary.lowStockCount || 0) > 0 ? 'text-danger' : 'text-success' %> mb-0 mt-1"><%= reportSummary.lowStockCount || 0 %></div>
+            <div class="small text-muted mt-1">Items at or below min alert</div>
+        </div>
+    </div>
+</div>
+
+<!-- Commercial Sales & Returns Analytics Row (Phase 2) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Sales Revenue</span>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-1">₹<%= Number(reportSummary.totalSalesRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></div>
+            <div class="small text-muted mt-1"><%= reportSummary.totalSalesCount || 0 %> confirmed commercial orders</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Estimated Gross Margin</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1">₹<%= Number(reportSummary.totalGrossProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 }) %></div>
+            <div class="small text-muted mt-1">Revenue minus WAC cost snapshot</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Sold Units</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= Number(reportSummary.totalUnitsSold || 0).toLocaleString('en-IN') %></div>
+            <div class="small text-muted mt-1">Dispatched or pending delivery</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Returns & Quarantine</span>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= (reportSummary.goodRestockedUnits || 0) + (reportSummary.damagedUnits || 0) + (reportSummary.defectiveUnits || 0) %></div>
+            <div class="small text-muted mt-1">
+                <span class="text-success"><%= reportSummary.goodRestockedUnits || 0 %> Good</span> | 
+                <span class="text-danger"><%= (reportSummary.damagedUnits || 0) + (reportSummary.defectiveUnits || 0) %> Damaged/Defective</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Breakdown Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden mb-4">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="admin-card-title mb-0 font-weight-bold text-dark" style="font-size: 16px;">
+            <i class="icofont-pie-chart text-warning me-2"></i> Inventory Valuation by Material Category
+        </h5>
+        <span class="badge bg-light text-dark border">
+            <%= (catStats || []).length %> Active Categories
+        </span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4 py-3">Category</th>
+                    <th class="py-3 text-center">SKUs</th>
+                    <th class="py-3 text-end">Total Units</th>
+                    <th class="py-3 text-end">Total Valuation (₹)</th>
+                    <th class="pe-4 py-3 text-end" style="width: 250px;">Valuation Share (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (catStats && catStats.length > 0) { %>
+                    <% catStats.forEach(cat => { %>
+                        <% 
+                            const pct = (reportSummary.totalValuation || 0) > 0 ? (((cat.totalValuation || 0) / reportSummary.totalValuation) * 100).toFixed(1) : 0;
+                        %>
+                        <tr>
+                            <td class="ps-4">
+                                <span class="fw-bold text-dark"><%= cat.category.replace(/_/g, ' ') %></span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border"><%= cat.itemCount %> items</span>
+                            </td>
+                            <td class="text-end fw-semibold text-dark">
+                                <%= Number(cat.totalUnits || 0).toLocaleString('en-IN') %>
+                            </td>
+                            <td class="text-end fw-bold text-success">
+                                ₹<%= Number(cat.totalValuation || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: <%= pct %>%;" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <span class="small fw-bold text-dark" style="min-width: 45px;"><%= pct %>%</span>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">No inventory categorized yet.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Low Stock Critical Alert List -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden mb-4">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="admin-card-title mb-0 font-weight-bold text-danger" style="font-size: 16px;">
+            <i class="icofont-warning text-danger me-2"></i> Low Stock & Reorder Alert List
+        </h5>
+        <a href="/admin/purchases/new" class="btn btn-sm btn-outline-danger">
+            <i class="icofont-plus-circle me-1"></i> Create Procurement PO
+        </a>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4 py-3">SKU</th>
+                    <th class="py-3">Material Name</th>
+                    <th class="py-3">Category</th>
+                    <th class="py-3 text-end">Current Stock</th>
+                    <th class="py-3 text-end">Min Alert Level</th>
+                    <th class="py-3 text-end">Reorder Deficit</th>
+                    <th class="pe-4 py-3 text-end">Quick Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (lowStock && lowStock.length > 0) { %>
+                    <% lowStock.forEach(m => { %>
+                        <% const deficit = Math.max(0, (m.minStockAlert || 0) - (m.currentStock || 0)); %>
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-dark font-monospace" style="font-size: 11px;"><%= m.sku %></span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark"><%= m.name %></div>
+                                <small class="text-muted"><%= m.brand || '' %> <%= m.model || '' %></small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border"><%= (m.category || '').replace(/_/g, ' ') %></span>
+                            </td>
+                            <td class="text-end fw-bold text-danger">
+                                <%= Number(m.currentStock || 0).toLocaleString('en-IN') %> <%= m.unitOfMeasurement %>
+                            </td>
+                            <td class="text-end text-muted">
+                                <%= Number(m.minStockAlert || 0).toLocaleString('en-IN') %> <%= m.unitOfMeasurement %>
+                            </td>
+                            <td class="text-end fw-bold text-warning">
+                                +<%= Number(deficit).toLocaleString('en-IN') %> <%= m.unitOfMeasurement %>
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a href="/admin/purchases/new" class="btn btn-sm btn-warning text-dark font-weight-semibold">
+                                    <i class="icofont-cart me-1"></i> Order Now
+                                </a>
+                            </td>
+                        </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-success">
+                            <i class="icofont-check-circled me-1"></i> All stock levels are currently healthy and above minimum thresholds!
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<%- include('partials/admin-footer') %>

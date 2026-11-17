@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Branch = require('../models/Branch');
 const Setting = require('../models/Setting');
 const AuditService = require('../services/auditService');
+const WebsiteService = require('../services/websiteService');
 const mongoose = require('mongoose');
 
 // 1. SUPER ADMIN DASHBOARD
@@ -700,8 +701,17 @@ exports.getSettings = async (req, res) => {
 
                 primaryDiscom: "MPPKVVCL (Madhya Kshetra)",
                 discomPortalUrl: "https://portal.mpcz.in/",
-                discomHelpline: "1912"
+                discomHelpline: "1912",
+                privacyPolicy: "",
+                termsAndConditions: ""
             };
+        }
+
+        if (!setting.privacyPolicy) {
+            setting.privacyPolicy = WebsiteService.getDefaultPrivacyPolicy(data.company);
+        }
+        if (!setting.termsAndConditions) {
+            setting.termsAndConditions = WebsiteService.getDefaultTermsConditions(data.company);
         }
 
         res.render('private/admin/settings', {
@@ -709,6 +719,8 @@ exports.getSettings = async (req, res) => {
             data,
             company: data.company,
             setting,
+            defaultPrivacyPolicy: WebsiteService.getDefaultPrivacyPolicy(data.company),
+            defaultTermsConditions: WebsiteService.getDefaultTermsConditions(data.company),
             user: req.session.user,
             currentUser: req.session.user,
             csrfToken: req.session ? req.session.csrfToken : '',
@@ -765,11 +777,25 @@ exports.saveSettings = async (req, res) => {
             discomHelpline: body.discomHelpline ? body.discomHelpline.trim() : "1912"
         };
 
+        if (typeof body.privacyPolicy !== 'undefined') {
+            updateData.privacyPolicy = body.privacyPolicy;
+            updateData.privacyPolicyUpdatedAt = new Date();
+        }
+        if (typeof body.termsAndConditions !== 'undefined') {
+            updateData.termsAndConditions = body.termsAndConditions;
+            updateData.termsAndConditionsUpdatedAt = new Date();
+        }
+
         if (mongoose.connection.readyState === 1) {
             await Setting.findOneAndUpdate({}, updateData, { upsert: true, new: true });
         }
         if (DataStore.saveSettings) {
             DataStore.saveSettings(updateData);
+        }
+
+        // Refresh WebsiteService cache
+        if (WebsiteService && WebsiteService.refreshCompanyCache) {
+            await WebsiteService.refreshCompanyCache();
         }
 
         // Synchronize in-memory company configuration so headers and invoices reflect it

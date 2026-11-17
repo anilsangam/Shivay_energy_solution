@@ -151,7 +151,6 @@ const purchaseSchema = new mongoose.Schema({
     timestamps: true
 });
 
-purchaseSchema.index({ purchaseNumber: 1 }, { unique: true });
 purchaseSchema.index({ supplier: 1, status: 1 });
 purchaseSchema.index({ purchaseDate: -1 });
 

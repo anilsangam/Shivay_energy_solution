@@ -56,9 +56,17 @@ const customerSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    companyName: {
+        type: String,
+        trim: true
+    },
+    contactPerson: {
+        type: String,
+        trim: true
+    },
     customerType: {
         type: String,
-        enum: ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL', 'AGRICULTURAL', 'INSTITUTIONAL'],
+        enum: ['RESIDENTIAL', 'COMMERCIAL', 'INDUSTRIAL', 'AGRICULTURAL', 'INSTITUTIONAL', 'INDIVIDUAL', 'BUSINESS', 'CONTRACTOR', 'DEALER', 'OTHER'],
         default: 'RESIDENTIAL'
     },
     status: {

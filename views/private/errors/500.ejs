@@ -1,0 +1,25 @@
+<%- include('../admin/partials/admin-head') %>
+
+<section class="admin-card admin-error-card" role="alert">
+    <div class="admin-error-icon" aria-hidden="true" style="background: rgba(220, 53, 69, .1); color: #dc3545;">
+        <i class="icofont-warning-alt"></i>
+    </div>
+    <p class="admin-error-code" style="color: #dc3545;">500</p>
+    <h2>Internal Server Error</h2>
+    <p class="admin-error-message"><%= typeof message !== 'undefined' ? message : 'An unexpected error occurred while processing your request. Please contact technical support or check activity logs.' %></p>
+    <div class="admin-error-actions">
+        <a href="javascript:location.reload()" class="btn btn-warning"><i class="icofont-refresh me-1"></i> Retry Page</a>
+        <a href="/admin" class="btn btn-outline-primary"><i class="icofont-speed-meter me-1"></i> Back to Dashboard</a>
+    </div>
+</section>
+
+<style>
+    .admin-error-card { max-width: 760px; margin: 36px auto; padding: clamp(24px, 5vw, 48px); text-align: center; }
+    .admin-error-icon { display: grid; width: 72px; height: 72px; margin: 0 auto 14px; place-items: center; border-radius: 50%; font-size: 32px; }
+    .admin-error-code { margin: 0; font-size: clamp(48px, 8vw, 72px); font-weight: 800; line-height: 1; }
+    .admin-error-card h2 { margin: 10px 0; color: #172b4d; font-size: clamp(22px, 4vw, 30px); }
+    .admin-error-message { max-width: 580px; margin: 0 auto 24px; color: #64748b; overflow-wrap: anywhere; }
+    .admin-error-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    @media (max-width: 575.98px) { .admin-error-card { margin: 16px auto; } }
+</style>
+<%- include('../admin/partials/admin-footer') %>

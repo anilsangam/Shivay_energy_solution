@@ -1,0 +1,368 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-users-alt-5 me-2 text-info"></i> Founders & Management Team Master
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage founders and key team leaders displayed on the About Us page and direct contact widgets.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/about#team" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live About Page
+        </a>
+        <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;" onclick="openCreateModal()">
+            <i class="icofont-plus-circle me-1"></i> Add Team Member
+        </button>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Website CMS:</span>
+            <a href="/admin/website/projects" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-energy-solar me-1 text-warning"></i> Projects
+            </a>
+            <a href="/admin/website/products" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-primary"></i> Products
+            </a>
+            <a href="/admin/website/services" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-tasks-alt me-1 text-primary"></i> Services
+            </a>
+            <a href="/admin/website/team" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-users-alt-5 me-1 text-info"></i> Founders & Team (Active)
+            </a>
+            <a href="/admin/website/testimonials" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-star me-1 text-warning"></i> Testimonials
+            </a>
+            <a href="/admin/website/contact" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-address-book me-1 text-success"></i> Contact Info
+            </a>
+        </div>
+        <span class="badge bg-light text-muted border">Total Members: <%= team.length %></span>
+    </div>
+</div>
+
+<!-- Team Cards Grid -->
+<div class="row g-4 mb-5">
+    <% if (team && team.length > 0) { %>
+        <% team.forEach(m => { %>
+            <div class="col-lg-4 col-md-6" id="team-card-<%= m._id %>">
+                <div class="card border-0 shadow-sm rounded-3 h-100 overflow-hidden bg-white d-flex flex-column">
+                    <div class="p-4 text-center bg-light border-bottom position-relative">
+                        <span class="badge position-absolute top-0 end-0 m-2 <%= m.isActive ? 'bg-success' : 'bg-secondary' %>">
+                            <%= m.isActive ? 'Active' : 'Draft' %>
+                        </span>
+                        <% if (m.isFounder) { %>
+                            <span class="badge position-absolute top-0 start-0 m-2 bg-warning text-dark font-weight-bold">
+                                Founder / Executive
+                            </span>
+                        <% } %>
+
+                        <% if (m.image && m.image.trim()) { %>
+                            <img src="<%= (m.image.startsWith('http') || m.image.startsWith('/')) ? m.image : '/' + m.image %>" 
+                                 alt="<%= m.name %>" 
+                                 class="rounded-circle shadow-sm border border-3 border-white mb-3"
+                                 style="width: 90px; height: 90px; object-fit: cover;">
+                        <% } else { %>
+                            <div class="rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center bg-primary text-white fw-bold fs-3 mb-3"
+                                 style="width: 90px; height: 90px;">
+                                <%= m.name.charAt(0).toUpperCase() %>
+                            </div>
+                        <% } %>
+
+                        <h5 class="font-weight-bold text-dark mb-0 fs-6"><%= m.name %></h5>
+                        <p class="text-muted small mb-0"><%= m.designation %></p>
+                    </div>
+
+                    <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                        <p class="text-muted small mb-3 flex-grow-1">
+                            <%= m.bio %>
+                        </p>
+
+                        <div class="p-2 bg-light rounded-2 mb-3 small">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted"><i class="icofont-phone me-1"></i> Mobile:</span>
+                                <strong><%= m.mobile %></strong>
+                            </div>
+                            <% if (m.email) { %>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="text-muted"><i class="icofont-envelope me-1"></i> Email:</span>
+                                    <span class="text-truncate" style="max-width: 65%;"><%= m.email %></span>
+                                </div>
+                            <% } %>
+                            <% if (m.whatsapp) { %>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted"><i class="icofont-brand-whatsapp text-success me-1"></i> WhatsApp:</span>
+                                    <a href="<%= m.whatsapp %>" target="_blank" class="text-success small fw-bold">Open Chat</a>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
+                            <span class="badge bg-light text-muted border">Order: <%= m.order %></span>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" onclick='openEditModal(<%= JSON.stringify(m) %>)'>
+                                    <i class="icofont-edit me-1"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteTeamMember('<%= m._id %>', '<%= m.name.replace(/'/g, "\\'") %>')">
+                                    <i class="icofont-ui-delete me-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3 p-5 text-center bg-white">
+                <i class="icofont-users-alt-5 text-muted" style="font-size: 48px;"></i>
+                <h5 class="mt-3 font-weight-bold">No Team Members Listed</h5>
+                <p class="text-muted small">Add your founders or project leads.</p>
+                <div>
+                    <button type="button" class="btn btn-warning font-weight-bold" onclick="openCreateModal()">
+                        <i class="icofont-plus me-1"></i> Add First Member
+                    </button>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Create / Edit Team Member -->
+<div class="modal fade" id="teamModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title font-weight-bold" id="modalTitle">Add Team Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="teamForm" onsubmit="handleTeamSubmit(event)">
+                <input type="hidden" id="teamEditId" value="">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Full Name *</label>
+                            <input type="text" id="teamName" class="form-control" required placeholder="e.g. Deepak Kushwaha">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Designation / Role *</label>
+                            <input type="text" id="teamDesignation" class="form-control" required placeholder="e.g. Managing Director & Technical Head">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Mobile Number *</label>
+                            <input type="text" id="teamMobile" class="form-control" required placeholder="+91 70005 75496">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Email Address</label>
+                            <input type="email" id="teamEmail" class="form-control" placeholder="deepak@shivayenergysolutions.com">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">WhatsApp Link (optional)</label>
+                            <input type="text" id="teamWhatsapp" class="form-control" placeholder="https://wa.me/917000575496">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label font-weight-bold small">Is Founder / Co-Founder?</label>
+                            <select id="teamIsFounder" class="form-select">
+                                <option value="true">Yes (Founder)</option>
+                                <option value="false">No (Staff / Lead)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label font-weight-bold small">Display Order</label>
+                            <input type="number" id="teamOrder" class="form-control" value="0">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold small">Short Bio / Expertise</label>
+                            <textarea id="teamBio" class="form-control" rows="2" placeholder="Experience in solar rooftop installation, DISCOM liaisoning..."></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Profile Photo (Upload to Cloudinary)</label>
+                            <input type="file" id="teamFile" class="form-control" accept="image/*" onchange="previewSelectedImage(this)">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Or Photo URL</label>
+                            <input type="text" id="teamImageUrl" class="form-control" placeholder="https://... or /images/...">
+                        </div>
+                        <div class="col-12" id="imagePreviewContainer" style="display: none;">
+                            <label class="form-label font-weight-bold small">Photo Preview</label>
+                            <div style="height: 100px; width: 100px; border-radius: 50%; overflow: hidden; border: 1px solid #ddd;">
+                                <img id="teamImagePreview" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveTeamBtn" class="btn btn-warning font-weight-bold text-dark px-4">
+                        Save Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedImageData = null;
+let selectedImageName = null;
+let selectedImageType = null;
+let teamModalInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    teamModalInstance = new bootstrap.Modal(document.getElementById('teamModal'));
+});
+
+function previewSelectedImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        selectedImageName = file.name;
+        selectedImageType = file.type;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            selectedImageData = e.target.result;
+            document.getElementById('teamImagePreview').src = selectedImageData;
+            document.getElementById('imagePreviewContainer').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function openCreateModal() {
+    document.getElementById('modalTitle').innerText = 'Add New Team Member';
+    document.getElementById('teamEditId').value = '';
+    document.getElementById('teamName').value = '';
+    document.getElementById('teamDesignation').value = '';
+    document.getElementById('teamMobile').value = '';
+    document.getElementById('teamEmail').value = '';
+    document.getElementById('teamWhatsapp').value = '';
+    document.getElementById('teamIsFounder').value = 'true';
+    document.getElementById('teamOrder').value = '0';
+    document.getElementById('teamBio').value = '';
+    document.getElementById('teamImageUrl').value = '';
+    document.getElementById('teamFile').value = '';
+    selectedImageData = null;
+    document.getElementById('imagePreviewContainer').style.display = 'none';
+    teamModalInstance.show();
+}
+
+function openEditModal(m) {
+    document.getElementById('modalTitle').innerText = 'Edit Member: ' + m.name;
+    document.getElementById('teamEditId').value = m._id;
+    document.getElementById('teamName').value = m.name || '';
+    document.getElementById('teamDesignation').value = m.designation || '';
+    document.getElementById('teamMobile').value = m.mobile || '';
+    document.getElementById('teamEmail').value = m.email || '';
+    document.getElementById('teamWhatsapp').value = m.whatsapp || '';
+    document.getElementById('teamIsFounder').value = m.isFounder ? 'true' : 'false';
+    document.getElementById('teamOrder').value = m.order || 0;
+    document.getElementById('teamBio').value = m.bio || '';
+    document.getElementById('teamImageUrl').value = m.image || '';
+    document.getElementById('teamFile').value = '';
+    selectedImageData = null;
+
+    if (m.image) {
+        document.getElementById('teamImagePreview').src = (m.image.startsWith('http') || m.image.startsWith('/')) ? m.image : '/' + m.image;
+        document.getElementById('imagePreviewContainer').style.display = 'block';
+    } else {
+        document.getElementById('imagePreviewContainer').style.display = 'none';
+    }
+
+    teamModalInstance.show();
+}
+
+async function handleTeamSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveTeamBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    const editId = document.getElementById('teamEditId').value;
+    const url = editId ? `/api/admin/website/team/${editId}/update` : '/api/admin/website/team';
+
+    const payload = {
+        _csrf: '<%= csrfToken %>',
+        name: document.getElementById('teamName').value,
+        designation: document.getElementById('teamDesignation').value,
+        mobile: document.getElementById('teamMobile').value,
+        email: document.getElementById('teamEmail').value,
+        whatsapp: document.getElementById('teamWhatsapp').value,
+        isFounder: document.getElementById('teamIsFounder').value === 'true',
+        order: document.getElementById('teamOrder').value,
+        bio: document.getElementById('teamBio').value,
+        image: document.getElementById('teamImageUrl').value,
+        imageData: selectedImageData,
+        imageName: selectedImageName,
+        imageType: selectedImageType
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            teamModalInstance.hide();
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving member.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Save Member';
+    }
+}
+
+async function deleteTeamMember(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/website/team/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _csrf: '<%= csrfToken %>' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const card = document.getElementById(`team-card-${id}`);
+            if (card) card.remove();
+            showToast('Team member deleted successfully.');
+        } else {
+            alert(data.message || 'Error deleting member.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('actionToast');
+    document.getElementById('actionToastMsg').innerText = msg;
+    toast.classList.remove('d-none');
+}
+</script>
+
+<%- include('../partials/admin-footer') %>

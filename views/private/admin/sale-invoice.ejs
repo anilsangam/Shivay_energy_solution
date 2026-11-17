@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Tax Invoice | Shivay Energy Solutions' %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/icofont.min.css">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; margin: 0; padding: 0; }
+            .invoice-card { box-shadow: none !important; border: none !important; }
+        }
+        body {
+            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #212529;
+        }
+        .invoice-card {
+            background: #fff;
+            max-width: 850px;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            padding: 40px;
+        }
+        .font-monospace { font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+</head>
+<body>
+
+<%
+    const s = (typeof sale !== 'undefined' && sale) ? sale : {
+        saleNumber: '—',
+        invoice: {},
+        items: []
+    };
+    const invNum = (s.invoice && s.invoice.invoiceNumber) ? s.invoice.invoiceNumber : s.saleNumber;
+    const invDate = (s.invoice && s.invoice.invoiceDate) ? new Date(s.invoice.invoiceDate) : new Date(s.saleDate || s.createdAt);
+%>
+
+<div class="container py-3">
+    <!-- Top Action Bar -->
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print" style="max-width: 850px; margin: 0 auto;">
+        <a href="/admin/sales-out/<%= s._id %>" class="btn btn-outline-secondary btn-sm">
+            <i class="icofont-arrow-left me-1"></i> Back to Sale Order
+        </a>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-primary btn-sm px-3">
+                <i class="icofont-print me-1"></i> Print Invoice
+            </button>
+        </div>
+    </div>
+
+    <!-- Printable Invoice Document -->
+    <div class="invoice-card">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark" style="color: #0b1f3a; letter-spacing: -0.5px;">
+                    <%= company.name || 'SHIVAY ENERGY SOLUTIONS' %>
+                </h3>
+                <p class="text-muted small mb-1"><%= company.tagline || 'Save Green Energy To Build A Better Future' %></p>
+                <div class="small text-muted" style="max-width: 380px;">
+                    <%= (company.address && company.address.full) || 'Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen, Madhya Pradesh – 464551, India.' %>
+                </div>
+                <div class="small text-dark mt-1">
+                    <strong>GSTIN:</strong> <span class="font-monospace"><%= company.gstin || '23AXXXX0000X1Z5' %></span> | 
+                    <strong>Phone:</strong> <%= (company.contact && company.contact.phone) || '+91 70005 75496' %>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-dark text-uppercase px-3 py-2 mb-2" style="font-size: 13px; letter-spacing: 1px;">TAX INVOICE</span>
+                <div class="h5 fw-bold text-primary font-monospace mb-1"><%= invNum %></div>
+                <div class="small text-muted"><strong>Date:</strong> <%= invDate.toLocaleDateString('en-IN') %></div>
+                <div class="small text-muted"><strong>Sale Ref:</strong> <span class="font-monospace"><%= s.saleNumber %></span></div>
+                <% if (s.projectNumber) { %>
+                    <div class="small text-muted"><strong>Project Ref:</strong> <span class="font-monospace"><%= s.projectNumber %></span></div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Bill To Section -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Billed To / Buyer:</h6>
+                <div class="fw-bold text-dark fs-6 mb-1"><%= s.customerName %></div>
+                <% if (s.companyName) { %>
+                    <div class="text-muted small fw-medium"><%= s.companyName %></div>
+                <% } %>
+                <div class="small text-muted"><%= s.customerAddress || 'Local Customer Site, Raisen, MP' %></div>
+                <div class="small text-muted"><%= s.city || 'Raisen' %>, <%= s.state || 'Madhya Pradesh' %> <%= s.pincode ? ('- ' + s.pincode) : '' %></div>
+                <div class="small text-dark mt-1">
+                    <strong>Mobile:</strong> <%= s.customerMobile %>
+                    <% if (s.customerEmail) { %> | <strong>Email:</strong> <%= s.customerEmail %><% } %>
+                </div>
+                <% if (s.customerGstin) { %>
+                    <div class="small text-dark mt-1">
+                        <strong>Customer GSTIN:</strong> <span class="font-monospace fw-bold"><%= s.customerGstin %></span>
+                    </div>
+                <% } %>
+            </div>
+            <div class="col-6 text-end">
+                <h6 class="text-uppercase text-muted fw-bold small mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Payment Details:</h6>
+                <div class="small"><strong>Payment Status:</strong> <span class="badge bg-light text-dark border"><%= s.paymentStatus || 'PAID' %></span></div>
+                <div class="small mt-1"><strong>Payment Mode:</strong> <%= s.paymentMethod || 'Bank Transfer' %></div>
+                <div class="small mt-1"><strong>Category:</strong> <%= s.customerType || 'INDIVIDUAL' %></div>
+            </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase font-weight-bold">
+                    <tr>
+                        <th class="text-center" style="width: 40px;">#</th>
+                        <th>Item Description & SKU</th>
+                        <th class="text-center" style="width: 80px;">Unit</th>
+                        <th class="text-end" style="width: 70px;">Qty</th>
+                        <th class="text-end" style="width: 110px;">Rate (₹)</th>
+                        <th class="text-end" style="width: 70px;">GST %</th>
+                        <th class="text-end" style="width: 90px;">Tax (₹)</th>
+                        <th class="text-end" style="width: 120px;">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (s.items && s.items.length > 0) { %>
+                        <% s.items.forEach((item, idx) => { %>
+                            <tr>
+                                <td class="text-center small text-muted"><%= idx + 1 %></td>
+                                <td>
+                                    <div class="fw-bold text-dark"><%= item.materialName %></div>
+                                    <div class="font-monospace text-muted small" style="font-size: 10px;">SKU: <%= item.sku %></div>
+                                </td>
+                                <td class="text-center small"><%= item.unit || 'Piece' %></td>
+                                <td class="text-end fw-semibold"><%= item.quantity %></td>
+                                <td class="text-end">₹<%= Number(item.unitPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                                <td class="text-end small"><%= item.gstRate || 0 %>%</td>
+                                <td class="text-end text-muted small">₹<%= Number(item.taxAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                                <td class="text-end fw-bold">₹<%= Number(item.lineTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Totals & Bank Details Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-6">
+                <div class="p-3 bg-light rounded-3 small">
+                    <h6 class="fw-bold text-dark mb-1" style="font-size: 12px;">Bank Transfer / RTGS / NEFT:</h6>
+                    <div><strong>Account Name:</strong> SHIVAY ENERGY SOLUTIONS</div>
+                    <div><strong>Bank:</strong> State Bank of India (SBI)</div>
+                    <div><strong>Account No:</strong> 39820011002233</div>
+                    <div><strong>IFSC Code:</strong> SBIN0000468</div>
+                    <div><strong>UPI ID:</strong> 7000575496@sbi</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless text-end mb-0">
+                    <tr>
+                        <td class="text-muted">Subtotal (Excl. Tax):</td>
+                        <td class="fw-semibold">₹<%= Number(s.subtotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Total GST Tax:</td>
+                        <td class="fw-semibold">₹<%= Number(s.taxTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                    </tr>
+                    <% if (s.additionalCharges > 0) { %>
+                        <tr>
+                            <td class="text-muted">Freight / Packaging:</td>
+                            <td class="text-primary fw-semibold">+₹<%= Number(s.additionalCharges || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                        </tr>
+                    <% } %>
+                    <% if (s.discount > 0) { %>
+                        <tr>
+                            <td class="text-muted">Discount:</td>
+                            <td class="text-danger fw-semibold">-₹<%= Number(s.discount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %></td>
+                        </tr>
+                    <% } %>
+                    <tr class="border-top">
+                        <td class="h6 font-weight-bold pt-2 text-dark">Grand Landed Total:</td>
+                        <td class="h5 font-weight-bold pt-2 text-dark" style="color: #0b1f3a;">
+                            ₹<%= Number(s.grandTotal || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Terms and Signatures -->
+        <div class="border-top pt-3 mt-4">
+            <div class="row align-items-end">
+                <div class="col-8 small text-muted">
+                    <div class="fw-bold text-dark mb-1">Terms & Conditions:</div>
+                    <ol class="mb-0 ps-3" style="font-size: 11px;">
+                        <li>Goods once sold will be accepted for return only in original sealed packaging subject to warehouse inspection.</li>
+                        <li>Manufacturer warranty is applicable as per OEM terms for solar panels, inverters, and battery banks.</li>
+                        <li>All disputes are subject to Raisen, Madhya Pradesh jurisdiction only.</li>
+                    </ol>
+                </div>
+                <div class="col-4 text-end">
+                    <div class="small text-muted mb-4">For <%= company.name || 'SHIVAY ENERGY SOLUTIONS' %></div>
+                    <div class="fw-bold text-dark small border-top pt-1 d-inline-block" style="min-width: 140px;">
+                        Authorized Signatory
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -8,13 +8,13 @@
                             <div class="d-flex justify-content-between xs-hide align-items-center">
                                 <div class="d-flex align-items-center">
                                     <div class="topbar-widget me-4">
-                                        <a href="/contact" title="Visit us in Raisen, MP">
-                                            <i class="icofont-location-pin"></i>Arjun Nagar, Raisen (M.P.)
+                                        <a href="/contact" title="Visit us in <%= company.address.city %>, <%= company.address.state %>">
+                                            <i class="icofont-location-pin"></i><%= company.address.line1 %>, <%= company.address.city %> (<%= company.address.state %>)
                                         </a>
                                     </div>
                                     <div class="topbar-widget me-4">
-                                        <a href="tel:+917000575496" title="Call Deepak Kushwaha">
-                                            <i class="icofont-phone"></i>+91 70005 75496
+                                        <a href="tel:<%= company.contact.phone.replace(/[^0-9+]/g, '') %>" title="Call <%= company.name %>">
+                                            <i class="icofont-phone"></i><%= company.contact.phone %>
                                         </a>
                                     </div>
                                     <div class="topbar-widget">

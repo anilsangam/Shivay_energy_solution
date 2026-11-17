@@ -96,9 +96,10 @@ app.use(session({
 }));
 
 // Setup CSRF and attach session user to all views
+const WebsiteService = require('./services/websiteService');
 app.use(setupCsrf);
 app.use((req, res, next) => {
-    res.locals.company = companyData.company;
+    res.locals.company = WebsiteService.getLiveCompanyData();
     res.locals.currentYear = new Date().getFullYear();
     res.locals.currentUser = req.session ? req.session.user : null;
     next();

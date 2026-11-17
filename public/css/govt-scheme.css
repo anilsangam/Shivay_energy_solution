@@ -427,6 +427,11 @@
     font-weight: 800;
 }
 
+.govt-subsidy-table tbody td:nth-child(2) {
+    color: #047857;
+    font-weight: 800;
+}
+
 .govt-subsidy-table tbody td:nth-child(4) {
     color: #163563;
     font-weight: 800;

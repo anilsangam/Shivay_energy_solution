@@ -1,0 +1,534 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const materialStats = (typeof stats !== 'undefined' && stats) ? stats : {
+        totalMaterials: 0,
+        activeMaterials: 0,
+        lowStockMaterials: 0,
+        inactiveMaterials: 0
+    };
+    const totalP = (typeof totalPages !== 'undefined') ? totalPages : ((typeof pagination !== 'undefined' && pagination.totalPages) ? pagination.totalPages : 1);
+    const currP = (typeof currentPage !== 'undefined') ? currentPage : ((typeof pagination !== 'undefined' && pagination.page) ? pagination.page : 1);
+    const totalItms = (typeof totalItems !== 'undefined') ? totalItems : ((typeof pagination !== 'undefined' && pagination.total) ? pagination.total : 0);
+    const filterObj = (typeof filters !== 'undefined' && filters) ? filters : {};
+    const categoriesList = (typeof categories !== 'undefined' && Array.isArray(categories)) ? categories : ['Solar Panels', 'Inverters', 'Batteries', 'Mounting Structures', 'DC Cables', 'AC Cables', 'Protection & Switchgear', 'Accessories'];
+    const unitsList = (typeof units !== 'undefined' && Array.isArray(units)) ? units : ['Piece', 'Meter', 'Set', 'Kilogram', 'Roll', 'Box', 'Packet'];
+    const materialsList = (typeof materials !== 'undefined' && Array.isArray(materials)) ? materials : [];
+%>
+
+<!-- Action Feedback Alert Banner -->
+<div id="materialToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="materialToastMsg">Material saved successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('materialToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-box me-2 text-warning"></i> Material Master
+        </h2>
+        <p class="text-muted small mb-0">
+            Define items, solar panels, inverters, structures, cables and accessories. Stock quantities are maintained through purchase receipts and verified adjustments.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-warning font-weight-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#createMaterialModal" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Add New Material
+        </button>
+        <a href="/admin/inventory" class="btn btn-outline-primary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-database me-1"></i> Stock Inventory
+        </a>
+        <a href="/admin/suppliers" class="btn btn-outline-info font-weight-bold text-dark shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-users me-1 text-info"></i> Suppliers
+        </a>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Inventory Hub:</span>
+            <a href="/admin/inventory" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-database me-1"></i> Stock Inventory
+            </a>
+            <a href="/admin/materials" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-warning"></i> Material Master / Items (Active)
+            </a>
+            <a href="/admin/suppliers" class="btn btn-sm btn-outline-info font-weight-bold" style="border-radius: 20px;">
+                <i class="icofont-users me-1"></i> Suppliers & Vendors
+            </a>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/admin/purchases" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-cart-alt me-1"></i> Purchases / Inward
+            </a>
+            <a href="/admin/sales-out" class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;">
+                <i class="icofont-truck-loaded me-1"></i> Sales / Outward
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Catalog Items</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= materialStats.totalMaterials %></div>
+            <div class="small text-muted mt-1">Catalog items tracked</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Active Materials</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= materialStats.activeMaterials %></div>
+            <div class="small text-muted mt-1">Available for procurement</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Low Stock Alert</span>
+            <div class="h3 font-weight-bold <%= materialStats.lowStockMaterials > 0 ? 'text-danger' : 'text-success' %> mb-0 mt-1"><%= materialStats.lowStockMaterials %></div>
+            <div class="small text-muted mt-1">Items at or below threshold</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Inactive Items</span>
+            <div class="h3 font-weight-bold text-secondary mb-0 mt-1"><%= materialStats.inactiveMaterials %></div>
+            <div class="small text-muted mt-1">Archived / discontinued</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/materials" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-4 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by SKU, Name or Brand..." value="<%= filterObj.search || '' %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-3 p-0 pe-1">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                <% categoriesList.forEach(cat => { %>
+                    <option value="<%= cat %>" <%= filterObj.category === cat ? 'selected' : '' %>><%= cat.replace(/_/g, ' ') %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div class="col-6 col-md-3 p-0 ps-1">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE" <%= filterObj.status === 'ACTIVE' ? 'selected' : '' %>>Active Only</option>
+                <option value="INACTIVE" <%= filterObj.status === 'INACTIVE' ? 'selected' : '' %>>Inactive Only</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2 p-0 ps-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);"><i class="icofont-filter me-1"></i> Filter</button>
+            <a href="/admin/materials" class="btn btn-outline-secondary" title="Reset Filters"><i class="icofont-refresh"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Materials Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Material Catalog (<%= totalItms %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Items, solar panels, inverters, structures & hardware</div>
+        </div>
+        <span class="badge bg-light text-dark border">Material Master</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3" style="width: 130px;">SKU / Code</th>
+                    <th class="py-3">Material Name & Details</th>
+                    <th class="py-3">Category</th>
+                    <th class="py-3">Brand & Model</th>
+                    <th class="py-3 text-center">Unit</th>
+                    <th class="py-3 text-end">Current Stock</th>
+                    <th class="py-3 text-end">Min Alert</th>
+                    <th class="py-3 text-end">Default Price</th>
+                    <th class="py-3 text-center">Status</th>
+                    <th class="pe-3 py-3 text-end">Actions</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <% if (materialsList && materialsList.length > 0) { %>
+                        <% materialsList.forEach(item => { %>
+                            <% const isLow = (item.currentStock || 0) <= (item.minStockAlert || 0); %>
+                            <tr>
+                                <td class="ps-3">
+                                    <span class="badge bg-dark font-monospace" style="font-size: 11px;"><%= item.sku %></span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark"><%= item.name %></div>
+                                    <% if (item.description) { %>
+                                        <small class="text-muted d-block text-truncate" style="max-width: 260px;"><%= item.description %></small>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-weight-normal"><%= (item.category || '').replace(/_/g, ' ') %></span>
+                                </td>
+                                <td>
+                                    <div class="text-dark small fw-medium"><%= item.brand || '—' %></div>
+                                    <small class="text-muted"><%= item.model || '' %></small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-subtle text-secondary small"><%= item.unitOfMeasurement %></span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="fw-bold <%= isLow ? 'text-danger' : 'text-success' %>">
+                                        <%= Number(item.currentStock || 0).toLocaleString('en-IN') %>
+                                        <% if (isLow) { %>
+                                            <i class="icofont-warning text-danger ms-1" title="Low stock alert!"></i>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="text-end text-muted small">
+                                    <%= Number(item.minStockAlert || 0).toLocaleString('en-IN') %>
+                                </td>
+                                <td class="text-end fw-semibold text-dark">
+                                    ₹<%= Number(item.defaultSellingPrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 }) %>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill <%= item.isActive ? 'bg-success' : 'bg-secondary' %>" style="font-size: 10px;">
+                                        <%= item.isActive ? 'ACTIVE' : 'INACTIVE' %>
+                                    </span>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="openEditMaterialModal('<%= item._id %>')" title="Edit Material">
+                                            <i class="icofont-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-<%= item.isActive ? 'warning' : 'success' %>" onclick="toggleMaterialStatus('<%= item._id %>', <%= item.isActive %>)" title="<%= item.isActive ? 'Deactivate' : 'Activate' %>">
+                                            <i class="icofont-<%= item.isActive ? 'ban' : 'check' %>"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="10" class="text-center py-5">
+                                <i class="icofont-box text-muted" style="font-size: 40px;"></i>
+                                <p class="text-muted mt-2 mb-0">No materials found matching your criteria.</p>
+                                <button class="btn btn-sm btn-warning mt-2" data-bs-toggle="modal" data-bs-target="#createMaterialModal">
+                                    <i class="icofont-plus-circle me-1"></i> Add First Material
+                                </button>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    
+    <% if (totalP > 1) { %>
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Showing page <%= currP %> of <%= totalP %> (<%= totalItms %> items)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <% for (let p = 1; p <= totalP; p++) { %>
+                    <li class="page-item <%= p === currP ? 'active' : '' %>">
+                        <a class="page-link" href="/admin/materials?page=<%= p %>&search=<%= filterObj.search || '' %>&category=<%= filterObj.category || '' %>&status=<%= filterObj.status || '' %>"><%= p %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Add New Material -->
+<div class="modal fade" id="createMaterialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="createMaterialForm" onsubmit="handleCreateMaterial(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-box me-2 text-warning"></i> Add New Material to Catalog</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="icofont-info-circle me-1"></i> <strong>Stock Notice:</strong> Opening stock is not entered here. Material stock levels are securely updated via <strong>Purchase Orders</strong> (Stock In) or verified <strong>Stock Adjustments</strong>.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label font-weight-semibold small">Material Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. 540W Mono PERC Solar Panel" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-semibold small">SKU / Code <small class="text-muted">(leave blank to auto-generate)</small></label>
+                            <input type="text" name="sku" class="form-control font-monospace" placeholder="e.g. PAN-540W-MONO">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Category <span class="text-danger">*</span></label>
+                            <select name="category" class="form-select" required>
+                                <% categoriesList.forEach(cat => { %>
+                                    <option value="<%= cat %>"><%= cat.replace(/_/g, ' ') %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Unit of Measurement <span class="text-danger">*</span></label>
+                            <select name="unitOfMeasurement" class="form-select" required>
+                                <% unitsList.forEach(u => { %>
+                                    <option value="<%= u %>"><%= u %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Brand / Manufacturer</label>
+                            <input type="text" name="brand" class="form-control" placeholder="e.g. Tata Power Solar, Waree, Havells">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Model / Specifications</label>
+                            <input type="text" name="model" class="form-control" placeholder="e.g. TP-540-PERC">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Default Selling Price (₹)</label>
+                            <input type="number" step="0.01" min="0" name="defaultSellingPrice" class="form-control" value="0.00">
+                            <small class="text-muted">Can be updated anytime without altering historical purchases.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Minimum Stock Alert Level</label>
+                            <input type="number" step="1" min="0" name="minStockAlert" class="form-control" value="5">
+                            <small class="text-muted">Threshold for low-stock dashboard warnings.</small>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Description / Technical Notes</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Key specs, warranty, dimensions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning font-weight-bold text-dark px-4" id="saveMaterialBtn">
+                        <i class="icofont-check-circled me-1"></i> Save Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Material -->
+<div class="modal fade" id="editMaterialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="editMaterialForm" onsubmit="handleUpdateMaterial(event)">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" id="editMaterialId" name="materialId">
+                <div class="modal-header bg-navy text-white" style="background-color: var(--admin-navy-primary);">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="icofont-edit me-2 text-warning"></i> Edit Material</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label font-weight-semibold small">Material Name <span class="text-danger">*</span></label>
+                            <input type="text" id="editName" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label font-weight-semibold small">SKU / Code</label>
+                            <input type="text" id="editSku" name="sku" class="form-control font-monospace" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Category <span class="text-danger">*</span></label>
+                            <select id="editCategory" name="category" class="form-select" required>
+                                <% categoriesList.forEach(cat => { %>
+                                    <option value="<%= cat %>"><%= cat.replace(/_/g, ' ') %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Unit of Measurement <span class="text-danger">*</span></label>
+                            <select id="editUnit" name="unitOfMeasurement" class="form-select" required>
+                                <% unitsList.forEach(u => { %>
+                                    <option value="<%= u %>"><%= u %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Brand / Manufacturer</label>
+                            <input type="text" id="editBrand" name="brand" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Model / Specifications</label>
+                            <input type="text" id="editModel" name="model" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Default Selling Price (₹)</label>
+                            <input type="number" step="0.01" min="0" id="editSellingPrice" name="defaultSellingPrice" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-semibold small">Minimum Stock Alert Level</label>
+                            <input type="number" step="1" min="0" id="editMinStock" name="minStockAlert" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label font-weight-semibold small">Description</label>
+                            <textarea id="editDescription" name="description" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="editIsActive" name="isActive" value="true">
+                                <label class="form-check-label font-weight-semibold small" for="editIsActive">Active Material</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary font-weight-bold px-4" id="updateMaterialBtn">
+                        <i class="icofont-check-circled me-1"></i> Update Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const CSRF_TOKEN = '<%= csrfToken %>';
+
+function showToast(msg, isError = false) {
+    const t = document.getElementById('materialToast');
+    const m = document.getElementById('materialToastMsg');
+    t.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show mb-4`;
+    m.textContent = msg;
+    t.classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function handleCreateMaterial(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveMaterialBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+        const res = await fetch('/api/admin/materials', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Material created successfully.');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Failed to create material.', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Save Material';
+        }
+    } catch (err) {
+        showToast('Network error while saving material.', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Save Material';
+    }
+}
+
+async function openEditMaterialModal(id) {
+    try {
+        const res = await fetch(`/admin/materials/${id}`);
+        const data = await res.json();
+        if (!data.success || !data.material) {
+            return alert(data.message || 'Error fetching material.');
+        }
+
+        const m = data.material;
+        document.getElementById('editMaterialId').value = m._id;
+        document.getElementById('editName').value = m.name || '';
+        document.getElementById('editSku').value = m.sku || '';
+        document.getElementById('editCategory').value = m.category || 'SOLAR_PANEL';
+        document.getElementById('editUnit').value = m.unitOfMeasurement || 'NOS';
+        document.getElementById('editBrand').value = m.brand || '';
+        document.getElementById('editModel').value = m.model || '';
+        document.getElementById('editSellingPrice').value = m.defaultSellingPrice || 0;
+        document.getElementById('editMinStock').value = m.minStockAlert || 5;
+        document.getElementById('editDescription').value = m.description || '';
+        document.getElementById('editIsActive').checked = m.isActive !== false;
+
+        const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+        editModal.show();
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+async function handleUpdateMaterial(e) {
+    e.preventDefault();
+    const btn = document.getElementById('updateMaterialBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+
+    const id = document.getElementById('editMaterialId').value;
+    const form = e.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    payload.isActive = document.getElementById('editIsActive').checked;
+
+    try {
+        const res = await fetch(`/api/admin/materials/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message || 'Material updated successfully.');
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Failed to update material.', true);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Update Material';
+        }
+    } catch (err) {
+        showToast('Network error while updating material.', true);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-check-circled me-1"></i> Update Material';
+    }
+}
+
+async function toggleMaterialStatus(id, currentlyActive) {
+    const action = currentlyActive ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this material?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/materials/${id}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message);
+            setTimeout(() => location.reload(), 600);
+        } else {
+            showToast(data.message || 'Error updating status.', true);
+        }
+    } catch (err) {
+        showToast('Server communication error.', true);
+    }
+}
+</script>
+
+<%- include('partials/admin-footer') %>

@@ -219,13 +219,17 @@
                 <% company.contacts.forEach((contact, idx) => { %>
                     <div class="col-md-5">
                         <article class="leadership-card h-100">
-                            <div class="leadership-avatar">
-                                <%= contact.name.charAt(0) %>
+                            <div class="leadership-avatar overflow-hidden">
+                                <% if (contact.image && contact.image.trim()) { %>
+                                    <img src="<%= (contact.image.startsWith('http') || contact.image.startsWith('/')) ? contact.image : '/' + contact.image %>" alt="<%= contact.name %>" style="width: 100%; height: 100%; object-fit: cover;">
+                                <% } else { %>
+                                    <%= contact.name.charAt(0) %>
+                                <% } %>
                             </div>
                             <h3><%= contact.name %></h3>
                             <span class="leadership-designation"><%= contact.designation %></span>
                             <p class="leadership-description">
-                                Available for technical consultation, rooftop feasibility checks, and project guidance.
+                                <%= contact.bio || 'Available for technical consultation, rooftop feasibility checks, and project guidance.' %>
                             </p>
                             <div class="leadership-actions">
                                 <a href="tel:<%= contact.mobile.replace(/[^0-9+]/g, '') %>" class="leadership-call-button">

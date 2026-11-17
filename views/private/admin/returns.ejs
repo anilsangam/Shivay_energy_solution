@@ -1,0 +1,201 @@
+<%- include('partials/admin-head') %>
+
+<%
+    const returnStats = (typeof stats !== 'undefined' && stats) ? stats : {
+        totalReturns: 0,
+        pendingInspection: 0,
+        approvedReturns: 0,
+        goodRestockedUnits: 0,
+        damagedUnits: 0,
+        defectiveUnits: 0
+    };
+    const totalP = (typeof totalPages !== 'undefined') ? totalPages : ((typeof pagination !== 'undefined' && pagination.totalPages) ? pagination.totalPages : 1);
+    const currP = (typeof currentPage !== 'undefined') ? currentPage : ((typeof pagination !== 'undefined' && pagination.page) ? pagination.page : 1);
+    const totalItms = (typeof totalItems !== 'undefined') ? totalItems : ((typeof pagination !== 'undefined' && pagination.total) ? pagination.total : 0);
+    const filterObj = (typeof filters !== 'undefined' && filters) ? filters : {};
+    const returnsList = (typeof returns !== 'undefined' && Array.isArray(returns)) ? returns : [];
+%>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-recycle me-2 text-warning"></i> Material Returns & RMA
+        </h2>
+        <p class="text-muted small mb-0">
+            Handle customer site surplus inward, defective inverter RMAs, physical inspections, and segregated stock quarantine.
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/admin/sales-out" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <i class="icofont-truck-loaded me-1"></i> View Sales Orders
+        </a>
+    </div>
+</div>
+
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Total Returns</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= returnStats.totalReturns %></div>
+            <div class="small text-muted mt-1">RMA cases logged</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Pending Inspection</span>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= returnStats.pendingInspection %></div>
+            <div class="small text-muted mt-1">Awaiting QA approval</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Approved Returns</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= returnStats.approvedReturns %></div>
+            <div class="small text-muted mt-1">Inspected & processed</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Good Restocked</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= returnStats.goodRestockedUnits %></div>
+            <div class="small text-muted mt-1">Returned to sellable</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Damaged Stock</span>
+            <div class="h3 font-weight-bold text-danger mb-0 mt-1"><%= returnStats.damagedUnits %></div>
+            <div class="small text-muted mt-1">Quarantined non-sellable</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-2">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Defective Stock</span>
+            <div class="h3 font-weight-bold text-danger mb-0 mt-1"><%= returnStats.defectiveUnits %></div>
+            <div class="small text-muted mt-1">Quarantined OEM RMA</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/returns" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-6 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by Return #, Sale #, Customer Name, or Reason..." value="<%= filterObj.search || '' %>">
+            </div>
+        </div>
+        <div class="col-6 col-md-4 p-0 px-1">
+            <select name="status" class="form-select">
+                <option value="">All Return Statuses</option>
+                <option value="REQUESTED" <%= filterObj.status === 'REQUESTED' ? 'selected' : '' %>>REQUESTED (Pending Review)</option>
+                <option value="RECEIVED" <%= filterObj.status === 'RECEIVED' ? 'selected' : '' %>>RECEIVED (At Warehouse)</option>
+                <option value="UNDER_INSPECTION" <%= filterObj.status === 'UNDER_INSPECTION' ? 'selected' : '' %>>UNDER INSPECTION</option>
+                <option value="APPROVED" <%= filterObj.status === 'APPROVED' ? 'selected' : '' %>>APPROVED (Stock Processed)</option>
+                <option value="REJECTED" <%= filterObj.status === 'REJECTED' ? 'selected' : '' %>>REJECTED</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 p-0 ps-1 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);"><i class="icofont-filter me-1"></i> Filter</button>
+            <a href="/admin/returns" class="btn btn-outline-secondary" title="Reset Filters"><i class="icofont-refresh"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Returns Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Material Returns & RMA (<%= totalItms %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Customer & project return requests, inspection & quarantine stock</div>
+        </div>
+        <span class="badge bg-light text-dark border">RMA Tracking</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3" style="width: 150px;">Return #</th>
+                    <th class="py-3">Sale Reference</th>
+                    <th class="py-3">Customer Name</th>
+                    <th class="py-3">Reason</th>
+                    <th class="py-3 text-center">Items Returned</th>
+                    <th class="py-3 text-center">Status</th>
+                    <th class="pe-3 py-3 text-end">Action</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <% if (returnsList && returnsList.length > 0) { %>
+                        <% returnsList.forEach(r => { %>
+                            <tr>
+                                <td class="ps-3">
+                                    <a href="/admin/returns/<%= r._id %>" class="fw-bold font-monospace text-primary text-decoration-none">
+                                        <%= r.returnNumber %>
+                                    </a>
+                                    <div class="text-muted" style="font-size: 11px;"><%= new Date(r.receivedDate || r.createdAt).toLocaleDateString('en-IN') %></div>
+                                </td>
+                                <td>
+                                    <a href="/admin/sales-out/<%= r.sale && r.sale._id ? r.sale._id : r.sale %>" class="fw-medium font-monospace text-dark text-decoration-none">
+                                        <%= r.saleNumber %>
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark"><%= r.customerName || 'Customer' %></div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate text-secondary small" style="max-width: 250px;"><%= r.returnReason %></div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border">
+                                        <%= (r.items || []).reduce((acc, it) => acc + (it.returnedQuantity || 0), 0) %> units
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <% if (r.status === 'APPROVED' || r.status === 'COMPLETED') { %>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="icofont-check me-1"></i>APPROVED</span>
+                                    <% } else if (r.status === 'REJECTED') { %>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="icofont-close me-1"></i>REJECTED</span>
+                                    <% } else { %>
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1"><i class="icofont-clock-time me-1"></i><%= r.status %></span>
+                                    <% } %>
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <a href="/admin/returns/<%= r._id %>" class="btn btn-sm btn-outline-secondary">
+                                        <i class="icofont-eye-alt me-1"></i> Inspect & Disposition
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="icofont-recycle text-muted" style="font-size: 40px;"></i>
+                                <p class="text-muted mt-2 mb-0">No material return requests found.</p>
+                                <a href="/admin/sales-out" class="btn btn-sm btn-primary mt-2">
+                                    <i class="icofont-truck-loaded me-1"></i> View Confirmed Sales to Request Return
+                                </a>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    
+    <% if (totalP > 1) { %>
+        <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <span class="small text-muted">Showing page <%= currP %> of <%= totalP %> (<%= totalItms %> returns)</span>
+            <ul class="pagination pagination-sm mb-0">
+                <% for (let p = 1; p <= totalP; p++) { %>
+                    <li class="page-item <%= p === currP ? 'active' : '' %>">
+                        <a class="page-link" href="/admin/returns?page=<%= p %>&search=<%= filterObj.search || '' %>&status=<%= filterObj.status || '' %>"><%= p %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </div>
+    <% } %>
+</div>
+
+<%- include('partials/admin-footer') %>

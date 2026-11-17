@@ -143,7 +143,7 @@ body.admin-body {
 }
 
 .admin-nav-item {
-    margin-bottom: 3px;
+    margin-bottom: 5px;
 }
 
 .admin-nav-link {
@@ -153,18 +153,31 @@ body.admin-body {
     border-radius: 8px;
     color: #cbd5e1;
     text-decoration: none;
-    font-size: 13px;
+    font-size: 13.5px;
+    line-height: 1.15;
     font-weight: 500;
     transition: var(--admin-transition);
     gap: 10px;
 }
 
+.admin-nav-link span {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.15;
+    display: block;
+    margin: 0;
+    padding: 0;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
 .admin-nav-link i {
-    font-size: 16px;
+    font-size: 17px;
     width: 20px;
     text-align: center;
     color: #94a3b8;
     transition: var(--admin-transition);
+    flex-shrink: 0;
 }
 
 .admin-nav-link:hover {
@@ -195,6 +208,105 @@ body.admin-body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+/* Material Management Expandable Submenu */
+.admin-nav-item.has-submenu > .admin-nav-link {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-nav-arrow {
+    margin-left: auto;
+    font-size: 13px !important;
+    width: auto !important;
+    color: #94a3b8;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.admin-nav-item.has-submenu.open > .admin-nav-link > .admin-nav-arrow {
+    transform: rotate(90deg);
+    color: var(--admin-solar-gold);
+}
+
+.admin-nav-item.has-submenu.open > .admin-nav-link {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-nav-submenu {
+    list-style: none;
+    margin: 4px 0 6px 14px;
+    padding: 2px 0 2px 10px;
+    border-left: 2px solid rgba(245, 158, 11, 0.3);
+    display: none;
+}
+
+.admin-nav-item.has-submenu.open > .admin-nav-submenu {
+    display: block;
+    animation: submenuFadeIn 0.2s ease-in-out;
+}
+
+@keyframes submenuFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-subnav-link {
+    display: flex;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 6px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1.15;
+    font-weight: 500;
+    transition: var(--admin-transition);
+    gap: 9px;
+    margin-bottom: 4px;
+}
+
+.admin-subnav-link span {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.15;
+    display: block;
+    margin: 0;
+    padding: 0;
+    word-break: normal;
+    overflow-wrap: break-word;
+}
+
+.admin-subnav-link i {
+    font-size: 15px;
+    width: 16px;
+    text-align: center;
+    color: #64748b;
+    transition: var(--admin-transition);
+    flex-shrink: 0;
+}
+
+.admin-subnav-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-subnav-link:hover i {
+    color: var(--admin-solar-gold);
+}
+
+.admin-subnav-link.active {
+    color: #ffffff;
+    background: linear-gradient(90deg, rgba(245, 158, 11, 0.22) 0%, rgba(22, 53, 99, 0.45) 100%);
+    border-left: 3px solid var(--admin-solar-gold);
+    font-weight: 600;
+}
+
+.admin-subnav-link.active i {
+    color: var(--admin-solar-gold);
 }
 
 .admin-sidebar-footer {
@@ -216,7 +328,7 @@ body.admin-body {
     border: 0;
     color: #fca5a5;
     text-decoration: none;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     transition: all 0.2s ease;
 }
@@ -604,6 +716,93 @@ body.admin-body {
 .icon-blue {
     background: rgba(59, 130, 246, 0.12);
     color: #3b82f6;
+}
+
+/* ============================================================
+   4B. UNIFIED SEARCH BARS & SEARCH ICON NORMALIZATION
+   ============================================================ */
+.admin-search-group,
+.input-group:has(input[type="text"][name="search"]),
+.input-group:has(input[type="search"]) {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    align-items: stretch !important;
+}
+
+.input-group > .input-group-text {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    line-height: 1 !important;
+    box-sizing: border-box !important;
+    border-radius: 8px 0 0 8px !important;
+}
+
+.input-group > .input-group-text > i,
+.input-group-text > i[class*="icofont-search"],
+i[class*="icofont-search"] {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    height: 14px !important;
+    max-height: 14px !important;
+    width: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+}
+
+.input-group > input.form-control[name="search"],
+.input-group > input.form-control[type="search"],
+.input-group > .form-control {
+    height: 38px !important;
+    min-height: 38px !important;
+    font-size: 13px !important;
+    border-color: #cbd5e1 !important;
+    box-sizing: border-box !important;
+}
+
+.input-group > input.form-control:not(:first-child) {
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.input-group > select.form-select,
+.card-body form select.form-select {
+    height: 38px !important;
+    min-height: 38px !important;
+    font-size: 13px !important;
+    border-color: #cbd5e1 !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+}
+
+.input-group > .btn,
+.card-body form .btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+}
+
+/* Clean Admin Filter Bar Container */
+.admin-filter-card {
+    background: #ffffff;
+    border: 1px solid var(--admin-border, #cbd5e1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(15, 42, 74, 0.04);
+    margin-bottom: 20px;
 }
 
 /* ============================================================

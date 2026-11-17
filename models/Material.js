@@ -88,6 +88,22 @@ const materialSchema = new mongoose.Schema({
         default: 0,
         min: [0, 'Current stock balance cannot be negative.']
     },
+    // Phase 2: Segregated non-sellable stock categories
+    damagedStock: {
+        type: Number,
+        default: 0,
+        min: [0, 'Damaged stock balance cannot be negative.']
+    },
+    defectiveStock: {
+        type: Number,
+        default: 0,
+        min: [0, 'Defective stock balance cannot be negative.']
+    },
+    pendingInspectionStock: {
+        type: Number,
+        default: 0,
+        min: [0, 'Pending inspection stock balance cannot be negative.']
+    },
     weightedAverageCost: {
         type: Number,
         default: 0,
@@ -110,7 +126,6 @@ const materialSchema = new mongoose.Schema({
     timestamps: true
 });
 
-materialSchema.index({ sku: 1 }, { unique: true });
 materialSchema.index({ name: 'text', brand: 'text', model: 'text', sku: 'text' });
 materialSchema.index({ category: 1, isActive: 1 });
 

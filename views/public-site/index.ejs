@@ -330,7 +330,7 @@
                                 </div>
                                 <div>
                                     <span class="govt-banner-pill">
-                                        आज ही रजिस्ट्रेशन कराएं और पाएं ₹1,08,000/- तक की सब्सिडी
+                                        आज ही रजिस्ट्रेशन कराएं और पाएं ₹78,000/- तक की सब्सिडी
                                     </span>
                                 </div>
                             </div>
@@ -418,39 +418,34 @@
                                 <thead>
                                     <tr>
                                         <th>संयंत्र की क्षमता</th>
-                                        <th>केन्द्र सरकार का अनुदान</th>
-                                        <th>राज्य सरकार का अनुदान</th>
-                                        <th>कुल अनुमन्य अनुदान</th>
+                                        <th>केन्द्र सरकार का अनुदान (Direct DBT)</th>
                                         <th>छत की आवश्यकता</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
+                                        <td>1 KW</td>
+                                        <td>₹30,000/-</td>
+                                        <td>100 sqft</td>
+                                    </tr>
+                                    <tr>
                                         <td>2 KW</td>
-                                        <td>60,000</td>
-                                        <td>30,000</td>
-                                        <td>90,000</td>
+                                        <td>₹60,000/-</td>
                                         <td>150 sqft</td>
                                     </tr>
                                     <tr>
                                         <td>3 KW</td>
-                                        <td>78,000</td>
-                                        <td>30,000</td>
-                                        <td>1,08,000</td>
+                                        <td>₹78,000/-</td>
                                         <td>200 sqft</td>
                                     </tr>
                                     <tr>
                                         <td>4 KW</td>
-                                        <td>78,000</td>
-                                        <td>30,000</td>
-                                        <td>1,08,000</td>
+                                        <td>₹78,000/-</td>
                                         <td>250 sqft</td>
                                     </tr>
                                     <tr>
                                         <td>5 KW</td>
-                                        <td>78,000</td>
-                                        <td>30,000</td>
-                                        <td>1,08,000</td>
+                                        <td>₹78,000/-</td>
                                         <td>350 sqft</td>
                                     </tr>
                                 </tbody>
@@ -482,7 +477,7 @@
                     <div class="home-projects-heading">
                         <h2 id="homeServicesHeading">Our Services</h2>
                     </div>
-                    <% const homeServiceItems = data.services; %>
+                    <% const homeServiceItems = data.services || []; %>
                     <div class="home-service-rail home-auto-rail" role="region" tabindex="0" aria-label="Solar and EV services">
                         <div class="home-project-track">
                             <% [false, true].forEach(isClone => { %>
@@ -490,10 +485,10 @@
                                     <% homeServiceItems.forEach(service => { %>
                                         <article class="home-service-card" <%= isClone ? 'tabindex="-1"' : '' %>>
                                             <div class="home-service-image">
-                                                <img src="/<%= service.image %>" alt="<%= isClone ? '' : service.title %>" loading="lazy">
+                                                <img src="<%= (service.image && (service.image.startsWith('http') || service.image.startsWith('/'))) ? service.image : ('/' + (service.image || 'images/services/1.webp')) %>" alt="<%= isClone ? '' : service.title %>" loading="lazy">
                                             </div>
                                             <div class="home-service-card-body">
-                                                <span class="home-service-icon"><i class="<%= service.icon %>" aria-hidden="true"></i></span>
+                                                <span class="home-service-icon"><i class="<%= service.icon || 'icofont-home' %>" aria-hidden="true"></i></span>
                                                 <h3><%= service.title %></h3>
                                                 <p><%= service.shortDesc %></p>
                                                 <div class="home-service-actions">
@@ -510,13 +505,13 @@
                 </div>
             </section>
 
-            <!-- Recent projects horizontal auto-scroll rail -->
+            <!-- Recent projects horizontal auto-scroll rail (Showing exactly 3 Recent Projects as requested) -->
             <section class="home-projects-section" aria-labelledby="homeProjectsHeading">
                 <div class="container">
                     <div class="home-projects-heading">
                         <h2 id="homeProjectsHeading">Recent Projects</h2>
                     </div>
-                    <% const homeProjectItems = data.projects.slice(0, 8); %>
+                    <% const homeProjectItems = (data.projects || []).slice(0, 3); %>
                     <div class="home-project-rail home-auto-rail" role="region" tabindex="0" aria-label="Recent solar projects">
                         <div class="home-project-track">
                             <% [false, true].forEach(isClone => { %>
@@ -524,7 +519,7 @@
                                     <% homeProjectItems.forEach((project, index) => { %>
                                         <article class="home-project-card" <%= isClone ? 'tabindex="-1"' : '' %>>
                                             <div class="home-project-image">
-                                                <img src="<%= project.image %>" alt="<%= isClone ? '' : project.title %>" loading="lazy">
+                                                <img src="<%= (project.image && (project.image.startsWith('http') || project.image.startsWith('/'))) ? project.image : ('/' + (project.image || 'images/projects/1.webp')) %>" alt="<%= isClone ? '' : project.title %>" loading="lazy">
                                                 <span><%= project.capacity %></span>
                                             </div>
                                             <div class="home-project-card-body">

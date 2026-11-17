@@ -1,0 +1,162 @@
+<%- include('partials/header') %>
+<%- include('partials/navbar') %>
+
+<div class="no-bottom no-top" id="content">
+    <div id="top"></div>
+
+    <!-- Subheader Banner -->
+    <section id="subheader" class="bg-dark text-light relative py-5" style="background: linear-gradient(135deg, rgba(22, 53, 99, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%), url('/images/background/2.webp') center/cover no-repeat;">
+        <div class="container py-3">
+            <div class="row align-items-center">
+                <div class="col-lg-9">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-warning bg-opacity-20 text-warning small font-weight-bold mb-3">
+                        <i class="icofont-shield-alt"></i> Transparency &amp; Data Protection
+                    </div>
+                    <h1 class="text-white font-weight-bold mb-2">Privacy Policy</h1>
+                    <p class="text-white-50 mb-0" style="font-size: 16px;">
+                        <%= company.name %> • Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen (M.P.)
+                    </p>
+                    <div class="small text-white-50 mt-2">
+                        <i class="icofont-clock-time me-1 text-warning"></i>
+                        Last Updated: <strong><%= new Date(lastUpdated).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row gy-4">
+                
+                <!-- Left Quick Navigation Sidebar (Desktop) -->
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="bg-white p-4 rounded-3 shadow-sm border sticky-top" style="top: 100px;">
+                        <h6 class="font-weight-bold text-dark text-uppercase small mb-3">
+                            <i class="icofont-list me-1 text-primary"></i> Policy Overview
+                        </h6>
+                        <ul class="list-unstyled small mb-4" style="line-height: 2;">
+                            <li><i class="icofont-check-circled text-success me-1"></i> Data Collection Scope</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Site Survey &amp; Bill Data</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> PM Surya Ghar Subsidy KYC</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Service Complaints</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Zero-Spam / Zero-Sale Rule</li>
+                            <li><i class="icofont-check-circled text-success me-1"></i> Grievance Redressal</li>
+                        </ul>
+
+                        <div class="p-3 rounded-3 bg-light border">
+                            <span class="font-weight-bold text-dark d-block small mb-1">
+                                <i class="icofont-headphone-alt text-warning me-1"></i> Have Questions?
+                            </span>
+                            <small class="text-muted d-block mb-2">Speak directly with our Raisen compliance team.</small>
+                            <a href="tel:<%= company.contact.phone.replace(/[^0-9+]/g, '') %>" class="btn btn-sm btn-primary w-100 font-weight-bold" style="background: var(--admin-navy-primary, #163563); border-radius: 6px;">
+                                <i class="icofont-phone me-1"></i> <%= company.contact.phone %>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Policy Document Content -->
+                <div class="col-lg-9">
+                    <div class="bg-white p-4 p-md-5 rounded-3 shadow-sm border legal-content-card">
+                        
+                        <!-- Trust Highlight Banner -->
+                        <div class="alert alert-success border-0 bg-success bg-opacity-10 d-flex align-items-center gap-3 p-3 rounded-3 mb-4">
+                            <i class="icofont-safety-hat text-success fs-2"></i>
+                            <div class="small">
+                                <strong class="text-dark d-block mb-1">Official Shivay Energy Solutions Privacy Commitment</strong>
+                                <span class="text-muted">
+                                    Your personal information is collected solely to engineer customized rooftop solar systems, process central PM Surya Ghar Muft Bijli Yojana subsidies (up to ₹78,000/-), and coordinate DISCOM net-metering with MPPKVVCL. We strictly do not sell customer data to any telemarketers.
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic / Formatted Policy Content -->
+                        <div class="legal-body-text">
+                            <% if (policyContent && (policyContent.includes('<p>') || policyContent.includes('<h3>') || policyContent.includes('<div>'))) { %>
+                                <%- policyContent %>
+                            <% } else { %>
+                                <% 
+                                    const paragraphs = (policyContent || '').split(/\n\s*\n/);
+                                    paragraphs.forEach(p => {
+                                        if (p.trim()) { 
+                                %>
+                                    <p><%= p.trim() %></p>
+                                <% 
+                                        }
+                                    }); 
+                                %>
+                            <% } %>
+                        </div>
+
+                        <!-- Footer Legal Notice Box -->
+                        <div class="mt-5 pt-4 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <span class="small font-weight-bold text-dark d-block mb-1">
+                                        <%= company.name %> — Registered Solar EPC
+                                    </span>
+                                    <small class="text-muted">
+                                        <%= company.address.full %>
+                                    </small>
+                                </div>
+                                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                                    <a href="/terms-and-conditions" class="btn btn-outline-secondary btn-sm font-weight-bold" style="border-radius: 6px;">
+                                        <i class="icofont-law-order me-1"></i> View Terms &amp; Conditions
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>
+
+<style>
+.legal-content-card h3 {
+    color: #163563;
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 32px;
+    margin-bottom: 14px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+.legal-content-card h4 {
+    color: #334155;
+    font-size: 16px;
+    font-weight: 700;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+.legal-content-card p {
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+.legal-content-card ul, .legal-content-card ol {
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    padding-left: 24px;
+}
+.legal-content-card li {
+    margin-bottom: 8px;
+}
+.legal-content-card strong {
+    color: #0f172a;
+}
+.legal-content-card a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+</style>
+
+<%- include('partials/footer') %>

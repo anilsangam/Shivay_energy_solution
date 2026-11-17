@@ -1,0 +1,283 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-star me-2 text-warning"></i> Customer Testimonials Master
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage genuine customer reviews and rooftop success stories showcased across the website.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/about#testimonials" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live Reviews
+        </a>
+        <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;" onclick="openCreateModal()">
+            <i class="icofont-plus-circle me-1"></i> Add New Review
+        </button>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Website CMS:</span>
+            <a href="/admin/website/projects" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-energy-solar me-1 text-warning"></i> Projects
+            </a>
+            <a href="/admin/website/products" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-primary"></i> Products
+            </a>
+            <a href="/admin/website/services" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-tasks-alt me-1 text-primary"></i> Services
+            </a>
+            <a href="/admin/website/team" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-users-alt-5 me-1 text-info"></i> Founders & Team
+            </a>
+            <a href="/admin/website/testimonials" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-star me-1 text-warning"></i> Testimonials (Active)
+            </a>
+            <a href="/admin/website/contact" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-address-book me-1 text-success"></i> Contact Info
+            </a>
+        </div>
+        <span class="badge bg-light text-muted border">Total Reviews: <%= testimonials.length %></span>
+    </div>
+</div>
+
+<!-- Testimonials Grid -->
+<div class="row g-4 mb-5">
+    <% if (testimonials && testimonials.length > 0) { %>
+        <% testimonials.forEach(t => { %>
+            <div class="col-lg-4 col-md-6" id="testimonial-card-<%= t._id %>">
+                <div class="card border-0 shadow-sm rounded-3 h-100 overflow-hidden bg-white d-flex flex-column">
+                    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                        <div class="text-warning fs-6">
+                            <% for(let i = 0; i < (t.rating || 5); i++) { %>★<% } %>
+                        </div>
+                        <span class="badge <%= t.isActive ? 'bg-success' : 'bg-secondary' %>">
+                            <%= t.isActive ? 'Active' : 'Draft' %>
+                        </span>
+                    </div>
+
+                    <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                        <p class="text-secondary small fst-italic mb-3 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;">
+                            "<%= t.review %>"
+                        </p>
+
+                        <div class="pt-2 border-top mt-auto">
+                            <h6 class="font-weight-bold text-dark mb-0 fs-6"><%= t.name %></h6>
+                            <div class="small text-muted"><%= t.location %></div>
+                            <div class="small text-primary fw-bold"><%= t.system %></div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-3">
+                            <span class="badge bg-light text-muted border">Order: <%= t.order %></span>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" onclick='openEditModal(<%= JSON.stringify(t) %>)'>
+                                    <i class="icofont-edit me-1"></i> Edit
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" onclick="deleteTestimonial('<%= t._id %>', '<%= t.name.replace(/'/g, "\\'") %>')">
+                                    <i class="icofont-ui-delete me-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3 p-5 text-center bg-white">
+                <i class="icofont-star text-muted" style="font-size: 48px;"></i>
+                <h5 class="mt-3 font-weight-bold">No Reviews Yet</h5>
+                <p class="text-muted small">Add your first customer testimonial.</p>
+                <div>
+                    <button type="button" class="btn btn-warning font-weight-bold" onclick="openCreateModal()">
+                        <i class="icofont-plus me-1"></i> Add Review
+                    </button>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal: Create / Edit Testimonial -->
+<div class="modal fade" id="testimonialModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title font-weight-bold" id="modalTitle">Add Customer Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="testimonialForm" onsubmit="handleTestimonialSubmit(event)">
+                <input type="hidden" id="testimonialEditId" value="">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Customer Name *</label>
+                            <input type="text" id="tName" class="form-control" required placeholder="e.g. Ramswaroop Sharma">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">City / Location *</label>
+                            <input type="text" id="tLocation" class="form-control" required placeholder="e.g. Arjun Nagar, Raisen (M.P.)">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Installed System Model</label>
+                            <input type="text" id="tSystem" class="form-control" placeholder="e.g. 3 kW Residential Rooftop System">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label font-weight-bold small">Rating (1 to 5 Stars)</label>
+                            <select id="tRating" class="form-select">
+                                <option value="5">★★★★★ (5 Stars)</option>
+                                <option value="4">★★★★☆ (4 Stars)</option>
+                                <option value="3">★★★☆☆ (3 Stars)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label font-weight-bold small">Display Order</label>
+                            <input type="number" id="tOrder" class="form-control" value="0">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label font-weight-bold small">Review / Feedback Statement *</label>
+                            <textarea id="tReview" class="form-control" rows="3" required placeholder="Details about installation speed, electricity savings, PM Surya Ghar subsidy received..."></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold small">Status</label>
+                            <select id="tActive" class="form-select">
+                                <option value="true">Active (Visible on Website)</option>
+                                <option value="false">Hidden / Draft</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveTestimonialBtn" class="btn btn-warning font-weight-bold text-dark px-4">
+                        Save Review
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let testimonialModalInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    testimonialModalInstance = new bootstrap.Modal(document.getElementById('testimonialModal'));
+});
+
+function openCreateModal() {
+    document.getElementById('modalTitle').innerText = 'Add New Customer Review';
+    document.getElementById('testimonialEditId').value = '';
+    document.getElementById('tName').value = '';
+    document.getElementById('tLocation').value = '';
+    document.getElementById('tSystem').value = '3 kW Residential Rooftop Solar';
+    document.getElementById('tRating').value = '5';
+    document.getElementById('tOrder').value = '0';
+    document.getElementById('tActive').value = 'true';
+    document.getElementById('tReview').value = '';
+    testimonialModalInstance.show();
+}
+
+function openEditModal(t) {
+    document.getElementById('modalTitle').innerText = 'Edit Review: ' + t.name;
+    document.getElementById('testimonialEditId').value = t._id;
+    document.getElementById('tName').value = t.name || '';
+    document.getElementById('tLocation').value = t.location || '';
+    document.getElementById('tSystem').value = t.system || '';
+    document.getElementById('tRating').value = t.rating || 5;
+    document.getElementById('tOrder').value = t.order || 0;
+    document.getElementById('tActive').value = t.isActive ? 'true' : 'false';
+    document.getElementById('tReview').value = t.review || '';
+    testimonialModalInstance.show();
+}
+
+async function handleTestimonialSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveTestimonialBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+
+    const editId = document.getElementById('testimonialEditId').value;
+    const url = editId ? `/api/admin/website/testimonials/${editId}/update` : '/api/admin/website/testimonials';
+
+    const payload = {
+        _csrf: '<%= csrfToken %>',
+        name: document.getElementById('tName').value,
+        location: document.getElementById('tLocation').value,
+        system: document.getElementById('tSystem').value,
+        rating: document.getElementById('tRating').value,
+        order: document.getElementById('tOrder').value,
+        isActive: document.getElementById('tActive').value === 'true',
+        review: document.getElementById('tReview').value
+    };
+
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            testimonialModalInstance.hide();
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error saving review.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Save Review';
+    }
+}
+
+async function deleteTestimonial(id, name) {
+    if (!confirm(`Are you sure you want to delete review from "${name}"?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/website/testimonials/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _csrf: '<%= csrfToken %>' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const card = document.getElementById(`testimonial-card-${id}`);
+            if (card) card.remove();
+            showToast('Review deleted successfully.');
+        } else {
+            alert(data.message || 'Error deleting review.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('actionToast');
+    document.getElementById('actionToastMsg').innerText = msg;
+    toast.classList.remove('d-none');
+}
+</script>
+
+<%- include('../partials/admin-footer') %>

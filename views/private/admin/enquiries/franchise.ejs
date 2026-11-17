@@ -1,0 +1,308 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Operation completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-handshake-deal me-2 text-warning"></i> Franchise & Channel Partner Applications
+        </h2>
+        <p class="text-muted small mb-0">
+            Prospective solar dealers and district distributor applications submitted via the channel partner portal.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/admin/enquiries/surveys" class="btn btn-outline-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-sun-alt me-1"></i> Site Survey Leads
+        </a>
+        <a href="/franchise" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live Franchise Page
+        </a>
+    </div>
+</div>
+
+<!-- Stats Counter Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small text-uppercase font-weight-bold">Total Applications</span>
+            <div class="h3 font-weight-bold mb-0 text-dark mt-1"><%= counts.total %></div>
+            <div class="small text-muted mt-1">All channel submissions</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small text-uppercase font-weight-bold">New Submissions</span>
+            <div class="h3 font-weight-bold mb-0 text-warning mt-1"><%= counts.new %></div>
+            <div class="small text-muted mt-1">Awaiting review</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small text-uppercase font-weight-bold">Under Review</span>
+            <div class="h3 font-weight-bold mb-0 text-info mt-1"><%= counts.under_review %></div>
+            <div class="small text-muted mt-1">Verification in progress</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small text-uppercase font-weight-bold">Approved Dealers</span>
+            <div class="h3 font-weight-bold mb-0 text-success mt-1"><%= counts.approved %></div>
+            <div class="small text-muted mt-1">Authorized partners</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="admin-filter-card mb-4 shadow-sm">
+    <form method="GET" action="/admin/enquiries/franchise" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-md-5 p-0 pe-md-2">
+            <div class="input-group admin-search-group">
+                <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, phone, district, city, ID..." value="<%= search %>">
+            </div>
+        </div>
+        <div class="col-md-4 p-0 px-1">
+            <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="">All Statuses (<%= counts.total %>)</option>
+                <option value="new" <%= currentStatus === 'new' ? 'selected' : '' %>>New (<%= counts.new %>)</option>
+                <option value="contacted" <%= currentStatus === 'contacted' ? 'selected' : '' %>>Contacted (<%= counts.contacted %>)</option>
+                <option value="under_review" <%= currentStatus === 'under_review' ? 'selected' : '' %>>Under Review (<%= counts.under_review %>)</option>
+                <option value="approved" <%= currentStatus === 'approved' ? 'selected' : '' %>>Approved (<%= counts.approved %>)</option>
+                <option value="rejected" <%= currentStatus === 'rejected' ? 'selected' : '' %>>Rejected (<%= counts.rejected %>)</option>
+            </select>
+        </div>
+        <div class="col-md-3 p-0 ps-1 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);">Filter</button>
+            <% if (search || currentStatus) { %>
+                <a href="/admin/enquiries/franchise" class="btn btn-outline-secondary" title="Clear Filters"><i class="icofont-refresh"></i></a>
+            <% } %>
+        </div>
+    </form>
+</div>
+
+<!-- Franchise Applications Table -->
+<div class="admin-card border shadow-sm p-0 overflow-hidden mb-5" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+    <div class="admin-card-header bg-white p-3 border-bottom d-flex align-items-center justify-content-between mb-0">
+        <div>
+            <h5 class="admin-card-title mb-0">Franchise & Dealership Applications (<%= counts.total %>)</h5>
+            <div class="admin-card-subtitle small text-muted">Channel partner inquiries & district distributor proposals</div>
+        </div>
+        <span class="badge bg-light text-dark border">Channel Partners</span>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th class="ps-3 py-3">Application ID / Date</th>
+                    <th>Applicant / Firm</th>
+                    <th>Territory (District & City)</th>
+                    <th>Investment Budget</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (applications && applications.length > 0) { %>
+                    <% applications.forEach(a => { %>
+                        <tr id="app-row-<%= a._id || a.applicationId %>">
+                            <td class="ps-3">
+                                <div class="font-monospace fw-bold text-dark"><%= a.applicationId %></div>
+                                <small class="text-muted">
+                                    <%= a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Recent' %>
+                                </small>
+                            </td>
+
+                            <td>
+                                <div class="fw-bold text-dark"><%= a.applicantName %></div>
+                                <div class="small text-muted">
+                                    <i class="icofont-phone me-1"></i>+91 <%= a.mobile %>
+                                </div>
+                                <% if (a.email) { %>
+                                    <div class="small text-muted text-truncate" style="max-width: 180px;"><%= a.email %></div>
+                                <% } %>
+                                <% if (a.businessBackground) { %>
+                                    <div class="small text-secondary fst-italic text-truncate" style="max-width: 220px;" title="<%= a.businessBackground %>">
+                                        Exp: <%= a.businessBackground %>
+                                    </div>
+                                <% } %>
+                            </td>
+
+                            <td>
+                                <div class="fw-bold small text-dark"><%= a.district %></div>
+                                <small class="text-muted"><%= a.city ? `${a.city}, ` : '' %><%= a.state || 'Madhya Pradesh' %></small>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace fw-bold">
+                                    <%= a.investmentCapacity || '₹2 Lakh - ₹5 Lakh' %>
+                                </span>
+                            </td>
+
+                            <td>
+                                <% 
+                                    let badgeClass = 'bg-secondary';
+                                    if (a.status === 'new') badgeClass = 'bg-warning text-dark';
+                                    else if (a.status === 'contacted') badgeClass = 'bg-info text-dark';
+                                    else if (a.status === 'under_review') badgeClass = 'bg-primary';
+                                    else if (a.status === 'approved') badgeClass = 'bg-success';
+                                    else if (a.status === 'rejected') badgeClass = 'bg-danger';
+                                %>
+                                <span class="badge <%= badgeClass %> text-uppercase" style="font-size: 11px;">
+                                    <%= (a.status || 'new').replace('_', ' ') %>
+                                </span>
+                            </td>
+
+                            <td class="text-end pe-3">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="tel:+91<%= a.mobile %>" class="btn btn-sm btn-outline-success" title="Direct Call">
+                                        <i class="icofont-phone"></i>
+                                    </a>
+                                    <a href="https://wa.me/91<%= a.mobile %>?text=Namaste%20<%= encodeURIComponent(a.applicantName) %>,%20thank%20you%20for%20your%20interest%20in%20becoming%20a%20Shivay%20Energy%20Solutions%20channel%20partner%20(<%= a.applicationId %>)%20for%20<%= encodeURIComponent(a.district) %>." 
+                                       target="_blank" class="btn btn-sm btn-success" title="WhatsApp Chat">
+                                        <i class="icofont-brand-whatsapp"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick='openAppStatusModal("<%= a._id || a.applicationId %>", "<%= a.applicationId %>", "<%= a.applicantName.replace(/"/g, "&quot;") %>", "<%= a.status %>")' title="Update Status">
+                                        <i class="icofont-edit"></i> Status
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick='deleteFranchise("<%= a._id || a.applicationId %>", "<%= a.applicationId %>")' title="Delete Application">
+                                        <i class="icofont-ui-delete"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="icofont-inbox fs-2 d-block mb-2 text-muted"></i>
+                            No franchise or dealership applications matching current filter.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Update Application Status -->
+<div class="modal fade" id="appStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-3">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title font-weight-bold" id="appStatusModalTitle">Update Application Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="appStatusForm" onsubmit="handleAppStatusSubmit(event)">
+                <input type="hidden" id="statusAppId" value="">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold small">Application Status *</label>
+                        <select id="modalAppStatusSelect" class="form-select" required>
+                            <option value="new">New Submission</option>
+                            <option value="contacted">Contacted Applicant</option>
+                            <option value="under_review">Under Financial / Background Review</option>
+                            <option value="approved">Approved Authorized Dealer</option>
+                            <option value="rejected">Rejected / Unqualified</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold small">Review Note</label>
+                        <textarea id="modalAppNote" class="form-control" rows="3" placeholder="e.g. Applicant has 5 years electrical contracting experience in Vidisha; warehouse space verified."></textarea>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top py-2 px-4 bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" id="saveAppStatusBtn" class="btn btn-warning font-weight-bold text-dark px-4">
+                        Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let appStatusModalInstance = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    appStatusModalInstance = new bootstrap.Modal(document.getElementById('appStatusModal'));
+});
+
+function openAppStatusModal(id, appId, name, currentStatus) {
+    document.getElementById('statusAppId').value = id;
+    document.getElementById('appStatusModalTitle').innerText = `Update: ${appId} (${name})`;
+    document.getElementById('modalAppStatusSelect').value = currentStatus || 'new';
+    document.getElementById('modalAppNote').value = '';
+    appStatusModalInstance.show();
+}
+
+async function handleAppStatusSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveAppStatusBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+
+    const id = document.getElementById('statusAppId').value;
+    const payload = {
+        _csrf: '<%= csrfToken %>',
+        status: document.getElementById('modalAppStatusSelect').value,
+        note: document.getElementById('modalAppNote').value
+    };
+
+    try {
+        const res = await fetch(`/api/admin/enquiries/franchise/${id}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            appStatusModalInstance.hide();
+            window.location.reload();
+        } else {
+            alert(data.message || 'Error updating status.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Update Status';
+    }
+}
+
+async function deleteFranchise(id, appId) {
+    if (!confirm(`Are you sure you want to delete application "${appId}"?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/enquiries/franchise/${id}/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ _csrf: '<%= csrfToken %>' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const row = document.getElementById(`app-row-${id}`);
+            if (row) row.remove();
+            const toast = document.getElementById('actionToast');
+            document.getElementById('actionToastMsg').innerText = 'Application deleted successfully.';
+            toast.classList.remove('d-none');
+        } else {
+            alert(data.message || 'Error deleting application.');
+        }
+    } catch (err) {
+        alert('Server communication error.');
+    }
+}
+</script>
+
+<%- include('../partials/admin-footer') %>
