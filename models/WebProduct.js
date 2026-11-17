@@ -55,7 +55,7 @@ const webProductSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: '/images/services/3.webp',
+        default: '/images/slider/slider1.webp',
         trim: true
     },
     order: {

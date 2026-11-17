@@ -4,7 +4,7 @@
                 <div class="row gx-5">
                     <div class="col-lg-4 col-sm-6 mb-4 footer-company-column">
                         <div class="footer-brand-lockup mb-3">
-                            <span class="footer-brand-mark"><img src="/images/brandlogo2.png" alt="Shivay Energy logo"></span>
+                            <span class="footer-brand-mark"><img src="/images/brandlogo2.webp" alt="Shivay Energy logo"></span>
                             <div class="footer-brand-copy">
                                 <small class="d-block"><%= company.tagline %></small>
                             </div>
@@ -90,7 +90,7 @@
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-md-5 text-center text-md-start small text-white-50">
-                            &copy; <%= currentYear %> - <strong><%= company.name %></strong>. All Rights Reserved.
+                            &copy; <%= typeof currentYear !== 'undefined' ? currentYear : new Date().getFullYear() %> - <strong><%= company.name %></strong>. All Rights Reserved.
                         </div>
                         <div class="col-md-7 text-center text-md-end small text-white-50">
                             <a href="/privacy-policy" class="text-white-50 text-decoration-none me-3 hover-white">Privacy Policy</a>

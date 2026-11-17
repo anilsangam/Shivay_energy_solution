@@ -64,7 +64,7 @@
                         <img src="<%= pr.image && (pr.image.startsWith('http') || pr.image.startsWith('/')) ? pr.image : '/' + pr.image %>" 
                              alt="<%= pr.title %>" 
                              style="width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.src='/images/projects/1.webp'">
+                             onerror="this.src='/images/slider/slider1.webp'">
                         <span class="badge position-absolute top-0 start-0 m-2 bg-dark">
                             <%= pr.capacity %>
                         </span>
@@ -214,7 +214,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small">Or Image URL / Path</label>
-                            <input type="text" id="projectImageUrl" class="form-control" placeholder="/images/projects/1.webp or https://...">
+                            <input type="text" id="projectImageUrl" class="form-control" placeholder="https://... or /images/slider/slider1.webp">
                         </div>
                         <div class="col-12" id="imagePreviewContainer" style="display: none;">
                             <label class="form-label font-weight-bold small">Image Preview</label>
@@ -275,7 +275,7 @@ function openCreateModal() {
     document.getElementById('projectOrder').value = '0';
     document.getElementById('projectActive').value = 'true';
     document.getElementById('projectDescription').value = '';
-    document.getElementById('projectImageUrl').value = '/images/projects/1.webp';
+    document.getElementById('projectImageUrl').value = '/images/slider/slider1.webp';
     document.getElementById('projectFile').value = '';
     selectedImageData = null;
     document.getElementById('imagePreviewContainer').style.display = 'none';

@@ -41,7 +41,7 @@ const webProjectSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: '/images/projects/1.webp',
+        default: '/images/slider/slider1.webp',
         trim: true
     },
     panels: {

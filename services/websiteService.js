@@ -18,7 +18,7 @@ const INITIAL_SERVICES = [
         serviceId: 'residential-solar',
         title: 'Residential Rooftop Solar Installation',
         icon: 'icofont-home',
-        image: 'images/services/1.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'Complete turnkey rooftop solar solutions for bungalows, apartments, and independent houses with PM Surya Ghar subsidy support.',
         details: 'Turn your rooftop into an income-generating clean energy plant. Shivay Energy Solutions handles everything from site survey, shadow analysis, structure fabrication, DCR module mounting, inverter commissioning to DISCOM net-metering approvals.',
         highlights: ['Up to ₹78,000 Direct Govt Subsidy', 'Zero Electricity Bills', 'Custom 3D Shadow Analysis', '25 Years Performance Warranty'],
@@ -29,7 +29,7 @@ const INITIAL_SERVICES = [
         serviceId: 'commercial-industrial',
         title: 'Commercial & Industrial (C&I) Solar Systems',
         icon: 'icofont-building-alt',
-        image: 'images/services/2.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'High-capacity on-grid solar plants for factories, cold storages, hospitals, petrol pumps, schools, and commercial establishments.',
         details: 'Commercial and industrial tariffs in Madhya Pradesh exceed ₹8 - ₹10 per unit. Solar energy reduces your operational overheads to less than ₹2.5 per unit, giving your business an immediate competitive edge.',
         highlights: ['Accelerated Depreciation (40% Tax Benefit)', 'Drastic Operational Cost Reduction', 'CAPEX & OPEX Business Models', 'Rapid 3-Year ROI Payback'],
@@ -40,7 +40,7 @@ const INITIAL_SERVICES = [
         serviceId: 'maintenance-amc',
         title: 'Solar System AMC & Maintenance Services',
         icon: 'icofont-tools-alt-2',
-        image: 'images/services/3.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'Comprehensive Operations & Maintenance (O&M) contracts, panel deep cleaning, inverter diagnostics, and earthing health audits.',
         details: 'Dust and bird droppings on solar panels reduce generation by up to 25%. Our specialized O&M team in Raisen and Bhopal ensures maximum yield, routine preventive check-ups, and uninterrupted generation year-round.',
         highlights: ['Scheduled High-Pressure Dust Cleaning', 'Inverter Health & String Diagnostics', 'Prompt Breakdown Resolution (< 24 Hours)', 'Generation Enhancement Audits'],
@@ -51,7 +51,7 @@ const INITIAL_SERVICES = [
         serviceId: 'agricultural-solar',
         title: 'Agricultural Solar Water Pumps (PM-KUSUM)',
         icon: 'icofont-water',
-        image: 'images/services/4.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'Solar pump installations for agricultural tube-wells, borewells, and rural farms under subsidized PM-KUSUM guidelines.',
         details: 'Reliable, free irrigation powered by sunlight. No more waiting for nighttime rural electricity rosters to water your wheat, gram, and soybean fields.',
         highlights: ['Eliminate Diesel Generator Expenses', 'Daytime Reliable Irrigation for Crops', 'Submersible & Surface DC/AC Pumps', 'Rugged High-Torque Performance'],
@@ -62,7 +62,7 @@ const INITIAL_SERVICES = [
         serviceId: 'consultation-netmetering',
         title: 'Solar Consultation & Net-Metering Liaisoning',
         icon: 'icofont-certificate-alt-1',
-        image: 'images/services/5.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'End-to-end liaisoning with MPPKVVCL / MPMKVVCL electricity boards for net-meter sanctions, CEIG safety approvals, and load upgrades.',
         details: 'Navigating DISCOM approvals can be frustrating. Our local liaisoning team in Raisen and MP takes care of every document, site inspection, and meter replacement seamlessly.',
         highlights: ['Complete DISCOM Paperwork Handling', 'Feasibility Study & Sanction Letters', 'Bi-Directional Meter Installation', '100% Hassle-Free Approvals'],
@@ -73,7 +73,7 @@ const INITIAL_SERVICES = [
         serviceId: 'battery-storage-solutions',
         title: 'Energy Storage & Battery Upgrades',
         icon: 'icofont-battery-full',
-        image: 'images/services/6.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'Retrofit battery storage systems to existing on-grid plants or design off-grid backup systems for critical commercial loads.',
         details: 'Ensure zero downtime during power cuts with modular lithium battery banks capable of high surge currents for air conditioners, machinery, and lighting loads.',
         highlights: ['Lithium Iron Phosphate (LiFePO4) Packs', 'Smart Micro-Grid Configuration', 'Uninterrupted Power for Critical Machinery', 'Zero Diesel Dependency'],
@@ -84,7 +84,7 @@ const INITIAL_SERVICES = [
         serviceId: 'ev-charging-installation',
         title: 'EV Charging Station Installation',
         icon: 'icofont-electricity',
-        image: 'images/services/5.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'EV charger supply, site assessment, electrical work, installation, and commissioning for homes and businesses.',
         details: 'Set up a safe, convenient EV charging point with charger selection, electrical preparation, installation, and commissioning.',
         highlights: ['Home & workplace chargers', 'Load and safety assessment', 'Installation & commissioning'],
@@ -95,7 +95,7 @@ const INITIAL_SERVICES = [
         serviceId: 'ev-charger-service',
         title: 'EV Charger Service & Maintenance',
         icon: 'icofont-tools-alt-2',
-        image: 'images/services/6.webp',
+        image: '/images/slider/slider1.webp',
         shortDesc: 'Inspection, troubleshooting, and routine maintenance for residential and commercial EV charging points.',
         details: 'Keep EV charging equipment reliable with fault checks, electrical safety inspections, and scheduled maintenance.',
         highlights: ['Charger diagnostics', 'Electrical safety checks', 'Repair & preventive maintenance'],
@@ -116,7 +116,7 @@ const INITIAL_PRODUCTS = [
         features: ['MNRE & BIS Certified', 'Dual MPPT Support', 'IP65 Weatherproof', 'Real-time Mobile App Monitoring'],
         bestFor: 'Homes, Offices & Factories with reliable grid supply wanting to reduce power bills to zero.',
         startingPrice: '₹24,500',
-        image: '/images/services/3.webp',
+        image: '/images/slider/slider1.webp',
         order: 1,
         isActive: true
     },
@@ -131,7 +131,7 @@ const INITIAL_PRODUCTS = [
         features: ['Lithium & Lead-Acid Battery Compatible', 'Instant Power Backup (< 10ms UPS switch)', 'Smart Load Sharing', 'Zero-Export Grid Compliance'],
         bestFor: 'Areas with occasional load-shedding wanting both 24/7 battery backup and net-metering savings.',
         startingPrice: '₹48,000',
-        image: '/images/services/3.webp',
+        image: '/images/slider/slider1.webp',
         order: 2,
         isActive: true
     },
@@ -146,7 +146,7 @@ const INITIAL_PRODUCTS = [
         features: ['Pure Sine Wave Output', 'High Surge Capability for Motors & Pumps', 'Auto Generator Start', 'LCD Display'],
         bestFor: 'Farmhouses, Agricultural tube-wells, Rural homes, and Remote commercial setups.',
         startingPrice: '₹18,500',
-        image: '/images/services/3.webp',
+        image: '/images/slider/slider1.webp',
         order: 3,
         isActive: true
     },
@@ -161,7 +161,7 @@ const INITIAL_PRODUCTS = [
         features: ['ALMM Listed & DCR Available (Eligible for PM Surya Ghar Subsidy)', 'Anti-Reflective Hydrophobic Glass', 'Withstands 5400 Pa Snow & 2400 Pa Wind Loads'],
         bestFor: 'Residential rooftops with limited space needing maximum power output per square foot.',
         startingPrice: '₹21/Watt',
-        image: '/images/slider/4.webp',
+        image: '/images/slider/slider1.webp',
         order: 4,
         isActive: true
     },
@@ -176,7 +176,7 @@ const INITIAL_PRODUCTS = [
         features: ['Deep 90% Depth of Discharge (DoD)', 'Quick 2-Hour Fast Charging', 'High Temperature Resistance', 'Smart Battery Management System (BMS)'],
         bestFor: 'Uninterrupted 24/7 power backup for lights, fans, computers, refrigerators, and coolers.',
         startingPrice: '₹14,500 (Tubular) / ₹65,000 (Lithium Wall Pack)',
-        image: '/images/services/4.webp',
+        image: '/images/slider/slider1.webp',
         order: 5,
         isActive: true
     },
@@ -191,7 +191,7 @@ const INITIAL_PRODUCTS = [
         features: ['Wind Speed Certified up to 150 km/h', 'IP65 Weatherproof Enclosures', 'Surge Protection Devices (SPD)', 'Chemical Earthing Electrodes'],
         bestFor: 'Safeguarding your complete solar investment against lightning, surges, and harsh weather.',
         startingPrice: 'Package based',
-        image: '/images/services/6.webp',
+        image: '/images/slider/slider1.webp',
         order: 6,
         isActive: true
     },
@@ -206,7 +206,7 @@ const INITIAL_PRODUCTS = [
         features: ['Wall-mounted options', 'Site and load assessment', 'Safety protection features'],
         bestFor: 'Home parking and private charging points.',
         startingPrice: 'Ask for a quote',
-        image: '/images/services/5.webp',
+        image: '/images/slider/slider1.webp',
         order: 7,
         isActive: true
     },
@@ -221,7 +221,7 @@ const INITIAL_PRODUCTS = [
         features: ['Single or three-phase options', 'Installation support', 'Electrical safety checks'],
         bestFor: 'Workplaces and commercial parking.',
         startingPrice: 'Ask for a quote',
-        image: '/images/services/6.webp',
+        image: '/images/slider/slider1.webp',
         order: 8,
         isActive: true
     }
@@ -236,7 +236,7 @@ const INITIAL_PROJECTS = [
         capacity: '3 kW',
         type: 'Residential On-Grid',
         year: '2024',
-        image: '/images/projects/1.webp',
+        image: '/images/slider/slider2.webp',
         panels: '6x 540W Mono PERC Half-Cut',
         inverter: '3 kW Dual MPPT On-Grid',
         impact: 'Installed under PM Surya Ghar. Bill reduced from ₹3,200 to ₹0.',
@@ -252,7 +252,7 @@ const INITIAL_PROJECTS = [
         capacity: '25 kW',
         type: 'Commercial C&I',
         year: '2023',
-        image: '/images/projects/2.webp',
+        image: '/images/slider/slider2.webp',
         panels: '46x 550W Tier-1 DCR Panels',
         inverter: '25 kW High-Efficiency Grid-Tied',
         impact: 'Saves over ₹3.5 Lakhs annually for manufacturing unit.',
@@ -268,7 +268,7 @@ const INITIAL_PROJECTS = [
         capacity: '5 HP',
         type: 'PM-KUSUM Agri',
         year: '2023',
-        image: '/images/projects/3.webp',
+        image: '/images/slider/slider2.webp',
         panels: '10x 500W High-Torque Solar Modules',
         inverter: '5 HP VFD Solar Pump Controller',
         impact: 'Zero diesel costs for 12-acre farm irrigation.',
@@ -284,7 +284,7 @@ const INITIAL_PROJECTS = [
         capacity: '5 kW',
         type: 'Hybrid Lithium',
         year: '2024',
-        image: '/images/projects/4.webp',
+        image: '/images/slider/slider2.webp',
         panels: '9x 545W Mono PERC Panels',
         inverter: '5 kW Hybrid with 5 kWh LiFePO4 Battery',
         impact: '24x7 uninterrupted power backup during grid outages.',
@@ -300,7 +300,7 @@ const INITIAL_PROJECTS = [
         capacity: '10 kW',
         type: 'Institutional',
         year: '2023',
-        image: '/images/projects/5.webp',
+        image: '/images/slider/slider2.webp',
         panels: '18x 550W Bifacial Solar Panels',
         inverter: '10 kW Three-Phase Inverter',
         impact: 'Powers school campus computers and lighting.',
@@ -316,7 +316,7 @@ const INITIAL_PROJECTS = [
         capacity: '2 kW',
         type: 'Residential Rooftop',
         year: '2024',
-        image: '/images/projects/6.webp',
+        image: '/images/slider/slider2.webp',
         panels: '4x 540W Mono PERC Panels',
         inverter: '2 kW Single-Phase On-Grid',
         impact: 'Received ₹60,000 PM Surya Ghar DBT subsidy.',
@@ -332,7 +332,7 @@ const INITIAL_PROJECTS = [
         capacity: '50 kW',
         type: 'Commercial C&I',
         year: '2024',
-        image: '/images/services/2.webp',
+        image: '/images/slider/slider1.webp',
         panels: '92x 550W Tier-1 DCR Modules',
         inverter: '50 kW Quad-MPPT Synchronized Inverter',
         impact: 'Saves ₹6.8 Lakhs annually for cold storage facility.',
@@ -348,7 +348,7 @@ const INITIAL_PROJECTS = [
         capacity: '3.3 kW',
         type: 'Residential On-Grid',
         year: '2024',
-        image: '/images/projects/1.webp',
+        image: '/images/slider/slider2.webp',
         panels: '6x 550W Mono PERC Half-Cut',
         inverter: '3.3 kW High-Efficiency Inverter',
         impact: 'Zero bill with surplus units exported every month.',
@@ -626,7 +626,454 @@ class WebsiteService {
     }
 
     /**
-     * Get comprehensive dynamic data for public pages (/services, /products, /projects, /about, /)
+     * Helper to map raw WebService doc to template representation
+     */
+    static mapServiceItem(s) {
+        return {
+            id: s.serviceId,
+            serviceId: s.serviceId,
+            title: s.title,
+            icon: s.icon || 'icofont-home',
+            image: s.image,
+            shortDesc: s.shortDesc,
+            details: s.details,
+            highlights: s.highlights || [],
+            order: s.order
+        };
+    }
+
+    /**
+     * Helper to map raw WebProduct doc to template representation
+     */
+    static mapProductItem(p) {
+        return {
+            id: p.productId,
+            productId: p.productId,
+            name: p.name,
+            category: p.category,
+            capacityRange: p.capacityRange,
+            efficiency: p.efficiency,
+            warranty: p.warranty,
+            description: p.description,
+            features: p.features || [],
+            bestFor: p.bestFor,
+            startingPrice: p.startingPrice,
+            image: p.image,
+            order: p.order
+        };
+    }
+
+    /**
+     * Helper to map raw WebProject doc to template representation
+     */
+    static mapProjectItem(pr) {
+        return {
+            id: pr.projectId,
+            projectId: pr.projectId,
+            title: pr.title,
+            category: pr.category,
+            location: pr.location,
+            capacity: pr.capacity,
+            type: pr.type,
+            year: pr.year,
+            image: pr.image,
+            panels: pr.panels,
+            inverter: pr.inverter,
+            impact: pr.impact,
+            description: pr.description,
+            order: pr.order
+        };
+    }
+
+    /**
+     * Helper to get common layout and business configuration
+     * Excludes collection arrays (services, products, projects, team, testimonials)
+     * so that each page only carries what it specifically queries.
+     */
+    static getBaseLayoutData(liveCompany) {
+        return {
+            company: liveCompany,
+            schemes: companyConfig.schemes,
+            taxPolicy: companyConfig.taxPolicy,
+            paymentPolicyOptions: companyConfig.paymentPolicyOptions,
+            calculator: companyConfig.calculator,
+            regions: companyConfig.regions
+        };
+    }
+
+    /**
+     * Helper to map raw WebTestimonial doc to template representation
+     */
+    static mapTestimonialItem(t) {
+        return {
+            name: t.name,
+            location: t.location,
+            system: t.system,
+            rating: t.rating || 5,
+            review: t.review,
+            image: t.image,
+            order: t.order
+        };
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Home Page (/)
+     * Queries ONLY active services and top 3 recent projects.
+     * Does NOT query products, team, or testimonials.
+     */
+    static async getHomeData() {
+        const liveCompany = await this.refreshCompanyCache();
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            services: [],
+            projects: []
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const [dbServices, dbProjects] = await Promise.all([
+                    WebService.find({ isActive: true })
+                        .select('serviceId title icon image shortDesc highlights order')
+                        .sort({ order: 1, createdAt: 1 })
+                        .lean(),
+                    WebProject.find({ isActive: true })
+                        .select('projectId title category location capacity type year image panels inverter impact description order')
+                        .sort({ order: 1, createdAt: 1 })
+                        .limit(3)
+                        .lean()
+                ]);
+
+                if (dbServices && dbServices.length > 0) {
+                    baseData.services = dbServices.map(this.mapServiceItem);
+                }
+                if (dbProjects && dbProjects.length > 0) {
+                    baseData.projects = dbProjects.map(this.mapProjectItem);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getHomeData:', err.message);
+            }
+        } else {
+            baseData.services = memServices.filter(s => s.isActive).map(this.mapServiceItem);
+            baseData.projects = memProjects.filter(pr => pr.isActive).slice(0, 3).map(this.mapProjectItem);
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: About Us Page (/about)
+     * Queries ONLY active team members and customer testimonials.
+     * Does NOT query services, products, or projects.
+     */
+    static async getAboutData() {
+        const liveCompany = await this.refreshCompanyCache();
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            company: { ...liveCompany },
+            team: [],
+            testimonials: []
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const [dbTeam, dbTestimonials] = await Promise.all([
+                    WebTeam.find({ isActive: true })
+                        .select('name designation mobile whatsapp email bio image isFounder order')
+                        .sort({ order: 1, createdAt: 1 })
+                        .lean(),
+                    WebTestimonial.find({ isActive: true })
+                        .select('name location system rating review image order')
+                        .sort({ order: 1, createdAt: 1 })
+                        .lean()
+                ]);
+
+                if (dbTeam && dbTeam.length > 0) {
+                    baseData.team = dbTeam;
+                    baseData.company.contacts = dbTeam.map(t => ({
+                        name: t.name,
+                        designation: t.designation,
+                        mobile: t.mobile,
+                        rawMobile: t.mobile.replace(/[^0-9]/g, ''),
+                        whatsapp: t.whatsapp || `https://wa.me/${t.mobile.replace(/[^0-9]/g, '')}`,
+                        image: t.image,
+                        bio: t.bio,
+                        isFounder: t.isFounder
+                    }));
+                }
+                if (dbTestimonials && dbTestimonials.length > 0) {
+                    baseData.testimonials = dbTestimonials.map(this.mapTestimonialItem);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getAboutData:', err.message);
+            }
+        } else {
+            const activeTeam = memTeam.filter(t => t.isActive);
+            baseData.team = activeTeam;
+            if (activeTeam.length > 0) {
+                baseData.company.contacts = activeTeam.map(t => ({
+                    name: t.name,
+                    designation: t.designation,
+                    mobile: t.mobile,
+                    rawMobile: t.mobile.replace(/[^0-9]/g, ''),
+                    whatsapp: t.whatsapp || `https://wa.me/${t.mobile.replace(/[^0-9]/g, '')}`,
+                    image: t.image,
+                    bio: t.bio,
+                    isFounder: t.isFounder
+                }));
+            }
+            baseData.testimonials = memTestimonials.filter(t => t.isActive).map(this.mapTestimonialItem);
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Services Catalog Page (/services)
+     * Queries ONLY active services.
+     * Does NOT query products, projects, team, or testimonials.
+     */
+    static async getServicesData() {
+        const liveCompany = await this.refreshCompanyCache();
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            services: []
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const dbServices = await WebService.find({ isActive: true })
+                    .select('serviceId title icon image shortDesc details highlights order')
+                    .sort({ order: 1, createdAt: 1 })
+                    .lean();
+
+                if (dbServices && dbServices.length > 0) {
+                    baseData.services = dbServices.map(this.mapServiceItem);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getServicesData:', err.message);
+            }
+        } else {
+            baseData.services = memServices.filter(s => s.isActive).map(this.mapServiceItem);
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Products Catalog Page (/products)
+     * Queries ONLY active products with pagination support.
+     * Does NOT query services, projects, team, or testimonials.
+     */
+    static async getProductsData(options = {}) {
+        const liveCompany = await this.refreshCompanyCache();
+        const limit = Number(options.limit) > 0 ? Number(options.limit) : 50;
+        const skip = Number(options.skip) >= 0 ? Number(options.skip) : 0;
+        const categoryFilter = options.category ? { category: options.category } : {};
+
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            products: []
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const dbProducts = await WebProduct.find({ isActive: true, ...categoryFilter })
+                    .select('productId name category capacityRange efficiency warranty description features bestFor startingPrice image order')
+                    .sort({ order: 1, createdAt: 1 })
+                    .skip(skip)
+                    .limit(limit)
+                    .lean();
+
+                if (dbProducts && dbProducts.length > 0) {
+                    baseData.products = dbProducts.map(this.mapProductItem);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getProductsData:', err.message);
+            }
+        } else {
+            let filtered = memProducts.filter(p => p.isActive);
+            if (options.category) {
+                filtered = filtered.filter(p => p.category === options.category);
+            }
+            baseData.products = filtered.slice(skip, skip + limit).map(this.mapProductItem);
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Single Product Details (/products/:slug)
+     * Uses a single-document query matching productId (slug) or _id.
+     * Does NOT query any other collections.
+     */
+    static async getProductDetails(slug) {
+        const liveCompany = await this.refreshCompanyCache();
+        const cleanSlug = String(slug || '').toLowerCase().trim();
+
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            product: null
+        };
+
+        if (!cleanSlug) return baseData;
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const candidates = [cleanSlug];
+                if (cleanSlug.includes('ongrid') || cleanSlug.includes('on-grid')) candidates.push('on-grid-inverter', 'ongrid-solar-inverter');
+                if (cleanSlug.includes('offgrid') || cleanSlug.includes('off-grid')) candidates.push('off-grid-inverter', 'offgrid-solar-inverter');
+                if (cleanSlug.includes('hybrid')) candidates.push('hybrid-inverter', 'hybrid-solar-inverter');
+                if (cleanSlug.includes('panel') || cleanSlug.includes('mono')) candidates.push('mono-perc-panels');
+                if (cleanSlug.includes('batter')) candidates.push('solar-batteries');
+                if (cleanSlug.includes('accessor') || cleanSlug.includes('bos')) candidates.push('solar-accessories');
+                if (cleanSlug.includes('home-ev') || cleanSlug.includes('home_ev')) candidates.push('home-ev-charger');
+                if (cleanSlug.includes('commercial-ev') || cleanSlug.includes('commercial_ev')) candidates.push('commercial-ev-charger');
+
+                let dbProduct = await WebProduct.findOne({
+                    $or: [
+                        { productId: { $in: candidates } },
+                        { productId: cleanSlug }
+                    ],
+                    isActive: true
+                })
+                .select('productId name category capacityRange efficiency warranty description features bestFor startingPrice image order')
+                .lean();
+
+                if (!dbProduct && mongoose.Types.ObjectId.isValid(cleanSlug)) {
+                    dbProduct = await WebProduct.findOne({ _id: cleanSlug, isActive: true })
+                        .select('productId name category capacityRange efficiency warranty description features bestFor startingPrice image order')
+                        .lean();
+                }
+
+                if (dbProduct) {
+                    baseData.product = this.mapProductItem(dbProduct);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getProductDetails:', err.message);
+            }
+        } else {
+            const normalized = cleanSlug.replace(/[^a-z0-9]/g, '');
+            const found = memProducts.find(p => p.isActive && (
+                p.productId === cleanSlug ||
+                p.productId.replace(/[^a-z0-9]/g, '') === normalized ||
+                (normalized.includes('ongrid') && p.productId.includes('on-grid')) ||
+                (normalized.includes('offgrid') && p.productId.includes('off-grid')) ||
+                (normalized.includes('hybrid') && p.productId.includes('hybrid')) ||
+                String(p._id) === cleanSlug
+            ));
+            if (found) {
+                baseData.product = this.mapProductItem(found);
+            }
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Recent Projects Portfolio (/projects)
+     * Queries ONLY active projects with pagination/limit support.
+     * Does NOT query services, products, team, or testimonials.
+     */
+    static async getProjectsData(options = {}) {
+        const liveCompany = await this.refreshCompanyCache();
+        const limit = Number(options.limit) > 0 ? Number(options.limit) : 50;
+        const skip = Number(options.skip) >= 0 ? Number(options.skip) : 0;
+        const categoryFilter = options.category ? { category: options.category } : {};
+
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            projects: []
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const dbProjects = await WebProject.find({ isActive: true, ...categoryFilter })
+                    .select('projectId title category location capacity type year image panels inverter impact description order')
+                    .sort({ order: 1, createdAt: 1 })
+                    .skip(skip)
+                    .limit(limit)
+                    .lean();
+
+                if (dbProjects && dbProjects.length > 0) {
+                    baseData.projects = dbProjects.map(this.mapProjectItem);
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getProjectsData:', err.message);
+            }
+        } else {
+            let filtered = memProjects.filter(pr => pr.isActive);
+            if (options.category) {
+                filtered = filtered.filter(pr => pr.category === options.category);
+            }
+            baseData.projects = filtered.slice(skip, skip + limit).map(this.mapProjectItem);
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Contact & Enquiry Page (/contact)
+     * Queries ONLY active team contacts for direct person contact cards.
+     * Does NOT query services, products, projects, or testimonials.
+     */
+    static async getContactData() {
+        const liveCompany = await this.refreshCompanyCache();
+        const baseData = {
+            ...this.getBaseLayoutData(liveCompany),
+            company: { ...liveCompany }
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const dbTeam = await WebTeam.find({ isActive: true })
+                    .select('name designation mobile whatsapp email image isFounder order')
+                    .sort({ order: 1, createdAt: 1 })
+                    .lean();
+
+                if (dbTeam && dbTeam.length > 0) {
+                    baseData.company.contacts = dbTeam.map(t => ({
+                        name: t.name,
+                        designation: t.designation,
+                        mobile: t.mobile,
+                        rawMobile: t.mobile.replace(/[^0-9]/g, ''),
+                        whatsapp: t.whatsapp || `https://wa.me/${t.mobile.replace(/[^0-9]/g, '')}`,
+                        image: t.image,
+                        isFounder: t.isFounder
+                    }));
+                }
+            } catch (err) {
+                console.error('[WebsiteService] Error in getContactData:', err.message);
+            }
+        } else {
+            const activeTeam = memTeam.filter(t => t.isActive);
+            if (activeTeam.length > 0) {
+                baseData.company.contacts = activeTeam.map(t => ({
+                    name: t.name,
+                    designation: t.designation,
+                    mobile: t.mobile,
+                    rawMobile: t.mobile.replace(/[^0-9]/g, ''),
+                    whatsapp: t.whatsapp || `https://wa.me/${t.mobile.replace(/[^0-9]/g, '')}`,
+                    image: t.image,
+                    isFounder: t.isFounder
+                }));
+            }
+        }
+
+        return baseData;
+    }
+
+    /**
+     * PAGE-SPECIFIC QUERY: Static / Layout-only pages (Careers, Calculator, Privacy, Terms)
+     * Executes 0 collection queries. Uses fast cached company configuration.
+     */
+    static async getLayoutOnlyData() {
+        const liveCompany = await this.refreshCompanyCache();
+        return this.getBaseLayoutData(liveCompany);
+    }
+
+    /**
+     * Legacy / Aggregate Public Site Data method
+     * Note: Runtime seed verification removed in Phase 1 for maximum request performance.
      */
     static async getPublicSiteData() {
         const liveCompany = await this.refreshCompanyCache();
@@ -634,69 +1081,29 @@ class WebsiteService {
 
         if (mongoose.connection && mongoose.connection.readyState === 1) {
             try {
-                // Ensure seed data exists
-                await this.ensureInitialSeedData();
-
-                // Fetch dynamic collections concurrently
+                // Fetch dynamic collections concurrently without automatic seed insertion
                 const [dbServices, dbProducts, dbProjects, dbTeam, dbTestimonials] = await Promise.all([
-                    WebService.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean(),
-                    WebProduct.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean(),
-                    WebProject.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean(),
-                    WebTeam.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean(),
-                    WebTestimonial.find({ isActive: true }).sort({ order: 1, createdAt: 1 }).lean()
+                    WebService.find({ isActive: true }).select('serviceId title icon image shortDesc details highlights order').sort({ order: 1, createdAt: 1 }).lean(),
+                    WebProduct.find({ isActive: true }).select('productId name category capacityRange efficiency warranty description features bestFor startingPrice image order').sort({ order: 1, createdAt: 1 }).lean(),
+                    WebProject.find({ isActive: true }).select('projectId title category location capacity type year image panels inverter impact description order').sort({ order: 1, createdAt: 1 }).lean(),
+                    WebTeam.find({ isActive: true }).select('name designation mobile whatsapp email bio image isFounder order').sort({ order: 1, createdAt: 1 }).lean(),
+                    WebTestimonial.find({ isActive: true }).select('name location system rating review image order').sort({ order: 1, createdAt: 1 }).lean()
                 ]);
 
                 if (dbServices && dbServices.length > 0) {
-                    baseData.services = dbServices.map(s => ({
-                        id: s.serviceId,
-                        serviceId: s.serviceId,
-                        title: s.title,
-                        icon: s.icon || 'icofont-home',
-                        image: s.image,
-                        shortDesc: s.shortDesc,
-                        details: s.details,
-                        highlights: s.highlights || []
-                    }));
+                    baseData.services = dbServices.map(this.mapServiceItem);
                 }
 
                 if (dbProducts && dbProducts.length > 0) {
-                    baseData.products = dbProducts.map(p => ({
-                        id: p.productId,
-                        productId: p.productId,
-                        name: p.name,
-                        category: p.category,
-                        capacityRange: p.capacityRange,
-                        efficiency: p.efficiency,
-                        warranty: p.warranty,
-                        description: p.description,
-                        features: p.features || [],
-                        bestFor: p.bestFor,
-                        startingPrice: p.startingPrice,
-                        image: p.image
-                    }));
+                    baseData.products = dbProducts.map(this.mapProductItem);
                 }
 
                 if (dbProjects && dbProjects.length > 0) {
-                    baseData.projects = dbProjects.map(pr => ({
-                        id: pr.projectId,
-                        projectId: pr.projectId,
-                        title: pr.title,
-                        category: pr.category,
-                        location: pr.location,
-                        capacity: pr.capacity,
-                        type: pr.type,
-                        year: pr.year,
-                        image: pr.image,
-                        panels: pr.panels,
-                        inverter: pr.inverter,
-                        impact: pr.impact,
-                        description: pr.description
-                    }));
+                    baseData.projects = dbProjects.map(this.mapProjectItem);
                 }
 
                 if (dbTeam && dbTeam.length > 0) {
                     baseData.team = dbTeam;
-                    // Also populate company.contacts for templates using company.contacts
                     baseData.company.contacts = dbTeam.map(t => ({
                         name: t.name,
                         designation: t.designation,
@@ -710,59 +1117,16 @@ class WebsiteService {
                 }
 
                 if (dbTestimonials && dbTestimonials.length > 0) {
-                    baseData.testimonials = dbTestimonials.map(t => ({
-                        name: t.name,
-                        location: t.location,
-                        system: t.system,
-                        rating: t.rating || 5,
-                        review: t.review,
-                        image: t.image
-                    }));
+                    baseData.testimonials = dbTestimonials.map(this.mapTestimonialItem);
                 }
             } catch (err) {
                 console.error('[WebsiteService] Error fetching dynamic site data:', err.message);
             }
         } else {
             // When Mongoose is not connected (e.g. offline dev, tests), use in-memory stores
-            baseData.services = memServices.filter(s => s.isActive).map(s => ({
-                id: s.serviceId,
-                serviceId: s.serviceId,
-                title: s.title,
-                icon: s.icon || 'icofont-home',
-                image: s.image,
-                shortDesc: s.shortDesc,
-                details: s.details,
-                highlights: s.highlights || []
-            }));
-            baseData.products = memProducts.filter(p => p.isActive).map(p => ({
-                id: p.productId,
-                productId: p.productId,
-                name: p.name,
-                category: p.category,
-                capacityRange: p.capacityRange,
-                efficiency: p.efficiency,
-                warranty: p.warranty,
-                description: p.description,
-                features: p.features || [],
-                bestFor: p.bestFor,
-                startingPrice: p.startingPrice,
-                image: p.image
-            }));
-            baseData.projects = memProjects.filter(pr => pr.isActive).map(pr => ({
-                id: pr.projectId,
-                projectId: pr.projectId,
-                title: pr.title,
-                category: pr.category,
-                location: pr.location,
-                capacity: pr.capacity,
-                type: pr.type,
-                year: pr.year,
-                image: pr.image,
-                panels: pr.panels,
-                inverter: pr.inverter,
-                impact: pr.impact,
-                description: pr.description
-            }));
+            baseData.services = memServices.filter(s => s.isActive).map(this.mapServiceItem);
+            baseData.products = memProducts.filter(p => p.isActive).map(this.mapProductItem);
+            baseData.projects = memProjects.filter(pr => pr.isActive).map(this.mapProjectItem);
             baseData.team = memTeam.filter(t => t.isActive);
             baseData.company.contacts = memTeam.filter(t => t.isActive).map(t => ({
                 name: t.name,
@@ -774,14 +1138,7 @@ class WebsiteService {
                 bio: t.bio,
                 isFounder: t.isFounder
             }));
-            baseData.testimonials = memTestimonials.filter(t => t.isActive).map(t => ({
-                name: t.name,
-                location: t.location,
-                system: t.system,
-                rating: t.rating || 5,
-                review: t.review,
-                image: t.image
-            }));
+            baseData.testimonials = memTestimonials.filter(t => t.isActive).map(this.mapTestimonialItem);
         }
 
         return baseData;

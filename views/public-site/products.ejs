@@ -15,12 +15,14 @@
                 <% data.products.forEach((product, index) => { %>
                     <article class="catalog-card product-tile" style="--card-delay: <%= index * 45 %>ms">
                         <div class="product-tile-image">
-                            <img src="<%= product.image || '/images/slider/4.webp' %>" alt="<%= product.name %>" loading="lazy">
+                            <a href="/products/<%= product.productId || product.id %>" class="d-block w-100 h-100 text-decoration-none">
+                                <img src="<%= product.image || '/images/slider/slider1.webp' %>" alt="<%= product.name %>" loading="lazy">
+                            </a>
                             <span><%= product.category %></span>
                         </div>
                         <div class="product-tile-body">
                             <div class="product-tile-meta"><span><i class="icofont-shield-alt"></i> <%= product.warranty %></span></div>
-                            <h3><%= product.name %></h3>
+                            <h3><a href="/products/<%= product.productId || product.id %>" class="text-decoration-none text-dark hover-primary"><%= product.name %></a></h3>
                             <p><%= product.description %></p>
                             <div class="product-specs"><span><small>Capacity</small><strong><%= product.capacityRange %></strong></span><span><small>Efficiency</small><strong><%= product.efficiency %></strong></span></div>
                             <div class="product-features">

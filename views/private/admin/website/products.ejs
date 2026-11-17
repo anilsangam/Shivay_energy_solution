@@ -64,7 +64,7 @@
                         <img src="<%= p.image && (p.image.startsWith('http') || p.image.startsWith('/')) ? p.image : '/' + p.image %>" 
                              alt="<%= p.name %>" 
                              style="width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.src='/images/slider/4.webp'">
+                             onerror="this.src='/images/slider/slider1.webp'">
                         <span class="badge position-absolute top-0 start-0 m-2 bg-primary">
                             <%= p.category %>
                         </span>
@@ -214,7 +214,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small">Or Image URL / Path</label>
-                            <input type="text" id="productImageUrl" class="form-control" placeholder="/images/slider/4.webp or https://...">
+                            <input type="text" id="productImageUrl" class="form-control" placeholder="/images/slider/slider1.webp or https://...">
                         </div>
                         <div class="col-12" id="imagePreviewContainer" style="display: none;">
                             <label class="form-label font-weight-bold small">Image Preview</label>
@@ -275,7 +275,7 @@ function openCreateModal() {
     document.getElementById('productDescription').value = '';
     document.getElementById('productBestFor').value = '';
     document.getElementById('productFeatures').value = '';
-    document.getElementById('productImageUrl').value = '/images/slider/4.webp';
+    document.getElementById('productImageUrl').value = '/images/slider/slider1.webp';
     document.getElementById('productFile').value = '';
     selectedImageData = null;
     document.getElementById('imagePreviewContainer').style.display = 'none';

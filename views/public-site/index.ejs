@@ -6,7 +6,7 @@
             <div id="top"></div>
 
             <!-- Hero Section (Exact Image 1 Centered Layout & Typography) -->
-            <section id="section-intro" class="text-light relative overflow-visible" style="background: linear-gradient(rgba(22, 53, 99, 0.45), rgba(15, 38, 71, 0.75)), url('/images/slider/4.webp') center 100%/cover no-repeat; padding: 160px 0 130px 0;">
+            <section id="section-intro" class="text-light relative overflow-visible" style="background: linear-gradient(rgba(22, 53, 99, 0.45), rgba(15, 38, 71, 0.75)), url('/images/slider/slider1.webp') center 100%/cover no-repeat; padding: 160px 0 130px 0;">
                 <div class="container z-2">
                     <div class="row g-4 align-items-center">
                         <div class="col-lg-8 col-md-8 text-start">
@@ -303,14 +303,14 @@
                     <div class="govt-scheme-banner wow fadeInUp" data-wow-delay=".2s">
                         <!-- Mobile Leaders Row (Centered at top on mobile) -->
                         <div class="govt-leaders-mobile">
-                            <img src="/images/misc/modiji.png" class="govt-leader-img" alt="PM Narendra Modi">
-                            <img src="/images/misc/mohanyadav.png" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
+                            <img src="/images/misc/modiji.webp" class="govt-leader-img" alt="PM Narendra Modi">
+                            <img src="/images/misc/mohanyadav.webp" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
                         </div>
 
                         <div class="govt-banner-inner">
                             <!-- Left: PM Narendra Modi (Desktop) -->
                             <div class="govt-leader-desktop">
-                                <img src="/images/misc/modiji.png" class="govt-leader-img" alt="Hon. PM Narendra Modi">
+                                <img src="/images/misc/modiji.webp" class="govt-leader-img" alt="Hon. PM Narendra Modi">
                                 <span class="govt-leader-label">PM Narendra Modi</span>
                             </div>
 
@@ -337,7 +337,7 @@
 
                             <!-- Right: Leadership (Desktop) -->
                             <div class="govt-leader-desktop">
-                                <img src="/images/misc/mohanyadav.png" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
+                                <img src="/images/misc/mohanyadav.webp" class="govt-leader-img" alt="Madhya Pradesh Chief Minister Mohan Yadav">
                                 <span class="govt-leader-label">CM Mohan Yadav</span>
                             </div>
                         </div>
@@ -485,7 +485,7 @@
                                     <% homeServiceItems.forEach(service => { %>
                                         <article class="home-service-card" <%= isClone ? 'tabindex="-1"' : '' %>>
                                             <div class="home-service-image">
-                                                <img src="<%= (service.image && (service.image.startsWith('http') || service.image.startsWith('/'))) ? service.image : ('/' + (service.image || 'images/services/1.webp')) %>" alt="<%= isClone ? '' : service.title %>" loading="lazy">
+                                                <img src="<%= (service.image && (service.image.startsWith('http') || service.image.startsWith('/'))) ? service.image : ('/' + (service.image || 'images/slider/slider1.webp')) %>" alt="<%= isClone ? '' : service.title %>" loading="lazy">
                                             </div>
                                             <div class="home-service-card-body">
                                                 <span class="home-service-icon"><i class="<%= service.icon || 'icofont-home' %>" aria-hidden="true"></i></span>
@@ -519,7 +519,7 @@
                                     <% homeProjectItems.forEach((project, index) => { %>
                                         <article class="home-project-card" <%= isClone ? 'tabindex="-1"' : '' %>>
                                             <div class="home-project-image">
-                                                <img src="<%= (project.image && (project.image.startsWith('http') || project.image.startsWith('/'))) ? project.image : ('/' + (project.image || 'images/projects/1.webp')) %>" alt="<%= isClone ? '' : project.title %>" loading="lazy">
+                                                <img src="<%= (project.image && (project.image.startsWith('http') || project.image.startsWith('/'))) ? project.image : ('/' + (project.image || 'images/slider/slider2.webp')) %>" alt="<%= isClone ? '' : project.title %>" loading="lazy">
                                                 <span><%= project.capacity %></span>
                                             </div>
                                             <div class="home-project-card-body">

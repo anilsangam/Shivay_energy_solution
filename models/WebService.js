@@ -20,7 +20,7 @@ const webServiceSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        default: 'images/services/1.webp',
+        default: '/images/slider/slider1.webp',
         trim: true
     },
     shortDesc: {

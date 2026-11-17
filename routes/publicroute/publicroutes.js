@@ -15,6 +15,7 @@ router.get(['/', '/index.html'], pageController.getHome);
 router.get(['/about', '/about.html'], pageController.getAbout);
 router.get(['/services', '/services.html'], pageController.getServices);
 router.get(['/products', '/products.html'], pageController.getProducts);
+router.get('/products/:slug', pageController.getProductDetails);
 router.get(['/careers', '/careers.html'], pageController.getCareers);
 router.get(['/projects', '/projects.html'], pageController.getProjects);
 router.get(['/calculator', '/calculator.html'], pageController.getCalculator);

@@ -14,7 +14,7 @@
             <div class="catalog-grid services-grid">
                 <% data.services.forEach((service, index) => { %>
                     <article class="catalog-card service-tile" id="<%= service.id %>" style="--card-delay: <%= index * 45 %>ms">
-                        <div class="service-tile-image"><img src="<%= (service.image && (service.image.startsWith('http') || service.image.startsWith('/'))) ? service.image : ('/' + (service.image || 'images/services/1.webp')) %>" alt="<%= service.title %>" loading="lazy"></div>
+                        <div class="service-tile-image"><img src="<%= (service.image && (service.image.startsWith('http') || service.image.startsWith('/'))) ? service.image : ('/' + (service.image || 'images/slider/slider1.webp')) %>" alt="<%= service.title %>" loading="lazy"></div>
                         <div class="catalog-card-top">
                             <span class="catalog-icon"><i class="<%= service.icon %>"></i></span>
                             <span class="catalog-number"><%= String(index + 1).padStart(2, '0') %></span>

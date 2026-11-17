@@ -8,7 +8,7 @@ const WebsiteService = require('../services/websiteService');
 const Enquiry = require('../models/Enquiry');
 
 exports.getHome = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getHomeData();
     res.render('public-site/index', {
         title: `${siteData.company.name} | ${siteData.company.tagline}`,
         metaDescription: `Official website of ${siteData.company.name}, Raisen (M.P.). Rooftop Solar, Inverters, Panels & PM Surya Ghar Muft Bijli Yojana subsidy assistance.`,
@@ -19,7 +19,7 @@ exports.getHome = async (req, res) => {
 };
 
 exports.getAbout = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getAboutData();
     res.render('public-site/about', {
         title: `About Us | ${siteData.company.name} - Solar Energy Experts in Raisen, MP`,
         metaDescription: `Know more about ${siteData.company.name}, founded by Deepak Kushwaha & Rahul Saini in Raisen, Madhya Pradesh. Turnkey solar rooftop solutions across Central India.`,
@@ -30,7 +30,7 @@ exports.getAbout = async (req, res) => {
 };
 
 exports.getServices = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getServicesData();
     res.render('public-site/services', {
         title: `Solar & EV Services | ${siteData.company.name}`,
         metaDescription: `Residential and commercial solar, agricultural pumps, EV charger installation, and maintenance services across Raisen and Madhya Pradesh.`,
@@ -41,7 +41,7 @@ exports.getServices = async (req, res) => {
 };
 
 exports.getProducts = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getProductsData();
     res.render('public-site/products', {
         title: `Solar Products & Inverters | ${siteData.company.name}`,
         metaDescription: `Explore On-Grid, Off-Grid, and Hybrid Solar Inverters, Mono PERC Solar Panels, and Lithium Batteries available at ${siteData.company.name}.`,
@@ -51,8 +51,30 @@ exports.getProducts = async (req, res) => {
     });
 };
 
+exports.getProductDetails = async (req, res) => {
+    const slug = req.params.slug;
+    const siteData = await WebsiteService.getProductDetails(slug);
+    if (!siteData.product) {
+        return res.status(404).render('public-site/404', {
+            title: `Product Not Found | ${siteData.company.name}`,
+            message: 'The requested solar product could not be found or is currently inactive.',
+            company: siteData.company,
+            data: siteData,
+            activePage: 'products'
+        });
+    }
+    res.render('public-site/product-details', {
+        title: `${siteData.product.name} | ${siteData.company.name}`,
+        metaDescription: `${siteData.product.name} - ${siteData.product.description} Available at ${siteData.company.name}, Raisen (M.P.).`,
+        data: siteData,
+        company: siteData.company,
+        product: siteData.product,
+        activePage: 'products'
+    });
+};
+
 exports.getCareers = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getLayoutOnlyData();
     res.render('public-site/careers', {
         title: `Careers & Opportunities | ${siteData.company.name}`,
         metaDescription: `Explore job, tender, and freelance opportunities with ${siteData.company.name} in solar energy and EV charging across Madhya Pradesh.`,
@@ -63,7 +85,7 @@ exports.getCareers = async (req, res) => {
 };
 
 exports.getProjects = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getProjectsData();
     res.render('public-site/projects', {
         title: `Completed Solar Projects | ${siteData.company.name} - Portfolio`,
         metaDescription: `View residential, commercial, and agricultural solar rooftop installations completed by ${siteData.company.name} in Madhya Pradesh.`,
@@ -74,7 +96,7 @@ exports.getProjects = async (req, res) => {
 };
 
 exports.getCalculator = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getLayoutOnlyData();
     res.render('public-site/calculator', {
         title: `India Solar Savings Calculator | ${siteData.company.name}`,
         metaDescription: `Calculate your rooftop solar capacity, estimated monthly units generation, savings in ₹ and PM Surya Ghar subsidy eligibility.`,
@@ -86,7 +108,7 @@ exports.getCalculator = async (req, res) => {
 };
 
 exports.getContact = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getContactData();
     res.render('public-site/contact', {
         title: `Contact Us | ${siteData.company.name} - Raisen (M.P.)`,
         metaDescription: `Contact ${siteData.company.name}, Ward No. 15, PHE Office, Arjun Nagar, Raisen.`,
@@ -97,7 +119,7 @@ exports.getContact = async (req, res) => {
 };
 
 exports.getPrivacyPolicy = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getLayoutOnlyData();
     const policyContent = WebsiteService.getPrivacyPolicyContent(siteData.company);
     res.render('public-site/privacy-policy', {
         title: `Privacy Policy | ${siteData.company.name}`,
@@ -111,7 +133,7 @@ exports.getPrivacyPolicy = async (req, res) => {
 };
 
 exports.getTermsConditions = async (req, res) => {
-    const siteData = await WebsiteService.getPublicSiteData();
+    const siteData = await WebsiteService.getLayoutOnlyData();
     const termsContent = WebsiteService.getTermsConditionsContent(siteData.company);
     res.render('public-site/terms-and-conditions', {
         title: `Terms & Conditions | ${siteData.company.name}`,

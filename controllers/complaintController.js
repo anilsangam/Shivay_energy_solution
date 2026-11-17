@@ -8,6 +8,7 @@ exports.getComplaintPage = (req, res) => {
         title: `Service & Complaint Support | ${data.company.name}`,
         metaDescription: `Register or track solar repair, inverter error, or warranty complaints with ${data.company.name}. Quick turnaround in Raisen & MP.`,
         data,
+        company: data.company,
         activePage: 'complaints',
         ticketResult: null
     });

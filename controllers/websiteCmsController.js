@@ -56,7 +56,6 @@ exports.getServicesPage = async (req, res) => {
     try {
         let services = [];
         if (isDbConnected()) {
-            await WebsiteService.ensureInitialSeedData();
             services = await WebService.find().sort({ order: 1, createdAt: 1 }).lean();
         } else {
             services = WebsiteService.getMemServices();
@@ -94,7 +93,7 @@ exports.createService = async (req, res) => {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
 
-        const image = await resolveImage(req.body, '/images/services/1.webp');
+        const image = await resolveImage(req.body, '/images/slider/slider1.webp');
         const highlights = parseStringArray(req.body.highlights);
 
         let newService = null;
@@ -218,7 +217,6 @@ exports.getProductsPage = async (req, res) => {
     try {
         let products = [];
         if (isDbConnected()) {
-            await WebsiteService.ensureInitialSeedData();
             products = await WebProduct.find().sort({ order: 1, createdAt: 1 }).lean();
         } else {
             products = WebsiteService.getMemProducts();
@@ -256,7 +254,7 @@ exports.createProduct = async (req, res) => {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
 
-        const image = await resolveImage(req.body, '/images/slider/4.webp');
+        const image = await resolveImage(req.body, '/images/slider/slider1.webp');
         const features = parseStringArray(req.body.features);
 
         let newProduct = null;
@@ -389,7 +387,6 @@ exports.getProjectsPage = async (req, res) => {
     try {
         let projects = [];
         if (isDbConnected()) {
-            await WebsiteService.ensureInitialSeedData();
             projects = await WebProject.find().sort({ order: 1, createdAt: 1 }).lean();
         } else {
             projects = WebsiteService.getMemProjects();
@@ -427,7 +424,7 @@ exports.createProject = async (req, res) => {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
 
-        const image = await resolveImage(req.body, '/images/projects/1.webp');
+        const image = await resolveImage(req.body, '/images/slider/slider1.webp');
 
         let newProject = null;
         if (isDbConnected()) {
@@ -559,7 +556,6 @@ exports.getTeamPage = async (req, res) => {
     try {
         let team = [];
         if (isDbConnected()) {
-            await WebsiteService.ensureInitialSeedData();
             team = await WebTeam.find().sort({ order: 1, createdAt: 1 }).lean();
         } else {
             team = WebsiteService.getMemTeam();
@@ -718,7 +714,6 @@ exports.getTestimonialsPage = async (req, res) => {
     try {
         let testimonials = [];
         if (isDbConnected()) {
-            await WebsiteService.ensureInitialSeedData();
             testimonials = await WebTestimonial.find().sort({ order: 1, createdAt: 1 }).lean();
         } else {
             testimonials = WebsiteService.getMemTestimonials();
