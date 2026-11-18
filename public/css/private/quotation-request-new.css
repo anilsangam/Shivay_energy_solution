@@ -1,0 +1,234 @@
+/* =========================================================================
+   SOLAR QUOTATION REQUEST FORM - UNIFIED EXECUTIVE UI
+   ========================================================================= */
+.req-card {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    margin-bottom: 22px;
+    transition: box-shadow 0.2s ease;
+}
+.req-card:hover {
+    box-shadow: 0 4px 14px rgba(15, 42, 74, 0.08);
+}
+.req-card-header {
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+    border-bottom: 1.5px solid #dce5f1;
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.req-card-body {
+    padding: 20px 22px;
+}
+.req-card-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f2a4a;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.req-card-subtitle {
+    font-size: 11.5px;
+    color: #5a738e;
+}
+
+/* Form Controls & Sizing Calibration */
+.req-form .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #243b53;
+    margin-bottom: 4px;
+}
+.req-form .form-control,
+.req-form .form-select {
+    height: 38px;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    color: #1e293b;
+    background-color: #ffffff;
+    padding: 6px 12px;
+    box-shadow: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.req-form .form-control:focus,
+.req-form .form-select:focus {
+    border-color: #163563;
+    box-shadow: 0 0 0 3px rgba(22, 53, 99, 0.1);
+    outline: none;
+}
+.req-form textarea.form-control {
+    height: auto;
+    min-height: 72px;
+    padding: 8px 12px;
+}
+
+/* Input Groups & Text/Icon Height Standardization (Strict 38px) */
+.req-form .input-group {
+    height: 38px;
+    border-radius: 8px;
+}
+.req-form .input-group .form-control {
+    height: 38px;
+}
+.req-form .input-group-text {
+    height: 38px;
+    min-width: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    line-height: 1;
+}
+.req-form .input-group-text i {
+    font-size: 15px;
+    line-height: 1;
+    height: 15px;
+    width: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.req-form .input-group .btn {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0 16px;
+    border-radius: 0 8px 8px 0 !important;
+    white-space: nowrap;
+}
+.req-form .input-group > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+.req-form .input-group > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu) {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Optional field pill badge */
+.badge-optional {
+    font-size: 10px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 7px;
+    border-radius: 10px;
+    letter-spacing: 0.2px;
+}
+.req-field-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Header & Footer Cards with Guaranteed Zero-Overflow */
+.req-header-banner {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    padding: 16px 20px;
+    margin-bottom: 22px;
+}
+.req-header-content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.req-header-step-text {
+    display: block;
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+.req-footer-box {
+    background: #ffffff;
+    border: 1px solid #c9d8ea;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(15, 42, 74, 0.05);
+    padding: 16px 20px;
+    margin-bottom: 35px;
+}
+.req-footer-notice {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.req-footer-text {
+    width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: normal !important;
+    line-height: 1.5;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .req-header-banner,
+    .req-footer-box {
+        padding: 14px 12px !important;
+    }
+    .req-header-actions {
+        width: 100%;
+    }
+    .req-header-actions .btn {
+        width: 100%;
+        justify-content: center;
+        height: 40px;
+    }
+    .req-card-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+    .req-card-body {
+        padding: 14px 12px !important;
+    }
+    .search-mobile-group {
+        flex-direction: row !important;
+    }
+    .search-mobile-group .btn {
+        padding: 0 10px !important;
+        font-size: 12px !important;
+    }
+    .req-footer-btn-wrap {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+    }
+    .req-footer-btn-wrap .btn {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        font-size: 13px;
+    }
+    #equipmentTable {
+        min-width: 620px;
+    }
+}

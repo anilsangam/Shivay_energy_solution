@@ -130,9 +130,11 @@ app.use((err, req, res, next) => {
         });
     }
 
-    res.status(err.status || 500).render('private/errors/403', {
-        title: 'Server Error | Shivay Energy Solutions',
-        message: isProduction ? 'An unexpected server error occurred.' : err.message,
+    const statusCode = err.status || 500;
+    const viewName = statusCode === 403 ? 'private/errors/403' : 'private/errors/500';
+    res.status(statusCode).render(viewName, {
+        title: statusCode === 403 ? 'Access Denied | Shivay Energy Solutions' : 'Server Error | Shivay Energy Solutions',
+        message: isProduction ? (statusCode === 403 ? 'Access Denied: You do not possess the required permissions.' : 'An unexpected server error occurred.') : err.message,
         currentUser: req.session ? req.session.user : null
     });
 });

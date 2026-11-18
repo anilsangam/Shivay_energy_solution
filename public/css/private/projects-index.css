@@ -1,0 +1,149 @@
+/* Executive Full-Width KPI Metric Cards */
+.project-metric-card {
+    background: #ffffff;
+    border: 1px solid var(--admin-border, #cbd5e1);
+    border-radius: 12px;
+    padding: 14px 18px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 106px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.project-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+.project-metric-card .metric-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.project-metric-card .metric-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.project-metric-card .metric-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.project-metric-card .metric-val {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+.project-metric-card .metric-sub {
+    font-size: 12px;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+/* Executive Filter Bar */
+.project-filter-card {
+    min-height: 54px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid var(--admin-border, #cbd5e1);
+}
+
+/* Desktop Zero-Scroll for Projects Table */
+@media (min-width: 992px) {
+    .projects-table-wrap {
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+    }
+    .projects-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+    }
+}
+@media (max-width: 991.98px) {
+    .projects-table-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .projects-table {
+        min-width: 960px;
+    }
+}
+
+/* Darker, visible row separation lines */
+.projects-table tbody td {
+    border-bottom: 1.5px solid #cbd5e1 !important;
+    padding: 14px 14px !important;
+    font-size: 13px;
+    vertical-align: middle;
+}
+.projects-table tbody tr:hover td {
+    background-color: #f8fafc;
+}
+.projects-table thead th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #475569;
+    background: #f8fafc;
+    padding: 12px 14px !important;
+    border-bottom: 1.5px solid #cbd5e1;
+}
+
+/* Fixed 2-Line Status Badge for Clean Table Alignment */
+.project-status-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    min-height: 34px;
+    padding: 3px 4px;
+    font-size: 9.5px;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* Elegant Status Edit Pen Icon Button */
+.status-edit-pen-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    padding: 0;
+}
+.status-edit-pen-btn:hover {
+    background: #eff6ff;
+    color: #0284c7;
+    border-color: #38bdf8;
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 2px 5px rgba(2, 132, 199, 0.2);
+}
+.status-edit-pen-btn i {
+    font-size: 13.5px;
+    line-height: 1;
+}
