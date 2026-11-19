@@ -1,6 +1,8 @@
 const data = require('../config/company');
 const DataStore = require('../services/dataStore');
 const AuditService = require('../services/auditService');
+const dateUtils = require('../services/dateUtils');
+const mongoose = require('mongoose');
 
 // Employee Portal Entry (Redirect to GPS Attendance)
 exports.getDashboard = async (req, res) => {
@@ -8,10 +10,14 @@ exports.getDashboard = async (req, res) => {
 };
 
 // Employee Field GPS Attendance Page
-exports.getAttendancePage = (req, res) => {
+exports.getAttendancePage = async (req, res) => {
+    try {
+        await DataStore.syncAttendanceFromDb();
+    } catch (_) {}
     const user = req.session.user;
-    const today = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-    const userPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === (user ? user.employeeId : ''));
+    const today = dateUtils.getIstDisplayDate();
+    const todayStr = dateUtils.getIstDate();
+    const userPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === (user ? user.employeeId : '') && (a.date === todayStr || !a.date));
 
     res.render('private/employee/attendance', {
         title: `Employee Field GPS Attendance | ${data.company.name}`,
@@ -27,8 +33,8 @@ exports.getAttendancePage = (req, res) => {
     });
 };
 
-// Secure Attendance Submission (Session-derived identity)
-exports.submitAttendance = (req, res) => {
+// Secure Attendance Submission (Session-derived identity, confirmed persistence)
+exports.submitAttendance = async (req, res) => {
     // 1. Enforce session-derived identity
     if (!req.session || !req.session.user) {
         return res.status(401).json({
@@ -53,10 +59,26 @@ exports.submitAttendance = (req, res) => {
         });
     }
 
-    // 3. Verify duplicate check-in or invalid check-out
-    const todayPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === sessionUser.employeeId);
-    const hasCheckIn = todayPunches.some(a => a.type === 'check_in');
-    const hasCheckOut = todayPunches.some(a => a.type === 'check_out');
+    // 3. Verify duplicate check-in or invalid check-out using IST business date
+    const todayStr = dateUtils.getIstDate();
+    let hasCheckIn = false;
+    let hasCheckOut = false;
+
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+        try {
+            const Attendance = require('../models/Attendance');
+            const dbPunches = await Attendance.find({ employeeId: sessionUser.employeeId, date: todayStr }).lean();
+            hasCheckIn = dbPunches.some(a => a.type === 'check_in');
+            hasCheckOut = dbPunches.some(a => a.type === 'check_out');
+        } catch (queryErr) {
+            console.error('[Attendance Pre-check Error]:', queryErr);
+        }
+    }
+
+    // Also verify against in-memory punches
+    const memPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === sessionUser.employeeId && (a.date === todayStr || !a.date));
+    if (!hasCheckIn) hasCheckIn = memPunches.some(a => a.type === 'check_in');
+    if (!hasCheckOut) hasCheckOut = memPunches.some(a => a.type === 'check_out');
 
     if (punchType === 'check_in' && hasCheckIn) {
         return res.status(400).json({
@@ -80,34 +102,51 @@ exports.submitAttendance = (req, res) => {
         }
     }
 
-    // 4. Record attendance using authenticated session identity
-    const record = DataStore.addAttendance({
-        employeeId: sessionUser.employeeId,
-        employeeName: sessionUser.name,
-        role: sessionUser.role,
-        type: punchType,
-        latitude: lat,
-        longitude: lng,
-        accuracy: acc
-    });
+    // 4. Record attendance awaiting confirmed persistence
+    try {
+        const record = await DataStore.addAttendance({
+            employee: sessionUser._id,
+            employeeId: sessionUser.employeeId,
+            employeeName: sessionUser.name,
+            role: sessionUser.role,
+            branchId: sessionUser.branchId,
+            type: punchType,
+            latitude: lat,
+            longitude: lng,
+            accuracy: acc
+        });
 
-    // 5. Audit log
-    AuditService.log({
-        action: 'ATTENDANCE_SUBMITTED',
-        user: sessionUser._id,
-        role: sessionUser.role,
-        branchId: sessionUser.branchId,
-        ipAddress: req.ip,
-        details: { type: punchType, lat, lng, acc }
-    });
+        // 5. Audit log
+        AuditService.log({
+            action: 'ATTENDANCE_SUBMITTED',
+            user: sessionUser._id,
+            role: sessionUser.role,
+            branchId: sessionUser.branchId,
+            ipAddress: req.ip,
+            details: { type: punchType, lat, lng, acc }
+        });
 
-    console.log(`[SECURE ATTENDANCE] ${record.type.toUpperCase()}: ${record.employeeName} (${record.employeeId}) from Session. Lat: ${lat}, Lng: ${lng}`);
+        console.log(`[SECURE ATTENDANCE] ${record.type.toUpperCase()}: ${record.employeeName} (${record.employeeId}) from Session. Lat: ${lat}, Lng: ${lng}`);
 
-    return res.json({
-        success: true,
-        record,
-        message: `${punchType === 'check_in' ? 'Check-In' : 'Check-Out'} successfully recorded for ${sessionUser.name} at ${record.timestamp} (IST). GPS Geo-tagged.`
-    });
+        return res.json({
+            success: true,
+            record,
+            message: `${punchType === 'check_in' ? 'Check-In' : 'Check-Out'} successfully recorded for ${sessionUser.name} at ${record.timestamp} (IST). GPS Geo-tagged.`
+        });
+    } catch (persistErr) {
+        console.error('[Attendance Submission Persistence Failed]:', persistErr);
+        // Handle MongoDB duplicate key error code 11000
+        if (persistErr.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: `You have already punched ${punchType === 'check_in' ? 'Check-In' : 'Check-Out'} for today.`
+            });
+        }
+        return res.status(500).json({
+            success: false,
+            message: 'Database persistence failed while recording attendance. Please try again.'
+        });
+    }
 };
 
 // Employee Quotations (Allowed - Existing proposals engine + Phase 2 placeholder notice)

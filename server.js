@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
+const connectMongo = require('connect-mongo');
+const MongoStore = connectMongo.MongoStore || connectMongo.default || connectMongo;
 const helmet = require('helmet');
 const connectDB = require('./config/database');
 const webRoutes = require('./routes/webRoutes');
@@ -53,24 +54,42 @@ app.use('/videos', express.static(path.join(__dirname, 'videos')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure Session Store (MongoDB backed)
+const isProduction = process.env.NODE_ENV === 'production';
 let sessionStore;
 const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
+
 if (mongoURI) {
     try {
         sessionStore = MongoStore.create({
             mongoUrl: mongoURI,
             collectionName: 'sessions',
             ttl: 14 * 24 * 60 * 60, // 14 days
+            touchAfter: 3600, // 1 hour: throttles session touch writes on GET requests while keeping 24h session alive
             autoRemove: 'native'
         });
+        if (sessionStore && typeof sessionStore.on === 'function') {
+            sessionStore.on('error', (storeErr) => {
+                console.error('[SESSION STORE ERROR]:', storeErr.message);
+            });
+        }
     } catch (err) {
-        console.warn('⚠️ Warning: Using in-memory session store (Development mode only).');
+        console.error('❌ Failed to initialize MongoDB Session Store:', err.message);
+        if (isProduction) {
+            console.error('FATAL CONFIGURATION ERROR: Production environment cannot operate with an insecure MemoryStore. Terminating.');
+            process.exit(1);
+        } else {
+            console.warn('⚠️ Warning: Using in-memory session store (Development mode only).');
+        }
     }
 } else {
-    console.warn('⚠️ Note: Using in-memory session store (MONGO_URI / MONGODB_URI not provided).');
+    if (isProduction) {
+        console.error('FATAL CONFIGURATION ERROR: Neither MONGODB_URI nor MONGO_URI is configured for production session persistence.');
+        process.exit(1);
+    } else {
+        console.warn('⚠️ Note: Using in-memory session store (MONGO_URI / MONGODB_URI not provided).');
+    }
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
 let activeSessionSecret = process.env.SESSION_SECRET;
 
 if (!activeSessionSecret) {

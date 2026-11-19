@@ -32,6 +32,15 @@ const connectDB = async () => {
                 }
             }
         } catch (healErr) {}
+
+        // Hydrate today's attendance from MongoDB to in-memory store on startup
+        try {
+            const DataStore = require('../services/dataStore');
+            await DataStore.syncAttendanceFromDb();
+            console.log('✅ Today\'s Attendance hydrated from MongoDB Atlas.');
+        } catch (attSyncErr) {
+            console.warn('⚠️ Attendance startup hydration note:', attSyncErr.message);
+        }
     } catch (err) {
         console.warn(`⚠️ MongoDB connection note: ${err.message}. Operating with in-memory & file-based storage fallback.`);
     }

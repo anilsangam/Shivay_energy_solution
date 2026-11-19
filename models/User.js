@@ -101,6 +101,8 @@ userSchema.index({ role: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ managerId: 1 });
 userSchema.index({ branchId: 1 });
+userSchema.index({ branchId: 1, role: 1 });
+userSchema.index({ status: 1, role: 1 });
 
 // Pre-save hook to hash password with bcrypt
 userSchema.pre('save', async function() {

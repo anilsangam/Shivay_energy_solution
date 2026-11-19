@@ -11,6 +11,72 @@ const UploadService = require('../services/uploadService');
 const AuditService = require('../services/auditService');
 const companyData = require('../config/company');
 
+/**
+ * Safely associates unlinked quotation requests with quotations in-memory.
+ * Priority Rules:
+ * 1. Exact quotationRequestId matching ALWAYS takes precedence.
+ * 2. Already-claimed quotation IDs cannot be re-used (1-to-1 association).
+ * 3. Mobile fallback occurs ONLY when unambiguous (exactly 1 unlinked request and 1 unclaimed quotation for that mobile number).
+ * 4. Never overwrites existing explicit relationships.
+ */
+function safelyLinkRequestsAndQuotations(requests, quotations) {
+    if (!requests || !quotations) return;
+    const claimedQuoteIds = new Set();
+
+    // Mark already-linked quotations as claimed
+    for (const r of requests) {
+        if (r.linkedQuotation) {
+            const qId = String(r.linkedQuotation._id || r.linkedQuotation);
+            claimedQuoteIds.add(qId);
+        }
+    }
+
+    // Pass 1: Strict quotationRequestId match
+    for (const r of requests) {
+        if (!r.linkedQuotation) {
+            const rIdStr = String(r._id);
+            const exactQ = quotations.find(q =>
+                !claimedQuoteIds.has(String(q._id)) &&
+                q.quotationRequestId &&
+                String(q.quotationRequestId._id || q.quotationRequestId) === rIdStr
+            );
+            if (exactQ) {
+                r.linkedQuotation = exactQ;
+                r.status = 'QUOTATION_PREPARED';
+                claimedQuoteIds.add(String(exactQ._id));
+            }
+        }
+    }
+
+    // Pass 2: Unambiguous mobile fallback
+    for (const r of requests) {
+        if (!r.linkedQuotation && r.customerMobile) {
+            const cleanMobile = r.customerMobile.replace(/\D/g, '').slice(-10);
+            if (cleanMobile.length === 10) {
+                const candidates = quotations.filter(q =>
+                    !claimedQuoteIds.has(String(q._id)) &&
+                    (!q.quotationRequestId || String(q.quotationRequestId._id || q.quotationRequestId) === String(r._id)) &&
+                    q.customerMobile &&
+                    q.customerMobile.replace(/\D/g, '').slice(-10) === cleanMobile
+                );
+
+                const unlinkedRequestsWithMobile = requests.filter(req =>
+                    !req.linkedQuotation &&
+                    req.customerMobile &&
+                    req.customerMobile.replace(/\D/g, '').slice(-10) === cleanMobile
+                );
+
+                if (candidates.length === 1 && unlinkedRequestsWithMobile.length === 1) {
+                    const matchQ = candidates[0];
+                    r.linkedQuotation = matchQ;
+                    r.status = 'QUOTATION_PREPARED';
+                    claimedQuoteIds.add(String(matchQ._id));
+                }
+            }
+        }
+    }
+}
+
 class QuotationController {
     // -------------------------------------------------------------
     // 1. EMPLOYEE: QUOTATION REQUESTS
@@ -256,33 +322,8 @@ class QuotationController {
                 .populate('quotationRequestId', 'requestNumber proposedCapacityKw')
                 .sort({ createdAt: -1 });
 
-            // Auto-heal legacy unlinked request for this employee
-            for (const r of requests) {
-                if (!r.linkedQuotation) {
-                    const matchQ = quotations.find(q =>
-                        (q.quotationRequestId && String(q.quotationRequestId._id || q.quotationRequestId) === String(r._id)) ||
-                        (q.customerMobile && r.customerMobile && q.customerMobile.slice(-10) === r.customerMobile.slice(-10))
-                    );
-                    if (matchQ) {
-                        r.linkedQuotation = matchQ;
-                        r.status = 'QUOTATION_PREPARED';
-                        if (mongoose.connection.readyState === 1) {
-                            await QuotationRequest.findByIdAndUpdate(r._id, {
-                                linkedQuotation: matchQ._id,
-                                status: 'QUOTATION_PREPARED'
-                            });
-                            if (!matchQ.quotationRequestId) {
-                                matchQ.quotationRequestId = r;
-                                matchQ.assignedEmployee = sessionUser._id;
-                                await Quotation.findByIdAndUpdate(matchQ._id, {
-                                    quotationRequestId: r._id,
-                                    assignedEmployee: sessionUser._id
-                                });
-                            }
-                        }
-                    }
-                }
-            }
+            // Safe in-memory association (exact match priority, claimed ID tracking, unambiguous fallback)
+            safelyLinkRequestsAndQuotations(requests, quotations);
 
             const stats = {
                 totalRequests: allEmpRequests.length,
@@ -479,7 +520,7 @@ class QuotationController {
                 .populate('customer', 'name mobile city')
                 .populate('assignedEmployee', 'name employeeId mobile')
                 .populate('linkedQuotation', 'quotationNumber status grandTotal')
-                .sort({ createdAt: -1 })
+                .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit);
 
@@ -503,33 +544,8 @@ class QuotationController {
                 .populate({ path: 'quotationRequestId', select: 'requestNumber assignedEmployee', populate: { path: 'assignedEmployee', select: 'name employeeId' } })
                 .sort({ createdAt: -1 });
 
-            // Auto-heal: Ensure legacy or in-flight requests link to their matching quotation
-            for (const r of requests) {
-                if (!r.linkedQuotation) {
-                    const matchQ = allBranchQuotes.find(q =>
-                        (q.quotationRequestId && String(q.quotationRequestId._id || q.quotationRequestId) === String(r._id)) ||
-                        (q.customerMobile && r.customerMobile && q.customerMobile.slice(-10) === r.customerMobile.slice(-10))
-                    );
-                    if (matchQ) {
-                        r.linkedQuotation = matchQ;
-                        r.status = 'QUOTATION_PREPARED';
-                        if (mongoose.connection.readyState === 1) {
-                            await QuotationRequest.findByIdAndUpdate(r._id, {
-                                linkedQuotation: matchQ._id,
-                                status: 'QUOTATION_PREPARED'
-                            });
-                            if (!matchQ.quotationRequestId) {
-                                matchQ.quotationRequestId = r;
-                                matchQ.assignedEmployee = r.assignedEmployee ? (r.assignedEmployee._id || r.assignedEmployee) : null;
-                                await Quotation.findByIdAndUpdate(matchQ._id, {
-                                    quotationRequestId: r._id,
-                                    assignedEmployee: matchQ.assignedEmployee
-                                });
-                            }
-                        }
-                    }
-                }
-            }
+            // Safe in-memory association (exact match priority, claimed ID tracking, unambiguous fallback)
+            safelyLinkRequestsAndQuotations(requests, allBranchQuotes);
 
             const stats = {
                 totalRequests: allBranchRequests.length,
@@ -1278,7 +1294,7 @@ class QuotationController {
                 .populate('assignedEmployee', 'name employeeId role')
                 .populate({ path: 'quotationRequestId', select: 'requestNumber assignedEmployee', populate: { path: 'assignedEmployee', select: 'name employeeId' } })
                 .populate('branch', 'name code')
-                .sort({ createdAt: -1 })
+                .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit);
 
@@ -1298,10 +1314,12 @@ class QuotationController {
             const allQuotesQuery = allQuotesConditions.length > 1 ? { $and: allQuotesConditions } : allQuotesConditions[0];
 
             const allQuotes = await Quotation.find(allQuotesQuery)
+                .select('_id quotationNumber customerMobile quotationRequestId assignedEmployee status grandTotal isArchived branch preparedBy approvedBy')
                 .populate('preparedBy', 'name employeeId role')
                 .populate('approvedBy', 'name role')
                 .populate('assignedEmployee', 'name employeeId role')
-                .populate({ path: 'quotationRequestId', select: 'requestNumber assignedEmployee', populate: { path: 'assignedEmployee', select: 'name employeeId' } });
+                .populate({ path: 'quotationRequestId', select: 'requestNumber assignedEmployee', populate: { path: 'assignedEmployee', select: 'name employeeId' } })
+                .lean();
 
             const reqConditions = [];
             if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
@@ -1319,38 +1337,14 @@ class QuotationController {
             const reqQuery = reqConditions.length > 0 ? (reqConditions.length > 1 ? { $and: reqConditions } : reqConditions[0]) : {};
 
             const allRequests = await QuotationRequest.find(reqQuery)
+                .select('requestNumber customer customerName customerMobile proposedCapacityKw systemType status assignedEmployee linkedQuotation attachments createdAt')
                 .populate('customer', 'name mobile city')
                 .populate('assignedEmployee', 'name employeeId mobile')
-                .populate('linkedQuotation')
+                .populate('linkedQuotation', '_id quotationNumber')
                 .sort({ createdAt: -1 });
 
-            // Auto-heal legacy unlinked pairs
-            for (const r of allRequests) {
-                if (!r.linkedQuotation) {
-                    const matchQ = allQuotes.find(q =>
-                        (q.quotationRequestId && String(q.quotationRequestId._id || q.quotationRequestId) === String(r._id)) ||
-                        (q.customerMobile && r.customerMobile && q.customerMobile.slice(-10) === r.customerMobile.slice(-10))
-                    );
-                    if (matchQ) {
-                        r.linkedQuotation = matchQ;
-                        r.status = 'QUOTATION_PREPARED';
-                        if (mongoose.connection.readyState === 1) {
-                            await QuotationRequest.findByIdAndUpdate(r._id, {
-                                linkedQuotation: matchQ._id,
-                                status: 'QUOTATION_PREPARED'
-                            });
-                            if (!matchQ.quotationRequestId) {
-                                matchQ.quotationRequestId = r;
-                                matchQ.assignedEmployee = r.assignedEmployee ? (r.assignedEmployee._id || r.assignedEmployee) : null;
-                                await Quotation.findByIdAndUpdate(matchQ._id, {
-                                    quotationRequestId: r._id,
-                                    assignedEmployee: matchQ.assignedEmployee
-                                });
-                            }
-                        }
-                    }
-                }
-            }
+            // Safe in-memory association (exact match priority, claimed ID tracking, unambiguous fallback)
+            safelyLinkRequestsAndQuotations(allRequests, allQuotes);
 
             const stats = {
                 totalRequests: allRequests.length,
@@ -1391,6 +1385,82 @@ class QuotationController {
                 message: 'Error loading company quotations.'
             });
         }
+    }
+
+    /**
+     * Maintenance / Migration utility to persist unlinked quotation pairs (callable on demand)
+     */
+    static async syncLegacyUnlinkedPairs() {
+        if (!mongoose.connection || mongoose.connection.readyState !== 1) return { synced: 0 };
+        const Quotation = require('../models/Quotation');
+        const QuotationRequest = require('../models/QuotationRequest');
+
+        const [requests, quotes] = await Promise.all([
+            QuotationRequest.find({ linkedQuotation: { $in: [null, undefined] } }).select('_id customerMobile status'),
+            Quotation.find({ isArchived: { $ne: true } }).select('_id quotationRequestId customerMobile assignedEmployee')
+        ]);
+
+        let synced = 0;
+        const claimedQuoteIds = new Set();
+        const existingLinked = await QuotationRequest.find({ linkedQuotation: { $ne: null } }).select('linkedQuotation').lean();
+        for (const el of existingLinked) {
+            if (el.linkedQuotation) claimedQuoteIds.add(String(el.linkedQuotation));
+        }
+
+        // Pass 1: Strict quotationRequestId match
+        for (const r of requests) {
+            const rIdStr = String(r._id);
+            const exactQ = quotes.find(q =>
+                !claimedQuoteIds.has(String(q._id)) &&
+                q.quotationRequestId &&
+                String(q.quotationRequestId._id || q.quotationRequestId) === rIdStr
+            );
+            if (exactQ) {
+                await QuotationRequest.findByIdAndUpdate(r._id, {
+                    linkedQuotation: exactQ._id,
+                    status: 'QUOTATION_PREPARED'
+                });
+                claimedQuoteIds.add(String(exactQ._id));
+                synced++;
+            }
+        }
+
+        // Pass 2: Unambiguous mobile fallback
+        for (const r of requests) {
+            const rIdStr = String(r._id);
+            const isAlreadyClaimed = quotes.some(q => claimedQuoteIds.has(String(q._id)) && String(q.quotationRequestId) === rIdStr);
+            if (!isAlreadyClaimed && r.customerMobile) {
+                const cleanMobile = r.customerMobile.replace(/\D/g, '').slice(-10);
+                if (cleanMobile.length === 10) {
+                    const candidates = quotes.filter(q =>
+                        !claimedQuoteIds.has(String(q._id)) &&
+                        !q.quotationRequestId &&
+                        q.customerMobile &&
+                        q.customerMobile.replace(/\D/g, '').slice(-10) === cleanMobile
+                    );
+
+                    const unlinkedRequestsWithMobile = requests.filter(req =>
+                        req.customerMobile &&
+                        req.customerMobile.replace(/\D/g, '').slice(-10) === cleanMobile
+                    );
+
+                    if (candidates.length === 1 && unlinkedRequestsWithMobile.length === 1) {
+                        const matchQ = candidates[0];
+                        await QuotationRequest.findByIdAndUpdate(r._id, {
+                            linkedQuotation: matchQ._id,
+                            status: 'QUOTATION_PREPARED'
+                        });
+                        await Quotation.findByIdAndUpdate(matchQ._id, {
+                            quotationRequestId: r._id,
+                            assignedEmployee: matchQ.assignedEmployee
+                        });
+                        claimedQuoteIds.add(String(matchQ._id));
+                        synced++;
+                    }
+                }
+            }
+        }
+        return { synced };
     }
 }
 

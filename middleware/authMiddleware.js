@@ -59,6 +59,10 @@ const verifyCsrf = (req, res, next) => {
 
 // Ensure user is logged in and account is currently active
 const requireAuth = (req, res, next) => {
+    if (req._authVerified) {
+        return next();
+    }
+
     if (!req.session || !req.session.user) {
         if (req.xhr || (req.path && req.path.startsWith('/api/')) || (req.headers && req.headers.accept && req.headers.accept.includes('application/json'))) {
             return res.status(401).json({
@@ -152,14 +156,17 @@ const requireAuth = (req, res, next) => {
                 req.session.user.status = liveUser.status;
                 req.session.user.role = liveUser.role;
                 req.session.user.branchId = liveUser.branchId;
+                req._authVerified = true;
                 next();
             })
             .catch(() => {
+                req._authVerified = true;
                 next();
             });
         return;
     }
 
+    req._authVerified = true;
     next();
 };
 
@@ -205,6 +212,12 @@ const requireRole = (...roles) => {
             });
         }
 
+        // If requireAuth has already successfully authenticated and verified the user on this request, proceed directly
+        if (req._authVerified) {
+            return next();
+        }
+
+        // Otherwise (requireRole used independently without prior requireAuth in chain), perform full authentication/verification
         return requireAuth(req, res, next);
     };
 };

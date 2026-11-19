@@ -8,6 +8,7 @@ const Invoice = require('../models/Invoice');
 const Attendance = require('../models/Attendance');
 const Complaint = require('../models/Complaint');
 const mongoose = require('mongoose');
+const dateUtils = require('./dateUtils');
 
 // Seed In-Memory User Directory (With real team and manager relationships)
 const managerSeedId = new mongoose.Types.ObjectId('655000000000000000000002');
@@ -316,14 +317,48 @@ class DataStore {
         return attendanceRecords;
     }
 
-    static addAttendance(data) {
+    static async syncAttendanceFromDb(targetDate) {
+        if (!mongoose.connection || mongoose.connection.readyState !== 1) return attendanceRecords;
+        try {
+            const Attendance = require('../models/Attendance');
+            const todayStr = targetDate || dateUtils.getIstDate();
+
+            const dbRecords = await Attendance.find({ date: todayStr }).sort({ createdAt: -1 }).lean();
+            if (dbRecords && dbRecords.length > 0) {
+                const existingKeys = new Set(attendanceRecords.map(a => `${a.employeeId}_${a.type}_${a.date}`));
+                for (const doc of dbRecords) {
+                    const key = `${doc.employeeId}_${doc.type}_${doc.date}`;
+                    if (!existingKeys.has(key)) {
+                        attendanceRecords.push({
+                            id: doc._id ? doc._id.toString() : ('ATT-' + (attendanceRecords.length + 101)),
+                            _id: doc._id,
+                            employeeId: doc.employeeId,
+                            employeeName: doc.employeeName,
+                            role: doc.role || 'Field Engineer',
+                            type: doc.type || 'check_in',
+                            latitude: doc.latitude || 23.3315,
+                            longitude: doc.longitude || 77.7807,
+                            accuracy: doc.accuracy || 10,
+                            locationName: doc.locationName || `Lat: ${(doc.latitude || 23.3315).toFixed(4)}, Lng: ${(doc.longitude || 77.7807).toFixed(4)}`,
+                            timestamp: doc.timestamp || (doc.createdAt ? dateUtils.getIstTime(doc.createdAt) : ''),
+                            date: doc.date || todayStr,
+                            isWithinGeofence: doc.isWithinGeofence !== false,
+                            photoUrl: doc.photoUrl
+                        });
+                        existingKeys.add(key);
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('[Attendance Sync Error]:', e);
+        }
+        return attendanceRecords;
+    }
+
+    static async addAttendance(data) {
         const id = 'ATT-' + (attendanceRecords.length + 101);
-        const timeStr = new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
-        const todayStr = new Date().toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).replace(/\//g, '-');
+        const timeStr = dateUtils.getIstTime();
+        const todayStr = dateUtils.getIstDate();
 
         const rec = {
             id,
@@ -337,8 +372,42 @@ class DataStore {
             locationName: `Lat: ${(parseFloat(data.latitude) || 23.3315).toFixed(4)}, Lng: ${(parseFloat(data.longitude) || 77.7807).toFixed(4)}`,
             timestamp: timeStr,
             date: todayStr,
-            isWithinGeofence: true
+            isWithinGeofence: true,
+            photoUrl: data.photoUrl || null
         };
+
+        // Confirmed persistence to MongoDB Atlas if connected
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            try {
+                const Attendance = require('../models/Attendance');
+                const doc = await Attendance.create({
+                    employee: (data.employee && mongoose.isValidObjectId(data.employee)) ? data.employee : undefined,
+                    branch: (data.branchId && mongoose.isValidObjectId(data.branchId)) ? data.branchId : undefined,
+                    employeeId: rec.employeeId,
+                    employeeName: rec.employeeName,
+                    role: rec.role,
+                    type: rec.type,
+                    latitude: rec.latitude,
+                    longitude: rec.longitude,
+                    accuracy: rec.accuracy,
+                    locationName: rec.locationName,
+                    timestamp: rec.timestamp,
+                    date: rec.date,
+                    isWithinGeofence: rec.isWithinGeofence,
+                    photoUrl: rec.photoUrl,
+                    checkInTime: rec.type === 'check_in' ? new Date() : undefined,
+                    checkOutTime: rec.type === 'check_out' ? new Date() : undefined,
+                    checkInLocation: rec.type === 'check_in' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: true } : undefined,
+                    checkOutLocation: rec.type === 'check_out' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: true } : undefined,
+                    status: 'present'
+                });
+                rec._id = doc._id;
+                rec.id = doc._id.toString();
+            } catch (dbErr) {
+                console.error('[Attendance DB write error]:', dbErr);
+                throw dbErr; // Propagate failure to controller so failure is never hidden
+            }
+        }
 
         attendanceRecords.unshift(rec);
         return rec;
@@ -450,7 +519,8 @@ class DataStore {
                 const found = await User.findById(id)
                     .populate('managerId', 'name email mobile role employeeId')
                     .populate('branchId', 'name code')
-                    .select('-password');
+                    .select('-password')
+                    .lean();
                 if (found) return found;
             } catch (err) {}
         }
@@ -499,8 +569,8 @@ class DataStore {
         });
     }
 
-    static async getRealCounts() {
-        const users = await this.getUsers();
+    static async getRealCounts(providedUsers) {
+        const users = (providedUsers && Array.isArray(providedUsers)) ? providedUsers : (await this.getUsers());
         const employeeCount = users.filter(u => u.role === 'EMPLOYEE').length;
         const managerCount = users.filter(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER').length;
         const activeCount = users.filter(u => u.status === 'ACTIVE').length;

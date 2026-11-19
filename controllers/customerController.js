@@ -314,9 +314,10 @@ class CustomerController {
                 customers = await Customer.find(filter)
                     .populate('assignedEmployee', 'name employeeId mobile')
                     .populate('assignedBranch', 'name code')
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
-                    .limit(limit);
+                    .limit(limit)
+                    .lean();
             }
 
             res.render('private/admin/customers', {

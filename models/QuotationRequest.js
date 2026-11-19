@@ -249,5 +249,8 @@ quotationRequestSchema.index({ assignedEmployee: 1 });
 quotationRequestSchema.index({ assignedManager: 1 });
 quotationRequestSchema.index({ branch: 1 });
 quotationRequestSchema.index({ createdAt: -1 });
+quotationRequestSchema.index({ branch: 1, createdAt: -1 });
+quotationRequestSchema.index({ status: 1, createdAt: -1 });
+quotationRequestSchema.index({ assignedEmployee: 1, createdAt: -1 });
 
 module.exports = mongoose.models.QuotationRequest || mongoose.model('QuotationRequest', quotationRequestSchema);

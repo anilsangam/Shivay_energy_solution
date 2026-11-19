@@ -23,6 +23,10 @@ const complaintSchema = new mongoose.Schema({
     resolvedAt: { type: Date }
 }, { timestamps: true });
 
+complaintSchema.index({ status: 1, createdAt: -1 });
+complaintSchema.index({ branch: 1, createdAt: -1 });
+complaintSchema.index({ createdAt: -1 });
+
 complaintSchema.pre('save', function(next) {
     if (!this.ticketId) {
         this.ticketId = 'SHIVAY-' + Math.floor(10000 + Math.random() * 90000);

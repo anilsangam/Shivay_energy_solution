@@ -10,101 +10,163 @@ const mongoose = require('mongoose');
 // 1. SUPER ADMIN DASHBOARD
 exports.getDashboard = async (req, res) => {
     try {
-        const counts = await DataStore.getRealCounts();
-        const users = await DataStore.getUsers();
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            await DataStore.syncAttendanceFromDb().catch(() => {});
+        }
         const recentEnquiries = DataStore.getAllEnquiries();
         const todayAttendance = DataStore.getTodayAttendance();
-        const recentActivities = await AuditService.getRecentLogs(10);
 
-        // 1. Real-time Phase 3 Project Execution Metrics & Recent Projects
+        let users = [];
+        let counts = { totalUsers: 0, employeeCount: 0, managerCount: 0, activeCount: 0, inactiveCount: 0 };
+        let recentActivities = [];
         let projectStats = { total: 0, active: 0, completed: 0, onHold: 0, totalKw: 0 };
         let recentProjects = [];
-        if (mongoose.connection && mongoose.connection.readyState === 1) {
-            try {
-                const Project = require('../models/Project');
-                const allProjs = await Project.find({})
-                    .populate('customer', 'name mobile city')
-                    .populate('assignedEngineer', 'name employeeId')
-                    .sort({ updatedAt: -1, createdAt: -1 })
-                    .lean();
-
-                projectStats.total = allProjs.length;
-                allProjs.forEach(p => {
-                    if (p.status !== 'CANCELLED') {
-                        projectStats.totalKw += (p.capacityKw || 0);
-                    }
-                    if (p.status === 'COMPLETED') {
-                        projectStats.completed++;
-                    } else if (p.status === 'ON_HOLD') {
-                        projectStats.onHold++;
-                    } else if (p.status !== 'CANCELLED') {
-                        projectStats.active++;
-                    }
-                });
-                projectStats.totalKw = Math.round(projectStats.totalKw * 10) / 10;
-                recentProjects = allProjs.slice(0, 5);
-            } catch (pErr) {
-                console.error('Project stats error in admin dashboard:', pErr);
-            }
-        }
-
-        // 2. Real-time Phase 2 Quotation Metrics & Recent Quotations
         let quotationStats = { total: 0, pending: 0, approved: 0, accepted: 0 };
         let recentQuotations = [];
+        let liveInquiries = [];
+
         if (mongoose.connection && mongoose.connection.readyState === 1) {
-            try {
-                const Quotation = require('../models/Quotation');
-                const allQuotes = await Quotation.find({})
+            const Project = require('../models/Project');
+            const Quotation = require('../models/Quotation');
+            const QuotationRequest = require('../models/QuotationRequest');
+
+            const [
+                fetchedUsers,
+                fetchedActivities,
+                fetchedRecentProjects,
+                fetchedRecentQuotes,
+                mongoRequests,
+                projStatsAgg,
+                quoteStatsAgg
+            ] = await Promise.all([
+                DataStore.getUsers().catch(() => []),
+                AuditService.getRecentLogs(10).catch(() => []),
+                Project.find({})
+                    .select('projectNumber status priority customer customerContact siteAddress city capacityKw progressPercentage updatedAt createdAt')
+                    .populate('customer', 'name mobile city')
+                    .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+                    .limit(5)
+                    .lean()
+                    .catch(pErr => {
+                        console.error('Project stats error in admin dashboard:', pErr);
+                        return [];
+                    }),
+                Quotation.find({})
+                    .select('quotationNumber status preparedBy customer customerId customerName customerMobile systemCapacityKw pricing createdAt')
                     .populate('customerId', 'name mobile city')
                     .populate('preparedBy', 'name employeeId')
-                    .populate('approvedBy', 'name')
-                    .sort({ createdAt: -1 })
-                    .lean();
-
-                quotationStats.total = allQuotes.length;
-                allQuotes.forEach(q => {
-                    if (q.status === 'PENDING_APPROVAL') {
-                        quotationStats.pending++;
-                    } else if (q.status === 'APPROVED') {
-                        quotationStats.approved++;
-                    } else if (q.status === 'CUSTOMER_ACCEPTED') {
-                        quotationStats.accepted++;
-                    }
-                });
-                recentQuotations = allQuotes.slice(0, 5);
-            } catch (qErr) {
-                console.error('Quotation stats error in admin dashboard:', qErr);
-            }
-        }
-
-        // 3. Live Customer Inquiries / Requests (Mongo QuotationRequest or fallback DataStore)
-        let liveInquiries = [];
-        if (mongoose.connection && mongoose.connection.readyState === 1) {
-            try {
-                const QuotationRequest = require('../models/QuotationRequest');
-                const mongoRequests = await QuotationRequest.find({})
+                    .sort({ createdAt: -1, _id: -1 })
+                    .limit(5)
+                    .lean()
+                    .catch(qErr => {
+                        console.error('Quotation stats error in admin dashboard:', qErr);
+                        return [];
+                    }),
+                QuotationRequest.find({})
+                    .select('requestNumber customer customerName customerMobile proposedCapacityKw city status createdAt')
                     .populate('customer', 'name mobile city district')
                     .populate('assignedEmployee', 'name employeeId')
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .limit(6)
-                    .lean();
+                    .lean()
+                    .catch(reqErr => {
+                        console.error('QuotationRequest inquiry error in admin dashboard:', reqErr);
+                        return [];
+                    }),
+                Project.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            total: { $sum: 1 },
+                            completed: { $sum: { $cond: [{ $eq: ['$status', 'COMPLETED'] }, 1, 0] } },
+                            onHold: { $sum: { $cond: [{ $eq: ['$status', 'ON_HOLD'] }, 1, 0] } },
+                            active: {
+                                $sum: {
+                                    $cond: [
+                                        {
+                                            $and: [
+                                                { $ne: ['$status', 'COMPLETED'] },
+                                                { $ne: ['$status', 'ON_HOLD'] },
+                                                { $ne: ['$status', 'CANCELLED'] }
+                                            ]
+                                        },
+                                        1,
+                                        0
+                                    ]
+                                }
+                            },
+                            totalKw: {
+                                $sum: {
+                                    $cond: [
+                                        { $ne: ['$status', 'CANCELLED'] },
+                                        { $ifNull: ['$capacityKw', 0] },
+                                        0
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]).catch(pAggErr => {
+                    console.error('Project stats aggregation error in admin dashboard:', pAggErr);
+                    return [];
+                }),
+                Quotation.aggregate([
+                    {
+                        $group: {
+                            _id: null,
+                            total: { $sum: 1 },
+                            pending: { $sum: { $cond: [{ $eq: ['$status', 'PENDING_APPROVAL'] }, 1, 0] } },
+                            approved: { $sum: { $cond: [{ $eq: ['$status', 'APPROVED'] }, 1, 0] } },
+                            accepted: { $sum: { $cond: [{ $eq: ['$status', 'CUSTOMER_ACCEPTED'] }, 1, 0] } }
+                        }
+                    }
+                ]).catch(qAggErr => {
+                    console.error('Quotation stats aggregation error in admin dashboard:', qAggErr);
+                    return [];
+                })
+            ]);
 
-                if (mongoRequests && mongoRequests.length > 0) {
-                    liveInquiries = mongoRequests.map(r => ({
-                        id: r.requestNumber || 'REQ',
-                        name: (r.customer && r.customer.name) || r.customerName || 'Direct Customer',
-                        mobile: (r.customer && r.customer.mobile) || r.customerMobile || 'N/A',
-                        requirement: `${r.proposedCapacityKw || 3} kW Solar Rooftop`,
-                        district: (r.customer && r.customer.city) || r.city || 'Raisen (M.P.)',
-                        status: r.status || 'SUBMITTED',
-                        createdAt: r.createdAt,
-                        rawId: r._id
-                    }));
-                }
-            } catch (reqErr) {
-                console.error('QuotationRequest inquiry error in admin dashboard:', reqErr);
+            users = fetchedUsers;
+            counts = await DataStore.getRealCounts(users);
+            recentActivities = fetchedActivities;
+            recentProjects = fetchedRecentProjects || [];
+            recentQuotations = fetchedRecentQuotes || [];
+
+            if (projStatsAgg && projStatsAgg[0]) {
+                const pa = projStatsAgg[0];
+                projectStats.total = pa.total || 0;
+                projectStats.completed = pa.completed || 0;
+                projectStats.onHold = pa.onHold || 0;
+                projectStats.active = pa.active || 0;
+                projectStats.totalKw = Math.round((pa.totalKw || 0) * 10) / 10;
             }
+
+            if (quoteStatsAgg && quoteStatsAgg[0]) {
+                const qa = quoteStatsAgg[0];
+                quotationStats.total = qa.total || 0;
+                quotationStats.pending = qa.pending || 0;
+                quotationStats.approved = qa.approved || 0;
+                quotationStats.accepted = qa.accepted || 0;
+            }
+
+            if (mongoRequests && mongoRequests.length > 0) {
+                liveInquiries = mongoRequests.map(r => ({
+                    id: r.requestNumber || 'REQ',
+                    name: (r.customer && r.customer.name) || r.customerName || 'Direct Customer',
+                    mobile: (r.customer && r.customer.mobile) || r.customerMobile || 'N/A',
+                    requirement: `${r.proposedCapacityKw || 3} kW Solar Rooftop`,
+                    district: (r.customer && r.customer.city) || r.city || 'Raisen (M.P.)',
+                    status: r.status || 'SUBMITTED',
+                    createdAt: r.createdAt,
+                    rawId: r._id
+                }));
+            }
+        } else {
+            users = await DataStore.getUsers();
+            counts = await DataStore.getRealCounts(users);
+            recentActivities = await AuditService.getRecentLogs(10);
         }
+
         if (liveInquiries.length === 0 && recentEnquiries && recentEnquiries.length > 0) {
             liveInquiries = recentEnquiries.slice(0, 6);
         }
@@ -162,7 +224,7 @@ exports.getQuotations = (req, res) => {
 };
 
 // 3. INVOICES MODULE
-// Helper to self-heal existing managers with legacy SES-EMP IDs or assigned managers
+// Helper to self-heal existing managers with legacy SES-EMP IDs or assigned managers (run on DB startup or maintenance)
 const selfHealManagers = async () => {
     if (mongoose.connection && mongoose.connection.readyState === 1) {
         try {
@@ -184,6 +246,7 @@ const selfHealManagers = async () => {
         } catch (e) {}
     }
 };
+exports.selfHealManagers = selfHealManagers;
 
 exports.getInvoices = async (req, res) => {
     try {
@@ -205,23 +268,30 @@ exports.getInvoices = async (req, res) => {
                 // Scope dropdowns and invoices for Branch Managers to their own branch/team
                 if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
                     if (sessionUser.branchId) {
-                        invFilter.$or = [{ branch: sessionUser.branchId }, { createdBy: sessionUser._id }];
+                        invFilter.$or = [{ branch: sessionUser.branchId }, { createdByUser: sessionUser._id }];
                         projFilter.$or = [{ branch: sessionUser.branchId }, { assignedManager: sessionUser._id }];
                         quoteFilter.$or = [{ branch: sessionUser.branchId }, { preparedBy: sessionUser._id }];
                     } else {
-                        invFilter.createdBy = sessionUser._id;
+                        invFilter.createdByUser = sessionUser._id;
                         projFilter.assignedManager = sessionUser._id;
                         quoteFilter.preparedBy = sessionUser._id;
                     }
                 }
 
-                invoices = await Invoice.find(invFilter).sort({ createdAt: -1 }).lean();
-                projects = await Project.find(projFilter)
-                    .populate('customer', 'name mobile city address consumerNumber gstin')
-                    .lean();
-                quotations = await Quotation.find(quoteFilter)
-                    .populate('customerId', 'name mobile city address consumerNumber gstin')
-                    .lean();
+                const [invoicesData, projectsData, quotationsData] = await Promise.all([
+                    Invoice.find(invFilter).sort({ createdAt: -1, _id: -1 }).lean(),
+                    Project.find(projFilter)
+                        .select('projectNumber capacityKw siteAddress city customer customerContact')
+                        .populate('customer', 'name mobile city address consumerNumber gstin')
+                        .lean(),
+                    Quotation.find(quoteFilter)
+                        .select('quotationNumber systemCapacityKw customerId customer customerName customerMobile customerAddress customerCity pricing')
+                        .populate('customerId', 'name mobile city address consumerNumber gstin')
+                        .lean()
+                ]);
+                invoices = invoicesData || [];
+                projects = projectsData || [];
+                quotations = quotationsData || [];
             } catch (dbErr) {
                 console.error('Invoice DB fetch error:', dbErr);
             }
@@ -253,17 +323,15 @@ exports.getInvoices = async (req, res) => {
 // 4. USER & EMPLOYEE MANAGEMENT
 exports.getEmployees = async (req, res) => {
     try {
-        await selfHealManagers();
-        const users = await DataStore.getUsers();
-        let branches = [];
-        if (mongoose.connection.readyState === 1) {
-            try {
-                branches = await Branch.find({});
-            } catch (e) {}
-        }
-        if (!branches || branches.length === 0) {
-            branches = [{ _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' }];
-        }
+        const [users, branchList] = await Promise.all([
+            DataStore.getUsers(),
+            (mongoose.connection && mongoose.connection.readyState === 1)
+                ? Branch.find({}).lean().catch(() => [])
+                : Promise.resolve([])
+        ]);
+        let branches = (branchList && branchList.length > 0)
+            ? branchList
+            : [{ _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' }];
 
         const managers = users.filter(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER');
 
@@ -339,25 +407,52 @@ exports.getBranches = async (req, res) => {
 
         if (mongoose.connection.readyState === 1) {
             try {
-                branches = await Branch.find({})
-                    .populate('manager', 'name employeeId mobile email role status')
-                    .sort({ createdAt: -1 })
-                    .lean();
-
-                // Compute employee and project counts per branch
                 const Project = require('../models/Project');
-                for (const b of branches) {
-                    b.employeeCount = await User.countDocuments({ branchId: b._id, role: 'EMPLOYEE' });
-                    b.projectCount = await Project.countDocuments({ branch: b._id, status: { $ne: 'CANCELLED' } });
-                    totalEmployees += b.employeeCount;
-                    totalProjects += b.projectCount;
+                const [dbBranches, dbManagers, empCountsAgg, prjCountsAgg] = await Promise.all([
+                    Branch.find({})
+                        .populate('manager', 'name employeeId mobile email role status')
+                        .sort({ createdAt: -1, _id: -1 })
+                        .lean(),
+                    User.find({
+                        role: { $in: ['BRANCH_MANAGER', 'MANAGER'] },
+                        status: { $in: ['ACTIVE', 'PENDING'] }
+                    }).select('name employeeId email mobile branchId').lean(),
+                    User.aggregate([
+                        { $match: { role: 'EMPLOYEE', branchId: { $ne: null } } },
+                        { $group: { _id: '$branchId', count: { $sum: 1 } } }
+                    ]).catch(err => {
+                        console.error('[Branch Operations] User count aggregation error:', err);
+                        return null; // Return null so failure is distinguished from empty count
+                    }),
+                    Project.aggregate([
+                        { $match: { status: { $ne: 'CANCELLED' }, branch: { $ne: null } } },
+                        { $group: { _id: '$branch', count: { $sum: 1 } } }
+                    ]).catch(err => {
+                        console.error('[Branch Operations] Project count aggregation error:', err);
+                        return null; // Return null so failure is distinguished from empty count
+                    })
+                ]);
+
+                branches = dbBranches || [];
+                allManagers = dbManagers || [];
+
+                const empAggregationFailed = empCountsAgg === null;
+                const prjAggregationFailed = prjCountsAgg === null;
+                if (empAggregationFailed || prjAggregationFailed) {
+                    console.warn(`[Branch Operations] Aggregation degraded: empFailed=${empAggregationFailed}, prjFailed=${prjAggregationFailed}`);
                 }
 
-                // Available managers
-                allManagers = await User.find({
-                    role: { $in: ['BRANCH_MANAGER', 'MANAGER'] },
-                    status: { $in: ['ACTIVE', 'PENDING'] }
-                }).select('name employeeId email mobile branchId').lean();
+                const empCountMap = new Map((empCountsAgg || []).map(a => [String(a._id), a.count]));
+                const prjCountMap = new Map((prjCountsAgg || []).map(a => [String(a._id), a.count]));
+
+                for (const b of branches) {
+                    const empCount = empAggregationFailed ? (b.employeeCount || 0) : (empCountMap.get(String(b._id)) || 0);
+                    const prjCount = prjAggregationFailed ? (b.projectCount || 0) : (prjCountMap.get(String(b._id)) || 0);
+                    b.employeeCount = empCount;
+                    b.projectCount = prjCount;
+                    totalEmployees += empCount;
+                    totalProjects += prjCount;
+                }
             } catch (dbErr) {
                 console.error('Error fetching branches from DB:', dbErr);
             }
@@ -889,20 +984,31 @@ exports.getReports = async (req, res) => {
 
         if (mongoose.connection && mongoose.connection.readyState === 1) {
             try {
-                branches = await Branch.find({}).lean();
-            } catch (e) {}
-            try {
                 const Project = require('../models/Project');
-                projects = await Project.find({}).populate('customer', 'name mobile city').populate('assignedEngineer', 'name employeeId').lean();
-            } catch (e) {}
-            try {
                 const Quotation = require('../models/Quotation');
-                quotations = await Quotation.find({}).lean();
-            } catch (e) {}
-            try {
                 const Invoice = require('../models/Invoice');
-                invoices = await Invoice.find({}).lean();
-            } catch (e) {}
+
+                const [dbBranches, dbProjects, qCount, dbInvoices] = await Promise.all([
+                    Branch.find({}).select('name code city state isActive').lean(),
+                    Project.find({})
+                        .select('_id projectId projectNumber title customer assignedEngineer capacityKw systemType status branch branchId createdAt')
+                        .populate('customer', 'name mobile city')
+                        .populate('assignedEngineer', 'name employeeId')
+                        .sort({ createdAt: -1 })
+                        .lean(),
+                    Quotation.countDocuments({ isArchived: { $ne: true } }),
+                    Invoice.find({})
+                        .select('status totalAmount total isArchived paymentStatus')
+                        .lean()
+                ]);
+
+                branches = dbBranches || [];
+                projects = dbProjects || [];
+                quotations = { length: qCount || 0 };
+                invoices = dbInvoices || [];
+            } catch (e) {
+                console.error('Error fetching analytics data in getReports:', e);
+            }
         }
 
         // Fallback default branch if none exists
@@ -1019,7 +1125,10 @@ exports.exportReportCsv = async (req, res) => {
             let list = [];
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 const Project = require('../models/Project');
-                list = await Project.find({}).populate('customer', 'name mobile city').lean();
+                list = await Project.find({})
+                    .select('_id projectId customer capacityKw systemType status createdAt')
+                    .populate('customer', 'name mobile city')
+                    .lean();
             }
             csvContent = 'Project ID,Customer Name,Customer Mobile,City,Capacity (kW),System Type,Status,Created At\n';
             list.forEach(p => {
@@ -1032,7 +1141,9 @@ exports.exportReportCsv = async (req, res) => {
             let list = [];
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 const Invoice = require('../models/Invoice');
-                list = await Invoice.find({}).lean();
+                list = await Invoice.find({})
+                    .select('_id invoiceNumber clientName customerName clientMobile customerMobile subtotal amount gstAmount totalAmount total status paymentStatus date invoiceDate')
+                    .lean();
             } else {
                 list = DataStore.getAllInvoices(true);
             }
@@ -1045,7 +1156,9 @@ exports.exportReportCsv = async (req, res) => {
             let list = [];
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 const Quotation = require('../models/Quotation');
-                list = await Quotation.find({}).lean();
+                list = await Quotation.find({})
+                    .select('_id quotationNumber customerName customerMobile systemCapacityKw finalPrice subsidyAmount status createdAt')
+                    .lean();
             }
             csvContent = 'Quotation Number,Customer Name,Mobile,System Capacity (kW),Final Price,Subsidy Amount,Status,Created At\n';
             list.forEach(q => {
@@ -1077,7 +1190,7 @@ exports.getComplaints = async (req, res) => {
             try {
                 let query = {};
                 if (statusFilter) query.status = statusFilter;
-                dbComplaints = await Complaint.find(query).populate('assignedEngineer', 'name employeeId mobile').sort({ createdAt: -1 }).lean();
+                dbComplaints = await Complaint.find(query).populate('assignedEngineer', 'name employeeId mobile').sort({ createdAt: -1, _id: -1 }).lean();
             } catch (dbErr) {
                 console.error('Error fetching complaints from DB:', dbErr);
             }
@@ -1112,18 +1225,42 @@ exports.getComplaints = async (req, res) => {
             resolved: complaints.filter(c => c.status === 'resolved' || c.status === 'closed').length
         };
 
-        const users = await DataStore.getUsers();
-        const engineers = users.filter(u => u.role === 'EMPLOYEE');
+        // Server-side pagination
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+        const total = complaints.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const startIndex = (page - 1) * limit;
+        const paginatedComplaints = complaints.slice(startIndex, startIndex + limit);
+
+        let engineers = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            engineers = await User.find({ role: 'EMPLOYEE' }).select('name employeeId mobile email').lean();
+        }
+        if (!engineers || engineers.length === 0) {
+            const users = await DataStore.getUsers();
+            engineers = users.filter(u => u.role === 'EMPLOYEE');
+        }
 
         res.render('private/admin/complaints', {
             title: `Service & Complaint Management | ${data.company.name}`,
             data,
             company: data.company,
-            complaints,
+            complaints: paginatedComplaints,
             counts,
             engineers,
             currentStatus: statusFilter,
             search,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page < totalPages ? page + 1 : null,
+                prevPage: page > 1 ? page - 1 : null
+            },
             user: req.session.user,
             currentUser: req.session.user,
             csrfToken: req.session ? req.session.csrfToken : '',

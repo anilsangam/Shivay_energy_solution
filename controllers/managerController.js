@@ -50,9 +50,10 @@ class ManagerController {
                     const Project = require('../models/Project');
                     const bFilter = branchId ? { $or: [{ branch: branchId }, { assignedManager: manager._id }] } : { assignedManager: manager._id };
                     const projs = await Project.find(bFilter)
+                        .select('projectNumber title capacityKw status customer assignedEngineer updatedAt createdAt')
                         .populate('customer', 'name mobile city')
                         .populate('assignedEngineer', 'name employeeId')
-                        .sort({ updatedAt: -1, createdAt: -1 })
+                        .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
                         .lean();
 
                     branchProjectStats.total = projs.length;
@@ -125,6 +126,9 @@ class ManagerController {
     // BRANCH ATTENDANCE
     // -------------------------------------------------------------
     static async getAttendance(req, res) {
+        try {
+            await DataStore.syncAttendanceFromDb();
+        } catch (_) {}
         const attendance = DataStore.getTodayAttendance();
         res.render('private/manager/attendance', {
             title: `Branch Field Attendance Logs | ${companyData.company.name}`,

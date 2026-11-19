@@ -323,5 +323,8 @@ projectSchema.index({ assignedManager: 1 });
 projectSchema.index({ assignedEngineer: 1 });
 projectSchema.index({ 'assignedEmployees.user': 1 });
 projectSchema.index({ branch: 1 });
+projectSchema.index({ branch: 1, status: 1 });
+projectSchema.index({ branch: 1, createdAt: -1 });
+projectSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.models.Project || mongoose.model('Project', projectSchema);

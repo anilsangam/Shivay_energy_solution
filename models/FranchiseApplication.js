@@ -66,6 +66,9 @@ const franchiseApplicationSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
+franchiseApplicationSchema.index({ status: 1, createdAt: -1 });
+franchiseApplicationSchema.index({ createdAt: -1 });
+
 franchiseApplicationSchema.pre('save', function(next) {
     if (!this.applicationId) {
         this.applicationId = 'FRA-' + Math.floor(100000 + Math.random() * 900000);

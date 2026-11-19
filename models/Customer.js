@@ -100,5 +100,7 @@ customerSchema.index({ email: 1 });
 customerSchema.index({ status: 1 });
 customerSchema.index({ assignedEmployee: 1 });
 customerSchema.index({ assignedBranch: 1 });
+customerSchema.index({ createdAt: -1 });
+customerSchema.index({ assignedBranch: 1, createdAt: -1 });
 
 module.exports = mongoose.models.Customer || mongoose.model('Customer', customerSchema);

@@ -18,4 +18,6 @@ const branchSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
+branchSchema.index({ isActive: 1 });
+
 module.exports = mongoose.models.Branch || mongoose.model('Branch', branchSchema);

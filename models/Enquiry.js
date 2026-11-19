@@ -27,6 +27,10 @@ const enquirySchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
+enquirySchema.index({ status: 1, createdAt: -1 });
+enquirySchema.index({ branch: 1, createdAt: -1 });
+enquirySchema.index({ createdAt: -1 });
+
 enquirySchema.pre('save', function(next) {
     if (!this.enquiryId) {
         this.enquiryId = 'ENQ-' + Math.floor(100000 + Math.random() * 900000);

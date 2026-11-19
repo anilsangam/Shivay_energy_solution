@@ -71,7 +71,7 @@ class MaterialController {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await Material.countDocuments(query);
                 materials = await Material.find(query)
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('createdBy', 'name employeeId')
@@ -275,17 +275,20 @@ class MaterialController {
                     .lean();
 
                 if (material) {
-                    transactions = await InventoryTransaction.find({ material: id })
-                        .sort({ transactionDate: -1 })
-                        .limit(20)
-                        .populate('performedBy', 'name employeeId')
-                        .lean();
-
-                    purchases = await Purchase.find({ 'items.material': id })
-                        .sort({ purchaseDate: -1 })
-                        .limit(10)
-                        .populate('supplier', 'name contactPerson mobile')
-                        .lean();
+                    const [txList, poList] = await Promise.all([
+                        InventoryTransaction.find({ material: id })
+                            .sort({ transactionDate: -1, _id: -1 })
+                            .limit(20)
+                            .populate('performedBy', 'name employeeId')
+                            .lean(),
+                        Purchase.find({ 'items.material': id })
+                            .sort({ purchaseDate: -1, _id: -1 })
+                            .limit(10)
+                            .populate('supplier', 'name contactPerson mobile')
+                            .lean()
+                    ]);
+                    transactions = txList || [];
+                    purchases = poList || [];
                 }
             } else {
                 material = memMaterials.find(m => m._id.toString() === id.toString());
@@ -473,7 +476,7 @@ class MaterialController {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await Supplier.countDocuments(query);
                 suppliers = await Supplier.find(query)
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('createdBy', 'name employeeId')
@@ -820,7 +823,7 @@ class MaterialController {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await Purchase.countDocuments(query);
                 purchases = await Purchase.find(query)
-                    .sort({ purchaseDate: -1, createdAt: -1 })
+                    .sort({ purchaseDate: -1, createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('supplier', 'name contactPerson mobile')

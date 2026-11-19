@@ -19,7 +19,7 @@ exports.getSurveysPage = async (req, res) => {
             try {
                 let query = {};
                 if (statusFilter) query.status = statusFilter;
-                dbSurveys = await Enquiry.find(query).sort({ createdAt: -1 }).lean();
+                dbSurveys = await Enquiry.find(query).sort({ createdAt: -1, _id: -1 }).lean();
             } catch (dbErr) {
                 console.error('[EnquiryController] DB Error fetching surveys:', dbErr);
             }
@@ -66,13 +66,31 @@ exports.getSurveysPage = async (req, res) => {
             closed: allSurveys.filter(s => s.status === 'closed' || s.status === 'cancelled').length
         };
 
+        // Server-side pagination
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+        const total = surveys.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const startIndex = (page - 1) * limit;
+        const paginatedSurveys = surveys.slice(startIndex, startIndex + limit);
+
         res.render('private/admin/enquiries/surveys', {
             title: `Solar Site Survey Leads | ${company.name}`,
             company,
-            surveys,
+            surveys: paginatedSurveys,
             counts,
             currentStatus: statusFilter,
             search,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page < totalPages ? page + 1 : null,
+                prevPage: page > 1 ? page - 1 : null
+            },
             user: req.session.user,
             currentUser: req.session.user,
             csrfToken: req.session ? req.session.csrfToken : '',
@@ -168,7 +186,7 @@ exports.getFranchiseApplicationsPage = async (req, res) => {
             try {
                 let query = {};
                 if (statusFilter) query.status = statusFilter;
-                dbApps = await FranchiseApplication.find(query).sort({ createdAt: -1 }).lean();
+                dbApps = await FranchiseApplication.find(query).sort({ createdAt: -1, _id: -1 }).lean();
             } catch (dbErr) {
                 console.error('[EnquiryController] DB Error fetching franchise applications:', dbErr);
             }
@@ -212,13 +230,31 @@ exports.getFranchiseApplicationsPage = async (req, res) => {
             rejected: allApps.filter(a => a.status === 'rejected').length
         };
 
+        // Server-side pagination
+        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+        const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+        const total = applications.length;
+        const totalPages = Math.ceil(total / limit) || 1;
+        const startIndex = (page - 1) * limit;
+        const paginatedApps = applications.slice(startIndex, startIndex + limit);
+
         res.render('private/admin/enquiries/franchise', {
             title: `Franchise & Dealer Applications | ${company.name}`,
             company,
-            applications,
+            applications: paginatedApps,
             counts,
             currentStatus: statusFilter,
             search,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page < totalPages ? page + 1 : null,
+                prevPage: page > 1 ? page - 1 : null
+            },
             user: req.session.user,
             currentUser: req.session.user,
             csrfToken: req.session ? req.session.csrfToken : '',

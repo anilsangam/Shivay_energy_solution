@@ -63,4 +63,8 @@ const invoiceSchema = new mongoose.Schema({
     createdByUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
+invoiceSchema.index({ isArchived: 1, createdAt: -1 });
+invoiceSchema.index({ branch: 1, isArchived: 1, createdAt: -1 });
+invoiceSchema.index({ createdByUser: 1, isArchived: 1, createdAt: -1 });
+
 module.exports = mongoose.models.Invoice || mongoose.model('Invoice', invoiceSchema);

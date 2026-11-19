@@ -188,6 +188,34 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Footer -->
+    <% if (typeof pagination !== 'undefined' && pagination.totalPages > 1) { %>
+        <div class="p-3 px-4 border-top d-flex flex-wrap align-items-center justify-content-between bg-light gap-2">
+            <small class="text-muted" style="font-size: 12px;">
+                Showing <%= ((pagination.page - 1) * pagination.limit) + 1 %> to <%= Math.min(pagination.page * pagination.limit, pagination.total) %> of <%= pagination.total %> applications
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <% if (pagination.hasPrevPage) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= pagination.prevPage %>&status=<%= currentStatus || '' %>&search=<%= search || '' %>" style="font-size: 12px; padding: 4px 10px;">&laquo; Prev</a>
+                        </li>
+                    <% } %>
+                    <% for(let p = 1; p <= pagination.totalPages; p++) { %>
+                        <li class="page-item <%= p === pagination.page ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= p %>&status=<%= currentStatus || '' %>&search=<%= search || '' %>" style="font-size: 12px; padding: 4px 10px;"><%= p %></a>
+                        </li>
+                    <% } %>
+                    <% if (pagination.hasNextPage) { %>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<%= pagination.nextPage %>&status=<%= currentStatus || '' %>&search=<%= search || '' %>" style="font-size: 12px; padding: 4px 10px;">Next &raquo;</a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
 </div>
 
 <!-- Modal: Update Application Status -->

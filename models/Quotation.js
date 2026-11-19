@@ -236,5 +236,8 @@ quotationSchema.index({ approvedBy: 1 });
 quotationSchema.index({ customerId: 1 });
 quotationSchema.index({ quotationRequestId: 1 });
 quotationSchema.index({ createdAt: -1 });
+quotationSchema.index({ isArchived: 1, createdAt: -1 });
+quotationSchema.index({ branch: 1, isArchived: 1, createdAt: -1 });
+quotationSchema.index({ status: 1, isArchived: 1, createdAt: -1 });
 
 module.exports = mongoose.models.Quotation || mongoose.model('Quotation', quotationSchema);

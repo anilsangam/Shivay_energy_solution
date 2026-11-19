@@ -79,7 +79,7 @@ class MaterialPhase2Controller {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await MaterialSale.countDocuments(query);
                 sales = await MaterialSale.find(query)
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('customer', 'name mobile city')
@@ -1161,7 +1161,7 @@ class MaterialPhase2Controller {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await MaterialDispatch.countDocuments(query);
                 dispatches = await MaterialDispatch.find(query)
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('sale', 'saleNumber grandTotal customerName')
@@ -1559,7 +1559,7 @@ class MaterialPhase2Controller {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 total = await MaterialReturn.countDocuments(query);
                 returns = await MaterialReturn.find(query)
-                    .sort({ createdAt: -1 })
+                    .sort({ createdAt: -1, _id: -1 })
                     .skip(skip)
                     .limit(limit)
                     .populate('sale', 'saleNumber grandTotal customerName')

@@ -325,7 +325,7 @@ async function runSecuritySuite() {
             ip: '127.0.0.1'
         };
         const res = createMockRes();
-        employeeController.submitAttendance(req, res);
+        await employeeController.submitAttendance(req, res);
 
         assert(res.jsonData && res.jsonData.success === true && res.jsonData.record.employeeId === mockFreshEmployee.employeeId,
             "Attendance identity strictly session-derived (Spoofed body ID ignored)",
@@ -344,7 +344,7 @@ async function runSecuritySuite() {
             ip: '127.0.0.1'
         };
         const res = createMockRes();
-        employeeController.submitAttendance(req, res);
+        await employeeController.submitAttendance(req, res);
 
         assert(res.statusCode === 400 && res.jsonData && res.jsonData.success === false,
             'Duplicate Check-In on same day -> HTTP 400 Rejected',
@@ -363,7 +363,7 @@ async function runSecuritySuite() {
             ip: '127.0.0.1'
         };
         const res = createMockRes();
-        employeeController.submitAttendance(req, res);
+        await employeeController.submitAttendance(req, res);
 
         assert(res.jsonData && res.jsonData.success === true && res.jsonData.record.type === 'check_out',
             'Check-Out after Check-In -> Allowed',
