@@ -1,15 +1,15 @@
 <%
     const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
-    const userName = authUser ? authUser.name : 'Authorized User';
+    const userName = (authUser && authUser.name) ? authUser.name : 'Authorized User';
     const userRole = authUser && authUser.role ? String(authUser.role).trim().toUpperCase() : 'EMPLOYEE';
     const isSuperAdmin = userRole === 'SUPER_ADMIN';
     const isManager = userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER';
     const isEmployee = userRole === 'EMPLOYEE';
-    const userEmail = authUser ? authUser.email : '';
+    const userEmail = authUser ? (authUser.email || '') : '';
     const userEmployeeId = authUser ? (authUser.employeeId || 'N/A') : 'N/A';
     
     // Generate initials (e.g. Deepak Kushwaha -> DK)
-    const initials = userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SE';
+    const initials = (userName || 'SE').split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'SE';
 
     let roleBadgeClass = 'badge-role-employee';
     let roleLabel = 'Employee';
@@ -21,8 +21,17 @@
         roleLabel = 'Branch Manager';
     }
 
-    const titleStr = typeof pageTitle !== 'undefined' ? pageTitle : (typeof title !== 'undefined' ? title.split('|')[0].trim() : 'Dashboard');
+    const titleStr = typeof pageTitle !== 'undefined' ? pageTitle : ((typeof title !== 'undefined' && title) ? String(title).split('|')[0].trim() : 'Dashboard');
     const profileUrl = userRole === 'SUPER_ADMIN' ? '/admin/profile' : (userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER' ? '/manager/profile' : '/employee/profile');
+%>
+
+<%
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+    const canHeaderSettings = checkPerm('settings.general.view');
+    const canHeaderBranches = checkPerm('branches.offices.view');
+    const canHeaderReports = checkPerm('reports.analytics.view');
 %>
 
 <header class="admin-header">
@@ -39,12 +48,14 @@
     </div>
 
     <div class="admin-header-right d-flex align-items-center gap-2">
-        <% if (isSuperAdmin) { %>
-            <!-- Quick Settings Direct Access for Super Admin -->
+        <% if (canHeaderSettings) { %>
+            <!-- Quick Settings Direct Access -->
             <a href="/admin/settings" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 shadow-sm text-dark font-weight-bold" style="border-radius: 8px; padding: 5px 12px; font-size: 12.5px; height: 36px;" title="Enterprise System Settings">
                 <i class="icofont-gear text-warning fs-6"></i>
                 <span class="d-none d-sm-inline">Settings</span>
             </a>
+        <% } %>
+        <% if (canHeaderBranches) { %>
             <a href="/admin/branches" class="btn btn-sm btn-light border d-none d-lg-inline-flex align-items-center gap-1 shadow-sm text-dark font-weight-bold" style="border-radius: 8px; padding: 5px 12px; font-size: 12.5px; height: 36px;" title="Branch Management">
                 <i class="icofont-building-alt text-success fs-6"></i>
                 <span>Branches</span>
@@ -101,25 +112,31 @@
                         <span>Security & Password</span>
                     </a>
                 </li>
-                <% if (isSuperAdmin) { %>
+                <% if (canHeaderSettings) { %>
                     <li>
                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/settings">
                             <i class="icofont-gear text-warning" style="font-size: 14px;"></i>
                             <span>System Settings</span>
                         </a>
                     </li>
+                <% } %>
+                <% if (canHeaderBranches) { %>
                     <li>
                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/branches">
                             <i class="icofont-building-alt text-success" style="font-size: 14px;"></i>
                             <span>Branches & Hubs</span>
                         </a>
                     </li>
+                <% } %>
+                <% if (canHeaderReports) { %>
                     <li>
                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/reports">
                             <i class="icofont-chart-growth text-primary" style="font-size: 14px;"></i>
                             <span>Analytics & Reports</span>
                         </a>
                     </li>
+                <% } %>
+                <% if (checkPerm('settings.audit_logs.view')) { %>
                     <li>
                         <a class="dropdown-item py-2 d-flex align-items-center gap-2 small" href="/admin/activity-logs">
                             <i class="icofont-history text-info" style="font-size: 14px;"></i>

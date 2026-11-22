@@ -142,6 +142,36 @@
                 }
             });
 
+            // 4.1 Native Bootstrap-Compatible Collapse & Accordion Toggle
+            document.addEventListener('click', function(e) {
+                let collapseBtn = e.target.closest('[data-bs-toggle="collapse"]');
+                if (!collapseBtn) {
+                    const header = e.target.closest('.accordion-header');
+                    if (header) {
+                        collapseBtn = header.querySelector('[data-bs-toggle="collapse"]');
+                    }
+                }
+                if (!collapseBtn) return;
+                e.preventDefault();
+
+                const targetSelector = collapseBtn.getAttribute('data-bs-target') || collapseBtn.getAttribute('href');
+                if (!targetSelector) return;
+                const targetEl = document.querySelector(targetSelector);
+                if (!targetEl) return;
+
+                const isShown = targetEl.classList.contains('show');
+
+                if (isShown) {
+                    targetEl.classList.remove('show');
+                    collapseBtn.classList.add('collapsed');
+                    collapseBtn.setAttribute('aria-expanded', 'false');
+                } else {
+                    targetEl.classList.add('show');
+                    collapseBtn.classList.remove('collapsed');
+                    collapseBtn.setAttribute('aria-expanded', 'true');
+                }
+            });
+
             // 5. Sidebar Scroll Position Retention Across Tab & Page Navigations
             const sidebarMenu = document.querySelector('.admin-sidebar-menu');
             if (sidebarMenu) {
@@ -212,6 +242,45 @@
             };
             window.bootstrap.Modal.getOrCreateInstance = function(target) {
                 return new window.bootstrap.Modal(target);
+            };
+
+            // 7. Global Bootstrap.Collapse Compatibility API
+            window.bootstrap.Collapse = function(target) {
+                const el = (typeof target === 'string') ? document.querySelector(target) : target;
+                return {
+                    show: function() {
+                        if (el) {
+                            el.classList.add('show');
+                            const btn = document.querySelector(`[data-bs-target="#${el.id}"], [href="#${el.id}"]`);
+                            if (btn) {
+                                btn.classList.remove('collapsed');
+                                btn.setAttribute('aria-expanded', 'true');
+                            }
+                        }
+                    },
+                    hide: function() {
+                        if (el) {
+                            el.classList.remove('show');
+                            const btn = document.querySelector(`[data-bs-target="#${el.id}"], [href="#${el.id}"]`);
+                            if (btn) {
+                                btn.classList.add('collapsed');
+                                btn.setAttribute('aria-expanded', 'false');
+                            }
+                        }
+                    },
+                    toggle: function() {
+                        if (el) {
+                            if (el.classList.contains('show')) this.hide();
+                            else this.show();
+                        }
+                    }
+                };
+            };
+            window.bootstrap.Collapse.getInstance = function(target) {
+                return new window.bootstrap.Collapse(target);
+            };
+            window.bootstrap.Collapse.getOrCreateInstance = function(target) {
+                return new window.bootstrap.Collapse(target);
             };
         })();
     </script>

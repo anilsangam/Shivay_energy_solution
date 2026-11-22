@@ -1,5 +1,17 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+
+    const canCreateBranch = checkPerm('branches.offices.create');
+    const canEditBranch = checkPerm('branches.offices.edit');
+    const canManageBranch = checkPerm('branches.offices.manage');
+    const canViewStaff = checkPerm('users.employees.view');
+%>
+
 <!-- Action Feedback Alert Banner -->
 <div id="branchToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
     <i class="icofont-check-circled me-2"></i><span id="branchToastMsg">Branch updated successfully.</span>
@@ -17,12 +29,16 @@
         </p>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-warning font-weight-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#createBranchModal" style="border-radius: 8px;">
-            <i class="icofont-plus-circle me-1"></i> Add New Branch
-        </button>
-        <a href="/admin/employees" class="btn btn-outline-primary" style="border-radius: 8px;">
-            <i class="icofont-users-alt-2 me-1"></i> Staff Management
-        </a>
+        <% if (canCreateBranch) { %>
+            <button class="btn btn-warning font-weight-bold text-dark shadow-sm" data-bs-toggle="modal" data-bs-target="#createBranchModal" style="border-radius: 8px;">
+                <i class="icofont-plus-circle me-1"></i> Add New Branch
+            </button>
+        <% } %>
+        <% if (canViewStaff) { %>
+            <a href="/admin/employees" class="btn btn-outline-primary" style="border-radius: 8px;">
+                <i class="icofont-users-alt-2 me-1"></i> Staff Management
+            </a>
+        <% } %>
     </div>
 </div>
 
@@ -136,17 +152,21 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-primary py-1 px-2" title="Edit Branch" onclick='openEditModal(<%= JSON.stringify(b) %>)'>
-                                        <i class="icofont-ui-edit"></i>
-                                    </button>
-                                    <% if (b.isActive !== false) { %>
-                                        <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate Branch" onclick="toggleStatus('<%= b._id %>', false)">
-                                            <i class="icofont-ban"></i>
+                                    <% if (canEditBranch) { %>
+                                        <button class="btn btn-sm btn-outline-primary py-1 px-2" title="Edit Branch" onclick='openEditModal(<%= JSON.stringify(b) %>)'>
+                                            <i class="icofont-ui-edit"></i>
                                         </button>
-                                    <% } else { %>
-                                        <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Branch" onclick="toggleStatus('<%= b._id %>', true)">
-                                            <i class="icofont-check"></i>
-                                        </button>
+                                    <% } %>
+                                    <% if (canManageBranch) { %>
+                                        <% if (b.isActive !== false) { %>
+                                            <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate Branch" onclick="toggleStatus('<%= b._id %>', false)">
+                                                <i class="icofont-ban"></i>
+                                            </button>
+                                        <% } else { %>
+                                            <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Branch" onclick="toggleStatus('<%= b._id %>', true)">
+                                                <i class="icofont-check"></i>
+                                            </button>
+                                        <% } %>
                                     <% } %>
                                 </div>
                             </td>

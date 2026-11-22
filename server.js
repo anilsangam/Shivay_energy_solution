@@ -116,11 +116,16 @@ app.use(session({
 
 // Setup CSRF and attach session user to all views
 const WebsiteService = require('./services/websiteService');
+const AuthorizationService = require('./services/authorizationService');
 app.use(setupCsrf);
 app.use((req, res, next) => {
     res.locals.company = WebsiteService.getLiveCompanyData();
     res.locals.currentYear = new Date().getFullYear();
     res.locals.currentUser = req.session ? req.session.user : null;
+    res.locals.hasPermission = (perm) => AuthorizationService.hasPermission(req.session ? req.session.user : null, perm);
+    res.locals.hasModuleAccess = (mod) => AuthorizationService.hasModuleAccess(req.session ? req.session.user : null, mod);
+    res.locals.hasFieldAccess = (field) => AuthorizationService.hasFieldAccess(req.session ? req.session.user : null, field);
+    res.locals.isPrimarySuperAdmin = (u) => AuthorizationService.isPrimarySuperAdmin(u || (req.session ? req.session.user : null));
     next();
 });
 

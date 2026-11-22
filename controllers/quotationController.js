@@ -9,6 +9,7 @@ const User = require('../models/User');
 const QuotationService = require('../services/quotationService');
 const UploadService = require('../services/uploadService');
 const AuditService = require('../services/auditService');
+const AuthorizationService = require('../services/authorizationService');
 const companyData = require('../config/company');
 
 /**
@@ -597,7 +598,37 @@ class QuotationController {
         try {
             const { id } = req.params;
             const { status, reason } = req.body;
-            const sessionUser = req.session.user;
+            const sessionUser = req.session ? req.session.user : null;
+
+            if (!sessionUser) {
+                return res.status(401).json({ success: false, message: 'Authentication required.' });
+            }
+
+            const normalized = (status || '').toUpperCase();
+            if (normalized === 'APPROVED' || normalized === 'APPROVE') {
+                if (!AuthorizationService.isPrimarySuperAdmin(sessionUser) && !AuthorizationService.hasPermission(sessionUser, 'quotations.approval.approve')) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Forbidden: Missing permission to approve quotations (quotations.approval.approve).'
+                    });
+                }
+            } else if (normalized === 'REJECTED') {
+                if (!AuthorizationService.isPrimarySuperAdmin(sessionUser) && !AuthorizationService.hasPermission(sessionUser, 'quotations.requests.reject')) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Forbidden: Missing permission to reject quotation requests (quotations.requests.reject).'
+                    });
+                }
+            } else {
+                if (!AuthorizationService.isPrimarySuperAdmin(sessionUser) && 
+                    !AuthorizationService.hasPermission(sessionUser, 'quotations.requests.edit') &&
+                    !AuthorizationService.hasPermission(sessionUser, 'quotations.requests.reject')) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Forbidden: Missing permission to update quotation request status.'
+                    });
+                }
+            }
 
             const updated = await QuotationService.updateRequestStatus(id, status, reason, sessionUser);
 
@@ -842,7 +873,10 @@ class QuotationController {
      */
     static previewFinancials(req, res) {
         try {
-            const financials = QuotationService.calculateFinancials(req.body);
+            let financials = QuotationService.calculateFinancials(req.body);
+            if (req.session && req.session.user) {
+                financials = AuthorizationService.filterSensitiveFields(req.session.user, financials);
+            }
             return res.json({ success: true, financials });
         } catch (err) {
             console.error('Preview Financials Error:', err);
@@ -957,6 +991,12 @@ class QuotationController {
             const history = await QuotationStatusHistory.find({ quotation: quotation._id })
                 .populate('changedBy', 'name role')
                 .sort({ createdAt: -1 });
+
+            if (req.xhr || (req.headers && req.headers.accept && req.headers.accept.includes('application/json')) || req.isJson) {
+                const quoteObj = quotation.toObject ? quotation.toObject() : quotation;
+                const sanitizedQuotation = AuthorizationService.filterSensitiveFields(sessionUser, quoteObj);
+                return res.json({ success: true, quotation: sanitizedQuotation, history });
+            }
 
             // Generate WhatsApp Sharing Text
             const acceptUrl = `${req.protocol}://${req.get('host')}/quotation/accept/${quotation.customerResponse.acceptanceToken}`;
@@ -1088,6 +1128,15 @@ class QuotationController {
                 return res.status(400).send('Attachment identifier is required.');
             }
 
+            // Path Traversal & Safe Filename Validation: reject traversal patterns and non-whitelisted characters
+            if (cleanFileId.includes('..') || cleanFileId.includes('/') || cleanFileId.includes('\\') || /[\0\r\n]/.test(cleanFileId) || !/^[a-zA-Z0-9_\-\.]+$/.test(cleanFileId)) {
+                return res.status(400).render('private/errors/403', {
+                    title: 'Invalid Request',
+                    message: 'Security Violation: Path traversal or invalid characters detected in document identifier.',
+                    currentUser: sessionUser
+                });
+            }
+
             let reqDoc = null;
             const QuotationRequest = require('../models/QuotationRequest');
 
@@ -1109,26 +1158,42 @@ class QuotationController {
             }
 
             if (reqDoc) {
-                    // Object-Level Authorization Check
-                    if (sessionUser.role === 'EMPLOYEE') {
-                        const isAssigned = reqDoc.assignedEmployee && String(reqDoc.assignedEmployee._id || reqDoc.assignedEmployee) === String(sessionUser._id);
-                        const isCreator = reqDoc.createdBy && String(reqDoc.createdBy._id || reqDoc.createdBy) === String(sessionUser._id);
+                // Object-Level Authorization Check for Employees
+                if (sessionUser.role === 'EMPLOYEE') {
+                    const isAssigned = reqDoc.assignedEmployee && String(reqDoc.assignedEmployee._id || reqDoc.assignedEmployee) === String(sessionUser._id);
+                    const isCreator = reqDoc.createdBy && String(reqDoc.createdBy._id || reqDoc.createdBy) === String(sessionUser._id);
 
-                        if (!isAssigned && !isCreator) {
-                            AuditService.log({
-                                action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
-                                user: sessionUser._id,
-                                role: sessionUser.role,
-                                targetResource: `/attachments/${cleanFileId}`,
-                                details: { reason: 'Employee attempted to download attachment of another staff member\'s request', requestId: reqDoc._id }
-                            });
-                            return res.status(403).render('private/errors/403', {
-                                title: 'Access Denied | Shivay Energy Solutions',
-                                message: 'HTTP 403 Forbidden: You do not possess permission to access attachments from another staff member\'s quotation request.',
-                                currentUser: sessionUser
-                            });
-                        }
+                    if (!isAssigned && !isCreator && !AuthorizationService.isPrimarySuperAdmin(sessionUser)) {
+                        AuditService.log({
+                            action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                            user: sessionUser._id,
+                            role: sessionUser.role,
+                            targetResource: `/attachments/${cleanFileId}`,
+                            details: { reason: 'Employee attempted to download attachment of another staff member\'s request', requestId: reqDoc._id }
+                        });
+                        return res.status(403).render('private/errors/403', {
+                            title: 'Access Denied | Shivay Energy Solutions',
+                            message: 'HTTP 403 Forbidden: You do not possess permission to access attachments from another staff member\'s quotation request.',
+                            currentUser: sessionUser
+                        });
                     }
+                } else if (sessionUser.role === 'BRANCH_MANAGER' || sessionUser.role === 'MANAGER') {
+                    // Branch Isolation Check for Branch Managers
+                    if (reqDoc.branch && !AuthorizationService.canAccessBranch(sessionUser, reqDoc.branch)) {
+                        AuditService.log({
+                            action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                            user: sessionUser._id,
+                            role: sessionUser.role,
+                            targetResource: `/attachments/${cleanFileId}`,
+                            details: { reason: 'Cross-branch quotation attachment access prohibited', requestId: reqDoc._id }
+                        });
+                        return res.status(403).render('private/errors/403', {
+                            title: 'Access Denied | Shivay Energy Solutions',
+                            message: 'HTTP 403 Forbidden: You cannot access quotation attachments belonging to another branch.',
+                            currentUser: sessionUser
+                        });
+                    }
+                }
 
                     const att = reqDoc.attachments.find(a =>
                         a.fileId === cleanFileId ||

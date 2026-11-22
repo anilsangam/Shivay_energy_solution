@@ -5,7 +5,20 @@ const Branch = require('../models/Branch');
 const Setting = require('../models/Setting');
 const AuditService = require('../services/auditService');
 const WebsiteService = require('../services/websiteService');
+const AuthorizationService = require('../services/authorizationService');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
+const {
+    MODULES,
+    PERMISSIONS,
+    SENSITIVE_FIELDS,
+    ROLE_MIGRATION_BASELINES,
+    getFullPermissionTree,
+    isValidPermission,
+    isValidFieldPermission,
+    filterValidPermissions,
+    filterValidFieldPermissions
+} = require('../config/permissionRegistry');
 
 // 1. SUPER ADMIN DASHBOARD
 exports.getDashboard = async (req, res) => {
@@ -224,27 +237,9 @@ exports.getQuotations = (req, res) => {
 };
 
 // 3. INVOICES MODULE
-// Helper to self-heal existing managers with legacy SES-EMP IDs or assigned managers (run on DB startup or maintenance)
+// Helper to self-heal existing managers with legacy SES-EMP IDs or assigned managers (deprecated: run explicitly via scripts/self_heal_managers.js)
 const selfHealManagers = async () => {
-    if (mongoose.connection && mongoose.connection.readyState === 1) {
-        try {
-            const managers = await User.find({ role: { $in: ['BRANCH_MANAGER', 'MANAGER'] } });
-            for (const m of managers) {
-                let modified = false;
-                if (m.employeeId && m.employeeId.startsWith('SES-EMP-')) {
-                    m.employeeId = m.employeeId.replace('SES-EMP-', 'SES-MGR-');
-                    modified = true;
-                }
-                if (m.managerId) {
-                    m.managerId = null;
-                    modified = true;
-                }
-                if (modified) {
-                    await m.save();
-                }
-            }
-        } catch (e) {}
-    }
+    console.warn('[DEPRECATION] selfHealManagers is deprecated and has been moved to scripts/self_heal_managers.js. It will not run automatically.');
 };
 exports.selfHealManagers = selfHealManagers;
 
@@ -1121,6 +1116,17 @@ exports.exportReportCsv = async (req, res) => {
         let filename = `solar_report_${type}_${Date.now()}.csv`;
         let csvContent = '';
 
+        const hasPii = AuthorizationService.hasFieldAccess(req.session ? req.session.user : null, 'fields.customer.pii.view');
+        const maskPhone = (phoneStr) => {
+            if (!phoneStr || phoneStr === 'N/A') return 'N/A';
+            if (hasPii) return phoneStr;
+            const clean = String(phoneStr).replace(/[^0-9]/g, '');
+            if (clean.length >= 10) {
+                return 'XXXXXX' + clean.slice(-4);
+            }
+            return 'XXXXXX';
+        };
+
         if (type === 'projects') {
             let list = [];
             if (mongoose.connection && mongoose.connection.readyState === 1) {
@@ -1133,7 +1139,7 @@ exports.exportReportCsv = async (req, res) => {
             csvContent = 'Project ID,Customer Name,Customer Mobile,City,Capacity (kW),System Type,Status,Created At\n';
             list.forEach(p => {
                 const cName = (p.customer && p.customer.name) ? `"${p.customer.name.replace(/"/g, '""')}"` : 'N/A';
-                const cMob = (p.customer && p.customer.mobile) ? p.customer.mobile : 'N/A';
+                const cMob = (p.customer && p.customer.mobile) ? maskPhone(p.customer.mobile) : 'N/A';
                 const cCity = (p.customer && p.customer.city) ? p.customer.city : 'Raisen';
                 csvContent += `${p.projectId || p._id},${cName},${cMob},${cCity},${p.capacityKw || 0},${p.systemType || 'On-Grid'},${p.status || 'NEW'},${p.createdAt ? new Date(p.createdAt).toISOString().split('T')[0] : ''}\n`;
             });
@@ -1150,7 +1156,7 @@ exports.exportReportCsv = async (req, res) => {
             csvContent = 'Invoice Number,Client Name,Client Mobile,Taxable Amount,GST Amount,Total Amount,Status,Issue Date\n';
             list.forEach(i => {
                 const clientName = (i.clientName || i.customerName) ? `"${(i.clientName || i.customerName).replace(/"/g, '""')}"` : 'N/A';
-                csvContent += `${i.invoiceNumber || i._id},${clientName},${i.clientMobile || i.customerMobile || 'N/A'},${i.subtotal || i.amount || 0},${i.gstAmount || 0},${i.totalAmount || i.total || 0},${i.status || i.paymentStatus || 'PAID'},${i.date || i.invoiceDate || ''}\n`;
+                csvContent += `${i.invoiceNumber || i._id},${clientName},${maskPhone(i.clientMobile || i.customerMobile || 'N/A')},${i.subtotal || i.amount || 0},${i.gstAmount || 0},${i.totalAmount || i.total || 0},${i.status || i.paymentStatus || 'PAID'},${i.date || i.invoiceDate || ''}\n`;
             });
         } else if (type === 'quotations') {
             let list = [];
@@ -1163,7 +1169,7 @@ exports.exportReportCsv = async (req, res) => {
             csvContent = 'Quotation Number,Customer Name,Mobile,System Capacity (kW),Final Price,Subsidy Amount,Status,Created At\n';
             list.forEach(q => {
                 const name = q.customerName ? `"${q.customerName.replace(/"/g, '""')}"` : 'N/A';
-                csvContent += `${q.quotationNumber || q._id},${name},${q.customerMobile || 'N/A'},${q.systemCapacityKw || 0},${q.finalPrice || 0},${q.subsidyAmount || 0},${q.status || 'PENDING'},${q.createdAt ? new Date(q.createdAt).toISOString().split('T')[0] : ''}\n`;
+                csvContent += `${q.quotationNumber || q._id},${name},${maskPhone(q.customerMobile || 'N/A')},${q.systemCapacityKw || 0},${q.finalPrice || 0},${q.subsidyAmount || 0},${q.status || 'PENDING'},${q.createdAt ? new Date(q.createdAt).toISOString().split('T')[0] : ''}\n`;
             });
         } else {
             return res.status(400).send('Invalid export type requested');
@@ -1489,7 +1495,7 @@ exports.createUser = async (req, res) => {
                 cleanEmpId = cleanEmpId.replace('SES-EMP-', 'SES-MGR-');
             }
         } else {
-            cleanEmpId = prefix + Math.floor(100 + Math.random() * 900);
+            cleanEmpId = `${prefix}${Date.now().toString().slice(-4)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
         }
 
         let createdUserObj = null;
@@ -1497,7 +1503,7 @@ exports.createUser = async (req, res) => {
             // Verify ID uniqueness
             const duplicateId = await User.findOne({ employeeId: cleanEmpId });
             if (duplicateId) {
-                cleanEmpId = prefix + Math.floor(100 + Math.random() * 900);
+                cleanEmpId = `${prefix}${Date.now().toString().slice(-4)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
             }
 
             createdUserObj = await User.create({
@@ -1527,6 +1533,10 @@ exports.createUser = async (req, res) => {
                 email: email.trim().toLowerCase(),
                 mobile: mobile.trim(),
                 role,
+                isPrimarySuperAdmin: false,
+                permissions: [],
+                fieldPermissions: [],
+                permissionVersion: 1,
                 employeeId: cleanEmpId,
                 branchId: branchId || 'br-raisen-1',
                 managerId: managerId || null,
@@ -1581,6 +1591,14 @@ exports.updateUserStatus = async (req, res) => {
 
         if (!targetUser) {
             return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        // Primary Super Admin cannot be deactivated or suspended
+        if (targetUser.isPrimarySuperAdmin && status !== 'ACTIVE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Security Policy Violation: The Primary Super Admin account cannot be deactivated, suspended, or rejected.'
+            });
         }
 
         // Branch Managers can only manage employees within their branch or team
@@ -1662,6 +1680,14 @@ exports.resetUserPassword = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
+        // Only Primary Super Admin themselves can reset their own password
+        if (targetUser.isPrimarySuperAdmin && !adminUser.isPrimarySuperAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: 'Security Policy Violation: Only the Primary Super Admin can modify the Primary Super Admin account.'
+            });
+        }
+
         if (targetUser.save) {
             targetUser.password = newPassword;
             targetUser.failedLoginAttempts = 0;
@@ -1736,6 +1762,284 @@ exports.assignManager = async (req, res) => {
     }
 };
 
+// 12.1 GET USER PERMISSIONS VIEW (PHASE 4 FBAC MANAGEMENT CONSOLE)
+exports.getUserPermissions = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currentUser = req.session.user;
+
+        let targetUser = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+            targetUser = await User.findById(id)
+                .populate('branchId', 'name code city')
+                .populate('authorizedBranches', 'name code city')
+                .populate('managerId', 'name email role employeeId')
+                .populate('permissionMetadata.assignedBy', 'name email role')
+                .select('-password')
+                .lean();
+        } else {
+            targetUser = await DataStore.getUserById(id);
+        }
+
+        if (!targetUser) {
+            return res.status(404).render('private/errors/403', {
+                title: 'Staff Member Not Found | Shivay Energy Solutions',
+                message: 'The requested staff account was not found in the personnel database.',
+                user: currentUser
+            });
+        }
+
+        let branchList = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            branchList = await Branch.find({ isActive: true }).select('name code city').lean().catch(() => []);
+        }
+        if (!branchList || branchList.length === 0) {
+            branchList = [
+                { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01', city: 'Raisen' },
+                { _id: 'br-bhopal-1', name: 'Bhopal Regional Hub', code: 'MP-BPL-02', city: 'Bhopal' },
+                { _id: 'br-vidisha-1', name: 'Vidisha Operational Center', code: 'MP-VDS-03', city: 'Vidisha' }
+            ];
+        }
+
+        const isTargetPrimaryAdmin = AuthorizationService.isPrimarySuperAdmin(targetUser);
+        const isCallerPrimaryAdmin = AuthorizationService.isPrimarySuperAdmin(currentUser);
+        const callerId = (currentUser._id?._id || currentUser._id || '').toString();
+        const targetId = (targetUser._id?._id || targetUser._id || '').toString();
+
+        // Target cannot be edited if they are Primary Super Admin, or if caller is editing their own permissions
+        const isSelf = callerId && targetId && callerId === targetId;
+        const canEdit = !isTargetPrimaryAdmin && !isSelf;
+
+        const permissionTree = getFullPermissionTree();
+
+        res.render('private/admin/user-permissions', {
+            title: `Manage Permissions: ${targetUser.name} | ${data.company.name}`,
+            data,
+            company: data.company,
+            targetUser,
+            isTargetPrimaryAdmin,
+            isCallerPrimaryAdmin,
+            canEdit,
+            isSelf,
+            permissionTree,
+            sensitiveFields: SENSITIVE_FIELDS,
+            roleBaselines: ROLE_MIGRATION_BASELINES,
+            modules: MODULES,
+            branches: branchList,
+            user: currentUser,
+            currentUser,
+            csrfToken: req.csrfToken ? req.csrfToken() : (req.session.csrfToken || ''),
+            activePage: 'admin-employees',
+            pageTitle: `Permissions & Security Scope: ${targetUser.name}`,
+            breadcrumbs: [
+                { label: 'Team', url: '/admin/employees' },
+                { label: 'Personnel', url: '/admin/employees' },
+                { label: `Permissions (${targetUser.name})` }
+            ]
+        });
+    } catch (err) {
+        console.error('Error fetching user permissions:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Error loading user permission management console.',
+            user: req.session.user
+        });
+    }
+};
+
+// 12.2 API: GET USER PERMISSIONS JSON
+exports.getUserPermissionsJson = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let targetUser = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+            targetUser = await User.findById(id).select('-password').lean();
+        } else {
+            targetUser = await DataStore.getUserById(id);
+        }
+
+        if (!targetUser) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        return res.json({
+            success: true,
+            user: {
+                _id: targetUser._id,
+                name: targetUser.name,
+                email: targetUser.email,
+                role: targetUser.role,
+                employeeId: targetUser.employeeId,
+                branchId: targetUser.branchId,
+                status: targetUser.status,
+                isPrimarySuperAdmin: AuthorizationService.isPrimarySuperAdmin(targetUser)
+            },
+            permissions: targetUser.permissions || [],
+            fieldPermissions: targetUser.fieldPermissions || [],
+            dataScope: targetUser.dataScope || 'BRANCH',
+            authorizedBranches: targetUser.authorizedBranches || [],
+            permissionVersion: targetUser.permissionVersion || 1,
+            permissionMetadata: targetUser.permissionMetadata || {}
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// 12.3 API: UPDATE USER PERMISSIONS & DATA SCOPE (GRANULAR FBAC ENGINE)
+exports.updateUserPermissions = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const callerUser = req.session.user;
+
+        let targetUser = null;
+        if (mongoose.connection && mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+            targetUser = await User.findById(id);
+        } else {
+            targetUser = await DataStore.getUserById(id);
+        }
+
+        if (!targetUser) {
+            return res.status(404).json({ success: false, message: 'Target user not found.' });
+        }
+
+        // 1. Primary Super Admin Protection: Root authority permissions cannot be altered or revoked
+        if (AuthorizationService.isPrimarySuperAdmin(targetUser)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Security Violation: Primary Super Admin permissions are protected and cannot be modified or restricted.'
+            });
+        }
+
+        // 2. Self-Escalation Prevention: Users cannot alter their own permissions
+        const callerId = (callerUser._id?._id || callerUser._id || '').toString();
+        const targetId = (targetUser._id?._id || targetUser._id || '').toString();
+        if (callerId && targetId && callerId === targetId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Privilege Escalation: Users cannot modify their own permissions or security scope.'
+            });
+        }
+
+        // 3. Privilege Escalation & Delegation Boundaries Check
+        const requestedChanges = {
+            permissions: req.body.permissions,
+            fieldPermissions: req.body.fieldPermissions,
+            role: targetUser.role
+        };
+        const escalationCheck = AuthorizationService.preventPrivilegeEscalation(callerUser, targetUser, requestedChanges);
+        if (!escalationCheck.allowed) {
+            return res.status(403).json({
+                success: false,
+                message: escalationCheck.reason || 'Privilege Escalation: Unauthorized permission assignment.'
+            });
+        }
+
+        // 4. Validate Permission Strings
+        const rawPermissions = Array.isArray(req.body.permissions) ? req.body.permissions : [];
+        const invalidPerms = rawPermissions.filter(p => !isValidPermission(p));
+        if (invalidPerms.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid permission keys detected: ${invalidPerms.slice(0, 3).join(', ')}`
+            });
+        }
+
+        // 5. Validate Field Permission Strings
+        const rawFieldPermissions = Array.isArray(req.body.fieldPermissions) ? req.body.fieldPermissions : [];
+        const invalidFields = rawFieldPermissions.filter(f => !isValidFieldPermission(f));
+        if (invalidFields.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid field permission keys detected: ${invalidFields.slice(0, 3).join(', ')}`
+            });
+        }
+
+        const validPermissions = Array.from(new Set(filterValidPermissions(rawPermissions)));
+        const validFieldPermissions = Array.from(new Set(filterValidFieldPermissions(rawFieldPermissions)));
+
+        // 6. Validate Data Scope
+        const validScopes = ['OWN', 'ASSIGNED', 'BRANCH', 'MULTI_BRANCH', 'GLOBAL'];
+        let dataScope = req.body.dataScope || targetUser.dataScope || 'BRANCH';
+        if (!validScopes.includes(dataScope)) {
+            dataScope = 'BRANCH';
+        }
+
+        // Only Primary Super Admin can grant GLOBAL enterprise data scope
+        if (dataScope === 'GLOBAL' && !AuthorizationService.isPrimarySuperAdmin(callerUser)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Security Violation: Only the Primary Super Admin can grant GLOBAL enterprise data scope.'
+            });
+        }
+
+        let authorizedBranches = Array.isArray(req.body.authorizedBranches) ? req.body.authorizedBranches : [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            authorizedBranches = authorizedBranches.filter(bId => mongoose.isValidObjectId(bId));
+        }
+
+        // 7. Increment Permission Version & Update Metadata
+        const newVersion = (targetUser.permissionVersion || 1) + 1;
+        const metadata = {
+            assignedBy: callerUser._id,
+            assignedAt: new Date(),
+            notes: req.body.notes ? String(req.body.notes).trim() : ''
+        };
+
+        if (mongoose.connection && mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+            await User.findByIdAndUpdate(id, {
+                $set: {
+                    permissions: validPermissions,
+                    fieldPermissions: validFieldPermissions,
+                    dataScope: dataScope,
+                    authorizedBranches: authorizedBranches,
+                    permissionVersion: newVersion,
+                    permissionMetadata: metadata
+                }
+            }, { new: true, runValidators: true });
+        } else {
+            targetUser.permissions = validPermissions;
+            targetUser.fieldPermissions = validFieldPermissions;
+            targetUser.dataScope = dataScope;
+            targetUser.authorizedBranches = authorizedBranches;
+            targetUser.permissionVersion = newVersion;
+            targetUser.permissionMetadata = metadata;
+        }
+
+        // 8. Audit Event Recording
+        AuditService.log({
+            action: 'PERMISSIONS_UPDATE',
+            user: callerUser._id,
+            targetUser: targetUser._id,
+            role: callerUser.role,
+            ipAddress: req.ip,
+            details: {
+                targetName: targetUser.name,
+                targetEmail: targetUser.email,
+                targetRole: targetUser.role,
+                permissionCount: validPermissions.length,
+                fieldPermissionCount: validFieldPermissions.length,
+                dataScope: dataScope,
+                version: newVersion,
+                assignedBy: callerUser.name || callerUser.email,
+                notes: metadata.notes
+            }
+        });
+
+        return res.json({
+            success: true,
+            message: `Permissions updated successfully for ${targetUser.name}.`,
+            permissionVersion: newVersion,
+            permissionCount: validPermissions.length,
+            fieldPermissionCount: validFieldPermissions.length,
+            dataScope: dataScope
+        });
+    } catch (err) {
+        console.error('Error updating permissions:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
 // 13. API: UPDATE ENQUIRY STATUS
 exports.updateEnquiryStatus = (req, res) => {
     const { id, status, note } = req.body;
@@ -1793,8 +2097,72 @@ exports.saveInvoice = async (req, res) => {
     }
 
     const invData = req.body;
-    if (!invData.customerName || !invData.totalAmount) {
-        return res.status(400).json({ success: false, message: 'Customer name and amount are required' });
+    if (!invData.customerName) {
+        return res.status(400).json({ success: false, message: 'Customer name is required' });
+    }
+
+    // 1. Server-side Financial Calculations & Validation (Prevent trusting frontend calculations)
+    let validatedItems = [];
+    let calculatedSubtotal = 0;
+    let calculatedCgst = 0;
+    let calculatedSgst = 0;
+    let calculatedGstAmount = 0;
+    let calculatedTotalAmount = 0;
+    const gstRate = parseFloat(invData.gstRate) || 12;
+
+    if (Array.isArray(invData.items) && invData.items.length > 0) {
+        for (const it of invData.items) {
+            const qty = Math.max(0.001, parseFloat(it.qty) || 1);
+            const rate = Math.max(0, parseFloat(it.rate) || 0);
+            const lineAmount = Math.round(qty * rate * 100) / 100;
+            calculatedSubtotal += lineAmount;
+            validatedItems.push({
+                description: String(it.description || 'Solar Component').trim(),
+                hsnCode: String(it.hsnCode || '8541').trim(),
+                qty,
+                rate,
+                amount: lineAmount
+            });
+        }
+        calculatedSubtotal = Math.round(calculatedSubtotal * 100) / 100;
+        const halfRate = gstRate / 2;
+        calculatedCgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
+        calculatedSgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
+        calculatedGstAmount = calculatedCgst + calculatedSgst;
+        calculatedTotalAmount = Math.round((calculatedSubtotal + calculatedGstAmount) * 100) / 100;
+    } else if (invData.subtotal !== undefined && invData.subtotal !== null && parseFloat(invData.subtotal) > 0) {
+        calculatedSubtotal = Math.max(0, parseFloat(invData.subtotal) || 0);
+        const halfRate = gstRate / 2;
+        calculatedCgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
+        calculatedSgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
+        calculatedGstAmount = calculatedCgst + calculatedSgst;
+        calculatedTotalAmount = Math.round((calculatedSubtotal + calculatedGstAmount) * 100) / 100;
+    } else {
+        // Direct totalAmount supplied without separate subtotal or item breakdown
+        calculatedTotalAmount = Math.max(0, parseFloat(invData.totalAmount) || 0);
+        calculatedSubtotal = Math.round((calculatedTotalAmount / (1 + gstRate / 100)) * 100) / 100;
+        calculatedGstAmount = Math.round((calculatedTotalAmount - calculatedSubtotal) * 100) / 100;
+        calculatedCgst = Math.round((calculatedGstAmount / 2) * 100) / 100;
+        calculatedSgst = Math.round((calculatedGstAmount - calculatedCgst) * 100) / 100;
+    }
+
+    if (calculatedTotalAmount <= 0) {
+        return res.status(400).json({ success: false, message: 'Invoice amount must be greater than zero' });
+    }
+
+    // Payment Tracking & Safe Default
+    const paidAmount = Math.max(0, parseFloat(invData.paidAmount) || 0);
+    const balanceAmount = Math.max(0, calculatedTotalAmount - paidAmount);
+    let paymentStatus = 'unpaid';
+
+    if (invData.paymentStatus === 'cancelled') {
+        paymentStatus = 'cancelled';
+    } else if (paidAmount >= calculatedTotalAmount && calculatedTotalAmount > 0) {
+        paymentStatus = 'paid';
+    } else if (paidAmount > 0) {
+        paymentStatus = 'partially_paid';
+    } else if (invData.paymentStatus && ['paid', 'partially_paid', 'unpaid', 'overdue', 'cancelled'].includes(invData.paymentStatus)) {
+        paymentStatus = invData.paymentStatus;
     }
 
     // Check if invoice already exists in DB or in-memory
@@ -1803,11 +2171,29 @@ exports.saveInvoice = async (req, res) => {
     if (mongoose.connection.readyState === 1 && invData.invoiceNumber) {
         try {
             existingInvoice = await Invoice.findOne({ invoiceNumber: invData.invoiceNumber });
-        } catch (e) {}
+        } catch (dbFindErr) {
+            console.error('Invoice DB lookup error:', dbFindErr);
+            return res.status(500).json({ success: false, message: 'Database error occurred during invoice lookup.' });
+        }
     }
     const memExisting = DataStore.getAllInvoices(true).find(i => i.invoiceNumber === invData.invoiceNumber);
 
     if (existingInvoice || memExisting) {
+        // Enforce explicit edit permission for updating existing invoice records
+        if (!AuthorizationService.hasPermission(user, 'invoices.records.edit')) {
+            AuditService.log({
+                action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                user: user ? user._id : null,
+                role: user ? user.role : 'GUEST',
+                ipAddress: req.ip,
+                details: { reason: 'Missing required permission: invoices.records.edit' }
+            });
+            return res.status(403).json({
+                success: false,
+                message: 'HTTP 403 Forbidden: You do not have permission to edit invoices (invoices.records.edit required).'
+            });
+        }
+
         // STRICT LOCK: Customer details CANNOT be changed during invoice update
         const lockedCustomerName = (existingInvoice && existingInvoice.customerName) || (memExisting && memExisting.customerName);
         const lockedCustomerMobile = (existingInvoice && existingInvoice.customerMobile) || (memExisting && memExisting.customerMobile);
@@ -1825,11 +2211,16 @@ exports.saveInvoice = async (req, res) => {
         invData.projectId = lockedProjectId;
         invData.quotationId = lockedQuotationId;
 
-        // If existing in MongoDB, store snapshot into previousVersions before updating
+        // If existing in MongoDB, store complete historical snapshot into previousVersions before updating
         if (existingInvoice) {
             existingInvoice.previousVersions = existingInvoice.previousVersions || [];
             existingInvoice.previousVersions.push({
                 version: existingInvoice.version || 1,
+                customerName: existingInvoice.customerName,
+                customerMobile: existingInvoice.customerMobile,
+                customerGstin: existingInvoice.customerGstin,
+                customerAddress: existingInvoice.customerAddress,
+                plantCapacityKw: existingInvoice.plantCapacityKw,
                 items: existingInvoice.items || [],
                 subtotal: existingInvoice.subtotal,
                 gstRate: existingInvoice.gstRate || 12,
@@ -1837,57 +2228,102 @@ exports.saveInvoice = async (req, res) => {
                 sgst: existingInvoice.sgst,
                 gstAmount: existingInvoice.gstAmount,
                 totalAmount: existingInvoice.totalAmount,
+                paidAmount: existingInvoice.paidAmount || 0,
+                balanceAmount: existingInvoice.balanceAmount || existingInvoice.totalAmount,
                 paymentStatus: existingInvoice.paymentStatus,
                 paymentMethod: existingInvoice.paymentMethod,
                 invoiceDate: existingInvoice.invoiceDate,
-                plantCapacityKw: existingInvoice.plantCapacityKw,
+                discomConsumerNo: existingInvoice.discomConsumerNo,
+                project: existingInvoice.project,
+                quotation: existingInvoice.quotation,
+                branch: existingInvoice.branch,
                 updatedByUser: user._id,
                 updatedAt: new Date()
             });
+
             existingInvoice.version = (existingInvoice.version || 1) + 1;
             existingInvoice.plantCapacityKw = parseFloat(invData.plantCapacityKw) || existingInvoice.plantCapacityKw;
-            existingInvoice.items = invData.items || existingInvoice.items;
-            existingInvoice.subtotal = parseFloat(invData.subtotal) || existingInvoice.subtotal;
-            existingInvoice.cgst = parseFloat(invData.cgst) || existingInvoice.cgst;
-            existingInvoice.sgst = parseFloat(invData.sgst) || existingInvoice.sgst;
-            existingInvoice.gstAmount = (parseFloat(invData.cgst) || 0) + (parseFloat(invData.sgst) || 0);
-            existingInvoice.totalAmount = parseFloat(invData.totalAmount) || existingInvoice.totalAmount;
-            existingInvoice.paymentStatus = invData.paymentStatus || existingInvoice.paymentStatus;
+            existingInvoice.items = validatedItems.length > 0 ? validatedItems : existingInvoice.items;
+            existingInvoice.subtotal = calculatedSubtotal;
+            existingInvoice.cgst = calculatedCgst;
+            existingInvoice.sgst = calculatedSgst;
+            existingInvoice.gstAmount = calculatedGstAmount;
+            existingInvoice.totalAmount = calculatedTotalAmount;
+            existingInvoice.paidAmount = paidAmount;
+            existingInvoice.balanceAmount = balanceAmount;
+            existingInvoice.paymentStatus = paymentStatus;
             existingInvoice.paymentMethod = invData.paymentMethod || existingInvoice.paymentMethod;
             existingInvoice.invoiceDate = invData.date || existingInvoice.invoiceDate;
 
-            await existingInvoice.save().catch(e => console.error('Error saving updated invoice:', e));
+            try {
+                await existingInvoice.save();
+            } catch (dbSaveErr) {
+                console.error('Error saving updated invoice to MongoDB:', dbSaveErr);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Database persistence error: Failed to update invoice.'
+                });
+            }
+        }
+    } else {
+        // Enforce explicit create permission for new invoice records
+        if (!AuthorizationService.hasPermission(user, 'invoices.records.create')) {
+            AuditService.log({
+                action: 'UNAUTHORIZED_ACCESS_ATTEMPT',
+                user: user ? user._id : null,
+                role: user ? user.role : 'GUEST',
+                ipAddress: req.ip,
+                details: { reason: 'Missing required permission: invoices.records.create' }
+            });
+            return res.status(403).json({
+                success: false,
+                message: 'HTTP 403 Forbidden: You do not have permission to create invoices (invoices.records.create required).'
+            });
         }
     }
 
     invData.createdByUser = user._id;
     invData.branch = user.branchId;
+    invData.subtotal = calculatedSubtotal;
+    invData.cgst = calculatedCgst;
+    invData.sgst = calculatedSgst;
+    invData.totalAmount = calculatedTotalAmount;
+    invData.paidAmount = paidAmount;
+    invData.balanceAmount = balanceAmount;
+    invData.paymentStatus = paymentStatus;
+    if (validatedItems.length > 0) {
+        invData.items = validatedItems;
+    }
 
-    const saved = DataStore.addInvoice(invData);
-
-    // If new invoice and MongoDB is ready
+    // If new invoice and MongoDB is ready, persist to MongoDB FIRST before updating in-memory store
     if (!existingInvoice && mongoose.connection.readyState === 1) {
         try {
+            const crypto = require('crypto');
+            const safeInvNum = invData.invoiceNumber || (`SES-INV-2026-${Date.now().toString().slice(-6)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`);
+            invData.invoiceNumber = safeInvNum;
+
             const mongoData = {
-                invoiceNumber: saved.invoiceNumber,
+                invoiceNumber: safeInvNum,
                 version: 1,
                 previousVersions: [],
                 isArchived: false,
-                customerName: saved.customerName,
-                customerMobile: saved.customerMobile,
-                customerAddress: saved.customerAddress,
-                customerGstin: saved.customerGstin || '',
-                plantCapacityKw: saved.plantCapacityKw,
-                items: invData.items || [],
-                subtotal: saved.subtotal,
-                cgst: saved.cgst,
-                sgst: saved.sgst,
-                gstRate: 12,
-                gstAmount: (saved.cgst || 0) + (saved.sgst || 0),
-                totalAmount: saved.totalAmount,
-                paymentStatus: saved.paymentStatus || 'paid',
-                paymentMethod: saved.paymentMethod,
-                invoiceDate: saved.date,
+                customerName: invData.customerName,
+                customerMobile: invData.customerMobile,
+                customerAddress: invData.customerAddress || '',
+                customerGstin: invData.customerGstin || '',
+                plantCapacityKw: parseFloat(invData.plantCapacityKw) || 0,
+                items: validatedItems,
+                subtotal: calculatedSubtotal,
+                cgst: calculatedCgst,
+                sgst: calculatedSgst,
+                gstRate: gstRate,
+                gstAmount: calculatedGstAmount,
+                totalAmount: calculatedTotalAmount,
+                paidAmount: paidAmount,
+                balanceAmount: balanceAmount,
+                paymentStatus: paymentStatus,
+                paymentMethod: invData.paymentMethod || 'Bank Transfer (NEFT/RTGS/UPI)',
+                invoiceDate: invData.date || new Date().toISOString().split('T')[0],
                 discomConsumerNo: invData.discomConsumerNo || '',
                 project: invData.projectId || null,
                 quotation: invData.quotationId || null,
@@ -1897,8 +2333,14 @@ exports.saveInvoice = async (req, res) => {
             await Invoice.create(mongoData);
         } catch (e) {
             console.error('Invoice create DB error:', e);
+            if (e.code === 11000) {
+                return res.status(409).json({ success: false, message: 'An invoice with this invoice number already exists.' });
+            }
+            return res.status(500).json({ success: false, message: 'Database persistence error: Failed to create invoice.' });
         }
     }
+
+    const saved = DataStore.addInvoice(invData);
 
     AuditService.log({
         action: existingInvoice ? 'INVOICE_UPDATED' : 'INVOICE_GENERATED',

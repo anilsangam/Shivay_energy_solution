@@ -155,6 +155,10 @@ class AuthController {
                     mobile: user.mobile,
                     employeeId: user.employeeId,
                     role: user.role,
+                    isPrimarySuperAdmin: user.isPrimarySuperAdmin === true,
+                    permissions: user.permissions || [],
+                    fieldPermissions: user.fieldPermissions || [],
+                    permissionVersion: user.permissionVersion || 1,
                     branchId: user.branchId,
                     status: user.status
                 };

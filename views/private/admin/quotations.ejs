@@ -1,5 +1,22 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+    const checkField = (typeof hasFieldAccess === 'function')
+        ? hasFieldAccess
+        : ((f) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.fieldPermissions) && authUser.fieldPermissions.includes(f))));
+
+    const canApproveQuotation = checkPerm('quotations.approval.approve');
+    const canCreateQuotation = checkPerm('quotations.preparation.create');
+    const canViewQuotationDoc = checkPerm('quotations.document.view');
+    const canViewCrm = checkPerm('crm.customers.view');
+    const canRejectRequest = checkPerm('quotations.requests.reject');
+    const canViewCostBreakdown = checkField('fields.quotation.cost_breakdown.view');
+%>
+
 <link rel="stylesheet" href="/css/private/quotations.css">
 
 <!-- TOP ROW: LEFT 50% STATS & SEARCH / RIGHT 50% COMPACT INCOMING REQUESTS -->
@@ -110,12 +127,16 @@
                     <span class="badge bg-primary text-white fw-bold rounded-pill" style="font-size: 10px; padding: 2px 6px;"><%= (typeof requests !== 'undefined' && requests) ? requests.length : 0 %></span>
                 </div>
                 <div class="d-flex gap-1">
-                    <a href="/admin/customers" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 10px; border-radius: 4px; height: 24px; line-height: 22px;">
-                        <i class="icofont-users-alt-2 me-1"></i> CRM
-                    </a>
-                    <a href="/admin/quotations/new" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 10px; border-radius: 4px; height: 24px; line-height: 22px;">
-                        <i class="icofont-plus-circle me-1"></i> New
-                    </a>
+                    <% if (canViewCrm) { %>
+                        <a href="/admin/customers" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-semibold" style="font-size: 10px; border-radius: 4px; height: 24px; line-height: 22px;">
+                            <i class="icofont-users-alt-2 me-1"></i> CRM
+                        </a>
+                    <% } %>
+                    <% if (canCreateQuotation) { %>
+                        <a href="/admin/quotations/new" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" style="font-size: 10px; border-radius: 4px; height: 24px; line-height: 22px;">
+                            <i class="icofont-plus-circle me-1"></i> New
+                        </a>
+                    <% } %>
                 </div>
             </div>
 
@@ -164,15 +185,19 @@
                                             <i class="icofont-eye"></i>
                                         </a>
                                         <% if (r.status !== 'QUOTATION_PREPARED' && r.status !== 'REJECTED') { %>
-                                            <a href="/admin/quotations/prepare/<%= r._id %>" class="btn btn-sm btn-success py-0 px-1 text-white ms-1" title="Prepare & Approve Official Quotation" style="font-size: 11px; border-radius: 4px;">
-                                                <i class="icofont-check-circled"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-outline-warning py-0 px-1 ms-1" onclick="adminRequestRevision('<%= r._id %>', '<%= r.requestNumber %>')" title="Request Revision" style="font-size: 11px; border-radius: 4px;">
-                                                <i class="icofont-refresh"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="adminRejectRequest('<%= r._id %>', '<%= r.requestNumber %>')" title="Reject Request" style="font-size: 11px; border-radius: 4px;">
-                                                <i class="icofont-close-circled"></i>
-                                            </button>
+                                            <% if (canCreateQuotation) { %>
+                                                <a href="/admin/quotations/prepare/<%= r._id %>" class="btn btn-sm btn-success py-0 px-1 text-white ms-1" title="Prepare & Approve Official Quotation" style="font-size: 11px; border-radius: 4px;">
+                                                    <i class="icofont-check-circled"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-warning py-0 px-1 ms-1" onclick="adminRequestRevision('<%= r._id %>', '<%= r.requestNumber %>')" title="Request Revision" style="font-size: 11px; border-radius: 4px;">
+                                                    <i class="icofont-refresh"></i>
+                                                </button>
+                                            <% } %>
+                                            <% if (canRejectRequest) { %>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" onclick="adminRejectRequest('<%= r._id %>', '<%= r.requestNumber %>')" title="Reject Request" style="font-size: 11px; border-radius: 4px;">
+                                                    <i class="icofont-close-circled"></i>
+                                                </button>
+                                            <% } %>
                                         <% } else if (r.linkedQuotation) { %>
                                             <a href="/admin/quotations/<%= r.linkedQuotation._id || r.linkedQuotation %>" class="btn btn-sm btn-outline-success py-0 px-1 ms-1" title="View Quote" style="font-size: 11px; border-radius: 4px;">
                                                 <i class="icofont-file-document"></i>
@@ -293,9 +318,11 @@
                                 <td class="text-end approved-actions-cell">
                                     <div class="approved-actions-grid">
                                         <!-- ROW 1: PDF & SHARE -->
-                                        <a href="/quotations/<%= q._id %>/document" target="_blank" class="btn btn-outline-danger" title="Download & Print PDF">
-                                            <i class="icofont-file-pdf"></i> PDF
-                                        </a>
+                                        <% if (canViewQuotationDoc) { %>
+                                            <a href="/quotations/<%= q._id %>/document" target="_blank" class="btn btn-outline-danger" title="Download & Print PDF">
+                                                <i class="icofont-file-pdf"></i> PDF
+                                            </a>
+                                        <% } %>
 
                                         <% if (['APPROVED', 'SHARED', 'CUSTOMER_ACCEPTED'].includes(q.status)) { %>
                                             <button type="button" class="btn btn-share btn-open-share-modal" data-quote="<%= JSON.stringify({
@@ -324,16 +351,24 @@
                                         </a>
 
                                         <% if (q.status === 'PENDING_APPROVAL') { %>
-                                            <button type="button" class="btn btn-success text-white fw-bold" onclick="adminApprove('<%= q._id %>', '<%= q.quotationNumber %>')" title="Super Admin Authorize">
-                                                <i class="icofont-check-circled"></i> Approve
-                                            </button>
+                                            <% if (canApproveQuotation) { %>
+                                                <button type="button" class="btn btn-success text-white fw-bold" onclick="adminApprove('<%= q._id %>', '<%= q.quotationNumber %>')" title="Authorize Proposal">
+                                                    <i class="icofont-check-circled"></i> Approve
+                                                </button>
+                                            <% } else { %>
+                                                <span class="action-pill-badge bg-warning text-dark border">
+                                                    <i class="icofont-clock-time"></i> Pending Authorization
+                                                </span>
+                                            <% } %>
                                         <% } else if (q.status === 'APPROVED' || q.status === 'SHARED') { %>
                                             <button type="button" class="btn btn-outline-primary fw-bold" onclick="openCustomerResponseModal('<%= q._id %>', '<%= q.quotationNumber %>', '<%= q.status %>', '<%= (q.quotationRequestId && (q.quotationRequestId._id || q.quotationRequestId)) || '' %>')" title="Actions, Revision & Client Decision">
                                                 <i class="icofont-navigation-menu"></i> Actions
                                             </button>
-                                            <a href="/admin/quotations/<%= q._id %>/edit" class="btn btn-outline-warning" title="Revise Quotation Details & Pricing">
-                                                <i class="icofont-edit"></i> Revise
-                                            </a>
+                                            <% if (canCreateQuotation) { %>
+                                                <a href="/admin/quotations/<%= q._id %>/edit" class="btn btn-outline-warning" title="Revise Quotation Details & Pricing">
+                                                    <i class="icofont-edit"></i> Revise
+                                                </a>
+                                            <% } %>
                                         <% } else if (q.status === 'CUSTOMER_ACCEPTED') { %>
                                             <span class="action-pill-badge bg-success-subtle text-success border border-success-subtle" title="Customer Accepted - Project Active">
                                                 <i class="icofont-check"></i> Accepted

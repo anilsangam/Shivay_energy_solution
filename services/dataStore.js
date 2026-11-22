@@ -8,7 +8,85 @@ const Invoice = require('../models/Invoice');
 const Attendance = require('../models/Attendance');
 const Complaint = require('../models/Complaint');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const dateUtils = require('./dateUtils');
+const { PERMISSIONS, SENSITIVE_FIELDS, ROLE_MIGRATION_BASELINES } = require('../config/permissionRegistry');
+const AUTH_CONFIG = require('../config/authConfig');
+const AuthorizationService = require('./authorizationService');
+
+function enrichUserPermissions(u) {
+    if (!u) return u;
+    if (u.isPrimarySuperAdmin === undefined) {
+        u.isPrimarySuperAdmin = AUTH_CONFIG.isPrimarySuperAdmin(u);
+    }
+    if (!u.permissions) {
+        if (u.isPrimarySuperAdmin) {
+            u.permissions = Object.keys(PERMISSIONS);
+            u.fieldPermissions = Object.keys(SENSITIVE_FIELDS);
+        } else if (ROLE_MIGRATION_BASELINES[u.role]) {
+            u.permissions = [...ROLE_MIGRATION_BASELINES[u.role].permissions];
+            u.fieldPermissions = [...ROLE_MIGRATION_BASELINES[u.role].fieldPermissions];
+        } else {
+            u.permissions = [];
+            u.fieldPermissions = [];
+        }
+    }
+    if (u.permissionVersion === undefined) {
+        u.permissionVersion = 1;
+    }
+    if (u.dataScope === undefined) {
+        u.dataScope = 'BRANCH';
+    }
+    if (!Array.isArray(u.authorizedBranches)) {
+        u.authorizedBranches = [];
+    }
+    if (!u.hasPermission) {
+        u.hasPermission = function(key) {
+            return AuthorizationService.hasPermission(this, key);
+        };
+    }
+    if (!u.hasAnyPermission) {
+        u.hasAnyPermission = function(keys = []) {
+            return AuthorizationService.hasAnyPermission(this, keys);
+        };
+    }
+    if (!u.hasAllPermissions) {
+        u.hasAllPermissions = function(keys = []) {
+            return AuthorizationService.hasAllPermissions(this, keys);
+        };
+    }
+    if (!u.hasFieldAccess) {
+        u.hasFieldAccess = function(key) {
+            return AuthorizationService.hasFieldAccess(this, key);
+        };
+    }
+    if (!u.hasModuleAccess) {
+        u.hasModuleAccess = function(moduleKey) {
+            return AuthorizationService.hasModuleAccess(this, moduleKey);
+        };
+    }
+    if (!u.hasFeatureAccess) {
+        u.hasFeatureAccess = function(moduleKey, featureKey) {
+            return AuthorizationService.hasFeatureAccess(this, moduleKey, featureKey);
+        };
+    }
+    if (!u.hasActionAccess) {
+        u.hasActionAccess = function(moduleKey, featureKey, actionKey) {
+            return AuthorizationService.hasActionAccess(this, moduleKey, featureKey, actionKey);
+        };
+    }
+    if (!u.canAccessBranch) {
+        u.canAccessBranch = function(targetBranchId) {
+            return AuthorizationService.canAccessBranch(this, targetBranchId);
+        };
+    }
+    if (!u.getAccessibleDataScope) {
+        u.getAccessibleDataScope = function(moduleKey) {
+            return AuthorizationService.getAccessibleDataScope(this, moduleKey);
+        };
+    }
+    return u;
+}
 
 // Seed In-Memory User Directory (With real team and manager relationships)
 const managerSeedId = new mongoose.Types.ObjectId('655000000000000000000002');
@@ -22,6 +100,10 @@ let inMemoryUsers = [
         mobile: '+91 70005 75496',
         employeeId: 'SES-ADMIN-01',
         role: 'SUPER_ADMIN',
+        isPrimarySuperAdmin: true,
+        permissions: Object.keys(PERMISSIONS),
+        fieldPermissions: Object.keys(SENSITIVE_FIELDS),
+        permissionVersion: 1,
         status: 'ACTIVE',
         designation: 'Managing Director & Founder',
         department: 'Executive Leadership',
@@ -37,6 +119,10 @@ let inMemoryUsers = [
         mobile: '+91 93997 61750',
         employeeId: 'SES-MGR-01',
         role: 'BRANCH_MANAGER',
+        isPrimarySuperAdmin: false,
+        permissions: [...ROLE_MIGRATION_BASELINES.BRANCH_MANAGER.permissions],
+        fieldPermissions: [...ROLE_MIGRATION_BASELINES.BRANCH_MANAGER.fieldPermissions],
+        permissionVersion: 1,
         status: 'ACTIVE',
         designation: 'General Operations Manager',
         department: 'Operations & DISCOM Approvals',
@@ -53,6 +139,10 @@ let inMemoryUsers = [
         mobile: '+91 98261 44521',
         employeeId: 'SES-EMP-03',
         role: 'EMPLOYEE',
+        isPrimarySuperAdmin: false,
+        permissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.permissions],
+        fieldPermissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.fieldPermissions],
+        permissionVersion: 1,
         status: 'ACTIVE',
         designation: 'Senior Solar Installation Technician',
         department: 'EPC Installation & Maintenance',
@@ -69,6 +159,10 @@ let inMemoryUsers = [
         mobile: '+91 94250 88712',
         employeeId: 'SES-EMP-99',
         role: 'EMPLOYEE',
+        isPrimarySuperAdmin: false,
+        permissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.permissions],
+        fieldPermissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.fieldPermissions],
+        permissionVersion: 1,
         status: 'ACTIVE',
         designation: 'Solar Site Survey Specialist',
         department: 'Field Surveys & Feasibility',
@@ -85,6 +179,10 @@ let inMemoryUsers = [
         mobile: '+91 99933 11204',
         employeeId: 'SES-EMP-04',
         role: 'EMPLOYEE',
+        isPrimarySuperAdmin: false,
+        permissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.permissions],
+        fieldPermissions: [...ROLE_MIGRATION_BASELINES.EMPLOYEE.fieldPermissions],
+        permissionVersion: 1,
         status: 'ACTIVE',
         designation: 'Electrical & Net-Meter Testing Engineer',
         department: 'Grid Integration & Net-Metering',
@@ -95,6 +193,8 @@ let inMemoryUsers = [
         createdAt: new Date('2026-03-01')
     }
 ];
+
+inMemoryUsers.forEach(enrichUserPermissions);
 
 // Empty storage collections for production data (no seed/dummy fallback records)
 let enquiries = [];
@@ -111,7 +211,7 @@ class DataStore {
     }
 
     static addEnquiry(data) {
-        const id = 'ENQ-' + Math.floor(100000 + Math.random() * 900000);
+        const id = 'ENQ-' + Date.now().toString().slice(-6) + '-' + crypto.randomBytes(2).toString('hex').toUpperCase();
         const todayStr = new Date().toLocaleDateString('en-IN', {
             day: '2-digit',
             month: '2-digit',
@@ -176,7 +276,7 @@ class DataStore {
     }
 
     static addQuotation(data) {
-        const num = data.quotationNumber || ('SES-Q2026-' + Math.floor(400 + Math.random() * 600));
+        const num = data.quotationNumber || ('SES-Q2026-' + Date.now().toString().slice(-4) + crypto.randomBytes(2).toString('hex').toUpperCase());
         const todayStr = new Date().toLocaleDateString('en-IN', {
             day: '2-digit',
             month: '2-digit',
@@ -226,7 +326,8 @@ class DataStore {
     }
 
     static addInvoice(data) {
-        const num = data.invoiceNumber || ('SES-INV-2026-' + Math.floor(120 + Math.random() * 800));
+        const crypto = require('crypto');
+        const num = data.invoiceNumber || ('SES-INV-2026-' + Date.now().toString().slice(-6) + '-' + crypto.randomBytes(2).toString('hex').toUpperCase());
         const todayStr = data.date || new Date().toLocaleDateString('en-IN', {
             day: '2-digit',
             month: '2-digit',
@@ -440,7 +541,7 @@ class DataStore {
     static addComplaint(complaintData) {
         const complaint = {
             _id: complaintData._id || new mongoose.Types.ObjectId(),
-            ticketId: complaintData.ticketId || ('SHIVAY-' + Math.floor(10000 + Math.random() * 90000)),
+            ticketId: complaintData.ticketId || ('SHIVAY-' + Date.now().toString().slice(-4) + crypto.randomBytes(2).toString('hex').toUpperCase()),
             customerName: complaintData.customerName,
             mobile: complaintData.mobile,
             email: complaintData.email || '',
@@ -525,14 +626,14 @@ class DataStore {
             } catch (err) {}
         }
         const mem = inMemoryUsers.find(u => u._id && u._id.toString() === idStr);
-        return mem || null;
+        return mem ? enrichUserPermissions(mem) : null;
     }
 
     static getUserByIdSync(id) {
         if (!id) return null;
         const idStr = id.toString();
         const mem = inMemoryUsers.find(u => u._id && u._id.toString() === idStr);
-        return mem || null;
+        return mem ? enrichUserPermissions(mem) : null;
     }
 
     static async getEmployeesByManager(managerId, branchId) {
@@ -586,6 +687,7 @@ class DataStore {
     }
 
     static addInMemoryUser(userObj) {
+        enrichUserPermissions(userObj);
         inMemoryUsers.unshift(userObj);
         return userObj;
     }

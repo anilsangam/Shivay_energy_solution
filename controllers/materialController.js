@@ -6,6 +6,7 @@ const Purchase = require('../models/Purchase');
 const InventoryTransaction = require('../models/InventoryTransaction');
 const Counter = require('../models/Counter');
 const AuditService = require('../services/auditService');
+const AuthorizationService = require('../services/authorizationService');
 const MaterialPhase2Controller = require('./materialPhase2Controller');
 
 // Safe round helper for currency / decimal math (2 decimals)
@@ -301,7 +302,27 @@ class MaterialController {
             }
 
             if (req.xhr || (req.headers && req.headers.accept && req.headers.accept.includes('application/json')) || req.isJson || !res.render) {
-                return res.json({ success: true, material, transactions, purchases });
+                const sessionUser = req.session ? req.session.user : null;
+                const filteredMaterial = AuthorizationService.filterSensitiveFields(sessionUser, material);
+                let filteredPurchases = purchases;
+                if (!AuthorizationService.hasFieldAccess(sessionUser, 'fields.material.purchase_price.view')) {
+                    filteredPurchases = purchases.map(p => {
+                        const pCopy = JSON.parse(JSON.stringify(p));
+                        if (pCopy.items) {
+                            pCopy.items.forEach(it => {
+                                delete it.unitPrice;
+                                delete it.unitCost;
+                                delete it.totalPrice;
+                                delete it.taxAmount;
+                            });
+                        }
+                        delete pCopy.totalAmount;
+                        delete pCopy.subtotal;
+                        delete pCopy.taxTotal;
+                        return pCopy;
+                    });
+                }
+                return res.json({ success: true, material: filteredMaterial, transactions, purchases: filteredPurchases });
             }
 
             return res.render('private/admin/material-view', {

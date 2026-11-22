@@ -1,5 +1,26 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+    const checkAnyPerm = (typeof hasAnyPermission === 'function') 
+        ? hasAnyPermission 
+        : ((keys) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && keys.some(k => authUser.permissions.includes(k)))));
+
+    const canDashProjects = checkAnyPerm(['projects.records.view', 'projects.all.view']);
+    const canDashQuotations = checkAnyPerm(['quotations.records.view', 'quotations.requests.view', 'quotations.all.view']);
+    const canDashStaff = checkPerm('users.employees.view');
+    const canDashEnquiries = checkAnyPerm(['crm.enquiries.view', 'crm.franchise.view', 'complaints.tickets.view']);
+    const canDashBranches = checkPerm('branches.offices.view');
+    const canDashSettings = checkPerm('settings.general.view');
+    const canDashReports = checkPerm('reports.analytics.view');
+    const canDashLogs = checkPerm('settings.audit_logs.view');
+
+    const hasAnyDashWidget = canDashProjects || canDashQuotations || canDashStaff || canDashEnquiries;
+%>
+
 <link rel="stylesheet" href="/css/private/dashboard.css">
 
 <!-- Quick Action Alert / Status Toast -->
@@ -21,36 +42,60 @@
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
-        <a href="/admin/projects" class="btn btn-sm btn-primary font-weight-bold" style="border-radius: 8px;">
-            <i class="icofont-solar-panel me-1"></i> Solar Projects
-        </a>
-        <a href="/admin/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
-            <i class="icofont-users-alt-2 me-1"></i> Manage Staff
-        </a>
-        <a href="/admin/quotations" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
-            <i class="icofont-calculator-alt-2 me-1"></i> Quotations
-        </a>
-        <a href="/admin/branches" class="btn btn-sm btn-outline-success font-weight-bold" style="border-radius: 8px;">
-            <i class="icofont-building-alt me-1"></i> Branches
-        </a>
-        <a href="/admin/settings" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 8px;">
-            <i class="icofont-gear me-1"></i> Settings
-        </a>
-        <a href="/admin/reports" class="btn btn-sm btn-outline-info font-weight-bold" style="border-radius: 8px;">
-            <i class="icofont-chart-growth me-1"></i> Reports
-        </a>
-        <a href="/admin/activity-logs" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
-            <i class="icofont-history me-1"></i> Audit Logs
-        </a>
+        <% if (canDashProjects) { %>
+            <a href="/admin/projects" class="btn btn-sm btn-primary font-weight-bold" style="border-radius: 8px;">
+                <i class="icofont-solar-panel me-1"></i> Solar Projects
+            </a>
+        <% } %>
+        <% if (canDashStaff) { %>
+            <a href="/admin/employees" class="btn btn-sm btn-outline-primary" style="border-radius: 8px;">
+                <i class="icofont-users-alt-2 me-1"></i> Manage Staff
+            </a>
+        <% } %>
+        <% if (canDashQuotations) { %>
+            <a href="/admin/quotations" class="btn btn-sm btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+                <i class="icofont-calculator-alt-2 me-1"></i> Quotations
+            </a>
+        <% } %>
+        <% if (canDashBranches) { %>
+            <a href="/admin/branches" class="btn btn-sm btn-outline-success font-weight-bold" style="border-radius: 8px;">
+                <i class="icofont-building-alt me-1"></i> Branches
+            </a>
+        <% } %>
+        <% if (canDashSettings) { %>
+            <a href="/admin/settings" class="btn btn-sm btn-outline-dark font-weight-bold" style="border-radius: 8px;">
+                <i class="icofont-gear me-1"></i> Settings
+            </a>
+        <% } %>
+        <% if (canDashReports) { %>
+            <a href="/admin/reports" class="btn btn-sm btn-outline-info font-weight-bold" style="border-radius: 8px;">
+                <i class="icofont-chart-growth me-1"></i> Reports
+            </a>
+        <% } %>
+        <% if (canDashLogs) { %>
+            <a href="/admin/activity-logs" class="btn btn-sm btn-dark" style="border-radius: 8px; background: var(--admin-navy-primary);">
+                <i class="icofont-history me-1"></i> Audit Logs
+            </a>
+        <% } %>
     </div>
 </div>
+
+<% if (!hasAnyDashWidget) { %>
+    <div class="dash-section-card p-5 text-center my-4">
+        <i class="icofont-shield-alt text-muted mb-3" style="font-size: 48px;"></i>
+        <h4 class="fw-bold text-dark">Welcome to Shivay Energy Solutions</h4>
+        <p class="text-muted">You have authenticated successfully. Please use the sidebar navigation on the left to access your permitted operational modules.</p>
+    </div>
+<% } %>
 
 <!-- ========================================================================= -->
 <!-- ROW 1: 60% PROJECTS (BOUND SECTION) | 40% ENQUIRIES (BOUND SECTION) -->
 <!-- ========================================================================= -->
+<% if (canDashProjects || canDashEnquiries) { %>
 <div class="row g-3 mb-1">
     <!-- LEFT 60%: SOLAR EXECUTION PROJECTS (SINGLE UNIFIED BOUND SECTION) -->
-    <div class="col-12 dash-col-60">
+    <% if (canDashProjects) { %>
+    <div class="col-12 <%= canDashEnquiries ? 'dash-col-60' : 'col-12' %>">
         <div class="dash-section-card">
             <!-- Header -->
             <div class="dash-section-header">
@@ -203,9 +248,11 @@
             </div>
         </div>
     </div>
+    <% } %>
 
     <!-- RIGHT 40%: CUSTOMER ENQUIRIES & LEADS (BOUND SECTION) -->
-    <div class="col-12 dash-col-40">
+    <% if (canDashEnquiries) { %>
+    <div class="col-12 <%= canDashProjects ? 'dash-col-40' : 'col-12' %>">
         <div class="dash-section-card h-100">
             <!-- Header -->
             <div class="dash-section-header">
@@ -272,14 +319,18 @@
             </div>
         </div>
     </div>
+    <% } %>
 </div>
+<% } %>
 
 <!-- ========================================================================= -->
 <!-- ROW 2: 60% QUOTATIONS (BOUND SECTION) | 40% EMPLOYEE MANAGEMENT (BOUND) -->
 <!-- ========================================================================= -->
+<% if (canDashQuotations || canDashStaff) { %>
 <div class="row g-3 mb-3">
     <!-- LEFT 60%: QUOTATIONS OVERVIEW (SINGLE UNIFIED BOUND SECTION) -->
-    <div class="col-12 dash-col-60">
+    <% if (canDashQuotations) { %>
+    <div class="col-12 <%= canDashStaff ? 'dash-col-60' : 'col-12' %>">
         <div class="dash-section-card">
             <!-- Header -->
             <div class="dash-section-header">
@@ -380,9 +431,11 @@
             </div>
         </div>
     </div>
+    <% } %>
 
     <!-- RIGHT 40%: EMPLOYEE MANAGEMENT OVERVIEW (BOUND SECTION) -->
-    <div class="col-12 dash-col-40">
+    <% if (canDashStaff) { %>
+    <div class="col-12 <%= canDashQuotations ? 'dash-col-40' : 'col-12' %>">
         <div class="dash-section-card h-100">
             <!-- Header -->
             <div class="dash-section-header">
@@ -482,6 +535,8 @@
             </div>
         </div>
     </div>
+    <% } %>
 </div>
+<% } %>
 
 <%- include('partials/admin-footer') %>

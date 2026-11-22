@@ -1,328 +1,430 @@
 <%
-    const userRole = (typeof currentUser !== 'undefined' && currentUser && currentUser.role) ? currentUser.role : ((typeof user !== 'undefined' && user && user.role) ? user.role : 'EMPLOYEE');
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const userRole = authUser && authUser.role ? String(authUser.role).trim().toUpperCase() : 'EMPLOYEE';
     const isSuperAdmin = userRole === 'SUPER_ADMIN';
     const isManager = userRole === 'MANAGER' || userRole === 'BRANCH_MANAGER';
     const isEmployee = userRole === 'EMPLOYEE';
     const currentActive = typeof activePage !== 'undefined' ? activePage : '';
+
+    // Robust permission checker helpers
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => {
+            if (!authUser) return false;
+            if (authUser.isPrimarySuperAdmin) return true;
+            return Array.isArray(authUser.permissions) && authUser.permissions.includes(k);
+        });
+    const checkAnyPerm = (typeof hasAnyPermission === 'function') 
+        ? hasAnyPermission 
+        : ((keys) => {
+            if (!authUser) return false;
+            if (authUser.isPrimarySuperAdmin) return true;
+            return Array.isArray(authUser.permissions) && keys.some(k => authUser.permissions.includes(k));
+        });
+
+    // 1. Core items
+    const canViewDashboard = checkAnyPerm(['dashboard.executive.view', 'dashboard.all.view', 'dashboard.branch.view']);
+    const canViewPersonalAttendance = checkPerm('attendance.personal.view');
+    const canViewBranchAttendance = checkAnyPerm(['attendance.branch.view', 'attendance.all.view']);
+
+    // 2. Operations & Commercials
+    const canViewProjects = checkAnyPerm(['projects.records.view', 'projects.all.view']);
+    const canViewQuotations = checkAnyPerm(['quotations.records.view', 'quotations.requests.view', 'quotations.all.view']);
+    const canCreateQuotation = checkAnyPerm(['quotations.preparation.create', 'quotations.requests.create']);
+    const canViewInvoices = checkPerm('invoices.records.view');
+    const canViewCustomers = checkPerm('crm.customers.view');
+    const canViewReports = checkPerm('reports.analytics.view');
+
+    // 3. Website Enquiries & Leads (Submenu)
+    const canViewSurveys = checkPerm('crm.enquiries.view');
+    const canViewFranchise = checkPerm('franchise.applications.view');
+    const canViewComplaints = checkPerm('complaints.tickets.view');
+    const hasEnquiriesSubmenu = canViewSurveys || canViewFranchise || canViewComplaints;
+
+    // 4. Material Management & Stock Inventory (Submenu)
+    const canViewInventory = checkPerm('inventory.stock.view');
+    const canViewPurchases = checkPerm('inventory.purchases.view');
+    const canViewSalesOut = checkPerm('inventory.sales_out.view');
+    const canViewDispatch = checkPerm('dispatch.orders.view');
+    const canViewReturns = checkPerm('inventory.returns.view');
+    const canViewStockReports = checkPerm('inventory.reports.view');
+    const canViewCatalog = checkPerm('material.catalog.view');
+    const canViewSuppliers = checkPerm('material.suppliers.view');
+    const hasMaterialSubmenu = canViewInventory || canViewPurchases || canViewSalesOut || canViewDispatch || canViewReturns || canViewStockReports || canViewCatalog || canViewSuppliers;
+
+    // 5. Team & Governance
+    const canViewEmployees = checkPerm('users.employees.view');
+    const canManageManagers = checkPerm('users.employees.manage') && (isSuperAdmin || (authUser && authUser.isPrimarySuperAdmin));
+    const canViewBranches = checkPerm('branches.offices.view');
+    const hasTeamSection = canViewEmployees || canManageManagers || canViewBranches;
+
+    // 6. Dynamic Website CMS (Submenu)
+    const canCmsProjects = checkPerm('cms.projects.manage');
+    const canCmsProducts = checkPerm('cms.products.manage');
+    const canCmsServices = checkPerm('cms.services.manage');
+    const canCmsTeam = checkPerm('cms.team.manage');
+    const canCmsTestimonials = checkPerm('cms.testimonials.manage');
+    const canCmsContact = checkPerm('cms.contact.manage');
+    const hasCmsSubmenu = canCmsProjects || canCmsProducts || canCmsServices || canCmsTeam || canCmsTestimonials || canCmsContact;
+
+    // 7. System & Security
+    const canViewSettings = checkPerm('settings.general.view');
+    const canViewActivityLogs = checkPerm('settings.audit_logs.view');
+
+    // Dynamic Route Resolution
+    const dashboardUrl = isSuperAdmin ? '/admin' : (isManager ? '/manager/dashboard' : '/employee/dashboard');
+    const projectsUrl = isSuperAdmin ? '/admin/projects' : (isManager ? '/manager/projects' : '/employee/projects');
+    const quotationsUrl = isSuperAdmin ? '/admin/quotations' : (isManager ? '/manager/quotations' : '/employee/quotations');
+    const newQuotationUrl = isSuperAdmin ? '/admin/quotations/new' : (isManager ? '/manager/quotations/new' : '/employee/quotations/new');
+    const invoicesUrl = isManager ? '/manager/invoices' : '/admin/invoices';
+    const profileUrl = isSuperAdmin ? '/admin/profile' : (isManager ? '/manager/profile' : '/employee/profile');
+    const employeesUrl = isManager ? '/manager/employees' : '/admin/employees';
+
+    // Section containers
+    const hasCoreSection = canViewDashboard || canViewPersonalAttendance || canViewBranchAttendance;
+    const hasOperationsSection = canViewProjects || canViewQuotations || canCreateQuotation || canViewInvoices || canViewCustomers || canViewReports || hasEnquiriesSubmenu;
+    const hasInventorySection = hasMaterialSubmenu;
 %>
 
 <aside class="admin-sidebar" id="adminSidebar">
     <!-- Brand / Logo Header -->
     <div class="admin-sidebar-brand">
-        <a href="<%= isSuperAdmin ? '/admin' : (isManager ? '/manager/dashboard' : '/employee/projects') %>" class="admin-sidebar-brand-link" aria-label="Shivay Energy dashboard home">
+        <a href="<%= canViewDashboard ? dashboardUrl : (canViewProjects ? projectsUrl : profileUrl) %>" class="admin-sidebar-brand-link" aria-label="Shivay Energy dashboard home">
             <img src="/images/brandlogo2.webp" alt="Shivay Energy Solutions" onerror="this.src='/images/brandlogo2.webp'">
         </a>
     </div>
 
-    <!-- Navigation Menu -->
+    <!-- Dynamic Navigation Menu -->
     <ul class="admin-sidebar-menu">
-        <% if (isSuperAdmin) { %>
-            <!-- SUPER ADMIN NAVIGATION -->
+        <!-- 1. CORE SECTION -->
+        <% if (hasCoreSection) { %>
             <li class="admin-sidebar-heading">Core</li>
-            <li class="admin-nav-item">
-                <a href="/admin" class="admin-nav-link <%= currentActive === 'admin' ? 'active' : '' %>">
-                    <i class="icofont-speed-meter"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
 
+            <% if (canViewDashboard) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= dashboardUrl %>" class="admin-nav-link <%= (currentActive === 'admin' || currentActive === 'manager-dashboard' || currentActive === 'employee-dashboard') ? 'active' : '' %>">
+                        <i class="icofont-speed-meter"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewPersonalAttendance) { %>
+                <li class="admin-nav-item">
+                    <a href="/employee/attendance" class="admin-nav-link <%= currentActive === 'employee' || currentActive === 'employee-attendance' ? 'active' : '' %>">
+                        <i class="icofont-location-pin"></i>
+                        <span>GPS Attendance</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewBranchAttendance) { %>
+                <li class="admin-nav-item">
+                    <a href="/manager/attendance" class="admin-nav-link <%= currentActive === 'manager-attendance' ? 'active' : '' %>">
+                        <i class="icofont-clock-time"></i>
+                        <span>Attendance Logs</span>
+                    </a>
+                </li>
+            <% } %>
+        <% } %>
+
+        <!-- 2. OPERATIONS & COMMERCIALS -->
+        <% if (hasOperationsSection) { %>
             <li class="admin-sidebar-heading">Operations & Sales</li>
-            <li class="admin-nav-item">
-                <a href="/admin/projects" class="admin-nav-link <%= (currentActive === 'projects' || currentActive === 'admin-projects') ? 'active' : '' %>">
-                    <i class="icofont-energy-solar"></i>
-                    <span>Projects</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/quotations" class="admin-nav-link <%= currentActive === 'quotations' ? 'active' : '' %>">
-                    <i class="icofont-calculator-alt-2"></i>
-                    <span>Quotations</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/customers" class="admin-nav-link <%= currentActive === 'admin-customers' ? 'active' : '' %>">
-                    <i class="icofont-address-book"></i>
-                    <span>Customers</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/quotations/new" class="admin-nav-link <%= currentActive === 'admin-quotations-new' ? 'active' : '' %>">
-                    <i class="icofont-plus-circle"></i>
-                    <span>New Solar Request</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/invoices" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
-                    <i class="icofont-bill"></i>
-                    <span>Tax Invoices</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/reports" class="admin-nav-link <%= currentActive === 'admin-reports' ? 'active' : '' %>">
-                    <i class="icofont-chart-growth"></i>
-                    <span>Reports & Analytics</span>
-                </a>
-            </li>
 
-            <!-- Website Enquiries & Lead Console -->
-            <% const isEnquiryActive = currentActive === 'admin-surveys' || currentActive === 'admin-franchise' || currentActive === 'admin-complaints'; %>
-            <li class="admin-nav-item has-submenu <%= isEnquiryActive ? 'open' : '' %>" id="enquiriesNavParent">
-                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="enquiriesNavToggle" role="button" aria-expanded="<%= isEnquiryActive ? 'true' : 'false' %>">
-                    <i class="icofont-ui-messaging text-info"></i>
-                    <span>Website Enquiries</span>
-                    <i class="icofont-rounded-right admin-nav-arrow"></i>
-                </a>
-                <ul class="admin-nav-submenu" id="enquiriesNavSubmenu">
-                    <li>
-                        <a href="/admin/enquiries/surveys" class="admin-subnav-link <%= currentActive === 'admin-surveys' ? 'active' : '' %>">
-                            <i class="icofont-sun-alt"></i>
-                            <span>Free Solar Site Surveys</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/enquiries/franchise" class="admin-subnav-link <%= currentActive === 'admin-franchise' ? 'active' : '' %>">
-                            <i class="icofont-handshake-deal"></i>
-                            <span>Franchise / Dealer Apps</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/complaints" class="admin-subnav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
-                            <i class="icofont-tools-alt-2"></i>
-                            <span>Service Complaints</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
+            <% if (canViewProjects) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= projectsUrl %>" class="admin-nav-link <%= (currentActive === 'projects' || currentActive === 'admin-projects' || currentActive === 'manager-projects' || currentActive === 'employee-projects') ? 'active' : '' %>">
+                        <i class="icofont-energy-solar"></i>
+                        <span>Projects</span>
+                    </a>
+                </li>
+            <% } %>
 
+            <% if (canViewQuotations) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= quotationsUrl %>" class="admin-nav-link <%= (currentActive === 'quotations' || currentActive === 'manager-quotations' || currentActive === 'employee-quotations') ? 'active' : '' %>">
+                        <i class="icofont-calculator-alt-2"></i>
+                        <span>Quotations</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canCreateQuotation) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= newQuotationUrl %>" class="admin-nav-link <%= (currentActive === 'admin-quotations-new' || currentActive === 'manager-quotations-new' || currentActive === 'employee-quotations-new') ? 'active' : '' %>">
+                        <i class="icofont-plus-circle"></i>
+                        <span>New Solar Request</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewInvoices) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= invoicesUrl %>" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
+                        <i class="icofont-bill"></i>
+                        <span>Tax Invoices</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewCustomers) { %>
+                <li class="admin-nav-item">
+                    <a href="/admin/customers" class="admin-nav-link <%= currentActive === 'admin-customers' ? 'active' : '' %>">
+                        <i class="icofont-address-book"></i>
+                        <span>Customers</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewReports) { %>
+                <li class="admin-nav-item">
+                    <a href="/admin/reports" class="admin-nav-link <%= currentActive === 'admin-reports' ? 'active' : '' %>">
+                        <i class="icofont-chart-growth"></i>
+                        <span>Reports & Analytics</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <!-- Website Enquiries & Lead Console (Submenu) -->
+            <% if (hasEnquiriesSubmenu) { %>
+                <% const isEnquiryActive = currentActive === 'admin-surveys' || currentActive === 'admin-franchise' || currentActive === 'admin-complaints'; %>
+                <li class="admin-nav-item has-submenu <%= isEnquiryActive ? 'open' : '' %>" id="enquiriesNavParent">
+                    <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="enquiriesNavToggle" role="button" aria-expanded="<%= isEnquiryActive ? 'true' : 'false' %>">
+                        <i class="icofont-ui-messaging text-info"></i>
+                        <span>Website Enquiries</span>
+                        <i class="icofont-rounded-right admin-nav-arrow"></i>
+                    </a>
+                    <ul class="admin-nav-submenu" id="enquiriesNavSubmenu">
+                        <% if (canViewSurveys) { %>
+                            <li>
+                                <a href="/admin/enquiries/surveys" class="admin-subnav-link <%= currentActive === 'admin-surveys' ? 'active' : '' %>">
+                                    <i class="icofont-sun-alt"></i>
+                                    <span>Free Solar Site Surveys</span>
+                                </a>
+                            </li>
+                        <% } %>
+                        <% if (canViewFranchise) { %>
+                            <li>
+                                <a href="/admin/enquiries/franchise" class="admin-subnav-link <%= currentActive === 'admin-franchise' ? 'active' : '' %>">
+                                    <i class="icofont-handshake-deal"></i>
+                                    <span>Franchise / Dealer Apps</span>
+                                </a>
+                            </li>
+                        <% } %>
+                        <% if (canViewComplaints) { %>
+                            <li>
+                                <a href="/admin/complaints" class="admin-subnav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
+                                    <i class="icofont-tools-alt-2"></i>
+                                    <span>Service Complaints</span>
+                                </a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </li>
+            <% } %>
+        <% } %>
+
+        <!-- 3. INVENTORY & SUPPLIES -->
+        <% if (hasInventorySection) { %>
             <li class="admin-sidebar-heading">Inventory & Supplies</li>
-            <li class="admin-nav-item has-submenu <%= (currentActive && currentActive.startsWith('material-')) ? 'open' : '' %>" id="materialNavParent">
-                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="materialNavToggle" role="button" aria-expanded="<%= (currentActive && currentActive.startsWith('material-')) ? 'true' : 'false' %>">
+            <% const isMaterialActive = currentActive && (currentActive.startsWith('material-') || currentActive === 'inventory' || currentActive === 'purchases'); %>
+            <li class="admin-nav-item has-submenu <%= isMaterialActive ? 'open' : '' %>" id="materialNavParent">
+                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="materialNavToggle" role="button" aria-expanded="<%= isMaterialActive ? 'true' : 'false' %>">
                     <i class="icofont-box"></i>
                     <span>Material Management</span>
                     <i class="icofont-rounded-right admin-nav-arrow"></i>
                 </a>
                 <ul class="admin-nav-submenu" id="materialNavSubmenu">
-                    <li>
-                        <a href="/admin/inventory" class="admin-subnav-link <%= (currentActive === 'material-inventory' || currentActive === 'material-list') ? 'active' : '' %>">
-                            <i class="icofont-database"></i>
-                            <span>Stock Inventory</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/purchases" class="admin-subnav-link <%= (currentActive === 'material-purchases' || currentActive === 'material-suppliers') ? 'active' : '' %>">
-                            <i class="icofont-cart-alt"></i>
-                            <span>Purchase / Stock In</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/sales-out" class="admin-subnav-link <%= currentActive === 'material-sales-out' ? 'active' : '' %>">
-                            <i class="icofont-truck-loaded"></i>
-                            <span>Sales / Stock Out</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/dispatch" class="admin-subnav-link <%= currentActive === 'material-dispatch' ? 'active' : '' %>">
-                            <i class="icofont-delivery-time"></i>
-                            <span>Dispatch Management</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/returns" class="admin-subnav-link <%= currentActive === 'material-returns' ? 'active' : '' %>">
-                            <i class="icofont-exchange"></i>
-                            <span>Returns</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/inventory/reports" class="admin-subnav-link <%= currentActive === 'material-reports' ? 'active' : '' %>">
-                            <i class="icofont-chart-histogram"></i>
-                            <span>Stock Reports</span>
-                        </a>
-                    </li>
+                    <% if (canViewInventory) { %>
+                        <li>
+                            <a href="/admin/inventory" class="admin-subnav-link <%= (currentActive === 'material-inventory' || currentActive === 'material-list') ? 'active' : '' %>">
+                                <i class="icofont-database"></i>
+                                <span>Stock Inventory</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewPurchases) { %>
+                        <li>
+                            <a href="/admin/purchases" class="admin-subnav-link <%= (currentActive === 'material-purchases') ? 'active' : '' %>">
+                                <i class="icofont-cart-alt"></i>
+                                <span>Purchase / Stock In</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewSalesOut) { %>
+                        <li>
+                            <a href="/admin/sales-out" class="admin-subnav-link <%= currentActive === 'material-sales-out' ? 'active' : '' %>">
+                                <i class="icofont-truck-loaded"></i>
+                                <span>Sales / Stock Out</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewDispatch) { %>
+                        <li>
+                            <a href="/admin/dispatch" class="admin-subnav-link <%= currentActive === 'material-dispatch' ? 'active' : '' %>">
+                                <i class="icofont-delivery-time"></i>
+                                <span>Dispatch Management</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewReturns) { %>
+                        <li>
+                            <a href="/admin/returns" class="admin-subnav-link <%= currentActive === 'material-returns' ? 'active' : '' %>">
+                                <i class="icofont-exchange"></i>
+                                <span>Returns</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewStockReports) { %>
+                        <li>
+                            <a href="/admin/inventory/reports" class="admin-subnav-link <%= currentActive === 'material-reports' ? 'active' : '' %>">
+                                <i class="icofont-chart-histogram"></i>
+                                <span>Stock Reports</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewCatalog) { %>
+                        <li>
+                            <a href="/admin/materials" class="admin-subnav-link <%= currentActive === 'material-catalog' ? 'active' : '' %>">
+                                <i class="icofont-listine-dots"></i>
+                                <span>Material Catalog</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canViewSuppliers) { %>
+                        <li>
+                            <a href="/admin/suppliers" class="admin-subnav-link <%= currentActive === 'material-suppliers' ? 'active' : '' %>">
+                                <i class="icofont-users"></i>
+                                <span>Suppliers Master</span>
+                            </a>
+                        </li>
+                    <% } %>
                 </ul>
             </li>
+        <% } %>
 
+        <!-- 4. TEAM MANAGEMENT -->
+        <% if (hasTeamSection) { %>
             <li class="admin-sidebar-heading">Team Management</li>
-            <li class="admin-nav-item">
-                <a href="/admin/employees" class="admin-nav-link <%= currentActive === 'admin-employees' ? 'active' : '' %>">
-                    <i class="icofont-users-alt-2"></i>
-                    <span>Employees</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/managers" class="admin-nav-link <%= currentActive === 'admin-managers' ? 'active' : '' %>">
-                    <i class="icofont-business-man"></i>
-                    <span>Managers</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/admin/branches" class="admin-nav-link <%= currentActive === 'admin-branches' ? 'active' : '' %>">
-                    <i class="icofont-building-alt"></i>
-                    <span>Branches & Offices</span>
-                </a>
-            </li>
 
-            <li class="admin-sidebar-heading">System & Security</li>
-                        <li class="admin-nav-item">
-                <a href="/admin/profile" class="admin-nav-link <%= currentActive === 'admin-profile' ? 'active' : '' %>">
-                    <i class="icofont-ui-user"></i>
-                    <span>My Profile</span>
+            <% if (canViewEmployees) { %>
+                <li class="admin-nav-item">
+                    <a href="<%= employeesUrl %>" class="admin-nav-link <%= (currentActive === 'admin-employees' || currentActive === 'manager-employees') ? 'active' : '' %>">
+                        <i class="icofont-users-alt-2"></i>
+                        <span>Employees</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canManageManagers) { %>
+                <li class="admin-nav-item">
+                    <a href="/admin/managers" class="admin-nav-link <%= currentActive === 'admin-managers' ? 'active' : '' %>">
+                        <i class="icofont-business-man"></i>
+                        <span>Managers</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewBranches) { %>
+                <li class="admin-nav-item">
+                    <a href="/admin/branches" class="admin-nav-link <%= currentActive === 'admin-branches' ? 'active' : '' %>">
+                        <i class="icofont-building-alt"></i>
+                        <span>Branches & Offices</span>
+                    </a>
+                </li>
+            <% } %>
+        <% } %>
+
+        <!-- 5. WEBSITE MANAGEMENT (CMS) -->
+        <% if (hasCmsSubmenu) { %>
+            <li class="admin-sidebar-heading">Website Content</li>
+            <% const isCmsActive = currentActive && currentActive.startsWith('cms-'); %>
+            <li class="admin-nav-item has-submenu <%= isCmsActive ? 'open' : '' %>" id="websiteNavParent">
+                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="websiteNavToggle" role="button" aria-expanded="<%= isCmsActive ? 'true' : 'false' %>">
+                    <i class="icofont-globe text-warning"></i>
+                    <span>Website CMS</span>
+                    <i class="icofont-rounded-right admin-nav-arrow"></i>
                 </a>
+                <ul class="admin-nav-submenu" id="websiteNavSubmenu">
+                    <% if (canCmsProjects) { %>
+                        <li>
+                            <a href="/admin/website/projects" class="admin-subnav-link <%= currentActive === 'cms-projects' ? 'active' : '' %>">
+                                <i class="icofont-energy-solar"></i>
+                                <span>Recent Projects</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canCmsProducts) { %>
+                        <li>
+                            <a href="/admin/website/products" class="admin-subnav-link <%= currentActive === 'cms-products' ? 'active' : '' %>">
+                                <i class="icofont-box"></i>
+                                <span>Products & Inverters</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canCmsServices) { %>
+                        <li>
+                            <a href="/admin/website/services" class="admin-subnav-link <%= currentActive === 'cms-services' ? 'active' : '' %>">
+                                <i class="icofont-tasks-alt"></i>
+                                <span>Services Master</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canCmsTeam) { %>
+                        <li>
+                            <a href="/admin/website/team" class="admin-subnav-link <%= currentActive === 'cms-team' ? 'active' : '' %>">
+                                <i class="icofont-users-alt-5"></i>
+                                <span>Founders & Team</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canCmsTestimonials) { %>
+                        <li>
+                            <a href="/admin/website/testimonials" class="admin-subnav-link <%= currentActive === 'cms-testimonials' ? 'active' : '' %>">
+                                <i class="icofont-star"></i>
+                                <span>Customer Testimonials</span>
+                            </a>
+                        </li>
+                    <% } %>
+                    <% if (canCmsContact) { %>
+                        <li>
+                            <a href="/admin/website/contact" class="admin-subnav-link <%= currentActive === 'cms-contact' ? 'active' : '' %>">
+                                <i class="icofont-address-book"></i>
+                                <span>Contact & Company Info</span>
+                            </a>
+                        </li>
+                    <% } %>
+                </ul>
             </li>
+        <% } %>
+
+        <!-- 6. SYSTEM & ACCOUNT -->
+        <li class="admin-sidebar-heading">Account & System</li>
+
+        <li class="admin-nav-item">
+            <a href="<%= profileUrl %>" class="admin-nav-link <%= (currentActive === 'admin-profile' || currentActive === 'manager-profile' || currentActive === 'employee-profile') ? 'active' : '' %>">
+                <i class="icofont-ui-user"></i>
+                <span>My Profile</span>
+            </a>
+        </li>
+
+        <% if (canViewActivityLogs) { %>
             <li class="admin-nav-item">
                 <a href="/admin/activity-logs" class="admin-nav-link <%= currentActive === 'admin-logs' ? 'active' : '' %>">
                     <i class="icofont-history"></i>
                     <span>Activity Logs</span>
                 </a>
             </li>
-            <!-- Dynamic Website CMS -->
-            <% const isCmsActive = currentActive && currentActive.startsWith('cms-'); %>
-            <li class="admin-nav-item has-submenu <%= isCmsActive ? 'open' : '' %>" id="websiteNavParent">
-                <a href="javascript:void(0)" class="admin-nav-link admin-nav-toggle" id="websiteNavToggle" role="button" aria-expanded="<%= isCmsActive ? 'true' : 'false' %>">
-                    <i class="icofont-globe text-warning"></i>
-                    <span>Website Management</span>
-                    <i class="icofont-rounded-right admin-nav-arrow"></i>
-                </a>
-                <ul class="admin-nav-submenu" id="websiteNavSubmenu">
-                    <li>
-                        <a href="/admin/website/projects" class="admin-subnav-link <%= currentActive === 'cms-projects' ? 'active' : '' %>">
-                            <i class="icofont-energy-solar"></i>
-                            <span>Recent Projects</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/website/products" class="admin-subnav-link <%= currentActive === 'cms-products' ? 'active' : '' %>">
-                            <i class="icofont-box"></i>
-                            <span>Products & Inverters</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/website/services" class="admin-subnav-link <%= currentActive === 'cms-services' ? 'active' : '' %>">
-                            <i class="icofont-tasks-alt"></i>
-                            <span>Services Master</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/website/team" class="admin-subnav-link <%= currentActive === 'cms-team' ? 'active' : '' %>">
-                            <i class="icofont-users-alt-5"></i>
-                            <span>Founders & Team</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/website/testimonials" class="admin-subnav-link <%= currentActive === 'cms-testimonials' ? 'active' : '' %>">
-                            <i class="icofont-star"></i>
-                            <span>Customer Testimonials</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/admin/website/contact" class="admin-subnav-link <%= currentActive === 'cms-contact' ? 'active' : '' %>">
-                            <i class="icofont-address-book"></i>
-                            <span>Contact & Company Info</span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
+        <% } %>
 
+        <% if (canViewSettings) { %>
             <li class="admin-nav-item">
                 <a href="/admin/settings" class="admin-nav-link <%= currentActive === 'admin-settings' ? 'active' : '' %>">
                     <i class="icofont-gear"></i>
                     <span>Settings</span>
                 </a>
             </li>
-
-
-        <% } else if (isManager) { %>
-            <!-- MANAGER NAVIGATION -->
-            <li class="admin-sidebar-heading">Management</li>
-            <li class="admin-nav-item">
-                <a href="/manager/dashboard" class="admin-nav-link <%= currentActive === 'manager-dashboard' ? 'active' : '' %>">
-                    <i class="icofont-speed-meter"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-
-            <li class="admin-sidebar-heading">Operations</li>
-            <li class="admin-nav-item">
-                <a href="/manager/projects" class="admin-nav-link <%= currentActive === 'manager-projects' ? 'active' : '' %>">
-                    <i class="icofont-energy-solar"></i>
-                    <span>Projects</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/manager/quotations" class="admin-nav-link <%= currentActive === 'manager-quotations' ? 'active' : '' %>">
-                    <i class="icofont-paper"></i>
-                    <span>Quotation Requests</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/manager/quotations/new" class="admin-nav-link <%= currentActive === 'manager-quotations-new' ? 'active' : '' %>">
-                    <i class="icofont-plus-circle"></i>
-                    <span>New Solar Request</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/manager/invoices" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
-                    <i class="icofont-bill"></i>
-                    <span>Branch Invoices</span>
-                </a>
-            </li>
-
-            <li class="admin-nav-item">
-                <a href="/manager/employees" class="admin-nav-link <%= currentActive === 'manager-employees' ? 'active' : '' %>">
-                    <i class="icofont-users-alt-2"></i>
-                    <span>Employees</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/manager/attendance" class="admin-nav-link <%= currentActive === 'manager-attendance' ? 'active' : '' %>">
-                    <i class="icofont-location-pin"></i>
-                    <span>Attendance Logs</span>
-                </a>
-            </li>
-
-
-            <li class="admin-sidebar-heading">Account</li>
-            <li class="admin-nav-item">
-                <a href="/manager/profile" class="admin-nav-link <%= currentActive === 'manager-profile' ? 'active' : '' %>">
-                    <i class="icofont-ui-user"></i>
-                    <span>My Profile</span>
-                </a>
-            </li>
-
-        <% } else { %>
-            <!-- EMPLOYEE NAVIGATION -->
-            <li class="admin-sidebar-heading">Work Orders & Operations</li>
-            <li class="admin-nav-item">
-                <a href="/employee/attendance" class="admin-nav-link <%= currentActive === 'employee' ? 'active' : '' %>">
-                    <i class="icofont-location-pin"></i>
-                    <span>GPS Attendance</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/employee/projects" class="admin-nav-link <%= currentActive === 'employee-projects' ? 'active' : '' %>">
-                    <i class="icofont-energy-solar"></i>
-                    <span>My Projects</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/employee/quotations" class="admin-nav-link <%= currentActive === 'employee-quotations' ? 'active' : '' %>">
-                    <i class="icofont-paper"></i>
-                    <span>My Quotations</span>
-                </a>
-            </li>
-            <li class="admin-nav-item">
-                <a href="/employee/quotations/new" class="admin-nav-link <%= currentActive === 'employee-quotations-new' ? 'active' : '' %>">
-                    <i class="icofont-plus-circle"></i>
-                    <span>New Solar Request</span>
-                </a>
-            </li>
-
-            <li class="admin-nav-item">
-                <a href="/employee/profile" class="admin-nav-link <%= currentActive === 'employee-profile' ? 'active' : '' %>">
-                    <i class="icofont-ui-user"></i>
-                    <span>My Profile</span>
-                </a>
-            </li>
-
         <% } %>
     </ul>
 

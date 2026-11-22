@@ -1,5 +1,20 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+    const checkField = (typeof hasFieldAccess === 'function')
+        ? hasFieldAccess
+        : ((f) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.fieldPermissions) && authUser.fieldPermissions.includes(f))));
+
+    const canCreateInvoice = checkPerm('invoices.records.create');
+    const canEditInvoice = checkPerm('invoices.records.edit');
+    const canDeleteInvoice = checkPerm('invoices.records.delete');
+    const canViewMetrics = checkField('fields.invoice.financial_metrics.view');
+%>
+
 <link rel="stylesheet" href="/css/private/invoices.css">
 
 <!-- Top Header & Action Banner -->
@@ -12,11 +27,13 @@
             Authorized GST Compliant Tax Invoices for Solar Rooftops, PM Surya Ghar Subsidies & MPPKVVCL Net-Metering.
         </p>
     </div>
-    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
-        <button type="button" class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 7px 14px;">
-            <i class="icofont-plus-circle fs-6"></i> Generate New Bill
-        </button>
-    </div>
+    <% if (canCreateInvoice) { %>
+        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+            <button type="button" class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 7px 14px;">
+                <i class="icofont-plus-circle fs-6"></i> Generate New Bill
+            </button>
+        </div>
+    <% } %>
 </div>
 
 <%
@@ -48,11 +65,13 @@
                 </span>
             </h5>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()">
-                <i class="icofont-plus-circle me-1"></i> Create Bill
-            </button>
-        </div>
+        <% if (canCreateInvoice) { %>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()">
+                    <i class="icofont-plus-circle me-1"></i> Create Bill
+                </button>
+            </div>
+        <% } %>
     </div>
 
     <!-- Integrated Stats Ribbon Strip -->
@@ -64,15 +83,15 @@
             </div>
             <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
                 <div class="inv-stat-label text-primary">Taxable Value</div>
-                <div class="inv-stat-value text-primary">₹<%= Math.round(totalTaxable).toLocaleString('en-IN') %></div>
+                <div class="inv-stat-value text-primary"><%= canViewMetrics ? ('₹' + Math.round(totalTaxable).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
             <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
                 <div class="inv-stat-label text-warning">12% GST Total</div>
-                <div class="inv-stat-value text-warning">₹<%= Math.round(totalTax).toLocaleString('en-IN') %></div>
+                <div class="inv-stat-value text-warning"><%= canViewMetrics ? ('₹' + Math.round(totalTax).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
             <div class="col-6 col-sm-3 inv-stat-item">
                 <div class="inv-stat-label text-success">Total Billed</div>
-                <div class="inv-stat-value text-success">₹<%= Math.round(totalBilled).toLocaleString('en-IN') %></div>
+                <div class="inv-stat-value text-success"><%= canViewMetrics ? ('₹' + Math.round(totalBilled).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
         </div>
     </div>
@@ -117,12 +136,12 @@
                             </td>
                             <td>
                                 <span class="font-monospace text-dark" style="font-size: 12.5px;">
-                                    ₹<%= Number(inv.subtotal || 0).toLocaleString('en-IN') %>
+                                    <%= canViewMetrics ? ('₹' + Number(inv.subtotal || 0).toLocaleString('en-IN')) : '₹ ••••••' %>
                                 </span>
                             </td>
                             <td>
                                 <strong class="font-monospace text-success" style="font-size: 13px;">
-                                    ₹<%= Number(inv.totalAmount || 0).toLocaleString('en-IN') %>
+                                    <%= canViewMetrics ? ('₹' + Number(inv.totalAmount || 0).toLocaleString('en-IN')) : '₹ ••••••' %>
                                 </strong>
                             </td>
                             <td class="text-center">
@@ -135,12 +154,16 @@
                                     <button class="btn btn-sm btn-outline-primary py-1 px-2" title="View & Print Document" onclick="selectInvoiceToPrint(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
                                         <i class="icofont-print"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
-                                        <i class="icofont-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Archive Invoice" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
-                                        <i class="icofont-archive"></i>
-                                    </button>
+                                    <% if (canEditInvoice) { %>
+                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
+                                            <i class="icofont-edit"></i>
+                                        </button>
+                                    <% } %>
+                                    <% if (canDeleteInvoice) { %>
+                                        <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Archive Invoice" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
+                                            <i class="icofont-archive"></i>
+                                        </button>
+                                    <% } %>
                                 </div>
                             </td>
                         </tr>

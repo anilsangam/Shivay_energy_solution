@@ -611,6 +611,17 @@ class WebsiteService {
         } catch (e) {
             console.error('[WebsiteService] Error refreshing company cache:', e.message);
         }
+        cacheTimestamp = Date.now();
+        return cachedCompany;
+    }
+
+    /**
+     * Get live company data asynchronously with TTL caching
+     */
+    static async getCompany() {
+        if (!cacheTimestamp || (Date.now() - cacheTimestamp > CACHE_TTL_MS)) {
+            await this.refreshCompanyCache();
+        }
         return cachedCompany;
     }
 
@@ -722,7 +733,7 @@ class WebsiteService {
      * Does NOT query products, team, or testimonials.
      */
     static async getHomeData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const baseData = {
             ...this.getBaseLayoutData(liveCompany),
             services: [],
@@ -766,7 +777,7 @@ class WebsiteService {
      * Does NOT query services, products, or projects.
      */
     static async getAboutData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const baseData = {
             ...this.getBaseLayoutData(liveCompany),
             company: { ...liveCompany },
@@ -833,7 +844,7 @@ class WebsiteService {
      * Does NOT query products, projects, team, or testimonials.
      */
     static async getServicesData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const baseData = {
             ...this.getBaseLayoutData(liveCompany),
             services: []
@@ -865,7 +876,7 @@ class WebsiteService {
      * Does NOT query services, projects, team, or testimonials.
      */
     static async getProductsData(options = {}) {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const limit = Number(options.limit) > 0 ? Number(options.limit) : 50;
         const skip = Number(options.skip) >= 0 ? Number(options.skip) : 0;
         const categoryFilter = options.category ? { category: options.category } : {};
@@ -907,7 +918,7 @@ class WebsiteService {
      * Does NOT query any other collections.
      */
     static async getProductDetails(slug) {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const cleanSlug = String(slug || '').toLowerCase().trim();
 
         const baseData = {
@@ -975,7 +986,7 @@ class WebsiteService {
      * Does NOT query services, products, team, or testimonials.
      */
     static async getProjectsData(options = {}) {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const limit = Number(options.limit) > 0 ? Number(options.limit) : 50;
         const skip = Number(options.skip) >= 0 ? Number(options.skip) : 0;
         const categoryFilter = options.category ? { category: options.category } : {};
@@ -1017,7 +1028,7 @@ class WebsiteService {
      * Does NOT query services, products, projects, or testimonials.
      */
     static async getContactData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const baseData = {
             ...this.getBaseLayoutData(liveCompany),
             company: { ...liveCompany }
@@ -1067,7 +1078,7 @@ class WebsiteService {
      * Executes 0 collection queries. Uses fast cached company configuration.
      */
     static async getLayoutOnlyData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         return this.getBaseLayoutData(liveCompany);
     }
 
@@ -1076,7 +1087,7 @@ class WebsiteService {
      * Note: Runtime seed verification removed in Phase 1 for maximum request performance.
      */
     static async getPublicSiteData() {
-        const liveCompany = await this.refreshCompanyCache();
+        const liveCompany = await this.getCompany();
         const baseData = { ...companyConfig, company: liveCompany };
 
         if (mongoose.connection && mongoose.connection.readyState === 1) {

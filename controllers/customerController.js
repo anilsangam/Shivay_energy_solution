@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Customer = require('../models/Customer');
 const User = require('../models/User');
 const AuditService = require('../services/auditService');
+const AuthorizationService = require('../services/authorizationService');
 const companyData = require('../config/company');
 
 class CustomerController {
@@ -89,11 +90,26 @@ class CustomerController {
                 }
             }
 
-            return res.json({
-                success: true,
-                found: true,
-                restricted: false,
-                customer: {
+            const hasFullCrmAccess = AuthorizationService.hasPermission(currentUser, 'crm.customers.view') || AuthorizationService.isPrimarySuperAdmin(currentUser);
+            const hasCrmSearch = AuthorizationService.hasPermission(currentUser, 'crm.search.view');
+
+            let customerData;
+            if (!hasFullCrmAccess && !hasCrmSearch) {
+                // Shared lookup for quotation requests: return minimal necessary fields
+                customerData = {
+                    _id: customer._id,
+                    name: customer.name,
+                    mobile: customer.mobile,
+                    city: customer.city,
+                    district: customer.district,
+                    state: customer.state,
+                    pincode: customer.pincode,
+                    consumerNumber: customer.consumerNumber,
+                    discom: customer.discom,
+                    customerType: customer.customerType
+                };
+            } else {
+                customerData = {
                     _id: customer._id,
                     name: customer.name,
                     mobile: customer.mobile,
@@ -109,7 +125,16 @@ class CustomerController {
                     customerType: customer.customerType,
                     status: customer.status,
                     assignedEmployee: customer.assignedEmployee
-                }
+                };
+            }
+
+            customerData = AuthorizationService.filterSensitiveFields(currentUser, customerData);
+
+            return res.json({
+                success: true,
+                found: true,
+                restricted: false,
+                customer: customerData
             });
         } catch (err) {
             console.error('Customer Search Error:', err);
@@ -122,6 +147,16 @@ class CustomerController {
      */
     static async createCustomer(req, res) {
         try {
+            const currentUser = req.session.user;
+
+            // Authorization: Explicit permission required to onboard/create customers
+            if (currentUser && Array.isArray(currentUser.permissions) && !AuthorizationService.isPrimarySuperAdmin(currentUser) && !AuthorizationService.hasPermission(currentUser, 'crm.customers.create')) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Forbidden: Missing permission to onboard or create customer profiles (crm.customers.create).'
+                });
+            }
+
             const {
                 name,
                 mobile,
@@ -136,8 +171,6 @@ class CustomerController {
                 discom,
                 customerType
             } = req.body;
-
-            const currentUser = req.session.user;
 
             if (!name || !name.trim() || !mobile || !mobile.trim()) {
                 return res.status(400).json({ success: false, message: 'Customer name and primary mobile number are required.' });
@@ -198,25 +231,34 @@ class CustomerController {
                 if (!customer.alternateMobile && alternateMobile) customer.alternateMobile = alternateMobile.trim();
                 await customer.save();
 
+                const isOwner = customer.assignedEmployee && String(customer.assignedEmployee._id || customer.assignedEmployee) === String(currentUser._id);
+                const isCreator = customer.createdBy && String(customer.createdBy._id || customer.createdBy) === String(currentUser._id);
+
+                let existingData = {
+                    _id: customer._id,
+                    name: customer.name,
+                    mobile: customer.mobile,
+                    alternateMobile: customer.alternateMobile || '',
+                    email: customer.email || '',
+                    address: customer.address || '',
+                    city: customer.city || 'Raisen',
+                    district: customer.district || 'Raisen',
+                    state: customer.state || 'Madhya Pradesh',
+                    pincode: customer.pincode || '',
+                    consumerNumber: customer.consumerNumber || '',
+                    discom: customer.discom || 'MPPKVVCL',
+                    customerType: customer.customerType || 'RESIDENTIAL',
+                    status: customer.status || 'ACTIVE'
+                };
+
+                if (!isOwner && !isCreator) {
+                    existingData = AuthorizationService.filterSensitiveFields(currentUser, existingData);
+                }
+
                 return res.json({
                     success: true,
                     existing: true,
-                    customer: {
-                        _id: customer._id,
-                        name: customer.name,
-                        mobile: customer.mobile,
-                        alternateMobile: customer.alternateMobile || '',
-                        email: customer.email || '',
-                        address: customer.address || '',
-                        city: customer.city || 'Raisen',
-                        district: customer.district || 'Raisen',
-                        state: customer.state || 'Madhya Pradesh',
-                        pincode: customer.pincode || '',
-                        consumerNumber: customer.consumerNumber || '',
-                        discom: customer.discom || 'MPPKVVCL',
-                        customerType: customer.customerType || 'RESIDENTIAL',
-                        status: customer.status || 'ACTIVE'
-                    },
+                    customer: existingData,
                     message: 'Existing customer record found and verified.'
                 });
             }
@@ -250,25 +292,27 @@ class CustomerController {
                 details: { customerId: customer._id, name: customer.name, mobile: customer.mobile }
             });
 
+            const newCustomerData = AuthorizationService.filterSensitiveFields(currentUser, {
+                _id: customer._id,
+                name: customer.name,
+                mobile: customer.mobile,
+                alternateMobile: customer.alternateMobile || '',
+                email: customer.email || '',
+                address: customer.address || '',
+                city: customer.city || 'Raisen',
+                district: customer.district || 'Raisen',
+                state: customer.state || 'Madhya Pradesh',
+                pincode: customer.pincode || '',
+                consumerNumber: customer.consumerNumber || '',
+                discom: customer.discom || 'MPPKVVCL',
+                customerType: customer.customerType || 'RESIDENTIAL',
+                status: customer.status || 'ACTIVE'
+            });
+
             return res.json({
                 success: true,
                 existing: false,
-                customer: {
-                    _id: customer._id,
-                    name: customer.name,
-                    mobile: customer.mobile,
-                    alternateMobile: customer.alternateMobile || '',
-                    email: customer.email || '',
-                    address: customer.address || '',
-                    city: customer.city || 'Raisen',
-                    district: customer.district || 'Raisen',
-                    state: customer.state || 'Madhya Pradesh',
-                    pincode: customer.pincode || '',
-                    consumerNumber: customer.consumerNumber || '',
-                    discom: customer.discom || 'MPPKVVCL',
-                    customerType: customer.customerType || 'RESIDENTIAL',
-                    status: customer.status || 'ACTIVE'
-                },
+                customer: newCustomerData,
                 message: 'New customer profile registered successfully.'
             });
         } catch (err) {

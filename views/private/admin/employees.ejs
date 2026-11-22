@@ -1,5 +1,15 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+
+    const canCreateUser = checkPerm('users.employees.create');
+    const canManageUser = checkPerm('users.employees.manage');
+%>
+
 <!-- Action Feedback Alert Banner -->
 <div id="empToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
     <i class="icofont-check-circled me-2"></i><span id="empToastMsg">User updated successfully.</span>
@@ -17,12 +27,16 @@
         </p>
     </div>
     <div class="d-flex gap-2 mt-3 mt-md-0">
-        <button class="btn btn-warning font-weight-bold text-dark" data-bs-toggle="modal" data-bs-target="#createUserModal" style="border-radius: 8px;">
-            <i class="icofont-plus-circle me-1"></i> Add New Staff Member
-        </button>
-        <a href="/admin/managers" class="btn btn-outline-primary" style="border-radius: 8px;">
-            <i class="icofont-business-man me-1"></i> View Managers (<%= managers ? managers.length : 0 %>)
-        </a>
+        <% if (canCreateUser) { %>
+            <button class="btn btn-warning font-weight-bold text-dark" data-bs-toggle="modal" data-bs-target="#createUserModal" style="border-radius: 8px;">
+                <i class="icofont-plus-circle me-1"></i> Add New Staff Member
+            </button>
+        <% } %>
+        <% if (canManageUser) { %>
+            <a href="/admin/managers" class="btn btn-outline-primary" style="border-radius: 8px;">
+                <i class="icofont-business-man me-1"></i> View Managers (<%= managers ? managers.length : 0 %>)
+            </a>
+        <% } %>
     </div>
 </div>
 
@@ -48,6 +62,7 @@
                     <th>Role</th>
                     <th>Assigned Manager / Branch</th>
                     <th>Status</th>
+                    <th>Assigned Permissions</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -110,33 +125,64 @@
                                     <%= u.status %>
                                 </span>
                             </td>
+                            <td>
+                                <% if (u.isPrimarySuperAdmin) { %>
+                                    <span class="badge bg-warning text-dark font-weight-bold" title="Primary Super Admin holds unconditional full bypass across all modules">
+                                        <i class="icofont-crown text-dark me-1"></i> Root Bypass (117)
+                                    </span>
+                                <% } else { 
+                                    const pCount = u.permissions ? u.permissions.length : 0;
+                                    const fCount = u.fieldPermissions ? u.fieldPermissions.length : 0;
+                                %>
+                                    <a href="/admin/users/<%= u._id %>/permissions" class="badge <%= pCount > 0 ? 'bg-primary' : 'bg-secondary' %> text-decoration-none" title="Click to view & configure granular permissions">
+                                        <i class="icofont-key me-1"></i> <%= pCount %> / 117 active
+                                        <% if (fCount > 0) { %>
+                                            <span class="badge bg-danger ms-1" style="font-size: 9px;"><%= fCount %> fields</span>
+                                        <% } %>
+                                    </a>
+                                <% } %>
+                            </td>
                             <td class="text-end">
                                 <div class="btn-group">
-                                    <% if (u.role !== 'SUPER_ADMIN') { %>
-                                        <% if (u.role === 'EMPLOYEE') { %>
-                                            <!-- Assign Manager Button ONLY for field staff/employees -->
-                                            <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
-                                                <i class="icofont-business-man"></i>
-                                            </button>
-                                        <% } %>
-
-                                        <!-- Status Toggle Button -->
-                                        <% if (u.status === 'ACTIVE') { %>
-                                            <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate/Suspend Account" onclick="updateStatus('<%= u._id %>', 'SUSPENDED')">
-                                                <i class="icofont-ban"></i>
-                                            </button>
-                                        <% } else { %>
-                                            <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Account" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
-                                                <i class="icofont-check"></i>
-                                            </button>
-                                        <% } %>
-
-                                        <!-- Password Reset Button -->
-                                        <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
+                                    <% if (canManageUser) { %>
+                                        <!-- Granular Permissions Management Action -->
+                                        <a href="/admin/users/<%= u._id %>/permissions" class="btn btn-sm btn-outline-primary py-1 px-2" title="Manage Granular Permissions & Security Scope">
                                             <i class="icofont-key"></i>
-                                        </button>
+                                        </a>
+
+                                        <% if (u.role !== 'SUPER_ADMIN') { %>
+                                            <% if (u.role === 'EMPLOYEE') { %>
+                                                <!-- Assign Manager Button ONLY for field staff/employees -->
+                                                <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
+                                                    <i class="icofont-business-man"></i>
+                                                </button>
+                                            <% } %>
+
+                                            <!-- Status Toggle Button -->
+                                            <% if (u.status === 'ACTIVE') { %>
+                                                <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate/Suspend Account" onclick="updateStatus('<%= u._id %>', 'SUSPENDED')">
+                                                    <i class="icofont-ban"></i>
+                                                </button>
+                                            <% } else { %>
+                                                <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Account" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
+                                                    <i class="icofont-check"></i>
+                                                </button>
+                                            <% } %>
+
+                                            <!-- Password Reset Button -->
+                                            <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
+                                                <i class="icofont-key"></i>
+                                            </button>
+                                        <% } else if (u.isPrimarySuperAdmin) { %>
+                                            <span class="badge bg-light text-muted border">Primary Root Protected</span>
+                                        <% } else { %>
+                                            <!-- Password Reset Button for secondary Super Admin -->
+                                            <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
+                                                <i class="icofont-key"></i>
+                                            </button>
+                                        <% } %>
                                     <% } else { %>
-                                        <span class="badge bg-light text-muted border">Super Admin Protected</span>
+                                        <span class="badge bg-light text-muted border py-1 px-2" style="font-size: 10px;">View Only</span>
                                     <% } %>
                                 </div>
                             </td>
@@ -144,7 +190,7 @@
                     <% }); %>
                 <% } else { %>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">No personnel records found.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">No personnel records found.</td>
                     </tr>
                 <% } %>
             </tbody>
@@ -195,6 +241,10 @@
                                 <option value="SUPER_ADMIN">Super Admin</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small mb-3">
+                        <i class="icofont-info-circle me-1"></i> <strong>Zero-Trust Authorization:</strong> Newly created accounts start with empty permissions. After creation, click the key icon (<strong>Manage Permissions</strong>) to assign specific modules, features, or administrative actions.
                     </div>
 
                     <!-- Branch Assignment (Required for Branch Manager) -->

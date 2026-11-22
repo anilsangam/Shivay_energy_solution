@@ -1,6 +1,19 @@
 <%- include('../admin/partials/admin-head') %>
 
 <%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function') 
+        ? hasPermission 
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+
+    const canEditStatus = checkPerm('projects.status.edit');
+    const canAssignMember = checkPerm('projects.assignment.assign');
+    const canCompleteProject = checkPerm('projects.completion.approve');
+    const canViewQuotation = checkPerm('quotations.document.view');
+    const canCreateTask = checkPerm('projects.tasks.create');
+    const canUploadDoc = checkPerm('projects.documents.create');
+    const canManageMaterials = checkPerm('projects.materials.manage');
+
     const isEmp = user.role === 'EMPLOYEE';
     const isMgrOrAdmin = user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || user.role === 'SUPER_ADMIN';
     const postPrefix = user.role === 'SUPER_ADMIN' ? '/admin/projects' : (isEmp ? '/employee/projects' : '/manager/projects');
@@ -55,25 +68,29 @@
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">
-            <!-- Update Status: Available to Field Employees, Managers & Super Admin -->
-            <% if (project.status !== 'COMPLETED') { %>
+            <!-- Update Status: Gated by projects.status.edit -->
+            <% if (project.status !== 'COMPLETED' && canEditStatus) { %>
                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#statusModal" style="border-radius: 6px; height: 34px;">
                     <i class="icofont-refresh"></i> Update Status
                 </button>
             <% } %>
 
-            <!-- Manager & Super Admin Exclusive Management Actions -->
-            <% if (isMgrOrAdmin) { %>
+            <!-- Assign Engineer/Staff: Gated by projects.assignment.assign -->
+            <% if (canAssignMember) { %>
                 <button type="button" class="btn btn-sm btn-outline-secondary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#assignModal" style="border-radius: 6px; height: 34px;">
                     <i class="icofont-user-suited"></i> Assign Member
                 </button>
-                <% if (project.status !== 'COMPLETED') { %>
-                    <button type="button" class="btn btn-sm btn-success fw-bold text-white d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#completeModal" style="border-radius: 6px; height: 34px;">
-                        <i class="icofont-check-circled"></i> Commission & Complete
-                    </button>
-                <% } %>
             <% } %>
-            <% if (project.quotation) { %>
+
+            <!-- Complete Project: Gated by projects.completion.approve -->
+            <% if (project.status !== 'COMPLETED' && canCompleteProject) { %>
+                <button type="button" class="btn btn-sm btn-success fw-bold text-white d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#completeModal" style="border-radius: 6px; height: 34px;">
+                    <i class="icofont-check-circled"></i> Commission & Complete
+                </button>
+            <% } %>
+
+            <!-- Quotation Document: Gated by quotations.document.view -->
+            <% if (project.quotation && canViewQuotation) { %>
                 <a href="<%= user.role === 'SUPER_ADMIN' ? '/admin/quotations/' + project.quotation._id + '/document' : (user.role === 'EMPLOYEE' ? '/employee/quotations/' + project.quotation._id + '/document' : '/manager/quotations/' + project.quotation._id + '/document') %>" target="_blank" class="btn btn-sm btn-light border fw-bold d-inline-flex align-items-center gap-1 shadow-sm" style="border-radius: 6px; height: 34px;">
                     <i class="icofont-file-document text-primary"></i> View Quotation
                 </a>

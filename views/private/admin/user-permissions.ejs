@@ -1,0 +1,913 @@
+<%- include('partials/admin-head') %>
+
+<!-- Feedback Alert Banner -->
+<div id="permToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="permToastMsg">Permissions updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('permToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Unsaved Changes Floating Bar -->
+<div id="unsavedChangesBar" class="admin-unsaved-bar d-none">
+    <div class="d-flex align-items-center justify-content-between container-fluid px-4 py-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="spinner-grow spinner-grow-sm text-warning" role="status"></span>
+            <span class="font-weight-bold text-white">
+                <span id="pendingChangesCount">0</span> unsaved permission change(s) detected.
+            </span>
+            <span class="badge bg-warning text-dark ms-2" id="pendingChangesDiff">+0 added, -0 removed</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="discardChanges()">
+                <i class="icofont-refresh me-1"></i> Discard
+            </button>
+            <button type="button" class="btn btn-sm btn-warning font-weight-bold text-dark px-3" onclick="savePermissions()">
+                <i class="icofont-save me-1"></i> Save Permission Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Header Navigation & Title -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <a href="/admin/employees" class="btn btn-sm btn-outline-secondary py-1 px-2 text-decoration-none">
+                <i class="icofont-arrow-left me-1"></i> Back to Staff Directory
+            </a>
+            <span class="text-muted">/</span>
+            <span class="badge bg-light text-dark border">RBAC + FBAC Engine</span>
+        </div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            Granular Permission Management
+        </h2>
+        <p class="text-muted small mb-0">
+            Configure feature-level access, granular action rights, sensitive financial visibility, and data scope for this account.
+        </p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+        <% if (canEdit) { %>
+            <button type="button" class="btn btn-warning font-weight-bold text-dark px-3" onclick="savePermissions()" id="topSaveBtn">
+                <i class="icofont-save me-1"></i> Save Changes
+            </button>
+        <% } %>
+    </div>
+</div>
+
+<!-- Target User Profile Summary Card -->
+<div class="admin-card mb-4 <%= isTargetPrimaryAdmin ? 'border-warning' : '' %>">
+    <div class="p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="admin-avatar-circle" style="width: 56px; height: 56px; font-size: 20px; background: <%= isTargetPrimaryAdmin ? '#f59e0b' : 'var(--admin-navy-primary)' %>; color: #fff;">
+                    <%= (targetUser.name || 'U').split(' ').filter(Boolean).map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                </div>
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <h4 class="font-weight-bold text-dark mb-0"><%= targetUser.name %></h4>
+                        <% if (isTargetPrimaryAdmin) { %>
+                            <span class="badge bg-warning text-dark border border-warning font-weight-bold">
+                                <i class="icofont-crown text-dark me-1"></i> PRIMARY SUPER ADMIN
+                            </span>
+                        <% } else if (targetUser.role === 'SUPER_ADMIN') { %>
+                            <span class="badge bg-danger text-white">Secondary Super Admin</span>
+                        <% } else if (targetUser.role === 'MANAGER' || targetUser.role === 'BRANCH_MANAGER') { %>
+                            <span class="badge bg-primary text-white">Branch Manager</span>
+                        <% } else { %>
+                            <span class="badge bg-secondary text-white">Employee (Field Staff)</span>
+                        <% } %>
+
+                        <span class="badge <%= targetUser.status === 'ACTIVE' ? 'bg-success' : 'bg-warning text-dark' %>">
+                            <%= targetUser.status %>
+                        </span>
+                    </div>
+                    <div class="text-muted small mt-1 d-flex flex-wrap gap-3">
+                        <span><i class="icofont-id-card text-muted me-1"></i>ID: <code><%= targetUser.employeeId || 'N/A' %></code></span>
+                        <span><i class="icofont-envelope text-muted me-1"></i><%= targetUser.email %></span>
+                        <span><i class="icofont-phone text-muted me-1"></i><%= targetUser.mobile %></span>
+                        <span><i class="icofont-building text-muted me-1"></i>Branch: <strong><%= (targetUser.branchId && targetUser.branchId.name) ? targetUser.branchId.name : 'Central Operations' %></strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Permission Metrics Counter Pills -->
+            <div class="d-flex flex-wrap gap-2 text-center">
+                <div class="p-2 px-3 bg-light rounded-3 border">
+                    <div class="small text-muted" style="font-size: 11px;">Assigned Permissions</div>
+                    <div class="font-weight-bold text-dark fs-5" id="metricAssignedCount">
+                        <%= isTargetPrimaryAdmin ? '117 / 117' : ((targetUser.permissions ? targetUser.permissions.length : 0) + ' / 117') %>
+                    </div>
+                </div>
+                <div class="p-2 px-3 bg-light rounded-3 border">
+                    <div class="small text-muted" style="font-size: 11px;">Sensitive Fields</div>
+                    <div class="font-weight-bold text-dark fs-5" id="metricFieldCount">
+                        <%= isTargetPrimaryAdmin ? '6 / 6' : ((targetUser.fieldPermissions ? targetUser.fieldPermissions.length : 0) + ' / 6') %>
+                    </div>
+                </div>
+                <div class="p-2 px-3 bg-light rounded-3 border">
+                    <div class="small text-muted" style="font-size: 11px;">Security Version</div>
+                    <div class="font-weight-bold text-primary fs-5">v<%= targetUser.permissionVersion || 1 %></div>
+                </div>
+            </div>
+        </div>
+
+        <% if (isTargetPrimaryAdmin) { %>
+            <div class="alert alert-warning mt-3 mb-0 d-flex align-items-center gap-2 py-2">
+                <i class="icofont-shield-alt fs-20 text-warning"></i>
+                <div class="small">
+                    <strong>Protected Root Account:</strong> This user is the designated Primary Super Admin (<code><%= targetUser.email %></code>).
+                    By constitutional architecture, this root authority holds unconditional bypass across all modules, sensitive fields, and branch boundaries.
+                    Permissions cannot be restricted, revoked, or demoted.
+                </div>
+            </div>
+        <% } else if (isSelf) { %>
+            <div class="alert alert-info mt-3 mb-0 d-flex align-items-center gap-2 py-2">
+                <i class="icofont-info-circle fs-20 text-info"></i>
+                <div class="small">
+                    <strong>Self-Escalation Safeguard:</strong> You are viewing your own administrative user account.
+                    To prevent privilege escalation and maintain administrative integrity, users cannot modify their own security permissions.
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Action & Search Toolbar -->
+<div class="admin-card mb-4">
+    <div class="p-3">
+        <div class="row g-2 align-items-center justify-content-between">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="icofont-search text-muted"></i>
+                    </span>
+                    <input type="text" id="permissionSearchInput" class="form-control border-start-0" placeholder="Search permissions by module, action, or key..." oninput="handleSearch(this.value)">
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" title="Clear Search">
+                        <i class="icofont-close-line"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-7 d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
+                <!-- Filter Tabs -->
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="filterBtnAll" onclick="setFilter('ALL')">
+                        All (<span id="totalVisibleCount">117</span>)
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="filterBtnAssigned" onclick="setFilter('ASSIGNED')">
+                        Assigned (<span id="totalAssignedCount"><%= targetUser.permissions ? targetUser.permissions.length : 0 %></span>)
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="filterBtnUnassigned" onclick="setFilter('UNASSIGNED')">
+                        Unassigned (<span id="totalUnassignedCount"><%= 117 - (targetUser.permissions ? targetUser.permissions.length : 0) %></span>)
+                    </button>
+                </div>
+
+                <% if (canEdit) { %>
+                    <!-- Quick Presets Dropdown -->
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="icofont-magic me-1"></i> Preset Templates
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li><h6 class="dropdown-header">Apply Canonical Baseline</h6></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="applyRoleTemplate('EMPLOYEE')"><i class="icofont-user text-muted me-2"></i> Employee Standard (21 perms)</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="applyRoleTemplate('BRANCH_MANAGER')"><i class="icofont-business-man text-info me-2"></i> Branch Manager (52 perms)</a></li>
+                            <% if (isCallerPrimaryAdmin) { %>
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="applyRoleTemplate('SUPER_ADMIN')"><i class="icofont-crown text-warning me-2"></i> Full Super Admin (117 perms)</a></li>
+                            <% } %>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmRevokeAll()"><i class="icofont-trash text-danger me-2"></i> Revoke All Permissions</a></li>
+                        </ul>
+                    </div>
+                <% } %>
+
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleExpandAll()" id="expandAllBtn">
+                    <i class="icofont-expand me-1"></i> Expand All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form id="permissionsForm" onsubmit="event.preventDefault(); savePermissions();">
+    <!-- SECTION 1: BRANCH & DATA SCOPE (WHERE SUPPORTED) -->
+    <div class="admin-card mb-4">
+        <div class="admin-card-header bg-light">
+            <div>
+                <h5 class="admin-card-title mb-0">
+                    <i class="icofont-building text-primary me-2"></i> Branch & Data Scope Authorization
+                </h5>
+                <div class="admin-card-subtitle">
+                    Control records visibility boundary across multi-branch enterprise installations
+                </div>
+            </div>
+            <span class="badge bg-secondary" id="scopeBadgeDisplay">Scope: <%= targetUser.dataScope || 'BRANCH' %></span>
+        </div>
+        <div class="p-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label small font-weight-bold">Primary Data Scope</label>
+                    <select id="dataScopeSelect" class="form-select" onchange="handleDataScopeChange(this.value)" <%= !canEdit ? 'disabled' : '' %>>
+                        <option value="BRANCH" <%= (!targetUser.dataScope || targetUser.dataScope === 'BRANCH') ? 'selected' : '' %>>
+                            Branch Scope — Records strictly belonging to user's assigned branch office (Standard)
+                        </option>
+                        <option value="OWN" <%= targetUser.dataScope === 'OWN' ? 'selected' : '' %>>
+                            Own Records Only — Strictly records created by this user
+                        </option>
+                        <option value="ASSIGNED" <%= targetUser.dataScope === 'ASSIGNED' ? 'selected' : '' %>>
+                            Assigned & Reporting Scope — Records assigned to user or their direct reporting subordinates
+                        </option>
+                        <option value="MULTI_BRANCH" <%= targetUser.dataScope === 'MULTI_BRANCH' ? 'selected' : '' %>>
+                            Multi-Branch Scope — Access across designated authorized branches
+                        </option>
+                        <% if (isCallerPrimaryAdmin) { %>
+                            <option value="GLOBAL" <%= targetUser.dataScope === 'GLOBAL' ? 'selected' : '' %>>
+                                Global Enterprise Scope — Unrestricted visibility across ALL branches (Executive Only)
+                            </option>
+                        <% } %>
+                    </select>
+                    <div class="form-text small text-muted">
+                        Backend authorization enforces query filtering automatically based on this scope.
+                    </div>
+                </div>
+
+                <!-- Multi-Branch Checkboxes (Visible only when MULTI_BRANCH is selected) -->
+                <div class="col-md-6" id="multiBranchContainer" style="display: <%= targetUser.dataScope === 'MULTI_BRANCH' ? 'block' : 'none' %>;">
+                    <label class="form-label small font-weight-bold">Authorized Multi-Branch Access</label>
+                    <div class="border rounded p-2 bg-light" style="max-height: 160px; overflow-y: auto;">
+                        <% 
+                        const assignedBranchIds = (targetUser.authorizedBranches || []).map(b => (b._id || b).toString());
+                        branches.forEach(b => { 
+                            const isChecked = assignedBranchIds.includes(b._id.toString());
+                        %>
+                            <div class="form-check form-check-sm mb-1">
+                                <input class="form-check-input authorized-branch-checkbox" type="checkbox" value="<%= b._id %>" id="branch_<%= b._id %>" <%= isChecked ? 'checked' : '' %> <%= !canEdit ? 'disabled' : '' %> onchange="markUnsaved()">
+                                <label class="form-check-label small" for="branch_<%= b._id %>">
+                                    <strong><%= b.name %></strong> <span class="text-muted">(<%= b.code %>, <%= b.city || 'M.P.' %>)</span>
+                                </label>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: SENSITIVE FIELD-LEVEL PERMISSIONS -->
+    <div class="admin-card mb-4 border-danger">
+        <div class="admin-card-header text-white" style="background: #991b1b;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="icofont-shield-alt fs-20 text-warning"></i>
+                <div>
+                    <h5 class="admin-card-title mb-0 text-white">Elevated Sensitive Field Access</h5>
+                    <div class="text-white-50 small">Independently assignable permissions for confidential procurement rates, margins, and PII</div>
+                </div>
+            </div>
+            <span class="badge bg-warning text-dark font-weight-bold">Field-Level Access Control</span>
+        </div>
+        <div class="p-4 bg-light">
+            <div class="row g-3">
+                <% 
+                const userFieldPerms = targetUser.fieldPermissions || [];
+                for (const [fieldKey, fieldMeta] of Object.entries(sensitiveFields)) { 
+                    const isChecked = isTargetPrimaryAdmin || userFieldPerms.includes(fieldKey);
+                %>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border shadow-sm <%= isChecked ? 'border-primary bg-white' : 'bg-white' %>">
+                            <div class="card-body p-3">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input field-perm-checkbox" type="checkbox" id="field_<%= fieldKey %>" value="<%= fieldKey %>" <%= isChecked ? 'checked' : '' %> <%= !canEdit ? 'disabled' : '' %> onchange="handleFieldCheck(this)">
+                                    <label class="form-check-label font-weight-bold text-dark small" for="field_<%= fieldKey %>">
+                                        <%= fieldMeta.label || fieldMeta.name || fieldKey %>
+                                    </label>
+                                </div>
+                                <p class="text-muted mb-2" style="font-size: 11px; line-height: 1.4;">
+                                    <%= fieldMeta.description || '' %>
+                                </p>
+                                <code><%= fieldKey %></code>
+                            </div>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: HIERARCHICAL MODULE & FEATURE PERMISSIONS -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h4 class="font-weight-bold text-dark mb-0">Module & Feature Permissions</h4>
+                <p class="text-muted small mb-0">Organized hierarchically: Module &rarr; Feature &rarr; Granular Action</p>
+            </div>
+        </div>
+
+        <div class="accordion" id="modulesAccordion">
+            <% 
+            const userPerms = targetUser.permissions || [];
+            
+            // Loop over all 15 Canonical Modules from permissionTree
+            for (const [modId, modData] of Object.entries(permissionTree)) {
+                // Group module permissions by feature
+                const featuresMap = {};
+                (modData.permissions || []).forEach(perm => {
+                    const featureKey = perm.feature || 'general';
+                    if (!featuresMap[featureKey]) {
+                        featuresMap[featureKey] = [];
+                    }
+                    featuresMap[featureKey].push(perm);
+                });
+
+                const totalModPerms = (modData.permissions || []).length;
+                const assignedModPerms = (modData.permissions || []).filter(p => isTargetPrimaryAdmin || userPerms.includes(p.key)).length;
+            %>
+                <div class="accordion-item admin-card mb-3 module-accordion-card" id="card_mod_<%= modId %>" data-module="<%= modId %>">
+                    <h2 class="accordion-header" id="heading_<%= modId %>">
+                        <button class="accordion-button <%= assignedModPerms > 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_<%= modId %>" aria-expanded="<%= assignedModPerms > 0 ? 'true' : 'false' %>" aria-controls="collapse_<%= modId %>">
+                            <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="admin-avatar-circle" style="width: 38px; height: 38px; font-size: 16px; background: rgba(30, 41, 59, 0.08); color: var(--admin-navy-primary);">
+                                        <i class="<%= modData.icon || 'icofont-box' %>"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="font-weight-bold text-dark fs-6"><%= modData.name %></span>
+                                            <span class="badge bg-light text-dark border" style="font-size: 10px;"><%= modData.category %></span>
+                                        </div>
+                                        <div class="text-muted small module-desc-text" style="font-size: 12px;"><%= modData.description %></div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge <%= assignedModPerms === totalModPerms ? 'bg-success' : (assignedModPerms > 0 ? 'bg-primary' : 'bg-secondary') %> module-counter-badge" id="counter_<%= modId %>">
+                                        <%= assignedModPerms %> / <%= totalModPerms %>
+                                    </span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+
+                    <div id="collapse_<%= modId %>" class="accordion-collapse collapse <%= assignedModPerms > 0 ? 'show' : '' %>" aria-labelledby="heading_<%= modId %>">
+                        <div class="accordion-body p-4 bg-white border-top">
+                            <% if (canEdit) { %>
+                                <!-- Module-Level Bulk Controls -->
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                    <div class="small text-muted font-weight-bold">
+                                        Module: <span class="text-dark"><%= modData.name %></span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;" onclick="selectAllInModule('<%= modId %>')">
+                                            <i class="icofont-check-circled me-1"></i> Select All in Module
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="clearAllInModule('<%= modId %>')">
+                                            <i class="icofont-close-circled me-1"></i> Clear Module
+                                        </button>
+                                    </div>
+                                </div>
+                            <% } %>
+
+                            <!-- Features inside Module -->
+                            <div class="features-wrapper">
+                                <% for (const [featureKey, permsList] of Object.entries(featuresMap)) { 
+                                    const featureTitle = (featureKey || 'general').split('_').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                                %>
+                                    <div class="feature-block mb-3 p-3 rounded-3 bg-light border feature-item" data-feature="<%= featureKey %>" data-module="<%= modId %>">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <div class="font-weight-bold text-dark small d-flex align-items-center gap-2">
+                                                <i class="icofont-folder text-warning"></i>
+                                                <span><%= featureTitle %></span>
+                                                <span class="text-muted" style="font-size: 11px;">(<%= permsList.length %> actions)</span>
+                                            </div>
+                                            <% if (canEdit) { %>
+                                                <div class="d-flex gap-2">
+                                                    <a href="javascript:void(0)" class="small text-primary text-decoration-none" onclick="selectAllInFeature('<%= modId %>', '<%= featureKey %>')">
+                                                        Select All
+                                                    </a>
+                                                    <span class="text-muted small">|</span>
+                                                    <a href="javascript:void(0)" class="small text-muted text-decoration-none" onclick="clearAllInFeature('<%= modId %>', '<%= featureKey %>')">
+                                                        Clear
+                                                    </a>
+                                                </div>
+                                            <% } %>
+                                        </div>
+
+                                        <!-- Granular Actions Grid -->
+                                        <div class="row g-2">
+                                            <% permsList.forEach(p => { 
+                                                const isPermChecked = isTargetPrimaryAdmin || userPerms.includes(p.key);
+                                                const permName = p.name || p.label || p.key || 'Permission';
+                                                const permDesc = p.description || '';
+                                                const permAction = p.action || '';
+                                                
+                                                // Verb styling badges
+                                                let badgeClass = 'bg-secondary';
+                                                const actionVerb = permAction ? String(permAction).toUpperCase() : 'ACTION';
+                                                if (actionVerb === 'VIEW') badgeClass = 'bg-info text-dark';
+                                                else if (actionVerb === 'CREATE') badgeClass = 'bg-success';
+                                                else if (actionVerb === 'EDIT') badgeClass = 'bg-warning text-dark';
+                                                else if (actionVerb === 'DELETE') badgeClass = 'bg-danger';
+                                                else if (actionVerb === 'APPROVE') badgeClass = 'bg-primary';
+                                                else if (actionVerb === 'REJECT') badgeClass = 'bg-dark';
+                                                else if (actionVerb === 'EXPORT') badgeClass = 'bg-teal text-white';
+                                                else if (actionVerb === 'MANAGE') badgeClass = 'bg-indigo text-white';
+                                            %>
+                                                <div class="col-md-6 col-lg-4 permission-item-col" 
+                                                     data-key="<%= p.key || '' %>" 
+                                                     data-name="<%= String(permName).toLowerCase() %>" 
+                                                     data-desc="<%= String(permDesc).toLowerCase() %>" 
+                                                     data-action="<%= String(permAction).toLowerCase() %>">
+                                                    <div class="card p-2 h-100 bg-white border shadow-none perm-card <%= isPermChecked ? 'border-primary' : '' %>">
+                                                        <div class="form-check form-check-sm mb-1 d-flex align-items-start gap-2">
+                                                            <input class="form-check-input perm-checkbox mt-1" type="checkbox" id="perm_<%= p.key %>" value="<%= p.key %>" data-module="<%= modId %>" data-feature="<%= featureKey %>" <%= isPermChecked ? 'checked' : '' %> <%= !canEdit ? 'disabled' : '' %> onchange="handlePermCheck(this)">
+                                                            <label class="form-check-label text-dark font-weight-bold small w-100" for="perm_<%= p.key %>">
+                                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                                    <span><%= permName %></span>
+                                                                    <span class="badge <%= badgeClass %>" style="font-size: 9px;"><%= actionVerb %></span>
+                                                                </div>
+                                                                <div class="text-muted fw-normal" style="font-size: 11px; line-height: 1.3;">
+                                                                    <%= permDesc %>
+                                                                </div>
+                                                                <code class="mt-1 d-inline-block text-muted" style="font-size: 10px;"><%= p.key %></code>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <% }); %>
+                                        </div>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Administrative Notes & Confirmation -->
+    <div class="admin-card mb-4">
+        <div class="p-4">
+            <h6 class="font-weight-bold text-dark mb-2">Administrative Notes & Audit Reason</h6>
+            <p class="text-muted small mb-2">Provide reason for permission changes. This note will be recorded in the immutable activity audit log.</p>
+            <textarea id="auditNotesInput" class="form-control" rows="2" placeholder="e.g. Delegated solar quotation preparation and catalogue creation rights per Operations Head approval." <%= !canEdit ? 'disabled' : '' %>></textarea>
+        </div>
+    </div>
+
+    <!-- Bottom Action Controls -->
+    <div class="d-flex align-items-center justify-content-between mb-5">
+        <a href="/admin/employees" class="btn btn-outline-secondary">
+            <i class="icofont-arrow-left me-1"></i> Cancel & Return to Staff
+        </a>
+
+        <% if (canEdit) { %>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-danger" onclick="confirmRevokeAll()">
+                    <i class="icofont-trash me-1"></i> Revoke All
+                </button>
+                <button type="button" class="btn btn-warning font-weight-bold text-dark px-4" onclick="savePermissions()">
+                    <i class="icofont-save me-1"></i> Save Changes
+                </button>
+            </div>
+        <% } %>
+    </div>
+</form>
+
+<style>
+.admin-unsaved-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0f172a;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+    z-index: 1050;
+    border-top: 2px solid #f59e0b;
+}
+.bg-teal { background-color: #0d9488 !important; }
+.bg-indigo { background-color: #4f46e5 !important; }
+.perm-card:hover {
+    border-color: var(--admin-navy-primary) !important;
+}
+.accordion-button {
+    cursor: pointer !important;
+    background-color: #ffffff;
+    box-shadow: none !important;
+    padding: 1.1rem 1.25rem;
+    border-radius: 8px !important;
+    transition: background-color 0.15s ease-in-out;
+}
+.accordion-button:hover {
+    background-color: #f8fafc;
+}
+.accordion-button:not(.collapsed) {
+    background-color: #f1f5f9;
+    color: var(--admin-navy-primary);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.08) !important;
+}
+.accordion-button:focus {
+    box-shadow: none !important;
+}
+.accordion-item {
+    border-radius: 8px !important;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+}
+</style>
+
+<script>
+const USER_ID = '<%= targetUser._id %>';
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+const IS_PRIMARY_ADMIN = <%= isTargetPrimaryAdmin ? 'true' : 'false' %>;
+const CAN_EDIT = <%= canEdit ? 'true' : 'false' %>;
+
+// Track baseline state for diffing
+const initialPermsSet = new Set(<%- JSON.stringify(targetUser.permissions || []) %>);
+const initialFieldsSet = new Set(<%- JSON.stringify(targetUser.fieldPermissions || []) %>);
+let initialDataScope = '<%= targetUser.dataScope || "BRANCH" %>';
+
+let hasUnsavedChanges = false;
+let currentFilter = 'ALL';
+
+function markUnsaved() {
+    if (!CAN_EDIT) return;
+    const currentPerms = getCurrentSelectedPermissions();
+    const currentFields = getCurrentSelectedFields();
+    const currentScope = document.getElementById('dataScopeSelect').value;
+
+    let addedCount = 0;
+    let removedCount = 0;
+
+    currentPerms.forEach(p => {
+        if (!initialPermsSet.has(p)) addedCount++;
+    });
+    initialPermsSet.forEach(p => {
+        if (!currentPerms.includes(p)) removedCount++;
+    });
+
+    currentFields.forEach(f => {
+        if (!initialFieldsSet.has(f)) addedCount++;
+    });
+    initialFieldsSet.forEach(f => {
+        if (!currentFields.includes(f)) removedCount++;
+    });
+
+    const scopeChanged = currentScope !== initialDataScope;
+    const totalDiff = addedCount + removedCount + (scopeChanged ? 1 : 0);
+
+    hasUnsavedChanges = totalDiff > 0;
+    const unsavedBar = document.getElementById('unsavedChangesBar');
+    const diffBadge = document.getElementById('pendingChangesDiff');
+    const countSpan = document.getElementById('pendingChangesCount');
+
+    if (hasUnsavedChanges) {
+        if (unsavedBar) unsavedBar.classList.remove('d-none');
+        if (countSpan) countSpan.innerText = totalDiff;
+        if (diffBadge) diffBadge.innerText = `+${addedCount} added, -${removedCount} removed${scopeChanged ? ', scope modified' : ''}`;
+    } else {
+        if (unsavedBar) unsavedBar.classList.add('d-none');
+    }
+
+    updateMetricCounters(currentPerms.length, currentFields.length);
+}
+
+function updateMetricCounters(permsCount, fieldsCount) {
+    const metricPerm = document.getElementById('metricAssignedCount');
+    const metricField = document.getElementById('metricFieldCount');
+    const totalAssignedCount = document.getElementById('totalAssignedCount');
+    const totalUnassignedCount = document.getElementById('totalUnassignedCount');
+
+    if (metricPerm) metricPerm.innerText = `${permsCount} / 117`;
+    if (metricField) metricField.innerText = `${fieldsCount} / 6`;
+    if (totalAssignedCount) totalAssignedCount.innerText = permsCount;
+    if (totalUnassignedCount) totalUnassignedCount.innerText = 117 - permsCount;
+
+    // Update module counter badges
+    document.querySelectorAll('.module-accordion-card').forEach(card => {
+        const modId = card.getAttribute('data-module');
+        const checkboxes = card.querySelectorAll('.perm-checkbox');
+        const checkedCount = card.querySelectorAll('.perm-checkbox:checked').length;
+        const totalCount = checkboxes.length;
+        const badge = document.getElementById(`counter_${modId}`);
+        if (badge) {
+            badge.innerText = `${checkedCount} / ${totalCount}`;
+            badge.className = `badge ${checkedCount === totalCount ? 'bg-success' : (checkedCount > 0 ? 'bg-primary' : 'bg-secondary')} module-counter-badge`;
+        }
+    });
+}
+
+function handlePermCheck(el) {
+    const card = el.closest('.perm-card');
+    if (card) {
+        if (el.checked) card.classList.add('border-primary');
+        else card.classList.remove('border-primary');
+    }
+    markUnsaved();
+}
+
+function handleFieldCheck(el) {
+    const card = el.closest('.card');
+    if (card) {
+        if (el.checked) card.classList.add('border-primary');
+        else card.classList.remove('border-primary');
+    }
+    markUnsaved();
+}
+
+function handleDataScopeChange(val) {
+    const multiContainer = document.getElementById('multiBranchContainer');
+    const badge = document.getElementById('scopeBadgeDisplay');
+    if (multiContainer) {
+        multiContainer.style.display = (val === 'MULTI_BRANCH') ? 'block' : 'none';
+    }
+    if (badge) badge.innerText = `Scope: ${val}`;
+    markUnsaved();
+}
+
+function getCurrentSelectedPermissions() {
+    const checked = [];
+    document.querySelectorAll('.perm-checkbox:checked').forEach(cb => {
+        checked.push(cb.value);
+    });
+    return checked;
+}
+
+function getCurrentSelectedFields() {
+    const checked = [];
+    document.querySelectorAll('.field-perm-checkbox:checked').forEach(cb => {
+        checked.push(cb.value);
+    });
+    return checked;
+}
+
+function getCurrentAuthorizedBranches() {
+    const checked = [];
+    document.querySelectorAll('.authorized-branch-checkbox:checked').forEach(cb => {
+        checked.push(cb.value);
+    });
+    return checked;
+}
+
+// Bulk Actions
+function selectAllInModule(modId) {
+    if (!CAN_EDIT) return;
+    document.querySelectorAll(`.perm-checkbox[data-module="${modId}"]`).forEach(cb => {
+        cb.checked = true;
+        const card = cb.closest('.perm-card');
+        if (card) card.classList.add('border-primary');
+    });
+    markUnsaved();
+}
+
+function clearAllInModule(modId) {
+    if (!CAN_EDIT) return;
+    document.querySelectorAll(`.perm-checkbox[data-module="${modId}"]`).forEach(cb => {
+        cb.checked = false;
+        const card = cb.closest('.perm-card');
+        if (card) card.classList.remove('border-primary');
+    });
+    markUnsaved();
+}
+
+function selectAllInFeature(modId, featureKey) {
+    if (!CAN_EDIT) return;
+    document.querySelectorAll(`.perm-checkbox[data-module="${modId}"][data-feature="${featureKey}"]`).forEach(cb => {
+        cb.checked = true;
+        const card = cb.closest('.perm-card');
+        if (card) card.classList.add('border-primary');
+    });
+    markUnsaved();
+}
+
+function clearAllInFeature(modId, featureKey) {
+    if (!CAN_EDIT) return;
+    document.querySelectorAll(`.perm-checkbox[data-module="${modId}"][data-feature="${featureKey}"]`).forEach(cb => {
+        cb.checked = false;
+        const card = cb.closest('.perm-card');
+        if (card) card.classList.remove('border-primary');
+    });
+    markUnsaved();
+}
+
+const ROLE_BASELINES = <%- JSON.stringify(roleBaselines || {}) %>;
+
+function applyRoleTemplate(roleKey) {
+    if (!CAN_EDIT) return;
+    if (!confirm(`Apply the standard baseline permissions for role ${roleKey}? Any custom overrides will be reset to this baseline.`)) return;
+
+    const baseline = ROLE_BASELINES[roleKey];
+    if (!baseline) return;
+
+    const targetPerms = new Set(baseline.permissions || []);
+    const targetFields = new Set(baseline.fieldPermissions || []);
+
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = targetPerms.has(cb.value);
+        const card = cb.closest('.perm-card');
+        if (card) {
+            if (cb.checked) card.classList.add('border-primary');
+            else card.classList.remove('border-primary');
+        }
+    });
+
+    document.querySelectorAll('.field-perm-checkbox').forEach(cb => {
+        cb.checked = targetFields.has(cb.value);
+        const card = cb.closest('.card');
+        if (card) {
+            if (cb.checked) card.classList.add('border-primary');
+            else card.classList.remove('border-primary');
+        }
+    });
+
+    markUnsaved();
+}
+
+function confirmRevokeAll() {
+    if (!CAN_EDIT) return;
+    if (!confirm(`Are you sure you want to REVOKE ALL permissions and field visibility for this user? They will have zero access to system features until permissions are re-assigned.`)) return;
+
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = false;
+        const card = cb.closest('.perm-card');
+        if (card) card.classList.remove('border-primary');
+    });
+
+    document.querySelectorAll('.field-perm-checkbox').forEach(cb => {
+        cb.checked = false;
+        const card = cb.closest('.card');
+        if (card) card.classList.remove('border-primary');
+    });
+
+    markUnsaved();
+}
+
+function discardChanges() {
+    if (!confirm('Discard all pending changes and revert to previously saved permissions?')) return;
+    window.location.reload();
+}
+
+// Search & Filter
+function handleSearch(term) {
+    const cleanTerm = (term || '').trim().toLowerCase();
+    let visible = 0;
+
+    document.querySelectorAll('.permission-item-col').forEach(col => {
+        const key = col.getAttribute('data-key') || '';
+        const name = col.getAttribute('data-name') || '';
+        const desc = col.getAttribute('data-desc') || '';
+        const action = col.getAttribute('data-action') || '';
+        const cb = col.querySelector('.perm-checkbox');
+        const isChecked = cb ? cb.checked : false;
+
+        let matchesSearch = !cleanTerm || key.includes(cleanTerm) || name.includes(cleanTerm) || desc.includes(cleanTerm) || action.includes(cleanTerm);
+        let matchesFilter = true;
+        if (currentFilter === 'ASSIGNED') matchesFilter = isChecked;
+        else if (currentFilter === 'UNASSIGNED') matchesFilter = !isChecked;
+
+        if (matchesSearch && matchesFilter) {
+            col.style.display = 'block';
+            visible++;
+        } else {
+            col.style.display = 'none';
+        }
+    });
+
+    // Hide empty features and modules during search
+    document.querySelectorAll('.feature-item').forEach(feat => {
+        const hasVisibleCols = Array.from(feat.querySelectorAll('.permission-item-col')).some(c => c.style.display !== 'none');
+        feat.style.display = hasVisibleCols ? 'block' : 'none';
+    });
+
+    document.querySelectorAll('.module-accordion-card').forEach(card => {
+        const modId = card.getAttribute('data-module');
+        const collapseEl = document.getElementById(`collapse_${modId}`);
+        const btn = card.querySelector('.accordion-button');
+        const hasVisibleFeats = Array.from(card.querySelectorAll('.feature-item')).some(f => f.style.display !== 'none');
+        card.style.display = hasVisibleFeats ? 'block' : 'none';
+
+        // Auto-expand module if there are matching search results
+        if (cleanTerm && hasVisibleFeats && collapseEl) {
+            collapseEl.classList.add('show');
+            if (btn) {
+                btn.classList.remove('collapsed');
+                btn.setAttribute('aria-expanded', 'true');
+            }
+        }
+    });
+
+    const totalVisibleSpan = document.getElementById('totalVisibleCount');
+    if (totalVisibleSpan) totalVisibleSpan.innerText = visible;
+}
+
+function clearSearch() {
+    document.getElementById('permissionSearchInput').value = '';
+    handleSearch('');
+}
+
+function setFilter(type) {
+    currentFilter = type;
+    ['All', 'Assigned', 'Unassigned'].forEach(t => {
+        const btn = document.getElementById(`filterBtn${t}`);
+        if (btn) {
+            if (t.toUpperCase() === type) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+    handleSearch(document.getElementById('permissionSearchInput').value);
+}
+
+function toggleExpandAll(forceState) {
+    const collapses = document.querySelectorAll('.accordion-collapse');
+    const buttons = document.querySelectorAll('.accordion-button[data-bs-toggle="collapse"]');
+    const btn = document.getElementById('expandAllBtn');
+
+    // Check if any collapse is currently closed
+    let hasClosed = false;
+    collapses.forEach(c => {
+        if (!c.classList.contains('show')) hasClosed = true;
+    });
+
+    const shouldExpand = (typeof forceState === 'boolean') ? forceState : hasClosed;
+
+    collapses.forEach(c => {
+        if (shouldExpand) {
+            c.classList.add('show');
+        } else {
+            c.classList.remove('show');
+        }
+    });
+
+    buttons.forEach(b => {
+        if (shouldExpand) {
+            b.classList.remove('collapsed');
+            b.setAttribute('aria-expanded', 'true');
+        } else {
+            b.classList.add('collapsed');
+            b.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    if (btn) {
+        btn.innerHTML = shouldExpand 
+            ? '<i class="icofont-collapse me-1"></i> Collapse All' 
+            : '<i class="icofont-expand me-1"></i> Expand All';
+    }
+}
+
+// Save Execution
+async function savePermissions() {
+    if (!CAN_EDIT) return;
+
+    const permissions = getCurrentSelectedPermissions();
+    const fieldPermissions = getCurrentSelectedFields();
+    const dataScope = document.getElementById('dataScopeSelect').value;
+    const authorizedBranches = getCurrentAuthorizedBranches();
+    const notes = document.getElementById('auditNotesInput').value;
+
+    const body = {
+        permissions,
+        fieldPermissions,
+        dataScope,
+        authorizedBranches,
+        notes,
+        _csrf: CSRF_TOKEN
+    };
+
+    try {
+        const res = await fetch(`/api/admin/users/${USER_ID}/permissions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            hasUnsavedChanges = false;
+            const toast = document.getElementById('permToast');
+            const toastMsg = document.getElementById('permToastMsg');
+            if (toast && toastMsg) {
+                toastMsg.innerText = data.message || 'Permissions updated successfully.';
+                toast.classList.remove('d-none');
+            }
+            const unsavedBar = document.getElementById('unsavedChangesBar');
+            if (unsavedBar) unsavedBar.classList.add('d-none');
+            setTimeout(() => window.location.reload(), 1200);
+        } else {
+            alert(data.message || 'Error updating permissions.');
+        }
+    } catch (err) {
+        console.error('Save error:', err);
+        alert('Server communication error during permission save.');
+    }
+}
+
+window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved permission changes.';
+    }
+});
+</script>
+
+<%- include('partials/admin-footer') %>
