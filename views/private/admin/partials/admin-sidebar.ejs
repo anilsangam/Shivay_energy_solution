@@ -33,12 +33,15 @@
     const canCreateQuotation = checkAnyPerm(['quotations.preparation.create', 'quotations.requests.create']);
     const canViewInvoices = checkPerm('invoices.records.view');
     const canViewCustomers = checkPerm('crm.customers.view');
+    const canViewLeads = checkPerm('crm.leads.view');
+    const canViewInspections = checkAnyPerm(['projects.tasks.view', 'projects.inspections.view']);
+    const canViewInstallation = checkAnyPerm(['projects.installation.manage', 'projects.tasks.view']);
     const canViewReports = checkPerm('reports.analytics.view');
 
     // 3. Website Enquiries & Leads (Submenu)
     const canViewSurveys = checkPerm('crm.enquiries.view');
     const canViewFranchise = checkPerm('franchise.applications.view');
-    const canViewComplaints = checkPerm('complaints.tickets.view');
+    const canViewComplaints = checkPerm('complaints.tickets.view') || checkPerm('complaints.records.view');
     const hasEnquiriesSubmenu = canViewSurveys || canViewFranchise || canViewComplaints;
 
     // 4. Material Management & Stock Inventory (Submenu)
@@ -75,14 +78,13 @@
     const dashboardUrl = isSuperAdmin ? '/admin' : (isManager ? '/manager/dashboard' : '/employee/dashboard');
     const projectsUrl = isSuperAdmin ? '/admin/projects' : (isManager ? '/manager/projects' : '/employee/projects');
     const quotationsUrl = isSuperAdmin ? '/admin/quotations' : (isManager ? '/manager/quotations' : '/employee/quotations');
-    const newQuotationUrl = isSuperAdmin ? '/admin/quotations/new' : (isManager ? '/manager/quotations/new' : '/employee/quotations/new');
     const invoicesUrl = isManager ? '/manager/invoices' : '/admin/invoices';
     const profileUrl = isSuperAdmin ? '/admin/profile' : (isManager ? '/manager/profile' : '/employee/profile');
     const employeesUrl = isManager ? '/manager/employees' : '/admin/employees';
 
     // Section containers
     const hasCoreSection = canViewDashboard || canViewPersonalAttendance || canViewBranchAttendance;
-    const hasOperationsSection = canViewProjects || canViewQuotations || canCreateQuotation || canViewInvoices || canViewCustomers || canViewReports || hasEnquiriesSubmenu;
+    const hasOperationsSection = canViewProjects || canViewQuotations || canCreateQuotation || canViewInvoices || canViewCustomers || canViewLeads || canViewInspections || canViewInstallation || canViewReports || hasEnquiriesSubmenu;
     const hasInventorySection = hasMaterialSubmenu;
 %>
 
@@ -152,9 +154,9 @@
 
             <% if (canCreateQuotation) { %>
                 <li class="admin-nav-item">
-                    <a href="<%= newQuotationUrl %>" class="admin-nav-link <%= (currentActive === 'admin-quotations-new' || currentActive === 'manager-quotations-new' || currentActive === 'employee-quotations-new') ? 'active' : '' %>">
-                        <i class="icofont-plus-circle"></i>
-                        <span>New Solar Request</span>
+                    <a href="/employee/quotations/generate" class="admin-nav-link <%= (currentActive === 'employee-quotations-generate' || currentActive === 'admin-quotations-new' || currentActive === 'manager-quotations-new' || currentActive === 'employee-quotations-new') ? 'active' : '' %>">
+                        <i class="icofont-calculator-alt-1 text-warning"></i>
+                        <span>Quotation Generate</span>
                     </a>
                 </li>
             <% } %>
@@ -164,6 +166,33 @@
                     <a href="<%= invoicesUrl %>" class="admin-nav-link <%= currentActive === 'invoices' ? 'active' : '' %>">
                         <i class="icofont-bill"></i>
                         <span>Tax Invoices</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewLeads) { %>
+                <li class="admin-nav-item">
+                    <a href="/admin/leads" class="admin-nav-link <%= currentActive === 'admin-leads' ? 'active' : '' %>">
+                        <i class="icofont-headphone-alt text-warning"></i>
+                        <span>Leads & Telecalling</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewInspections) { %>
+                <li class="admin-nav-item">
+                    <a href="/field-engineer/workspace" class="admin-nav-link <%= currentActive === 'field-engineer-workspace' ? 'active' : '' %>">
+                        <i class="icofont-direction-sign text-info"></i>
+                        <span>Field Workspace</span>
+                    </a>
+                </li>
+            <% } %>
+
+            <% if (canViewInstallation) { %>
+                <li class="admin-nav-item">
+                    <a href="/installation/workspace" class="admin-nav-link <%= currentActive === 'installation-workspace' ? 'active' : '' %>">
+                        <i class="icofont-tools-alt-2 text-success"></i>
+                        <span>Installation Team</span>
                     </a>
                 </li>
             <% } %>
@@ -214,7 +243,7 @@
                         <% } %>
                         <% if (canViewComplaints) { %>
                             <li>
-                                <a href="/admin/complaints" class="admin-subnav-link <%= currentActive === 'admin-complaints' ? 'active' : '' %>">
+                                <a href="<%= (currentUser && currentUser.role === 'EMPLOYEE') ? '/employee/complaints' : ((currentUser && currentUser.role === 'BRANCH_MANAGER') ? '/manager/complaints' : '/admin/complaints') %>" class="admin-subnav-link <%= (currentActive === 'admin-complaints' || currentActive === 'complaints') ? 'active' : '' %>">
                                     <i class="icofont-tools-alt-2"></i>
                                     <span>Service Complaints</span>
                                 </a>

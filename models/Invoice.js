@@ -9,6 +9,23 @@ const paymentTransactionSchema = new mongoose.Schema({
     notes: { type: String, default: '', trim: true }
 }, { _id: true });
 
+const invoiceItemSchema = new mongoose.Schema({
+    itemName: { type: String, trim: true },
+    description: { type: String, default: '' },
+    model: { type: String, default: '', trim: true },
+    serialNumbers: [{ type: String, trim: true }],
+    serialNumbersRaw: { type: String, default: '' },
+    hsnCode: { type: String, default: '85414012', trim: true },
+    qty: { type: Number, required: true, default: 1, min: [0.001, 'Quantity must be positive'] },
+    rate: { type: Number, required: true, default: 0, min: [0, 'Rate cannot be negative'] },
+    amount: { type: Number, required: true, default: 0, min: [0, 'Amount cannot be negative'] },
+    cgstRate: { type: Number, default: 6 },
+    cgstAmount: { type: Number, default: 0 },
+    sgstRate: { type: Number, default: 6 },
+    sgstAmount: { type: Number, default: 0 },
+    itemTotal: { type: Number, default: 0 }
+}, { _id: true });
+
 const invoiceVersionSchema = new mongoose.Schema({
     version: { type: Number, required: true },
     customerName: { type: String },
@@ -16,21 +33,22 @@ const invoiceVersionSchema = new mongoose.Schema({
     customerGstin: { type: String },
     customerAddress: { type: String },
     plantCapacityKw: { type: Number },
-    items: [{
-        description: String,
-        hsnCode: { type: String, default: '8541' },
-        qty: Number,
-        rate: Number,
-        amount: Number
-    }],
+    items: [invoiceItemSchema],
     subtotal: { type: Number, required: true },
     gstRate: { type: Number, default: 12 },
-    cgst: { type: Number },
-    sgst: { type: Number },
-    gstAmount: { type: Number, required: true },
+    cgst: { type: Number, default: 0 },
+    sgst: { type: Number, default: 0 },
+    gstAmount: { type: Number, required: true, default: 0 },
+    roundOff: { type: Number, default: 0 },
+    totalTaxAmount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
     paidAmount: { type: Number, default: 0 },
     balanceAmount: { type: Number, default: 0 },
+    paymentReceivedPercent: { type: String, default: '100%' },
+    paymentReceivedAmount: { type: Number, default: 0 },
+    mprgNo: { type: String, default: 'CZS2026042411080336' },
+    companyGstin: { type: String, default: '23AFRFS0964B1Z0' },
+    invoiceTitle: { type: String, default: 'TAX INVOICE ORIGINAL FOR RECIPIENT' },
     paymentStatus: { type: String, default: 'unpaid' },
     paymentMethod: { type: String },
     invoiceDate: { type: String },
@@ -55,18 +73,14 @@ const invoiceSchema = new mongoose.Schema({
     customerGstin: { type: String },
     customerAddress: { type: String },
     plantCapacityKw: { type: Number },
-    items: [{
-        description: { type: String, required: true },
-        hsnCode: { type: String, default: '8541' },
-        qty: { type: Number, required: true, min: [0.001, 'Quantity must be positive'] },
-        rate: { type: Number, required: true, min: [0, 'Rate cannot be negative'] },
-        amount: { type: Number, required: true, min: [0, 'Amount cannot be negative'] }
-    }],
+    items: [invoiceItemSchema],
     subtotal: { type: Number, required: true, min: [0, 'Subtotal cannot be negative'] },
     gstRate: { type: Number, default: 12 }, // Solar in India GST is typically 12% (concessional composite)
     cgst: { type: Number, default: 0 },
     sgst: { type: Number, default: 0 },
     gstAmount: { type: Number, required: true, default: 0 },
+    roundOff: { type: Number, default: 0 },
+    totalTaxAmount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true, min: [0, 'Total amount cannot be negative'] },
     paidAmount: { type: Number, default: 0, min: [0, 'Paid amount cannot be negative'] },
     balanceAmount: { 
@@ -75,6 +89,18 @@ const invoiceSchema = new mongoose.Schema({
             return this.totalAmount !== undefined ? this.totalAmount : 0;
         }, 
         min: [0, 'Balance amount cannot be negative'] 
+    },
+    paymentReceivedPercent: { type: String, default: '100%' },
+    paymentReceivedAmount: { type: Number, default: 0 },
+    mprgNo: { type: String, default: 'CZS2026042411080336' },
+    companyGstin: { type: String, default: '23AFRFS0964B1Z0' },
+    invoiceTitle: { type: String, default: 'TAX INVOICE ORIGINAL FOR RECIPIENT' },
+    termsAndConditions: [{ type: String }],
+    bankDetails: {
+        name: { type: String, default: 'STATE BANK OF INDIA' },
+        ifsc: { type: String, default: 'SBIN0000462' },
+        accountNo: { type: String, default: '44391949170' },
+        branch: { type: String, default: 'YASHWANT NAGAR, SAUGOR ROAD RAISEN' }
     },
     paymentStatus: { 
         type: String, 

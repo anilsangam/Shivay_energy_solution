@@ -1,0 +1,466 @@
+<%- include('../admin/partials/admin-head', { title: 'Installation Team Workspace | Shivay Energy Solutions' }) %>
+    <style>
+        .inst-header-card {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            color: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .inst-metric-badge {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #fff;
+            text-align: center;
+        }
+        .inst-metric-badge h3 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .inst-metric-badge small {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .inst-card {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+        }
+        .inst-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .inst-card-body {
+            padding: 20px;
+        }
+        .status-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-badge-dispatched {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .status-badge-progress {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        .status-badge-completed {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        .progress-thin {
+            height: 8px;
+            border-radius: 4px;
+        }
+        @media (max-width: 768px) {
+            .inst-header-card {
+                padding: 16px;
+            }
+            .inst-metric-badge {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+
+    <!-- HERO SUMMARY -->
+                <div class="inst-header-card">
+                    <div class="row align-items-center">
+                        <div class="col-lg-7 mb-3 mb-lg-0">
+                            <span class="badge bg-warning text-dark mb-2 font-weight-bold">Solar Installation & Commissioning</span>
+                            <h2 class="h3 font-weight-bold mb-1">Welcome, <%= user ? user.name : 'Installation Technician' %></h2>
+                            <p class="mb-0 text-white-50 small">Material Verification, Inverter/Panel Serial Tagging, Electrical Grid Testing & Signoff</p>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <div class="inst-metric-badge">
+                                        <h3 id="statTotal"><%= projects ? projects.length : 0 %></h3>
+                                        <small>Total Projects</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="inst-metric-badge">
+                                        <h3 id="statInProgress"><%= projects ? projects.filter(p => p.status === 'INSTALLATION_IN_PROGRESS' || p.status === 'MATERIAL_DISPATCHED').length : 0 %></h3>
+                                        <small>Active Installs</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="inst-metric-badge">
+                                        <h3 id="statCompleted"><%= projects ? projects.filter(p => p.status === 'COMPLETED').length : 0 %></h3>
+                                        <small>Completed</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROJECT WORKSPACE LIST -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="inst-card">
+                            <div class="inst-card-header">
+                                <h5 class="mb-0 font-weight-bold"><i class="icofont-tools-alt-2 me-2 text-primary"></i> Site Execution Queue</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search project, customer or mobile..." style="max-width: 250px;">
+                                </div>
+                            </div>
+                            <div class="inst-card-body p-0">
+                                <% if (!projects || projects.length === 0) { %>
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="icofont-check-circled icofont-3x mb-2 text-success"></i>
+                                        <p class="mb-0">No pending installation assignments found.</p>
+                                    </div>
+                                <% } else { %>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" id="projectsTable">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Project & Plant</th>
+                                                    <th>Customer & Location</th>
+                                                    <th>Branch</th>
+                                                    <th>Progress</th>
+                                                    <th>Status</th>
+                                                    <th class="text-end">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% projects.forEach(function(proj) { %>
+                                                    <tr data-project-id="<%= proj._id %>" data-status="<%= proj.status %>">
+                                                        <td>
+                                                            <strong><%= proj.projectNumber || ('PRJ-' + proj._id.toString().slice(-6).toUpperCase()) %></strong>
+                                                            <div class="small text-muted">
+                                                                Capacity: <span class="badge bg-light text-dark border"><%= proj.capacityKw || 0 %> kW</span>
+                                                                <% if (proj.quotation && proj.quotation.quotationNumber) { %>
+                                                                    | Quote: <%= proj.quotation.quotationNumber %>
+                                                                <% } %>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div><strong><%= proj.customer ? proj.customer.name : 'Unknown Customer' %></strong></div>
+                                                            <div class="small text-muted"><i class="icofont-phone"></i> <%= proj.customer ? proj.customer.mobile : '-' %></div>
+                                                            <div class="small text-muted text-truncate" style="max-width: 220px;"><%= proj.customer ? proj.customer.address : '' %></div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-secondary"><%= proj.branch ? proj.branch.name : 'Central' %></span>
+                                                        </td>
+                                                        <td style="min-width: 140px;">
+                                                            <div class="d-flex justify-content-between small mb-1">
+                                                                <span>Progress</span>
+                                                                <strong><%= proj.progressPercentage || 0 %>%</strong>
+                                                            </div>
+                                                            <div class="progress progress-thin">
+                                                                <div class="progress-bar bg-success" role="progressbar" style="width: <%= proj.progressPercentage || 0 %>%"></div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <% if (proj.status === 'COMPLETED') { %>
+                                                                <span class="status-badge-pill status-badge-completed"><i class="icofont-check"></i> Completed</span>
+                                                            <% } else if (proj.status === 'MATERIAL_DISPATCHED' || proj.status === 'INSTALLATION_SCHEDULED') { %>
+                                                                <span class="status-badge-pill status-badge-dispatched"><i class="icofont-truck-loaded"></i> Dispatched</span>
+                                                            <% } else { %>
+                                                                <span class="status-badge-pill status-badge-progress"><i class="icofont-clock-time"></i> <%= proj.status.replace(/_/g, ' ') %></span>
+                                                            <% } %>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <div class="btn-group btn-group-sm">
+                                                                <% if (proj.status === 'MATERIAL_DISPATCHED' || proj.status === 'INSTALLATION_SCHEDULED' || proj.status === 'MATERIAL_ALLOCATED') { %>
+                                                                    <button class="btn btn-outline-primary btn-sm" onclick="startInstallation('<%= proj._id %>')">
+                                                                        <i class="icofont-play-alt-2"></i> Start Install
+                                                                    </button>
+                                                                <% } %>
+                                                                <% if (proj.status === 'INSTALLATION_IN_PROGRESS' || proj.status === 'TESTING_AND_COMMISSIONING') { %>
+                                                                    <button class="btn btn-success btn-sm" onclick="openTestingModal('<%= proj._id %>', '<%= proj.capacityKw || 0 %>')">
+                                                                        <i class="icofont-dashboard-web"></i> Test & Signoff
+                                                                    </button>
+                                                                <% } %>
+                                                                <% if (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'BRANCH_MANAGER' || (typeof hasPermission === 'function' && hasPermission('projects.completion.approve'))) && proj.status === 'TESTING_AND_COMMISSIONING') { %>
+                                                                    <button class="btn btn-warning btn-sm" onclick="openApprovalModal('<%= proj._id %>', '<%= proj.projectNumber %>')">
+                                                                        <i class="icofont-check-circled"></i> Approve
+                                                                    </button>
+                                                                <% } %>
+                                                                <a href="/employee/projects/<%= proj._id %>" class="btn btn-outline-secondary btn-sm" title="View Full Project Details">
+                                                                    <i class="icofont-eye"></i>
+                                                                </a>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+    <!-- MODAL: ELECTRICAL TESTING & HANDOVER SIGNOFF -->
+    <div class="modal fade" id="testingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="testingForm" onsubmit="submitTestingForm(event)">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title"><i class="icofont-electrical-sensor me-2"></i> Commissioning, Electrical Testing & Handover</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="modalProjectId" name="projectId">
+                        
+                        <h6 class="font-weight-bold text-primary mb-3">1. Electrical Grid & Array Measurements</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label small">Voc (Open Circuit V)</label>
+                                <input type="number" step="0.1" class="form-control" name="voc" id="inputVoc" placeholder="e.g. 450" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Isc (Short Circuit A)</label>
+                                <input type="number" step="0.1" class="form-control" name="isc" id="inputIsc" placeholder="e.g. 11.5" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Grid Voltage (V)</label>
+                                <input type="number" step="0.1" class="form-control" name="gridVoltage" id="inputGridVoltage" placeholder="e.g. 230" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small">Earthing (Ohms, < 5.0)</label>
+                                <input type="number" step="0.01" class="form-control" name="earthingResistance" id="inputEarthingResistance" placeholder="e.g. 2.1" required>
+                                <small class="text-danger d-none" id="earthingWarning">Earthing resistance must be below 5.0 Ohms</small>
+                            </div>
+                        </div>
+
+                        <h6 class="font-weight-bold text-primary mb-3">2. Installed Serial Numbers (Scanned on Site)</h6>
+                        <div class="mb-3">
+                            <label class="form-label small">Serial Numbers (Comma or Newline separated)</label>
+                            <textarea class="form-control font-monospace" rows="2" name="installedSerials" id="inputInstalledSerials" placeholder="e.g. INV-10029, PAN-5001, PAN-5002"></textarea>
+                            <small class="text-muted">Enter serials physically installed on rooftop/inverter station</small>
+                        </div>
+
+                        <h6 class="font-weight-bold text-primary mb-3">3. Customer Signoff & Site Verification</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small">Customer Signoff Name</label>
+                                <input type="text" class="form-control" name="signoffName" id="inputSignoffName" placeholder="Customer full name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small">Customer Rating (1-5)</label>
+                                <select class="form-select" name="customerRating" id="inputRating">
+                                    <option value="5" selected>5 - Excellent</option>
+                                    <option value="4">4 - Very Good</option>
+                                    <option value="3">3 - Satisfactory</option>
+                                    <option value="2">2 - Needs Attention</option>
+                                    <option value="1">1 - Unsatisfactory</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small">Customer Handover Feedback</label>
+                                <textarea class="form-control" rows="2" name="signoffRemarks" id="inputSignoffRemarks" placeholder="Customer confirmed inverter operation and plant generation"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitTesting">Submit Commissioning Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: FINAL COMPLETION APPROVAL (MANAGER) -->
+    <div class="modal fade" id="approvalModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="approvalForm" onsubmit="submitApprovalForm(event)">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="icofont-check-circled me-2"></i> Approve Project Commissioning</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="approvalProjectId" name="projectId">
+                        <p>You are approving final commissioning and energization for project: <strong id="approvalProjectNumber"></strong>.</p>
+                        <div class="mb-3">
+                            <label class="form-label small">DISCOM Net Meter Serial Number</label>
+                            <input type="text" class="form-control" name="meterNumber" id="inputMeterNumber" placeholder="e.g. MTR-DISCOM-9921" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small">Approval / Quality Remarks</label>
+                            <textarea class="form-control" rows="2" name="approvalRemarks" id="inputApprovalRemarks" placeholder="Site verified, net metering active, final signoff completed"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success" id="btnSubmitApproval">Confirm & Mark Completed</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCsrfToken() {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            return meta ? meta.getAttribute('content') : '';
+        }
+
+        async function startInstallation(projectId) {
+            if (!confirm('Commence physical solar installation for this project site?')) return;
+            try {
+                const response = await fetch(`/api/projects/${projectId}/installation/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCsrfToken()
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message || 'Installation commenced successfully.');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (err) {
+                alert('Network error commencing installation: ' + err.message);
+            }
+        }
+
+        function openTestingModal(projectId, capacity) {
+            document.getElementById('modalProjectId').value = projectId;
+            const modalEl = document.getElementById('testingModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        function openApprovalModal(projectId, projectNumber) {
+            document.getElementById('approvalProjectId').value = projectId;
+            document.getElementById('approvalProjectNumber').textContent = projectNumber;
+            const modalEl = document.getElementById('approvalModal');
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+
+        async function submitTestingForm(e) {
+            e.preventDefault();
+            const projectId = document.getElementById('modalProjectId').value;
+            const earthing = parseFloat(document.getElementById('inputEarthingResistance').value);
+            
+            if (earthing >= 5.0) {
+                document.getElementById('earthingWarning').classList.remove('d-none');
+                alert('Safety Warning: Earthing resistance must be below 5.0 Ohms for solar grid synchronization.');
+                return;
+            } else {
+                document.getElementById('earthingWarning').classList.add('d-none');
+            }
+
+            const rawSerials = document.getElementById('inputInstalledSerials').value;
+            const installedSerials = rawSerials ? rawSerials.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
+
+            const payload = {
+                testResults: {
+                    voc: parseFloat(document.getElementById('inputVoc').value) || 0,
+                    isc: parseFloat(document.getElementById('inputIsc').value) || 0,
+                    gridVoltage: parseFloat(document.getElementById('inputGridVoltage').value) || 0,
+                    earthingResistance: earthing,
+                    inverterOperational: true,
+                    gridSynchronized: true
+                },
+                installedSerials,
+                customerSignoff: {
+                    signedBy: document.getElementById('inputSignoffName').value,
+                    feedback: document.getElementById('inputSignoffRemarks').value,
+                    rating: parseInt(document.getElementById('inputRating').value) || 5
+                }
+            };
+
+            const btn = document.getElementById('btnSubmitTesting');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch(`/api/projects/${projectId}/installation/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCsrfToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Installation testing & handover recorded successfully.');
+                    window.location.reload();
+                } else {
+                    alert('Submission failed: ' + data.message);
+                }
+            } catch (err) {
+                alert('Error submitting testing results: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Commissioning Report';
+            }
+        }
+
+        async function submitApprovalForm(e) {
+            e.preventDefault();
+            const projectId = document.getElementById('approvalProjectId').value;
+            const payload = {
+                meterNumber: document.getElementById('inputMeterNumber').value,
+                remarks: document.getElementById('inputApprovalRemarks').value
+            };
+
+            const btn = document.getElementById('btnSubmitApproval');
+            btn.disabled = true;
+            btn.textContent = 'Approving...';
+
+            try {
+                const response = await fetch(`/api/projects/${projectId}/approve-completion`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': getCsrfToken()
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message || 'Project approved and completed successfully.');
+                    window.location.reload();
+                } else {
+                    alert('Approval failed: ' + data.message);
+                }
+            } catch (err) {
+                alert('Error completing project: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Confirm & Mark Completed';
+            }
+        }
+
+        // Live filter for search
+        document.getElementById('searchInput')?.addEventListener('keyup', function() {
+            const val = this.value.toLowerCase();
+            document.querySelectorAll('#projectsTable tbody tr').forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(val) ? '' : 'none';
+            });
+        });
+    </script>
+
+<%- include('../admin/partials/admin-footer') %>

@@ -43,10 +43,66 @@
                 }
             });
 
-            // 2. Native Bootstrap-Compatible Dropdowns (Profile Menus)
+            // 2. Native Bootstrap-Compatible Dropdowns (Profile Menus & Left-Opening Table Menus)
+            function resetFloatingMenuStyles(menu) {
+                if (!menu) return;
+                menu.style.position = '';
+                menu.style.top = '';
+                menu.style.left = '';
+                menu.style.right = '';
+                menu.style.bottom = '';
+                menu.style.margin = '';
+            }
+
+            function positionFloatingDropdown(toggle, menu) {
+                if (!toggle || !menu) return;
+                const useFixed = toggle.getAttribute('data-bs-popper-config') ||
+                    toggle.closest('.admin-table, .admin-mobile-staff-list');
+                if (!useFixed) return;
+
+                const rect = toggle.getBoundingClientRect();
+                menu.style.position = 'fixed';
+                menu.style.right = 'auto';
+                menu.style.bottom = 'auto';
+                menu.style.margin = '0';
+
+                const menuW = menu.offsetWidth || 210;
+                const menuH = menu.offsetHeight || 220;
+
+                // Open to the left when right-aligned (.dropdown-menu-end), clamped within viewport
+                let left = menu.classList.contains('dropdown-menu-end')
+                    ? (rect.right - menuW)
+                    : rect.left;
+                if (left + menuW > window.innerWidth - 8) {
+                    left = Math.max(8, window.innerWidth - menuW - 8);
+                }
+                if (left < 8) {
+                    left = 8;
+                }
+
+                // Prefer opening downward; flip upward if near bottom edge
+                let top = rect.bottom + 4;
+                if (top + menuH > window.innerHeight - 8 && (rect.top - menuH - 4) >= 8) {
+                    top = rect.top - menuH - 4;
+                } else if (top + menuH > window.innerHeight - 8) {
+                    top = Math.max(8, window.innerHeight - menuH - 8);
+                }
+
+                menu.style.left = left + 'px';
+                menu.style.top = top + 'px';
+            }
+
+            function closeAllDropdowns(exceptMenu) {
+                document.querySelectorAll('.dropdown-menu.show').forEach(function(d) {
+                    if (d !== exceptMenu) {
+                        d.classList.remove('show');
+                        resetFloatingMenuStyles(d);
+                    }
+                });
+            }
+
             document.addEventListener('click', function(e) {
                 const toggle = e.target.closest('[data-bs-toggle="dropdown"]');
-                const openDropdowns = document.querySelectorAll('.dropdown-menu.show');
 
                 if (toggle) {
                     e.preventDefault();
@@ -54,21 +110,27 @@
                     const container = toggle.closest('.dropdown');
                     const menu = container ? container.querySelector('.dropdown-menu') : null;
 
-                    // Close any other open dropdowns
-                    openDropdowns.forEach(function(d) {
-                        if (d !== menu) d.classList.remove('show');
-                    });
+                    closeAllDropdowns(menu);
 
                     if (menu) {
-                        menu.classList.toggle('show');
+                        const willShow = !menu.classList.contains('show');
+                        menu.classList.toggle('show', willShow);
+                        if (willShow) {
+                            positionFloatingDropdown(toggle, menu);
+                        } else {
+                            resetFloatingMenuStyles(menu);
+                        }
                     }
                 } else if (!e.target.closest('.dropdown-menu')) {
-                    // Clicked outside - close all dropdown menus
-                    openDropdowns.forEach(function(d) {
-                        d.classList.remove('show');
-                    });
+                    closeAllDropdowns(null);
                 }
             });
+
+            window.addEventListener('resize', function() { closeAllDropdowns(null); });
+            window.addEventListener('scroll', function(e) {
+                if (e.target && e.target.closest && e.target.closest('.dropdown-menu')) return;
+                closeAllDropdowns(null);
+            }, true);
 
             // 3. Native Bootstrap-Compatible Tabs Navigation
             document.addEventListener('click', function(e) {

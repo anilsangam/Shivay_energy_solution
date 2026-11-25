@@ -42,10 +42,15 @@
 
 /* Form Controls & Sizing Calibration */
 .req-form .form-label {
-    font-size: 12px;
+    display: block;
+    font-size: 11.5px;
     font-weight: 600;
     color: #243b53;
     margin-bottom: 4px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .req-form .form-control,
 .req-form .form-select {
@@ -55,9 +60,15 @@
     border: 1px solid #cbd5e1;
     color: #1e293b;
     background-color: #ffffff;
-    padding: 6px 12px;
+    padding: 6px 10px;
     box-shadow: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.req-form .form-control.form-control-sm,
+.req-form .form-select.form-select-sm {
+    height: 34px;
+    font-size: 12.5px;
+    padding: 4px 10px;
 }
 .req-form .form-control:focus,
 .req-form .form-select:focus {
@@ -220,13 +231,23 @@
         gap: 8px;
     }
     .req-footer-btn-wrap .btn {
-        flex: 1;
         text-align: center;
         justify-content: center;
-        height: 42px;
+        min-height: 42px;
+        height: auto;
+        padding: 8px 12px !important;
         display: inline-flex;
         align-items: center;
         font-size: 13px;
+        line-height: 1.2;
+        white-space: normal;
+    }
+    .req-footer-btn-wrap .btn-outline-secondary {
+        flex: 0 0 auto;
+        min-width: 88px;
+    }
+    .req-footer-btn-wrap #submitBtn {
+        flex: 1;
     }
     #equipmentTable {
         min-width: 620px;

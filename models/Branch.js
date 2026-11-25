@@ -15,9 +15,15 @@ const branchSchema = new mongoose.Schema({
         longitude: { type: Number, default: 77.7807 }
     },
     geofenceRadiusMeters: { type: Number, default: 500 },
+    // Service Coverage & PIN Routing Configuration (Phase 4)
+    serviceablePinCodes: [{ type: String, trim: true }],
+    districts: [{ type: String, trim: true }],
+    cities: [{ type: String, trim: true }],
+    isActiveServiceCoverage: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
 branchSchema.index({ isActive: 1 });
+branchSchema.index({ serviceablePinCodes: 1 });
 
 module.exports = mongoose.models.Branch || mongoose.model('Branch', branchSchema);

@@ -167,6 +167,37 @@ class UploadService {
         }
         return null;
     }
+
+    /**
+     * Validate and upload a staff profile picture (strictly JPG, PNG, or WEBP)
+     * @returns {Promise<string|null>} Uploaded asset URL or null when no upload data was sent
+     */
+    static async processProfileAvatar({ avatarData, avatarFilename, avatarMimeType } = {}) {
+        if (!avatarData) return null;
+
+        const mime = String(avatarMimeType || '').toLowerCase().trim();
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+            throw new Error('Profile picture must be a valid JPG, PNG, or WEBP image.');
+        }
+
+        const extMap = {
+            'image/jpeg': '.jpg',
+            'image/png': '.png',
+            'image/webp': '.webp'
+        };
+        const safeName = (avatarFilename && String(avatarFilename).trim())
+            ? String(avatarFilename).trim()
+            : `staff-avatar${extMap[mime]}`;
+
+        const result = await UploadService.processUpload({
+            name: safeName,
+            type: mime,
+            data: avatarData,
+            category: 'employee_avatar'
+        });
+
+        return result.cloudinaryUrl || result.url;
+    }
 }
 
 module.exports = UploadService;

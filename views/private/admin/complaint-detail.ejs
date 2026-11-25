@@ -1,0 +1,781 @@
+<%- include('partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Action completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+            <h2 class="font-weight-bold mb-0" style="color: var(--admin-navy-primary); font-size: 24px;">
+                <i class="icofont-tools-alt-2 me-2 text-warning"></i> Complaint Ticket: <span class="font-monospace text-primary"><%= complaint.ticketId %></span>
+            </h2>
+            <% const curStatus = (complaint.status || 'submitted').toLowerCase(); %>
+            <% if (curStatus === 'resolved') { %>
+                <span class="badge bg-info-subtle text-info border border-info px-2 py-1">RESOLVED</span>
+            <% } else if (curStatus === 'closed') { %>
+                <span class="badge bg-success-subtle text-success border border-success px-2 py-1">CLOSED</span>
+            <% } else if (curStatus === 'waiting for material' || curStatus === 'waiting_for_material') { %>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1">WAITING MATERIAL</span>
+            <% } else if (curStatus === 'in_progress' || curStatus === 'work in progress' || curStatus === 'site visited' || curStatus === 'on the way' || curStatus === 'visit scheduled') { %>
+                <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">IN PROGRESS</span>
+            <% } else if (curStatus === 'assigned') { %>
+                <span class="badge bg-primary-subtle text-primary border border-primary px-2 py-1">ASSIGNED</span>
+            <% } else if (curStatus === 'reopened') { %>
+                <span class="badge bg-danger text-white px-2 py-1">REOPENED</span>
+            <% } else { %>
+                <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">SUBMITTED</span>
+            <% } %>
+        </div>
+        <p class="text-muted small mb-0 font-monospace">
+            ID: <%= complaint._id %> | Complaint Ref: <%= complaint.complaintId || complaint.ticketId %> | Filed: <%= complaint.createdAt ? new Date(complaint.createdAt).toLocaleString('en-IN') : '' %>
+        </p>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="d-flex flex-wrap gap-2">
+        <a href="<%= (currentUser && currentUser.role === 'EMPLOYEE') ? '/employee/complaints' : '/admin/complaints' %>" class="btn btn-outline-secondary" style="border-radius: 8px;">
+            <i class="icofont-arrow-left me-1"></i> Back to Tickets
+        </a>
+
+        <% if (currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+            <button class="btn btn-outline-primary" style="border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#assignTechModal">
+                <i class="icofont-ui-user me-1"></i> Assign Technician
+            </button>
+            <button class="btn btn-outline-warning" style="border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#transferBranchModal">
+                <i class="icofont-exchange me-1"></i> Transfer Branch
+            </button>
+        <% } %>
+
+        <% if (curStatus === 'resolved' && currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+            <button class="btn btn-success fw-bold" style="border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#approveClosureModal">
+                <i class="icofont-check-circled me-1"></i> Approve Closure
+            </button>
+            <button class="btn btn-danger fw-bold" style="border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#reopenModal">
+                <i class="icofont-refresh me-1"></i> Reopen Ticket
+            </button>
+        <% } else if (curStatus === 'closed' && currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+            <button class="btn btn-outline-danger fw-bold" style="border-radius: 8px;" data-bs-toggle="modal" data-bs-target="#reopenModal">
+                <i class="icofont-refresh me-1"></i> Reopen Ticket
+            </button>
+        <% } %>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- LEFT COLUMN: SECTIONS 1 to 6 -->
+    <div class="col-lg-6">
+        <!-- 1. CUSTOMER INFORMATION -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-user-alt-7 text-primary me-2"></i>1. Customer Information</h6>
+                <span class="badge bg-light text-muted border font-monospace">Public Intake</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Customer Name</small>
+                        <strong class="text-dark fs-6"><%= complaint.customerName %></strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">10-Digit Mobile</small>
+                        <a href="tel:<%= complaint.mobile %>" class="font-monospace fw-bold text-decoration-none text-dark">
+                            <i class="icofont-phone text-success me-1"></i><%= complaint.mobile %>
+                        </a>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Email Address</small>
+                        <span class="text-dark"><%= complaint.email || 'Not Provided' %></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">System Capacity</small>
+                        <span class="text-dark"><%= complaint.systemCapacity || 'Not Specified' %></span>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Complaint Category &amp; Problem Description</small>
+                        <span class="badge bg-light text-primary border mb-2"><%= (complaint.category || 'general_service').replace(/_/g, ' ').toUpperCase() %></span>
+                        <div class="p-2 bg-light rounded border text-secondary small"><%= complaint.description %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. ORIGINAL SERVICE ADDRESS (IMMUTABLE AUDIT TRAIL) -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-location-pin text-danger me-2"></i>2. Original Service Address (Site Location)</h6>
+                <span class="badge bg-secondary text-white" style="font-size: 10px;">IMMUTABLE</span>
+            </div>
+            <div class="card-body">
+                <% const origAddr = complaint.originalServiceAddress || {}; %>
+                <div class="row g-2">
+                    <div class="col-12">
+                        <small class="text-muted d-block">Full Service Site Address</small>
+                        <strong class="text-dark"><%= origAddr.address || complaint.serviceAddress || 'Address on file' %></strong>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">City / Block</small>
+                        <span class="text-dark"><%= origAddr.city || complaint.city || '-' %></span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">District</small>
+                        <span class="text-dark"><%= origAddr.district || complaint.district || '-' %></span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted d-block">State &amp; PIN Code</small>
+                        <span class="text-dark"><%= origAddr.state || complaint.state || 'Madhya Pradesh' %> - <strong class="font-monospace"><%= origAddr.pinCode || complaint.pinCode || '-' %></strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. LINKED CUSTOMER & PROJECT DETAILS -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-solar-panel text-warning me-2"></i>3. Linked Customer &amp; Project Details</h6>
+                <% if (currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#linkModal">
+                        <i class="icofont-link me-1"></i> Link / Re-Link
+                    </button>
+                <% } %>
+            </div>
+            <div class="card-body">
+                <% if (complaint.project) { %>
+                    <% const prj = complaint.project; %>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Project Number</small>
+                            <strong class="text-primary font-monospace"><%= prj.projectNumber || prj.title %></strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Installed Plant Capacity</small>
+                            <strong class="text-dark"><%= prj.capacityKw || prj.systemCapacity || '-' %> kW</strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">DISCOM / Consumer No.</small>
+                            <span class="text-dark font-monospace"><%= prj.discom || prj.consumerNumber || '-' %></span>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Commissioning / Install Date</small>
+                            <span class="text-dark"><%= prj.commissioningDate ? new Date(prj.commissioningDate).toLocaleDateString('en-IN') : (prj.createdAt ? new Date(prj.createdAt).toLocaleDateString('en-IN') : '-') %></span>
+                        </div>
+                    </div>
+                <% } else if (complaint.customer) { %>
+                    <div class="alert alert-warning mb-0 p-3 small">
+                        <i class="icofont-info-circle me-1"></i> Customer is linked (<%= (complaint.customer && complaint.customer.name) || complaint.customerName %>), but <strong>no specific Project is attached</strong>.
+                        <% if (candidateProjects && candidateProjects.length > 0) { %>
+                            <div class="mt-2">
+                                <strong>Found <%= candidateProjects.length %> Project(s) for this Customer:</strong>
+                                <ul class="mb-1 ps-3">
+                                    <% candidateProjects.forEach(cp => { %>
+                                        <li><%= cp.projectNumber || cp.title %> (<%= cp.capacityKw || '' %> kW)</li>
+                                    <% }); %>
+                                </ul>
+                                <em>Use the "Link / Re-Link" button above to attach the target project.</em>
+                            </div>
+                        <% } else { %>
+                            <div class="mt-1">Customer has 0 registered installation projects.</div>
+                        <% } %>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-light border mb-0 p-3 small text-muted">
+                        <i class="icofont-warning text-warning me-1"></i> Complaint is not linked to any existing Customer or Project in the database.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 4. INSTALLED EQUIPMENT & SERIAL NUMBERS -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-barcode text-success me-2"></i>4. Installed Equipment &amp; Serial Numbers</h6>
+                <span class="badge bg-light text-dark border font-monospace"><%= installedEquipment.length %> Items</span>
+            </div>
+            <div class="card-body p-0">
+                <% if (installedEquipment && installedEquipment.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3 py-2">Item Type</th>
+                                    <th>Brand &amp; Model</th>
+                                    <th>Serial Number</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% installedEquipment.forEach(item => { %>
+                                    <tr>
+                                        <td class="ps-3 py-2 fw-bold"><%= (item.materialMaster && item.materialMaster.category) || 'Equipment' %></td>
+                                        <td><%= (item.materialMaster && item.materialMaster.brand) || '-' %> <%= (item.materialMaster && item.materialMaster.modelNumber) || '' %></td>
+                                        <td class="font-monospace text-primary fw-bold"><%= item.serialNumber %></td>
+                                        <td><span class="badge bg-success-subtle text-success"><%= item.status || 'INSTALLED' %></span></td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="p-3 text-muted small text-center">
+                        <i class="icofont-info-circle me-1"></i> No equipment serial numbers tracked for this project or project unlinked.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 5. BRANCH ROUTING DETAILS -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-building text-info me-2"></i>5. Branch Routing Details</h6>
+                <span class="badge bg-light text-primary border font-monospace"><%= complaint.branchRoutingMethod || 'ROUTING_PENDING' %></span>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Assigned Service Branch</small>
+                        <strong class="text-dark fs-6"><%= (complaint.branch && complaint.branch.name) || 'Not Assigned' %></strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <small class="text-muted d-block">Routing Hierarchy Method</small>
+                        <span class="font-monospace fw-bold text-secondary"><%= complaint.branchRoutingMethod || 'UNASSIGNED' %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. BRANCH TRANSFER HISTORY -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-history text-secondary me-2"></i>6. Branch Transfer History</h6>
+            </div>
+            <div class="card-body p-0">
+                <% if (complaint.branchTransferHistory && complaint.branchTransferHistory.length > 0) { %>
+                    <ul class="list-group list-group-flush small">
+                        <% complaint.branchTransferHistory.forEach(tr => { %>
+                            <li class="list-group-item py-2 px-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong class="text-dark">
+                                        <%= (tr.fromBranch && tr.fromBranch.name) || 'Previous Branch' %> &rarr; <%= (tr.toBranch && tr.toBranch.name) || 'Target Branch' %>
+                                    </strong>
+                                    <small class="text-muted"><%= tr.transferredAt ? new Date(tr.transferredAt).toLocaleString('en-IN') : '' %></small>
+                                </div>
+                                <div class="text-muted mt-1">Reason: <em>"<%= tr.reason %>"</em> (By: <%= (tr.transferredBy && tr.transferredBy.name) || 'Admin' %>)</div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                <% } else { %>
+                    <div class="p-3 text-muted small text-center">No branch transfer records. Original routing retained.</div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: SECTIONS 7 to 12 -->
+    <div class="col-lg-6">
+        <!-- 7. ASSIGNED TECHNICIAN / ENGINEER -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-worker text-warning me-2"></i>7. Assigned Field Technician / Engineer</h6>
+                <% if (currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignTechModal">
+                        <i class="icofont-edit me-1"></i> Reassign
+                    </button>
+                <% } %>
+            </div>
+            <div class="card-body">
+                <% const tech = complaint.assignedTechnician || complaint.assignedEngineer; %>
+                <% if (tech) { %>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Technician Name</small>
+                            <strong class="text-dark fs-6"><%= tech.name %></strong>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Employee ID &amp; Designation</small>
+                            <span class="text-dark font-monospace"><%= tech.employeeId || 'STAFF' %> (<%= tech.designation || 'Field Service' %>)</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Contact Phone</small>
+                            <a href="tel:<%= tech.mobile %>" class="text-dark font-monospace text-decoration-none">
+                                <i class="icofont-phone text-success me-1"></i><%= tech.mobile || 'On Profile' %>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted d-block">Scheduled Visit</small>
+                            <span class="text-dark font-weight-bold"><%= complaint.scheduledVisitDate ? new Date(complaint.scheduledVisitDate).toLocaleString('en-IN') : 'Visit not scheduled' %></span>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-light border mb-0 p-3 small text-muted text-center">
+                        <i class="icofont-ui-user me-1 text-warning"></i> No technician assigned to this complaint yet.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 8. TECHNICIAN ASSIGNMENT HISTORY -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-ui-user-group text-primary me-2"></i>8. Technician Assignment History</h6>
+            </div>
+            <div class="card-body p-0">
+                <% if (complaint.assignmentHistory && complaint.assignmentHistory.length > 0) { %>
+                    <ul class="list-group list-group-flush small">
+                        <% complaint.assignmentHistory.forEach(asgn => { %>
+                            <li class="list-group-item py-2 px-3">
+                                <div class="d-flex justify-content-between">
+                                    <strong class="text-dark">Assigned to: <%= (asgn.technician && asgn.technician.name) || 'Technician' %></strong>
+                                    <small class="text-muted"><%= asgn.assignedAt ? new Date(asgn.assignedAt).toLocaleString('en-IN') : '' %></small>
+                                </div>
+                                <div class="text-muted mt-1">Remarks: <%= asgn.remarks %> (Assigned by: <%= (asgn.assignedBy && asgn.assignedBy.name) || 'Management' %>)</div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                <% } else { %>
+                    <div class="p-3 text-muted small text-center">No previous assignment records.</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 9. PROGRESS HISTORY TIMELINE -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-clock-time text-info me-2"></i>9. Progress History Timeline</h6>
+                <span class="badge bg-light text-muted border font-monospace"><%= (complaint.progressHistory || []).length %> Events</span>
+            </div>
+            <div class="card-body">
+                <% if (complaint.progressHistory && complaint.progressHistory.length > 0) { %>
+                    <div class="timeline" style="border-left: 2px solid #e2e8f0; margin-left: 10px; padding-left: 15px;">
+                        <% complaint.progressHistory.forEach(prg => { %>
+                            <div class="mb-3 position-relative">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary-subtle text-primary border text-uppercase" style="font-size: 11px;"><%= prg.status %></span>
+                                    <small class="text-muted font-monospace"><%= prg.updatedAt ? new Date(prg.updatedAt).toLocaleString('en-IN') : '' %></small>
+                                </div>
+                                <% if (prg.remarks || prg.workPerformed) { %>
+                                    <p class="small text-secondary mb-1 mt-1"><%= prg.remarks || prg.workPerformed %></p>
+                                <% } %>
+                                <% if (prg.delayReason) { %>
+                                    <p class="small text-danger mb-1"><strong>Delay:</strong> <%= prg.delayReason %></p>
+                                <% } %>
+                                <% if (prg.materialRequired) { %>
+                                    <p class="small text-warning mb-1"><strong>Spares Needed:</strong> <%= prg.materialRequired %></p>
+                                <% } %>
+                                <small class="text-muted d-block" style="font-size: 10px;">Updated by: <%= (prg.updatedBy && prg.updatedBy.name) || 'Staff' %></small>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="text-muted small text-center">No progress entries recorded.</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 10. DELAY REASONS & MATERIAL WAIT LOGS -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-box text-secondary me-2"></i>10. Delay Reasons &amp; Material Wait Logs</h6>
+            </div>
+            <div class="card-body">
+                <% const delayEntries = (complaint.progressHistory || []).filter(p => p.delayReason || p.materialRequired || p.status === 'Waiting for Material' || p.status === 'Unable to Resolve'); %>
+                <% if (delayEntries.length > 0) { %>
+                    <div class="list-group list-group-flush small">
+                        <% delayEntries.forEach(d => { %>
+                            <div class="list-group-item px-0 py-2">
+                                <strong class="text-danger"><%= d.status %></strong>
+                                <span class="text-muted small font-monospace float-end"><%= d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('en-IN') : '' %></span>
+                                <% if (d.materialRequired) { %>
+                                    <div class="text-secondary mt-1"><strong>Material Needed:</strong> <%= d.materialRequired %></div>
+                                <% } %>
+                                <% if (d.delayReason) { %>
+                                    <div class="text-secondary"><strong>Delay Reason:</strong> <%= d.delayReason %></div>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <div class="text-muted small text-center">No recorded delays or pending material requests for this complaint.</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 11. RESOLUTION DETAILS & EVIDENCE PHOTOS -->
+        <div class="card border shadow-sm rounded-3 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-check-circled text-success me-2"></i>11. Resolution Details &amp; Evidence Photos</h6>
+                <% if (complaint.status === 'Resolved' || complaint.status === 'Closed') { %>
+                    <span class="badge bg-success">Resolution Submitted</span>
+                <% } else { %>
+                    <span class="badge bg-light text-muted border">Incomplete</span>
+                <% } %>
+            </div>
+            <div class="card-body">
+                <% const res = complaint.resolutionDetails; %>
+                <% if (res && (res.workPerformed || res.rootCause)) { %>
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Root Cause Analysis</small>
+                        <p class="text-dark small mb-2"><%= res.rootCause || 'Root cause analyzed on site' %></p>
+                        <small class="text-muted d-block">Work Performed</small>
+                        <p class="text-dark small mb-2"><%= res.workPerformed %></p>
+                        <% if (res.replacedParts && res.replacedParts.length > 0) { %>
+                            <small class="text-muted d-block">Replaced Spare Parts</small>
+                            <p class="text-dark small mb-2 font-monospace"><%= res.replacedParts.join(', ') %></p>
+                        <% } %>
+                        <small class="text-muted d-block">Resolved By &amp; Date</small>
+                        <span class="text-muted small"><%= (res.resolvedBy && res.resolvedBy.name) || 'Technician' %> on <%= res.resolvedAt ? new Date(res.resolvedAt).toLocaleString('en-IN') : '' %></span>
+                    </div>
+
+                    <% if ((res.beforePhotos && res.beforePhotos.length > 0) || (res.afterPhotos && res.afterPhotos.length > 0)) { %>
+                        <div class="row g-2 mt-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Before Repair Photos</small>
+                                <% (res.beforePhotos || []).forEach(ph => { %>
+                                    <a href="<%= ph %>" target="_blank" class="d-inline-block me-1 mb-1">
+                                        <img src="<%= ph %>" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                    </a>
+                                <% }); %>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">After Repair Photos</small>
+                                <% (res.afterPhotos || []).forEach(ph => { %>
+                                    <a href="<%= ph %>" target="_blank" class="d-inline-block me-1 mb-1">
+                                        <img src="<%= ph %>" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                                    </a>
+                                <% }); %>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="text-muted small text-center">Resolution has not been submitted by the field technician yet.</div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- 12. MANAGER REVIEW & CLOSURE APPROVAL (STRICT MAKER-CHECKER) -->
+        <div class="card border shadow-sm rounded-3 mb-4 border-primary">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-dark"><i class="icofont-stamp text-danger me-2"></i>12. Manager Review &amp; Closure Approval (Maker-Checker)</h6>
+                <span class="badge bg-primary text-white">MAKER-CHECKER</span>
+            </div>
+            <div class="card-body">
+                <% if (complaint.status === 'Closed') { %>
+                    <div class="alert alert-success mb-0 p-3 small">
+                        <strong class="d-block mb-1"><i class="icofont-check-circled me-1"></i> Complaint Formally Closed</strong>
+                        <% const cl = complaint.closureDetails || {}; %>
+                        <div>Approved by: <strong><%= (cl.approvedBy && cl.approvedBy.name) || 'Branch Manager' %></strong></div>
+                        <div>Closed on: <%= cl.approvedAt ? new Date(cl.approvedAt).toLocaleString('en-IN') : '' %></div>
+                        <div>Remarks: <em>"<%= cl.closureRemarks || 'Inspected and verified.' %>"</em></div>
+                    </div>
+                <% } else if (complaint.status === 'Reopened') { %>
+                    <div class="alert alert-danger mb-0 p-3 small">
+                        <strong class="d-block mb-1"><i class="icofont-warning me-1"></i> Complaint Reopened</strong>
+                        <% const ro = complaint.reopeningDetails || {}; %>
+                        <div>Reopened by: <strong><%= (ro.reopenedBy && ro.reopenedBy.name) || 'Manager' %></strong></div>
+                        <div>Date: <%= ro.reopenedAt ? new Date(ro.reopenedAt).toLocaleString('en-IN') : '' %></div>
+                        <div>Mandatory Reason: <em>"<%= ro.reason || 'Issue persisted.' %>"</em></div>
+                    </div>
+                <% } else if (complaint.status === 'Resolved') { %>
+                    <div class="alert alert-info mb-3 p-3 small">
+                        <strong class="d-block mb-1"><i class="icofont-sand-clock me-1"></i> Pending Manager Closure Review</strong>
+                        Technician has marked work resolved. Manager/Admin must review work notes, before/after evidence photos, and approve closure or reopen.
+                    </div>
+                    <% if (currentUser && ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(currentUser.role)) { %>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-success btn-sm fw-bold flex-grow-1" data-bs-toggle="modal" data-bs-target="#approveClosureModal">
+                                <i class="icofont-check-circled me-1"></i> Approve Closure
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#reopenModal">
+                                <i class="icofont-refresh me-1"></i> Reopen
+                            </button>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="text-muted small text-center">
+                        Complaint is currently <strong><%= complaint.status %></strong>. Closure approval becomes available once technician resolves the issue.
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: LINK CUSTOMER / PROJECT -->
+<div class="modal fade" id="linkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold" style="font-size: 16px;">Link Customer &amp; Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitLink();">
+                <div class="modal-body p-4">
+                    <% if (candidateProjects && candidateProjects.length > 0) { %>
+                        <div class="mb-3">
+                            <label class="form-label small font-weight-bold">Select from Customer's Registered Projects</label>
+                            <select class="form-select" id="linkProjectId">
+                                <option value="">-- Select Project --</option>
+                                <% candidateProjects.forEach(cp => { %>
+                                    <option value="<%= cp._id %>"><%= cp.projectNumber || cp.title %> (<%= cp.capacityKw || '' %> kW)</option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } else { %>
+                        <div class="mb-3">
+                            <label class="form-label small font-weight-bold">Target Project ID (MongoDB ObjectId)</label>
+                            <input type="text" class="form-control" id="linkProjectId" placeholder="Enter valid Project ObjectId">
+                        </div>
+                    <% } %>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Target Customer ID (Optional ObjectId)</label>
+                        <input type="text" class="form-control" id="linkCustomerId" value="<%= complaint.customer ? (complaint.customer._id || complaint.customer) : '' %>" placeholder="Enter Customer ObjectId">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold" id="submitLinkBtn">Confirm Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ASSIGN TECHNICIAN -->
+<div class="modal fade" id="assignTechModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold" style="font-size: 16px;">Assign Service Technician</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitTechAssignment();">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Select Eligible Field Technician *</label>
+                        <select class="form-select" id="assignTechId" required>
+                            <option value="">-- Choose Technician --</option>
+                            <% if (candidateTechnicians && candidateTechnicians.length > 0) { %>
+                                <% candidateTechnicians.forEach(t => { %>
+                                    <option value="<%= t._id %>"><%= t.name %> (<%= t.employeeId || 'Staff' %>) - <%= t.designation || 'Technician' %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Assignment Instructions / Remarks</label>
+                        <textarea class="form-control" id="assignTechRemarks" rows="3" placeholder="Visit instructions or priority notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold" id="submitAssignBtn">Assign Technician</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: TRANSFER BRANCH -->
+<div class="modal fade" id="transferBranchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold" style="font-size: 16px;">Transfer to Another Service Branch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitBranchTransfer();">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Target Service Branch *</label>
+                        <select class="form-select" id="transferTargetBranch" required>
+                            <option value="">-- Select Destination Branch --</option>
+                            <% if (branches && branches.length > 0) { %>
+                                <% branches.forEach(b => { %>
+                                    <option value="<%= b._id %>"><%= b.name %> (<%= b.code %>) - <%= b.city %></option>
+                                <% }); %>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Mandatory Transfer Reason *</label>
+                        <textarea class="form-control" id="transferReason" rows="3" required placeholder="Reason for territorial or branch reallocation..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-4 fw-bold" id="submitTransferBtn">Transfer Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: APPROVE CLOSURE (MAKER-CHECKER) -->
+<div class="modal fade" id="approveClosureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold text-success" style="font-size: 16px;">
+                    <i class="icofont-check-circled me-1"></i> Approve Complaint Closure
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitClosureApproval();">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        As reviewing Manager, you verify that the technician has completed required service work, root-cause has been identified, and customer is satisfied.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Managerial Closure Remarks</label>
+                        <textarea class="form-control" id="closureRemarks" rows="3" placeholder="Inspected work and customer confirmation received..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" id="submitClosureBtn">Confirm &amp; Close Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: REOPEN TICKET -->
+<div class="modal fade" id="reopenModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold text-danger" style="font-size: 16px;">
+                    <i class="icofont-refresh me-1"></i> Reopen Complaint Ticket
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitReopening();">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Mandatory Reopening Reason *</label>
+                        <textarea class="form-control" id="reopenReason" rows="3" required placeholder="Explain why the issue persisted, recurring fault code, or customer feedback..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4 fw-bold" id="submitReopenBtn">Reopen Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const complaintId = '<%= complaint._id %>';
+const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+function showToast(msg) {
+    const toast = document.getElementById('actionToast');
+    const toastMsg = document.getElementById('actionToastMsg');
+    toastMsg.innerText = msg;
+    toast.classList.remove('d-none');
+    setTimeout(() => window.location.reload(), 800);
+}
+
+function submitLink() {
+    const projectId = document.getElementById('linkProjectId').value.trim();
+    const customerId = document.getElementById('linkCustomerId').value.trim();
+    const btn = document.getElementById('submitLinkBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${complaintId}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ projectId: projectId || null, customerId: customerId || null, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message);
+        else alert(data.message || 'Error linking project');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed'); });
+}
+
+function submitTechAssignment() {
+    const technicianId = document.getElementById('assignTechId').value;
+    const remarks = document.getElementById('assignTechRemarks').value.trim();
+    const btn = document.getElementById('submitAssignBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${complaintId}/assign-technician`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ technicianId, remarks, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message);
+        else alert(data.message || 'Error assigning technician');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed'); });
+}
+
+function submitBranchTransfer() {
+    const targetBranchId = document.getElementById('transferTargetBranch').value;
+    const reason = document.getElementById('transferReason').value.trim();
+    const btn = document.getElementById('submitTransferBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${complaintId}/transfer-branch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ targetBranchId, reason, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message);
+        else alert(data.message || 'Error transferring branch');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed'); });
+}
+
+function submitClosureApproval() {
+    const remarks = document.getElementById('closureRemarks').value.trim();
+    const btn = document.getElementById('submitClosureBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${complaintId}/approve-closure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ remarks, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message);
+        else alert(data.message || 'Error approving closure');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed'); });
+}
+
+function submitReopening() {
+    const reason = document.getElementById('reopenReason').value.trim();
+    const btn = document.getElementById('submitReopenBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${complaintId}/reopen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ reason, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message);
+        else alert(data.message || 'Error reopening ticket');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed'); });
+}
+</script>
+
+<%- include('partials/admin-footer') %>

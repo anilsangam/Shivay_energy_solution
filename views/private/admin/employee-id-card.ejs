@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Employee Identity Card | Shivay Energy Solutions' %></title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/fonts/icofont.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --blue: #1f2937;
+            --deep-blue: #09090b;
+            --light-blue: #e5e7eb;
+            --ink: #111827;
+            --muted: #6b7280;
+            --ses-solar-gold: #f59e0b;
+            --ses-border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #edf2f7;
+            color: var(--ink);
+            min-height: 100vh;
+        }
+
+        /* Screen Control Bar */
+        .card-control-bar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--ses-border);
+            padding: 14px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .bar-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            font-size: 13.5px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .btn-print {
+            background: var(--deep-blue);
+            color: #ffffff;
+        }
+        .btn-print:hover {
+            background: #092c57;
+            color: #ffffff;
+        }
+
+        .btn-share {
+            background: #10b981;
+            color: #ffffff;
+        }
+        .btn-share:hover {
+            background: #059669;
+            color: #ffffff;
+        }
+
+        .btn-switch {
+            background: #ffffff;
+            color: var(--blue);
+            border-color: #cbd5e1;
+        }
+        .btn-switch:hover {
+            background: #f1f5f9;
+            color: var(--deep-blue);
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        main#id-card-preview {
+            min-height: calc(100vh - 70px);
+            padding: 36px 20px 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview {
+            width: min(100%, 860px);
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 32px;
+            align-items: start;
+        }
+
+        .card-perspective {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .card-side-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--muted);
+            background: #ffffff;
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--ses-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        /* User's Exact Card Side & Bottom Double-Wave Architecture */
+        .card-side {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            min-height: 620px;
+            width: 100%;
+            max-width: 410px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 55%, #eef0f4 100%);
+            border-radius: 20px;
+            box-shadow: 0 18px 45px rgba(17, 24, 39, .16), 0 2px 8px rgba(17, 24, 39, .08);
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .card-side::before {
+            content: "";
+            position: absolute;
+            z-index: -1;
+            width: 145%;
+            height: 180px;
+            left: -20%;
+            bottom: -107px;
+            background: linear-gradient(180deg, #374151 0%, #18181b 55%, #050507 100%);
+            border-radius: 50% 50% 0 0;
+            transform: rotate(-8deg);
+        }
+
+        .card-side::after {
+            content: "";
+            position: absolute;
+            z-index: -2;
+            width: 150%;
+            height: 185px;
+            left: -20%;
+            bottom: -82px;
+            background: #d1d5db;
+            border-radius: 50% 50% 0 0;
+            transform: rotate(8deg);
+        }
+
+        /* FRONT SIDE STYLING */
+        .front {
+            padding: 22px 18px 32px;
+        }
+
+        .front-top-wave {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 230px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .brand {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .front .brand {
+            margin-top: 10px;
+        }
+
+        .brand-logo-circle {
+            width: 66px;
+            height: 66px;
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            flex-shrink: 0;
+            padding: 0;
+        }
+
+        .brand-logo-circle svg,
+        .brand-logo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+        }
+
+        .front-brand-name {
+            margin: 0;
+            color: #ffffff !important;
+            font-size: 19px;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: .015em;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+        }
+
+        .front-brand-sub {
+            margin: 3px 0 0;
+            color: #fef08a !important;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.4;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        }
+
+        .portrait-wrap {
+            width: 150px;
+            height: 150px;
+            margin: 18px auto 14px;
+            border: 5px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px var(--ses-solar-gold), 0 9px 20px rgba(17, 24, 39, .2);
+            overflow: hidden;
+            background: #e6edf4;
+            position: relative;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+
+        .portrait {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .portrait-initials {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 44px;
+            font-weight: 800;
+            color: #111827;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            letter-spacing: 1px;
+        }
+
+        .identity {
+            text-align: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        .employee-name {
+            margin: 0;
+            color: var(--deep-blue);
+            font-size: 24px;
+            line-height: 1.2;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .employee-role {
+            margin: 4px 0 0;
+            color: var(--blue);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .rule {
+            height: 1px;
+            margin: 14px auto 14px;
+            background: #d9e5ef;
+            width: 100%;
+            max-width: 295px;
+        }
+
+        .details {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 295px;
+            display: grid;
+            gap: 6px;
+            font-size: 13.5px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 5;
+        }
+
+        .detail-row {
+            display: grid;
+            grid-template-columns: 78px minmax(0, 1fr);
+            gap: 8px;
+            align-items: baseline;
+        }
+
+        .detail-row dt {
+            color: var(--deep-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .detail-row dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+            color: #344b62;
+            font-weight: 500;
+        }
+
+        .sign-center-qr {
+            text-align: center;
+        }
+
+        .sign-qr-img {
+            width: 38px;
+            height: 38px;
+            display: block;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 2px;
+        }
+
+        .qr-caption {
+            font-size: 7px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+            display: block;
+        }
+
+        /* BACK SIDE STYLING */
+        .back {
+            padding: 20px 22px 18px;
+        }
+
+        .back .brand {
+            justify-content: center;
+            display: flex;
+            align-items: center;
+            min-height: 82px;
+            padding-top: 2px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--light-blue);
+        }
+
+        .back-brand-logo {
+            width: 100%;
+            max-width: 260px;
+            height: auto;
+            max-height: 72px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .back-content {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 10px;
+        }
+
+        .back-tc-qr-row {
+            display: grid;
+            grid-template-columns: 60% 1fr;
+            gap: 12px;
+            align-items: center;
+            margin-top: 2px;
+        }
+
+        .back h2 {
+            margin: 0 0 4px;
+            color: var(--deep-blue);
+            font-size: 12.5px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-align: left;
+        }
+
+        .back-rule {
+            width: 38px;
+            height: 2.5px;
+            background: var(--blue);
+            border-radius: 3px;
+            margin: 0 0 7px;
+        }
+
+        .terms {
+            display: grid;
+            gap: 6px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .terms li {
+            position: relative;
+            padding-left: 13px;
+            color: #334155;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .terms li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: .45em;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--blue);
+        }
+
+        .terms strong {
+            color: var(--deep-blue);
+        }
+
+        .back-detail-qr-box {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(17, 24, 39, 0.08);
+        }
+
+        .back-qr-svg-wrap {
+            width: 102px;
+            height: 102px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .back-qr-svg-wrap svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .back-qr-caption {
+            font-size: 7.5px;
+            font-weight: 800;
+            color: var(--deep-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 4px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .back-branch-box {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-left: 4px solid var(--blue);
+            border-radius: 8px;
+            padding: 8px 11px;
+        }
+
+        .branch-box-heading {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: var(--deep-blue);
+            text-transform: uppercase;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .branch-box-text {
+            font-size: 10.5px;
+            color: #334155;
+            line-height: 1.38;
+        }
+
+        .branch-contact-line {
+            margin-top: 3px;
+            font-weight: 700;
+            color: var(--deep-blue);
+            font-size: 10.5px;
+            line-height: 1.38;
+        }
+
+        .back-company-box {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 8px 11px;
+            font-size: 10px;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .company-box-heading {
+            font-weight: 800;
+            font-size: 11px;
+            color: var(--deep-blue);
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+
+        .back-sign-box {
+            margin-top: auto;
+            border-top: none;
+            padding-top: 8px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            position: relative;
+            z-index: 5;
+        }
+
+        .signature-draw {
+            font-family: 'Brush Script MT', cursive, sans-serif;
+            font-size: 20px;
+            color: #ffffff;
+            line-height: 1;
+            margin-bottom: 3px;
+            text-align: right;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .sign-caption {
+            font-size: 8.5px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            text-transform: uppercase;
+            border-top: 1px solid rgba(255, 255, 255, 0.55);
+            padding-top: 3px;
+            text-align: right;
+            letter-spacing: 0.4px;
+        }
+
+        @media (max-width: 768px) {
+            .preview {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .card-side {
+                max-width: 380px;
+            }
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .card-control-bar, .card-side-label, .modal, .modal-backdrop {
+                display: none !important;
+            }
+            main#id-card-preview {
+                padding: 0 !important;
+                min-height: auto !important;
+            }
+            .preview {
+                margin: 0 !important;
+                gap: 20px !important;
+                page-break-inside: avoid;
+            }
+            .card-side {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                page-break-inside: avoid;
+            }
+            @page {
+                size: portrait;
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <%
+        const empName = employee.name || 'Richard Sanchez';
+        const empDesig = employee.designation || 'Manager';
+        const empCode = employee.employeeId || employee.idCardNumber || '1234567890';
+        const empBlood = employee.bloodGroup || 'B+';
+        const empMobile = employee.mobile || '+91 70005 75496';
+        const empAlt = employee.alternateMobile || '';
+        const empEmail = employee.email || 'Official@shivayenergysolutions.in';
+
+        function formatDate(d) {
+            if (!d) return 'MM/DD/YYYY';
+            const dt = new Date(d);
+            if (isNaN(dt.getTime())) return 'MM/DD/YYYY';
+            const mm = String(dt.getMonth() + 1).padStart(2, '0');
+            const dd = String(dt.getDate()).padStart(2, '0');
+            const yyyy = dt.getFullYear();
+            return `${mm}/${dd}/${yyyy}`;
+        }
+
+        const joinDateFormatted = formatDate(employee.joiningDate || employee.createdAt);
+        const expDateFormatted = formatDate(employee.expiryDate || new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000));
+        const avatarUrl = (employee.avatar && employee.avatar !== '/images/misc/cst-1.webp') ? employee.avatar : '';
+
+        // Dynamic Branch Resolution
+        const branchName = branch ? branch.name : 'Raisen Central Branch';
+        const branchAddress = branch ? branch.address : 'In Front Of P.H.E. Office Arjun Nagar, Raisen, M.P. 464551';
+        const branchPhone = branch ? branch.contactNumber : '+91 70005 75496';
+        const branchEmail = branch ? (branch.email || 'sesraisen@gmail.com') : 'Official@shivayenergysolutions.in';
+        const branchCity = branch ? branch.city : 'Raisen';
+    %>
+
+    <!-- Screen Control Bar (Hidden when Printing) -->
+    <div class="card-control-bar">
+        <div class="bar-container">
+            <div class="d-flex align-items-center gap-2">
+                <a href="<%= (user && user.role === 'SUPER_ADMIN') ? '/admin/employees' : '/manager/employees' %>" class="btn-action btn-back">
+                    <i class="icofont-arrow-left"></i> Back to Personnel
+                </a>
+                <span class="badge bg-light text-dark border px-3 py-2 font-weight-bold">
+                    <i class="icofont-id-card text-warning me-1"></i> Official Identity Card
+                </span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="<%= (user && user.role === 'SUPER_ADMIN') ? '/admin/employees/' + employee._id + '/visiting-card' : '/manager/employees/' + employee._id + '/visiting-card' %>" class="btn-action btn-switch">
+                    <i class="icofont-credit-card"></i> View Visiting Card
+                </a>
+                
+                <% if (isManagerOrAdmin) { %>
+                    <button class="btn-action btn-share" data-bs-toggle="modal" data-bs-target="#shareCardModal">
+                        <i class="icofont-share"></i> Share to Employee
+                    </button>
+                <% } %>
+
+                <button class="btn-action btn-print" onclick="window.print()">
+                    <i class="icofont-printer"></i> Print ID Card (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Display Wrapper -->
+    <main id="id-card-preview" aria-label="Employee ID card front and back preview">
+        <div class="preview">
+            
+            <!-- 1. FRONT SIDE OF ID CARD -->
+            <div class="card-perspective">
+                <div class="card-side-label">Front Side (मुख भाग)</div>
+                <section id="card-front" class="card-side front canva-card" aria-label="Front of employee ID card">
+                    
+                    <!-- Top Curved Wave SVG (Single Proper Convex Arch extending to middle of profile photo - Black Theme) -->
+                    <div class="front-top-wave">
+                        <svg viewBox="0 0 410 230" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                            <defs>
+                                <linearGradient id="frontTopGrad" x1="0" y1="0" x2="0" y2="230" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#050507"/>
+                                    <stop offset="35%" stop-color="#111827"/>
+                                    <stop offset="72%" stop-color="#27272a"/>
+                                    <stop offset="100%" stop-color="#4b5563"/>
+                                </linearGradient>
+                                <linearGradient id="frontTopAccent" x1="0" y1="0" x2="0" y2="250" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#4b5563" stop-opacity="0.5"/>
+                                    <stop offset="60%" stop-color="#6b7280" stop-opacity="0.6"/>
+                                    <stop offset="100%" stop-color="#9ca3af" stop-opacity="0.72"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Secondary Accent Wave Layer (Single Convex Curve) -->
+                            <path d="M0 0 H410 V162 Q205 250 0 162 Z" fill="url(#frontTopAccent)"/>
+                            <!-- Primary Sleek Black Wave Layer (Single Convex Curve passing at middle of profile photo y=192) -->
+                            <path d="M0 0 H410 V150 Q205 234 0 150 Z" fill="url(#frontTopGrad)"/>
+                        </svg>
+                    </div>
+
+                    <!-- Brand Header: Logo + Title -->
+                    <header class="brand canva-header">
+                        <div class="brand-logo-circle">
+                            <img src="/images/brandlogo_transparent.png" alt="Shivay Energy Solutions Logo">
+                        </div>
+                        <div>
+                            <h1 class="brand-name canva-text front-brand-name">SHIVAY ENERGY SOLUTIONS</h1>
+                            <p class="brand-subtitle canva-text front-brand-sub">SOLAR ROOFTOP &amp; EPC SPECIALIST</p>
+                        </div>
+                    </header>
+
+                    <!-- Portrait Wrap with Gold Accent Ring -->
+                    <div class="portrait-wrap">
+                        <% if (avatarUrl) { %>
+                            <img id="employee-portrait" class="portrait canva-image" src="<%= avatarUrl %>" alt="Portrait of <%= empName %>">
+                        <% } else { %>
+                            <div class="portrait-initials" aria-label="<%= empName %>">
+                                <%= (empName || 'E').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() %>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Identity -->
+                    <div class="identity">
+                        <h2 class="employee-name canva-text"><%= empName %></h2>
+                        <p class="employee-role canva-text"><%= empDesig %></p>
+                    </div>
+
+                    <!-- Thin Divider -->
+                    <div class="rule canva-divider"></div>
+
+                    <!-- Details Table List (All Details Together: ID No, Phone, E-mail, Blood Gr, Alt No, Join, Expire) -->
+                    <dl class="details canva-list" aria-label="Employee contact details">
+                        <div class="detail-row">
+                            <dt>ID No</dt>
+                            <dd>: <%= empCode %></dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Phone</dt>
+                            <dd>: <%= empMobile %></dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>E-mail</dt>
+                            <dd>: <%= empEmail %></dd>
+                        </div>
+                        <% if (empBlood) { %>
+                        <div class="detail-row">
+                            <dt>Blood Gr</dt>
+                            <dd>: <span style="font-weight: 700; color: #b91c1c;"><%= empBlood %></span></dd>
+                        </div>
+                        <% } %>
+                        <div class="detail-row">
+                            <dt>Alt No</dt>
+                            <dd>: <%= (empAlt && empAlt !== 'N/A' && empAlt !== 'None' && empAlt !== '') ? empAlt : 'N/A' %></dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Join</dt>
+                            <dd>: <%= joinDateFormatted %></dd>
+                        </div>
+                        <div class="detail-row">
+                            <dt>Expire</dt>
+                            <dd>: <%= expDateFormatted %></dd>
+                        </div>
+                    </dl>
+                </section>
+            </div>
+
+            <!-- 2. BACK SIDE OF ID CARD -->
+            <div class="card-perspective">
+                <div class="card-side-label">Back Side (पृष्ठ भाग)</div>
+                <section id="card-back" class="card-side back canva-card" aria-label="Back of employee ID card">
+                    
+                    <!-- Centered Brand Header (Transparent Horizontal Logo, Taller Top Area) -->
+                    <header class="brand canva-header">
+                        <img src="/images/brandlogo_leftlgoog_rightname_trans.png" alt="Shivay Energy Solutions" class="back-brand-logo">
+                    </header>
+
+                    <div class="back-content">
+                        <!-- DYNAMIC BRANCH DETAILS (DIFFERENT PER BRANCH) -->
+                        <div class="back-branch-box">
+                            <div class="branch-box-heading">
+                                <span><%= branchName %></span>
+                                <span class="badge bg-light text-dark border" style="font-size: 9px;"><%= branch ? branch.code : 'MP-RSN-01' %></span>
+                            </div>
+                            <div class="branch-box-text">
+                                <%= branchAddress %>
+                            </div>
+                            <div class="branch-contact-line">
+                                Contact: <span><%= branchPhone %></span>
+                            </div>
+                            <div class="branch-box-text mt-1">
+                                Email: <%= branchEmail %>
+                            </div>
+                        </div>
+
+                        <!-- Registered Corporate Details -->
+                        <div class="back-company-box">
+                            <div class="company-box-heading">Registered Corporate Office</div>
+                            <div>In Front Of P.H.E. Office Arjun Nagar, Raisen (M.P.) 464551</div>
+                            <div class="mt-1">
+                                <strong>GSTIN:</strong> 23AFRFS0964B1Z0 &bull; <strong>MPRG:</strong> CZS2026042411080336
+                            </div>
+                            <div>
+                                <strong>Email:</strong> Official@shivayenergysolutions.in
+                            </div>
+                            <div>
+                                <strong>Portal:</strong> www.shivayenergysolutions.com
+                            </div>
+                        </div>
+
+                        <!-- Split Row: 60% Left Terms & Conditions + 40% Right Real Full-ID QR Code -->
+                        <div class="back-tc-qr-row">
+                            <div class="back-terms-wrap">
+                                <h2 class="canva-text">TERMS &amp; CONDITIONS</h2>
+                                <div class="back-rule canva-divider"></div>
+                                <ul class="terms canva-list">
+                                    <li><strong>Identification:</strong> Carry the ID card at all times during working hours for identification purposes.</li>
+                                    <li><strong>Authorized Use:</strong> The ID card is strictly for official use and should not be shared or used for unauthorized purposes.</li>
+                                </ul>
+                            </div>
+
+                            <div class="back-detail-qr-box">
+                                <div class="back-qr-svg-wrap" id="id-qr-container">
+                                    <% if (typeof idQrSvg !== 'undefined' && idQrSvg) { %>
+                                        <%- idQrSvg %>
+                                    <% } %>
+                                </div>
+                                <span class="back-qr-caption">Scan Full ID Info</span>
+                            </div>
+                        </div>
+
+                        <!-- Signature Only (White Color over Black Bottom Curve; No QR/Seal) -->
+                        <div class="back-sign-box">
+                            <div class="sign-right-authority">
+                                <div class="signature-draw">Deepak K.</div>
+                                <div class="sign-caption">Authorized Signatory</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal: Share ID Card with Employee -->
+    <% if (isManagerOrAdmin) { %>
+    <div class="modal fade" id="shareCardModal" tabindex="-1" aria-labelledby="shareCardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header text-white" style="background: var(--deep-blue);">
+                    <h5 class="modal-title font-weight-bold" id="shareCardModalLabel">
+                        <i class="icofont-share me-1 text-warning"></i> Share ID Card with <%= empName %>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        As an authorized Manager / Administrator, you can securely deliver this official Identity Card directly to the employee via WhatsApp or direct secure link.
+                    </p>
+
+                    <% 
+                        const cleanMobileDigits = (empMobile || '').replace(/\D/g, '');
+                        const shareLink = '/cards/view/id-card/' + employee._id + '?token=' + shareToken;
+                        const defaultShareText = `Namaste ${empName}, here is your official Shivay Energy Solutions Employee ID Card (${branchName}):\n${shareLink}\nEmployee ID: ${empCode}`;
+                        const waUrl = `https://wa.me/${cleanMobileDigits.length === 10 ? '91' + cleanMobileDigits : cleanMobileDigits}?text=${encodeURIComponent(defaultShareText)}`;
+                    %>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Direct Secure Card URL</label>
+                        <div class="input-group">
+                            <input type="text" id="shareUrlInput" class="form-control form-control-sm" value="<%= shareLink %>" readonly>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="copyShareLink()">
+                                <i class="icofont-copy me-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="<%= waUrl %>" target="_blank" class="btn btn-success font-weight-bold text-white">
+                            <i class="icofont-brand-whatsapp me-1"></i> Send ID Card on WhatsApp (<%= empMobile %>)
+                        </a>
+                        <button class="btn btn-primary font-weight-bold" onclick="copyShareText(`<%= defaultShareText.replace(/\n/g, ' ') %>`)">
+                            <i class="icofont-ui-copy me-1"></i> Copy Share Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/qrcode-browser.js"></script>
+    <script>
+        (function renderRealIdQrFallback() {
+            const box = document.getElementById('id-qr-container');
+            if (!box || box.querySelector('svg') || typeof window.SesQRCode === 'undefined') return;
+            const qrPayload = <%- JSON.stringify([
+                'SHIVAY ENERGY SOLUTIONS - EMPLOYEE ID',
+                'Name: ' + empName,
+                'Role: ' + empDesig,
+                'ID No: ' + empCode,
+                'Phone: ' + empMobile,
+                'Alt No: ' + ((empAlt && empAlt !== 'N/A' && empAlt !== 'None' && empAlt !== '') ? empAlt : 'N/A'),
+                'Email: ' + empEmail,
+                'Blood Gr: ' + (empBlood || 'B+'),
+                'Join: ' + joinDateFormatted,
+                'Expire: ' + expDateFormatted,
+                'Branch: ' + branchName + ' (' + (branch ? branch.code : 'MP-RSN-01') + ')',
+                'Website: https://www.shivayenergysolutions.com'
+            ].join('\n')) %>;
+            window.SesQRCode.toString(qrPayload, {
+                type: 'svg',
+                margin: 1,
+                color: { dark: '#111827', light: '#ffffff' }
+            }, function (err, svg) {
+                if (!err && svg) {
+                    box.innerHTML = svg;
+                }
+            });
+        })();
+
+        function copyShareLink() {
+            const input = document.getElementById('shareUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            const fullUrl = window.location.origin + input.value;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                alert('Secure card link copied to clipboard: ' + fullUrl);
+            });
+        }
+
+        function copyShareText(text) {
+            const fullText = text.replace(document.getElementById('shareUrlInput').value, window.location.origin + document.getElementById('shareUrlInput').value);
+            navigator.clipboard.writeText(fullText).then(() => {
+                alert('Share message copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

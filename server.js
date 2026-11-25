@@ -13,8 +13,8 @@ const { setupCsrf } = require('./middleware/authMiddleware');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB once and share its connected MongoClient with the session store
+const dbConnectPromise = connectDB();
 
 // Security Headers with Helmet
 app.use(helmet({
@@ -53,34 +53,81 @@ app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/videos', express.static(path.join(__dirname, 'videos')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Configure Session Store (MongoDB backed)
+// Configure Session Store (Reuses Mongoose's MongoClient with safe dev fallback)
 const isProduction = process.env.NODE_ENV === 'production';
-let sessionStore;
 const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
 
-if (mongoURI) {
-    try {
-        sessionStore = MongoStore.create({
-            mongoUrl: mongoURI,
-            collectionName: 'sessions',
-            ttl: 14 * 24 * 60 * 60, // 14 days
-            touchAfter: 3600, // 1 hour: throttles session touch writes on GET requests while keeping 24h session alive
-            autoRemove: 'native'
-        });
-        if (sessionStore && typeof sessionStore.on === 'function') {
-            sessionStore.on('error', (storeErr) => {
-                console.error('[SESSION STORE ERROR]:', storeErr.message);
-            });
-        }
-    } catch (err) {
-        console.error('❌ Failed to initialize MongoDB Session Store:', err.message);
-        if (isProduction) {
-            console.error('FATAL CONFIGURATION ERROR: Production environment cannot operate with an insecure MemoryStore. Terminating.');
-            process.exit(1);
-        } else {
-            console.warn('⚠️ Warning: Using in-memory session store (Development mode only).');
-        }
+class ResilientSessionStore extends session.Store {
+    constructor(initPromise) {
+        super();
+        this.fallback = new session.MemoryStore();
+        this.readyStorePromise = initPromise.catch(() => this.fallback);
     }
+
+    _delegate(method, args) {
+        const cb = args[args.length - 1];
+        this.readyStorePromise
+            .then((activeStore) => {
+                if (!activeStore || typeof activeStore[method] !== 'function') {
+                    return this.fallback[method](...args);
+                }
+                if (activeStore !== this.fallback && !isProduction && typeof cb === 'function') {
+                    const safeArgs = [...args.slice(0, -1), (err, ...rest) => {
+                        if (err && /MongoServerSelectionError|MongoNetworkError|Topology is closed/i.test(`${err.name} ${err.message}`)) {
+                            return this.fallback[method](...args);
+                        }
+                        cb(err, ...rest);
+                    }];
+                    return activeStore[method](...safeArgs);
+                }
+                return activeStore[method](...args);
+            })
+            .catch(() => {
+                if (typeof cb === 'function') this.fallback[method](...args);
+            });
+    }
+
+    get(sid, cb) { this._delegate('get', [sid, cb]); }
+    set(sid, sess, cb) { this._delegate('set', [sid, sess, cb]); }
+    destroy(sid, cb) { this._delegate('destroy', [sid, cb]); }
+    touch(sid, sess, cb) { this._delegate('touch', [sid, sess, cb]); }
+}
+
+let sessionStore;
+if (mongoURI) {
+    const storeInitPromise = dbConnectPromise.then((client) => {
+        if (!client) {
+            if (isProduction) {
+                console.error('FATAL CONFIGURATION ERROR: Production environment cannot operate with an insecure MemoryStore. Terminating.');
+                process.exit(1);
+            }
+            console.warn('⚠️ Session store note: Using in-memory session store fallback while MongoDB Atlas is unreachable.');
+            return null;
+        }
+        try {
+            const mongoStore = MongoStore.create({
+                client,
+                collectionName: 'sessions',
+                ttl: 14 * 24 * 60 * 60, // 14 days
+                touchAfter: 3600, // 1 hour: throttles session touch writes on GET requests while keeping 24h session alive
+                autoRemove: 'native'
+            });
+            if (mongoStore && typeof mongoStore.on === 'function') {
+                mongoStore.on('error', (storeErr) => {
+                    console.error('[SESSION STORE ERROR]:', storeErr.message);
+                });
+            }
+            return mongoStore;
+        } catch (err) {
+            console.error('❌ Failed to initialize MongoDB Session Store:', err.message);
+            if (isProduction) {
+                console.error('FATAL CONFIGURATION ERROR: Production environment cannot operate with an insecure MemoryStore. Terminating.');
+                process.exit(1);
+            }
+            return null;
+        }
+    });
+    sessionStore = new ResilientSessionStore(storeInitPromise);
 } else {
     if (isProduction) {
         console.error('FATAL CONFIGURATION ERROR: Neither MONGODB_URI nor MONGO_URI is configured for production session persistence.');

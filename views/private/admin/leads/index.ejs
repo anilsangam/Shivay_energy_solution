@@ -1,0 +1,1108 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Leads & Telecalling Header Banner -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary, #0f2a4a); font-size: 23px;">
+            <i class="icofont-headphone-alt text-warning me-1"></i> Lead Management & Telecalling Console
+        </h2>
+        <p class="text-muted small mb-0">
+            Track solar prospects, execute telecaller outreach, schedule follow-ups, and convert leads into verified customer installations.
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
+        <% if (currentUser && (currentUser.isPrimarySuperAdmin || (currentUser.permissions && currentUser.permissions.includes('crm.leads.export')))) { %>
+            <a href="/admin/leads/export?status=<%= filters.status %>&callStatus=<%= filters.callStatus %>&priority=<%= filters.priority %>&search=<%= encodeURIComponent(filters.search) %>" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-sm" style="border-radius: 8px; padding: 7px 14px;">
+                <i class="icofont-download"></i> Export CSV
+            </a>
+        <% } %>
+        <% if (currentUser && (currentUser.isPrimarySuperAdmin || (currentUser.permissions && currentUser.permissions.includes('crm.leads.import')))) { %>
+            <button class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#importLeadsModal" style="border-radius: 8px; padding: 7px 14px;">
+                <i class="icofont-upload-alt"></i> Bulk Import
+            </button>
+        <% } %>
+        <% if (currentUser && (currentUser.isPrimarySuperAdmin || (currentUser.permissions && currentUser.permissions.includes('crm.leads.create')))) { %>
+            <button class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#newLeadModal" style="background: var(--admin-navy-primary, #0f2a4a); border-radius: 8px; padding: 7px 14px;">
+                <i class="icofont-plus-circle fs-6"></i> Add New Lead
+            </button>
+        <% } %>
+    </div>
+</div>
+
+<!-- Telecalling Metric Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #3b82f6 !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Total Leads</div>
+            <div class="fs-4 fw-bold text-dark mt-1"><%= stats.totalLeads %></div>
+            <div class="small text-muted mt-1"><i class="icofont-address-book"></i> Active Pipeline</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #ef4444 !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Not Called</div>
+            <div class="fs-4 fw-bold text-danger mt-1"><%= stats.notCalled %></div>
+            <div class="small text-muted mt-1"><i class="icofont-phone"></i> Pending First Touch</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #f59e0b !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Follow-Up Due</div>
+            <div class="fs-4 fw-bold text-warning mt-1"><%= stats.followUpDue %></div>
+            <div class="small text-muted mt-1"><i class="icofont-clock-time"></i> Due Today / Overdue</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #10b981 !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Connected</div>
+            <div class="fs-4 fw-bold text-success mt-1"><%= stats.connected %></div>
+            <div class="small text-muted mt-1"><i class="icofont-ui-call"></i> Contacted Leads</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #8b5cf6 !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Qualified</div>
+            <div class="fs-4 fw-bold text-primary mt-1"><%= stats.qualified %></div>
+            <div class="small text-muted mt-1"><i class="icofont-check-circled"></i> Ready for Site Survey</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl-1-5" style="flex: 1 1 120px;">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-radius: 10px; background: #fff; border-left: 4px solid #059669 !important;">
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 11px;">Converted</div>
+            <div class="fs-4 fw-bold text-success mt-1"><%= stats.converted %></div>
+            <div class="small text-muted mt-1"><i class="icofont-trophy"></i> Customer Projects</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Multi-Filter Card -->
+<div class="card border-0 shadow-sm mb-4 p-3" style="border-radius: 12px; background: #fff;">
+    <form method="GET" action="/admin/leads" class="row g-2 align-items-center">
+        <!-- Search -->
+        <div class="col-12 col-md-3">
+            <label class="form-label small text-muted mb-1">Search Leads</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0" style="border-radius: 8px 0 0 8px;"><i class="icofont-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Name, mobile, city, or ID..." value="<%= filters.search %>" style="border-radius: 0 8px 8px 0; font-size: 13px;">
+            </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-md-2">
+            <label class="form-label small text-muted mb-1">Lead Status</label>
+            <select name="status" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; height: 38px;">
+                <option value="ALL" <%= filters.status === 'ALL' || !filters.status ? 'selected' : '' %>>All Statuses</option>
+                <option value="New" <%= filters.status === 'New' ? 'selected' : '' %>>New</option>
+                <option value="Contacted" <%= filters.status === 'Contacted' ? 'selected' : '' %>>Contacted</option>
+                <option value="Qualified" <%= filters.status === 'Qualified' ? 'selected' : '' %>>Qualified</option>
+                <option value="Follow-up Required" <%= filters.status === 'Follow-up Required' ? 'selected' : '' %>>Follow-up Required</option>
+                <option value="Not Interested" <%= filters.status === 'Not Interested' ? 'selected' : '' %>>Not Interested</option>
+                <option value="Disqualified" <%= filters.status === 'Disqualified' ? 'selected' : '' %>>Disqualified</option>
+                <option value="Converted" <%= filters.status === 'Converted' ? 'selected' : '' %>>Converted</option>
+            </select>
+        </div>
+
+        <!-- Call Status Filter -->
+        <div class="col-6 col-md-2">
+            <label class="form-label small text-muted mb-1">Call Outreach</label>
+            <select name="callStatus" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; height: 38px;">
+                <option value="ALL" <%= filters.callStatus === 'ALL' || !filters.callStatus ? 'selected' : '' %>>All Calls</option>
+                <option value="Not Called" <%= filters.callStatus === 'Not Called' ? 'selected' : '' %>>Not Called</option>
+                <option value="Called" <%= filters.callStatus === 'Called' ? 'selected' : '' %>>Called</option>
+            </select>
+        </div>
+
+        <!-- Follow-Up Date Filter -->
+        <div class="col-6 col-md-2">
+            <label class="form-label small text-muted mb-1">Follow-Up Schedule</label>
+            <select name="followUp" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; height: 38px;">
+                <option value="" <%= !filters.followUp ? 'selected' : '' %>>All Timelines</option>
+                <option value="today" <%= filters.followUp === 'today' ? 'selected' : '' %>>Due Today</option>
+                <option value="overdue" <%= filters.followUp === 'overdue' ? 'selected' : '' %>>Overdue</option>
+                <option value="upcoming" <%= filters.followUp === 'upcoming' ? 'selected' : '' %>>Upcoming</option>
+                <option value="none" <%= filters.followUp === 'none' ? 'selected' : '' %>>No Follow-Up Set</option>
+            </select>
+        </div>
+
+        <!-- Priority Filter -->
+        <div class="col-6 col-md-1">
+            <label class="form-label small text-muted mb-1">Priority</label>
+            <select name="priority" class="form-select form-select-sm" style="border-radius: 8px; font-size: 13px; height: 38px;">
+                <option value="ALL" <%= filters.priority === 'ALL' || !filters.priority ? 'selected' : '' %>>All</option>
+                <option value="URGENT" <%= filters.priority === 'URGENT' ? 'selected' : '' %>>Urgent</option>
+                <option value="HIGH" <%= filters.priority === 'HIGH' ? 'selected' : '' %>>High</option>
+                <option value="MEDIUM" <%= filters.priority === 'MEDIUM' ? 'selected' : '' %>>Medium</option>
+                <option value="LOW" <%= filters.priority === 'LOW' ? 'selected' : '' %>>Low</option>
+            </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-12 col-md-2 d-flex gap-2 align-items-end mt-2 mt-md-0">
+            <button type="submit" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center" style="height: 38px; border-radius: 8px; font-size: 13px; background: var(--admin-navy-primary, #0f2a4a);">
+                <i class="icofont-filter me-1"></i> Filter
+            </button>
+            <a href="/admin/leads" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" title="Reset Filters" style="height: 38px; width: 44px; border-radius: 8px; flex-shrink: 0;">
+                <i class="icofont-refresh"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Leads Data Table Card -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden; background: #fff;">
+    <div class="card-header bg-white border-bottom py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 15px; color: #0f2a4a;">
+                <i class="icofont-list text-primary fs-5"></i>
+                Lead Pipeline & Telecalling Queue
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 12px;">
+                    <%= pagination.total %> Leads
+                </span>
+            </h5>
+        </div>
+        <div class="small text-muted font-monospace" style="font-size: 12px;">
+            Showing Page <%= pagination.page %> of <%= pagination.totalPages || 1 %>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="table-light" style="font-size: 12px; text-transform: uppercase;">
+                <tr>
+                    <th style="width: 14%;">Lead ID & Date</th>
+                    <th style="width: 20%;">Contact Info</th>
+                    <th style="width: 15%;">Requirement</th>
+                    <th style="width: 10%;">Priority</th>
+                    <th style="width: 13%;">Lead Status</th>
+                    <th style="width: 13%;">Call Outreach</th>
+                    <th style="width: 15%;">Assigned To</th>
+                    <th class="text-end" style="width: 10%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (leads && leads.length > 0) { %>
+                    <% leads.forEach(l => { %>
+                        <tr>
+                            <!-- Lead ID & Date -->
+                            <td>
+                                <div class="fw-bold text-dark font-monospace"><%= l.leadId %></div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    <%= new Date(l.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %>
+                                </div>
+                                <span class="badge bg-light text-secondary border font-monospace mt-1" style="font-size: 10px;">
+                                    <%= l.leadSource %>
+                                </span>
+                            </td>
+
+                            <!-- Contact Info -->
+                            <td>
+                                <div class="fw-bold text-dark"><%= l.name %></div>
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    <a href="tel:<%= l.mobile %>" class="text-primary text-decoration-none fw-bold" style="font-size: 12px;">
+                                        <i class="icofont-phone"></i> <%= l.mobile %>
+                                    </a>
+                                </div>
+                                <% if (l.city || l.district) { %>
+                                    <div class="text-muted small mt-1" style="font-size: 11px;">
+                                        <i class="icofont-location-pin text-danger"></i> <%= l.city || l.district %>, <%= l.state || 'M.P.' %>
+                                    </div>
+                                <% } %>
+                            </td>
+
+                            <!-- Requirement -->
+                            <td>
+                                <div class="text-dark small"><%= l.solarRequirement %></div>
+                                <% if (l.monthlyBill > 0) { %>
+                                    <div class="text-muted font-monospace small mt-1">₹<%= l.monthlyBill.toLocaleString('en-IN') %>/mo bill</div>
+                                <% } %>
+                            </td>
+
+                            <!-- Priority -->
+                            <td>
+                                <% if (l.leadPriority === 'URGENT') { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold">Urgent</span>
+                                <% } else if (l.leadPriority === 'HIGH') { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle fw-bold">High</span>
+                                <% } else if (l.leadPriority === 'LOW') { %>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Low</span>
+                                <% } else { %>
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">Medium</span>
+                                <% } %>
+                            </td>
+
+                            <!-- Lead Status -->
+                            <td>
+                                <% if (l.leadStatus === 'New') { %>
+                                    <span class="badge bg-primary text-white">New</span>
+                                <% } else if (l.leadStatus === 'Contacted') { %>
+                                    <span class="badge bg-info text-dark">Contacted</span>
+                                <% } else if (l.leadStatus === 'Qualified') { %>
+                                    <span class="badge bg-success text-white">Qualified</span>
+                                <% } else if (l.leadStatus === 'Follow-up Required') { %>
+                                    <span class="badge bg-warning text-dark">Follow-Up</span>
+                                <% } else if (l.leadStatus === 'Converted') { %>
+                                    <span class="badge bg-success fw-bold text-white"><i class="icofont-check-circled me-1"></i> Converted</span>
+                                <% } else if (l.leadStatus === 'Not Interested' || l.leadStatus === 'Disqualified') { %>
+                                    <span class="badge bg-secondary text-white"><%= l.leadStatus %></span>
+                                <% } %>
+
+                                <% if (l.followUpDate) { %>
+                                    <% 
+                                        const now = new Date();
+                                        const isPast = new Date(l.followUpDate) < now;
+                                    %>
+                                    <div class="mt-1 font-monospace <%= isPast ? 'text-danger fw-bold' : 'text-muted' %>" style="font-size: 11px;">
+                                        <i class="icofont-clock-time"></i> <%= new Date(l.followUpDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) %>
+                                    </div>
+                                <% } %>
+                            </td>
+
+                            <!-- Call Outreach -->
+                            <td>
+                                <% if (l.callStatus === 'Called') { %>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="icofont-check"></i> Called (<%= (l.callHistory || []).length %>)
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                        <i class="icofont-close"></i> Not Called
+                                    </span>
+                                <% } %>
+
+                                <% if (l.callHistory && l.callHistory.length > 0) { %>
+                                    <% const lastCall = l.callHistory[l.callHistory.length - 1]; %>
+                                    <div class="text-muted mt-1 small" style="font-size: 11px;">
+                                        Last: <span class="fw-bold"><%= lastCall.callOutcome %></span>
+                                    </div>
+                                <% } %>
+                            </td>
+
+                            <!-- Assigned Staff & Branch -->
+                            <td>
+                                <% if (l.assignedTelecaller) { %>
+                                    <div class="fw-bold text-dark"><%= l.assignedTelecaller.name %></div>
+                                    <div class="text-muted small" style="font-size: 11px;"><%= l.assignedTelecaller.designation || 'Telecaller' %></div>
+                                <% } else { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Unassigned</span>
+                                <% } %>
+
+                                <% if (l.branch) { %>
+                                    <div class="text-muted mt-1" style="font-size: 11px;">
+                                        <i class="icofont-building"></i> <%= l.branch.name %>
+                                    </div>
+                                <% } %>
+                            </td>
+
+                            <!-- Action Buttons -->
+                            <td class="text-end text-nowrap">
+                                <!-- Log Call Outcome -->
+                                <button class="btn btn-sm btn-outline-success py-1 px-2" onclick="openCallModal('<%= l._id %>', '<%= l.name %>', '<%= l.mobile %>', '<%= l.leadStatus %>')" title="Log Call Outcome">
+                                    <i class="icofont-ui-call"></i> Log Call
+                                </button>
+
+                                <!-- View Full Detail / Timeline Drawer -->
+                                <button class="btn btn-sm btn-outline-primary py-1 px-2 ms-1" onclick="openDetailModal('<%= l._id %>')" title="View Lead Timeline & Notes">
+                                    <i class="icofont-eye"></i>
+                                </button>
+
+                                <!-- Dropdown More Actions -->
+                                <div class="dropdown d-inline-block ms-1">
+                                    <button class="btn btn-sm btn-light border py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="icofont-navigation-menu"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 13px;">
+                                        <li>
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openCallModal('<%= l._id %>', '<%= l.name %>', '<%= l.mobile %>', '<%= l.leadStatus %>')">
+                                                <i class="icofont-phone text-success me-2"></i> Record Call
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openReassignModal('<%= l._id %>', '<%= l.name %>')">
+                                                <i class="icofont-exchange text-info me-2"></i> Reassign Lead
+                                            </a>
+                                        </li>
+                                        <% if (l.leadStatus !== 'Converted') { %>
+                                            <li>
+                                                <a class="dropdown-item text-primary" href="javascript:void(0)" onclick="convertLead('<%= l._id %>', '<%= l.name %>')">
+                                                    <i class="icofont-check-circled text-primary me-2"></i> Convert to Customer
+                                                </a>
+                                            </li>
+                                        <% } %>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="javascript:void(0)" onclick="openDetailModal('<%= l._id %>')">
+                                                <i class="icofont-file-text text-secondary me-2"></i> Full Activity History
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="icofont-inbox fs-1 text-secondary d-block mb-2"></i>
+                            No lead records match your search and filter criteria.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <% if (pagination.totalPages > 1) { %>
+        <div class="card-footer bg-white border-top py-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="small text-muted">
+                Showing <%= ((pagination.page - 1) * pagination.limit) + 1 %> to <%= Math.min(pagination.page * pagination.limit, pagination.total) %> of <%= pagination.total %> leads
+            </div>
+            <nav aria-label="Lead pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item <%= pagination.page <= 1 ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/leads?page=<%= pagination.page - 1 %>&search=<%= filters.search %>&status=<%= filters.status %>&callStatus=<%= filters.callStatus %>&priority=<%= filters.priority %>&followUp=<%= filters.followUp %>">Previous</a>
+                    </li>
+                    <% for (let p = Math.max(1, pagination.page - 2); p <= Math.min(pagination.totalPages, pagination.page + 2); p++) { %>
+                        <li class="page-item <%= p === pagination.page ? 'active' : '' %>">
+                            <a class="page-link" href="/admin/leads?page=<%= p %>&search=<%= filters.search %>&status=<%= filters.status %>&callStatus=<%= filters.callStatus %>&priority=<%= filters.priority %>&followUp=<%= filters.followUp %>"><%= p %></a>
+                        </li>
+                    <% } %>
+                    <li class="page-item <%= pagination.page >= pagination.totalPages ? 'disabled' : '' %>">
+                        <a class="page-link" href="/admin/leads?page=<%= pagination.page + 1 %>&search=<%= filters.search %>&status=<%= filters.status %>&callStatus=<%= filters.callStatus %>&priority=<%= filters.priority %>&followUp=<%= filters.followUp %>">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    <% } %>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 1: ADD NEW LEAD (MANUAL) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="newLeadModal" tabindex="-1" aria-labelledby="newLeadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary, #0f2a4a);">
+                <h5 class="modal-title fs-6 fw-bold" id="newLeadModalLabel">
+                    <i class="icofont-plus-circle me-1"></i> Register New Solar Lead
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="newLeadForm">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Customer / Contact Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Primary Mobile Number <span class="text-danger">*</span></label>
+                            <input type="tel" name="mobile" class="form-control" placeholder="10-digit mobile number" required pattern="[6-9][0-9]{9}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Alternate Mobile</label>
+                            <input type="tel" name="alternateMobile" class="form-control" placeholder="Optional secondary number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email Address</label>
+                            <input type="email" name="email" class="form-control" placeholder="client@example.com">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Address / Location</label>
+                            <input type="text" name="address" class="form-control" placeholder="House/Shop no, street, landmark">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">City / Town</label>
+                            <input type="text" name="city" class="form-control" value="Raisen">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">District</label>
+                            <input type="text" name="district" class="form-control" value="Raisen">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">PIN Code</label>
+                            <input type="text" name="pincode" class="form-control" placeholder="e.g. 464551">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Solar Requirement</label>
+                            <select name="solarRequirement" class="form-select">
+                                <option value="Residential Rooftop (PM Surya Ghar)">Residential Rooftop (PM Surya Ghar)</option>
+                                <option value="Commercial Rooftop (5kW - 50kW)">Commercial Rooftop (5kW - 50kW)</option>
+                                <option value="Industrial Solar Plant (50kW+)">Industrial Solar Plant (50kW+)</option>
+                                <option value="Solar Water Pump (PM KUSUM)">Solar Water Pump (PM KUSUM)</option>
+                                <option value="Off-Grid / Hybrid Battery System">Off-Grid / Hybrid Battery System</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Avg Monthly Electricity Bill (₹)</label>
+                            <input type="number" name="monthlyBill" class="form-control" placeholder="e.g. 2500" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Lead Source</label>
+                            <select name="leadSource" class="form-select">
+                                <option value="MANUAL">Manual Entry</option>
+                                <option value="COLD_CALL">Cold Calling List</option>
+                                <option value="REFERRAL">Customer Referral</option>
+                                <option value="CAMPAIGN">Field Campaign</option>
+                                <option value="WALK_IN">Branch Walk-In</option>
+                                <option value="WEBSITE">Website Form</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Priority</label>
+                            <select name="leadPriority" class="form-select">
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                                <option value="LOW">Low</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold">Assign Telecaller</label>
+                            <select name="assignedTelecallerId" class="form-select">
+                                <option value="">-- Leave Unassigned --</option>
+                                <% telecallers.forEach(t => { %>
+                                    <option value="<%= t._id %>"><%= t.name %> (<%= t.designation || t.role %>)</option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Initial Notes / Comments</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Record customer requirements or call instructions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold" style="background: var(--admin-navy-primary, #0f2a4a);">Save Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: BULK IMPORT LEADS (CSV / EXCEL / COPY-PASTE) -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="importLeadsModal" tabindex="-1" aria-labelledby="importLeadsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary, #0f2a4a);">
+                <h5 class="modal-title fs-6 fw-bold" id="importLeadsModalLabel">
+                    <i class="icofont-upload-alt me-1"></i> Bulk Lead Import Console
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Nav Tabs for Import Modes -->
+                <ul class="nav nav-tabs mb-3" id="importTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold" id="file-tab" data-bs-toggle="tab" data-bs-target="#fileImportPane" type="button" role="tab">
+                            <i class="icofont-file-excel text-success me-1"></i> Upload File (CSV / Excel)
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold" id="paste-tab" data-bs-toggle="tab" data-bs-target="#pasteImportPane" type="button" role="tab">
+                            <i class="icofont-ui-copy text-primary me-1"></i> Copy-Paste Tabular Data
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="importTabContent">
+                    <!-- File Upload Tab -->
+                    <div class="tab-pane fade show active" id="fileImportPane" role="tabpanel">
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <label class="form-label fw-bold small">Select CSV or Excel Workbook (.xlsx, .xls, .csv)</label>
+                            <input type="file" id="importFileInput" class="form-control" accept=".csv, .xlsx, .xls">
+                            <div class="text-muted small mt-1">
+                                Supported columns: <strong>Name, Mobile, Alternate Mobile, Email, City, Address, Requirement, Monthly Bill, Priority</strong>. Maximum file size: 5 MB.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Copy-Paste Tab -->
+                    <div class="tab-pane fade" id="pasteImportPane" role="tabpanel">
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <label class="form-label fw-bold small">Paste Tab-Separated or Comma-Separated Data (including header row)</label>
+                            <textarea id="importPasteInput" class="form-control font-monospace" rows="5" placeholder="Name&#9;Mobile&#9;City&#9;Requirement
+Ramesh Kumar&#9;9876543210&#9;Raisen&#9;3kW Rooftop
+Suresh Patel&#9;9123456780&#9;Bhopal&#9;5kW Commercial"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment & Import Options -->
+                <div class="row g-3 p-3 bg-white border rounded mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Target Branch</label>
+                        <select id="importBranchSelect" class="form-select form-select-sm">
+                            <% branches.forEach(b => { %>
+                                <option value="<%= b._id %>"><%= b.name %> (<%= b.code %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Assignment Strategy</label>
+                        <select id="importAssignStrategy" class="form-select form-select-sm" onchange="toggleAssignStrategy()">
+                            <option value="AUTO">Auto-Distribute (Workload Balancing)</option>
+                            <option value="SPECIFIC">Assign to Specific Telecaller</option>
+                            <option value="NONE">Leave Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4" id="specificTelecallerGroup" style="display: none;">
+                        <label class="form-label small fw-bold">Select Telecaller</label>
+                        <select id="importSpecificTelecaller" class="form-select form-select-sm">
+                            <% telecallers.forEach(t => { %>
+                                <option value="<%= t._id %>"><%= t.name %> (<%= t.designation || t.role %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Parse & Preview Action Button -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <button type="button" id="btnParsePreview" class="btn btn-outline-primary fw-bold" onclick="parseAndPreviewImport()">
+                        <i class="icofont-search-job me-1"></i> Step 1: Validate & Preview Records
+                    </button>
+                    <div id="importSpinner" class="spinner-border spinner-border-sm text-primary d-none" role="status">
+                        <span class="visually-hidden">Parsing...</span>
+                    </div>
+                </div>
+
+                <!-- Preview Results Container -->
+                <div id="importPreviewContainer" style="display: none;">
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge bg-dark px-3 py-2 fs-6">Total: <span id="prevTotal">0</span></span>
+                        <span class="badge bg-success px-3 py-2 fs-6">Valid: <span id="prevValid">0</span></span>
+                        <span class="badge bg-danger px-3 py-2 fs-6">Duplicates (Skipped): <span id="prevDuplicates">0</span></span>
+                        <span class="badge bg-warning text-dark px-3 py-2 fs-6">Invalid: <span id="prevInvalid">0</span></span>
+                    </div>
+
+                    <div class="table-responsive border rounded" style="max-height: 250px;">
+                        <table class="table table-sm table-striped mb-0" style="font-size: 12px;">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Mobile</th>
+                                    <th>City</th>
+                                    <th>Requirement</th>
+                                    <th>Validation Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="btnConfirmImport" class="btn btn-success fw-bold d-none" onclick="executeImport()">
+                    <i class="icofont-check-circled me-1"></i> Step 2: Confirm & Import Valid Leads
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 3: LOG CALL OUTCOME -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="logCallModal" tabindex="-1" aria-labelledby="logCallModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fs-6 fw-bold" id="logCallModalLabel">
+                    <i class="icofont-ui-call me-1"></i> Log Telecalling Call Outcome
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="logCallForm">
+                <input type="hidden" id="callLeadId">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal-body p-4">
+                    <div class="mb-3 p-2 bg-light rounded border">
+                        <div class="fw-bold text-dark" id="callLeadName">Customer Name</div>
+                        <div class="text-primary font-monospace small" id="callLeadMobile">+91 0000000000</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Call Outcome <span class="text-danger">*</span></label>
+                        <select id="callOutcomeSelect" class="form-select" required onchange="handleCallOutcomeChange()">
+                            <option value="">-- Select Call Outcome --</option>
+                            <option value="Connected">Connected (Customer Spoke)</option>
+                            <option value="Call Back Requested">Call Back Requested (Busy now)</option>
+                            <option value="No Answer">No Answer / Ringing</option>
+                            <option value="Busy">Busy / Line Engaged</option>
+                            <option value="Invalid Number">Invalid Number / Switched Off</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Update Lead Status</label>
+                        <select id="callUpdatedStatusSelect" class="form-select">
+                            <option value="">-- Keep Current Status --</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Qualified">Qualified (Ready for Site Survey)</option>
+                            <option value="Follow-up Required">Follow-up Required</option>
+                            <option value="Not Interested">Not Interested</option>
+                            <option value="Disqualified">Disqualified</option>
+                            <option value="Converted">Converted to Customer</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Schedule Next Follow-Up (Date & Time)</label>
+                        <input type="datetime-local" id="callFollowUpInput" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Call Notes & Customer Remarks <span class="text-danger">*</span></label>
+                        <textarea id="callNotesInput" class="form-control" rows="3" placeholder="Summary of discussion, roof size, quotation interest..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold">Save Call Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 4: REASSIGN LEAD -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="reassignModal" tabindex="-1" aria-labelledby="reassignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary, #0f2a4a);">
+                <h5 class="modal-title fs-6 fw-bold" id="reassignModalLabel">
+                    <i class="icofont-exchange me-1"></i> Reassign Lead Ownership
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reassignForm">
+                <input type="hidden" id="reassignLeadId">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal-body p-4">
+                    <p class="small text-muted mb-3">
+                        Reassigning lead for: <strong class="text-dark" id="reassignLeadName">Lead Name</strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select New Owner / Telecaller <span class="text-danger">*</span></label>
+                        <select id="reassignOwnerSelect" class="form-select" required>
+                            <option value="">-- Select Active Staff Member --</option>
+                            <% telecallers.forEach(t => { %>
+                                <option value="<%= t._id %>"><%= t.name %> (<%= t.designation || t.role %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Reason for Reassignment <span class="text-danger">*</span></label>
+                        <input type="text" id="reassignReasonInput" class="form-control" placeholder="e.g. Workload balancing, language preference, leave coverage" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold" style="background: var(--admin-navy-primary, #0f2a4a);">Confirm Reassignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 5: COMPLETE LEAD DETAIL DRAWER & CALL HISTORY -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="leadDetailModal" tabindex="-1" aria-labelledby="leadDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary, #0f2a4a);">
+                <h5 class="modal-title fs-6 fw-bold" id="leadDetailModalLabel">
+                    <i class="icofont-file-text me-1"></i> Lead Overview & Timeline
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="leadDetailContent">
+                <!-- Dynamically populated via AJAX -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client-side Interactive Script -->
+<script>
+    let validatedImportRecords = [];
+
+    function toggleAssignStrategy() {
+        const strategy = document.getElementById('importAssignStrategy').value;
+        const group = document.getElementById('specificTelecallerGroup');
+        group.style.display = (strategy === 'SPECIFIC') ? 'block' : 'none';
+    }
+
+    function handleCallOutcomeChange() {
+        const outcome = document.getElementById('callOutcomeSelect').value;
+        const statusSelect = document.getElementById('callUpdatedStatusSelect');
+        if (outcome === 'Connected') {
+            statusSelect.value = 'Contacted';
+        } else if (outcome === 'Call Back Requested') {
+            statusSelect.value = 'Follow-up Required';
+        } else if (outcome === 'Invalid Number') {
+            statusSelect.value = 'Disqualified';
+        }
+    }
+
+    function openCallModal(id, name, mobile, currentStatus) {
+        document.getElementById('callLeadId').value = id;
+        document.getElementById('callLeadName').textContent = name;
+        document.getElementById('callLeadMobile').textContent = mobile;
+        document.getElementById('callOutcomeSelect').value = '';
+        document.getElementById('callUpdatedStatusSelect').value = currentStatus || '';
+        document.getElementById('callNotesInput').value = '';
+        document.getElementById('callFollowUpInput').value = '';
+        new bootstrap.Modal(document.getElementById('logCallModal')).show();
+    }
+
+    function openReassignModal(id, name) {
+        document.getElementById('reassignLeadId').value = id;
+        document.getElementById('reassignLeadName').textContent = name;
+        document.getElementById('reassignReasonInput').value = '';
+        new bootstrap.Modal(document.getElementById('reassignModal')).show();
+    }
+
+    async function openDetailModal(id) {
+        const modal = new bootstrap.Modal(document.getElementById('leadDetailModal'));
+        modal.show();
+        const container = document.getElementById('leadDetailContent');
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+        try {
+            const res = await fetch(`/admin/leads/${id}`);
+            const data = await res.json();
+            if (!data.success) {
+                container.innerHTML = `<div class="alert alert-danger">${data.message || 'Error loading lead details'}</div>`;
+                return;
+            }
+
+            const l = data.lead;
+            let callHistoryHtml = '';
+            if (l.callHistory && l.callHistory.length > 0) {
+                callHistoryHtml = l.callHistory.slice().reverse().map(c => `
+                    <div class="border-start border-3 border-success ps-3 py-2 mb-2 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success">${c.callOutcome}</span>
+                            <span class="small text-muted">${new Date(c.callDate).toLocaleString('en-IN')}</span>
+                        </div>
+                        <div class="mt-1 small"><strong>Caller:</strong> ${c.callerName || 'Staff'}</div>
+                        <div class="small text-dark mt-1">${c.notes || 'No notes recorded.'}</div>
+                        ${c.nextFollowUpDate ? `<div class="small text-warning mt-1"><i class="icofont-clock-time"></i> Next follow-up: ${new Date(c.nextFollowUpDate).toLocaleString('en-IN')}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                callHistoryHtml = '<div class="text-muted small py-2">No call records logged yet.</div>';
+            }
+
+            let assignmentHistoryHtml = '';
+            if (l.assignmentHistory && l.assignmentHistory.length > 0) {
+                assignmentHistoryHtml = l.assignmentHistory.slice().reverse().map(a => `
+                    <div class="small py-1 border-bottom">
+                        <strong>${new Date(a.assignedAt).toLocaleDateString('en-IN')}:</strong> Assigned to <em>${a.newOwnerName || 'Staff'}</em> by ${a.assignedByName || 'System'} (${a.reason || 'Assignment'})
+                    </div>
+                `).join('');
+            } else {
+                assignmentHistoryHtml = '<div class="text-muted small py-2">No assignment history.</div>';
+            }
+
+            container.innerHTML = `
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-1">${l.name}</h6>
+                        <div class="text-muted small"><i class="icofont-id"></i> ID: <strong>${l.leadId}</strong></div>
+                        <div class="text-primary small mt-1"><i class="icofont-phone"></i> ${l.mobile} ${l.alternateMobile ? `| Alt: ${l.alternateMobile}` : ''}</div>
+                        ${l.email ? `<div class="text-muted small"><i class="icofont-email"></i> ${l.email}</div>` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="small"><strong>Location:</strong> ${l.address || ''} ${l.city}, ${l.district}, ${l.state} ${l.pincode ? `(${l.pincode})` : ''}</div>
+                        <div class="small mt-1"><strong>Requirement:</strong> ${l.solarRequirement}</div>
+                        <div class="small mt-1"><strong>Source:</strong> <span class="badge bg-light text-dark border">${l.leadSource}</span> | <strong>Priority:</strong> <span class="badge bg-info-subtle text-info border">${l.leadPriority}</span></div>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                    <li class="nav-item"><button class="nav-link active fw-bold small" data-bs-toggle="tab" data-bs-target="#tabCalls">Call History (${(l.callHistory || []).length})</button></li>
+                    <li class="nav-item"><button class="nav-link fw-bold small" data-bs-toggle="tab" data-bs-target="#tabAssignments">Assignment Trail</button></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tabCalls">${callHistoryHtml}</div>
+                    <div class="tab-pane fade" id="tabAssignments">${assignmentHistoryHtml}</div>
+                </div>
+            `;
+        } catch (err) {
+            container.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+        }
+    }
+
+    // New Lead Form Submit
+    document.getElementById('newLeadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const bodyObj = Object.fromEntries(formData.entries());
+
+        try {
+            const res = await fetch('/api/admin/leads/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                },
+                body: JSON.stringify(bodyObj)
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            alert('Failed to save lead: ' + err.message);
+        }
+    });
+
+    // Log Call Form Submit
+    document.getElementById('logCallForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('callLeadId').value;
+        const callOutcome = document.getElementById('callOutcomeSelect').value;
+        const updatedLeadStatus = document.getElementById('callUpdatedStatusSelect').value;
+        const nextFollowUpDate = document.getElementById('callFollowUpInput').value;
+        const notes = document.getElementById('callNotesInput').value;
+
+        try {
+            const res = await fetch(`/api/admin/leads/${leadId}/call`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                },
+                body: JSON.stringify({ callOutcome, updatedLeadStatus, nextFollowUpDate, notes })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Call logged successfully.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            alert('Error recording call: ' + err.message);
+        }
+    });
+
+    // Reassign Form Submit
+    document.getElementById('reassignForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const leadId = document.getElementById('reassignLeadId').value;
+        const newOwnerId = document.getElementById('reassignOwnerSelect').value;
+        const reason = document.getElementById('reassignReasonInput').value;
+
+        try {
+            const res = await fetch(`/api/admin/leads/${leadId}/reassign`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                },
+                body: JSON.stringify({ newOwnerId, reason })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert('Lead reassigned successfully.');
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            alert('Error reassigning lead: ' + err.message);
+        }
+    });
+
+    // Convert Lead to Customer
+    async function convertLead(leadId, name) {
+        if (!confirm(`Convert "${name}" from prospective lead to full Customer account?`)) return;
+
+        try {
+            const res = await fetch(`/api/admin/leads/${leadId}/convert`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            alert('Error converting lead: ' + err.message);
+        }
+    }
+
+    // Step 1: Parse and Preview Bulk Import
+    async function parseAndPreviewImport() {
+        const fileInput = document.getElementById('importFileInput');
+        const pasteInput = document.getElementById('importPasteInput').value;
+        const spinner = document.getElementById('importSpinner');
+        const previewContainer = document.getElementById('importPreviewContainer');
+        const confirmBtn = document.getElementById('btnConfirmImport');
+
+        let payload = {};
+
+        if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            spinner.classList.remove('d-none');
+
+            reader.onload = async function(e) {
+                payload = {
+                    fileData: e.target.result,
+                    filename: file.name
+                };
+                await executePreviewRequest(payload);
+            };
+            reader.readAsDataURL(file);
+        } else if (pasteInput && pasteInput.trim().length > 0) {
+            spinner.classList.remove('d-none');
+            payload = { rawText: pasteInput.trim() };
+            await executePreviewRequest(payload);
+        } else {
+            alert('Please select a CSV/Excel file or paste tabular data.');
+        }
+    }
+
+    async function executePreviewRequest(payload) {
+        const spinner = document.getElementById('importSpinner');
+        const previewContainer = document.getElementById('importPreviewContainer');
+        const confirmBtn = document.getElementById('btnConfirmImport');
+
+        try {
+            const res = await fetch('/api/admin/leads/import-preview', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            spinner.classList.add('d-none');
+
+            if (!data.success) {
+                alert('Preview error: ' + data.message);
+                return;
+            }
+
+            validatedImportRecords = data.validRows || [];
+            document.getElementById('prevTotal').textContent = data.totalRecords;
+            document.getElementById('prevValid').textContent = data.validCount;
+            document.getElementById('prevDuplicates').textContent = data.duplicateCount;
+            document.getElementById('prevInvalid').textContent = data.invalidCount;
+
+            const tbody = document.getElementById('importPreviewTableBody');
+            tbody.innerHTML = (data.previewRows || []).map(r => `
+                <tr class="${r.isDuplicate ? 'table-danger' : (!r.isValid ? 'table-warning' : 'table-success')}">
+                    <td>${r.index}</td>
+                    <td><strong>${r.name}</strong></td>
+                    <td class="font-monospace">${r.formattedMobile || r.mobile}</td>
+                    <td>${r.city || 'Raisen'}</td>
+                    <td>${r.solarRequirement}</td>
+                    <td>
+                        ${r.isValid ? '<span class="badge bg-success">Valid</span>' : `<span class="badge bg-danger">${r.validationError || 'Invalid'}</span>`}
+                    </td>
+                </tr>
+            `).join('');
+
+            previewContainer.style.display = 'block';
+
+            if (validatedImportRecords.length > 0) {
+                confirmBtn.classList.remove('d-none');
+            } else {
+                confirmBtn.classList.add('d-none');
+            }
+        } catch (err) {
+            spinner.classList.add('d-none');
+            alert('Error generating preview: ' + err.message);
+        }
+    }
+
+    // Step 2: Confirm and Import Valid Leads
+    async function executeImport() {
+        if (!validatedImportRecords || validatedImportRecords.length === 0) {
+            alert('No valid records to import.');
+            return;
+        }
+
+        const branchId = document.getElementById('importBranchSelect').value;
+        const strategy = document.getElementById('importAssignStrategy').value;
+        let telecallerId = null;
+        let autoDistribute = false;
+
+        if (strategy === 'AUTO') {
+            autoDistribute = true;
+        } else if (strategy === 'SPECIFIC') {
+            telecallerId = document.getElementById('importSpecificTelecaller').value;
+        }
+
+        const confirmBtn = document.getElementById('btnConfirmImport');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Importing...';
+
+        try {
+            const res = await fetch('/api/admin/leads/import-confirm', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '<%= csrfToken %>'
+                },
+                body: JSON.stringify({
+                    records: validatedImportRecords,
+                    branchId,
+                    telecallerId,
+                    autoDistribute,
+                    leadSource: 'BULK_IMPORT'
+                })
+            });
+            const data = await res.json();
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="icofont-check-circled me-1"></i> Confirm & Import Valid Leads';
+
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Import error: ' + data.message);
+            }
+        } catch (err) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="icofont-check-circled me-1"></i> Confirm & Import Valid Leads';
+            alert('Failed to execute import: ' + err.message);
+        }
+    }
+</script>
+
+<%- include('../partials/admin-footer') %>

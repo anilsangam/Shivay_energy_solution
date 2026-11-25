@@ -1,0 +1,484 @@
+<%- include('../admin/partials/admin-head', { title: 'Field Engineer Workspace | Shivay Energy Solutions' }) %>
+    <style>
+        .fe-header-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .fe-metric-badge {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #fff;
+            text-align: center;
+        }
+        .fe-metric-badge h3 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .fe-metric-badge small {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .fe-card {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+        }
+        .fe-card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .fe-card-body {
+            padding: 20px;
+        }
+        .gps-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .gps-verified {
+            background: #e6fffa;
+            color: #047481;
+            border: 1px solid #81e6d9;
+        }
+        .gps-unverified {
+            background: #fffaf0;
+            color: #9c4221;
+            border: 1px solid #fbd38d;
+        }
+        .mobile-action-btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+        @media (max-width: 768px) {
+            .fe-header-card {
+                padding: 16px;
+            }
+            .fe-metric-badge {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+
+    <!-- HERO SUMMARY -->
+                <div class="fe-header-card">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6 mb-3 mb-lg-0">
+                            <span class="badge bg-warning text-dark mb-2 font-weight-bold">Field Engineer Workspace</span>
+                            <h2 class="h3 font-weight-bold mb-1">Welcome, <%= user ? user.name : 'Engineer' %></h2>
+                            <p class="mb-0 text-white-50 small">Rooftop Solar Feasibility, Geo-tagged Inspections & Onsite Commercials</p>
+                            <div class="mt-2" id="liveGpsStatus">
+                                <span class="gps-status-pill gps-unverified" id="gpsBadge">
+                                    <i class="icofont-location-pin"></i> Detecting Device Geolocation...
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="row g-2">
+                                <div class="col-6 col-sm-3 mb-2 mb-sm-0">
+                                    <div class="fe-metric-badge">
+                                        <h3><%= stats ? stats.totalAssignedLeads : 0 %></h3>
+                                        <small>Assigned Leads</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3 mb-2 mb-sm-0">
+                                    <div class="fe-metric-badge">
+                                        <h3><%= stats ? stats.pendingInspectionsCount : 0 %></h3>
+                                        <small>Pending Visits</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="fe-metric-badge">
+                                        <h3><%= stats ? stats.completedInspectionsCount : 0 %></h3>
+                                        <small>Inspections Done</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="fe-metric-badge">
+                                        <h3><%= stats ? stats.activeProjectsCount : 0 %></h3>
+                                        <small>Active Projects</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN WORKSPACE CONTENT -->
+                <div class="row">
+                    <!-- ASSIGNED LEADS & VISITS -->
+                    <div class="col-lg-8">
+                        <div class="fe-card">
+                            <div class="fe-card-header">
+                                <h5 class="mb-0 font-weight-bold">
+                                    <i class="icofont-direction-sign text-primary me-2"></i> Assigned Qualified Leads & Surveys
+                                </h5>
+                                <button class="btn btn-sm btn-primary mobile-action-btn" onclick="openNewInspectionModal()">
+                                    <i class="icofont-plus"></i> New Site Inspection
+                                </button>
+                            </div>
+                            <div class="fe-card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Customer & Contact</th>
+                                                <th>Location</th>
+                                                <th>Requirement</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (assignedLeads && assignedLeads.length > 0) { %>
+                                                <% assignedLeads.forEach(lead => { %>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="font-weight-bold text-dark"><%= lead.name %></div>
+                                                            <small class="text-muted"><i class="icofont-phone"></i> <%= lead.mobile %></small>
+                                                        </td>
+                                                        <td>
+                                                            <div><%= lead.city || 'Raisen' %></div>
+                                                            <small class="text-muted"><%= lead.district || 'MP' %></small>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-light text-dark"><%= lead.solarRequirement || '3 kW Rooftop' %></span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-info text-white"><%= lead.leadStatus %></span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-outline-primary mobile-action-btn" onclick="startInspectionForLead('<%= lead._id %>', '<%= lead.name %>', '<%= lead.mobile %>', '<%= lead.address %>')">
+                                                                <i class="icofont-survey"></i> Inspect
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-4 text-muted">
+                                                        <i class="icofont-info-circle fs-4 d-block mb-1"></i>
+                                                        No pending leads assigned for site visit in this branch context.
+                                                    </td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- RECENT INSPECTIONS -->
+                        <div class="fe-card">
+                            <div class="fe-card-header">
+                                <h5 class="mb-0 font-weight-bold">
+                                    <i class="icofont-camera-alt text-success me-2"></i> Site Inspection Records & Photos
+                                </h5>
+                            </div>
+                            <div class="fe-card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Inspection ID</th>
+                                                <th>Customer</th>
+                                                <th>Roof / Area</th>
+                                                <th>GPS Coordinates</th>
+                                                <th>Photos</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (inspections && inspections.length > 0) { %>
+                                                <% inspections.forEach(insp => { %>
+                                                    <tr>
+                                                        <td class="font-weight-bold text-primary"><%= insp.inspectionId %></td>
+                                                        <td>
+                                                            <div><%= insp.customerName %></div>
+                                                            <small class="text-muted"><%= insp.customerMobile %></small>
+                                                        </td>
+                                                        <td>
+                                                            <div><%= insp.roofType %></div>
+                                                            <small class="text-muted"><%= insp.shadowFreeAreaSqFt || 0 %> sq.ft free</small>
+                                                        </td>
+                                                        <td>
+                                                            <% if (insp.coordinates && insp.coordinates.isGpsVerified) { %>
+                                                                <span class="gps-status-pill gps-verified">
+                                                                    <i class="icofont-check-circled"></i> GPS Verified
+                                                                </span>
+                                                            <% } else { %>
+                                                                <span class="gps-status-pill gps-unverified">
+                                                                    <i class="icofont-warning"></i> GPS Unverified
+                                                                </span>
+                                                            <% } %>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-secondary"><%= insp.photos ? insp.photos.length : 0 %> photos</span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge <%= insp.status === 'VERIFIED' ? 'bg-success' : (insp.status === 'SUBMITTED' ? 'bg-primary' : 'bg-warning text-dark') %>">
+                                                                <%= insp.status %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openPhotoUploadModal('<%= insp.inspectionId %>')">
+                                                                <i class="icofont-ui-camera"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-success" onclick="openOnsiteQuoteModal('<%= insp.inspectionId %>', '<%= insp.customerName %>', '<%= insp.customerMobile %>', '<%= insp.recommendedCapacityKw || 3 %>')">
+                                                                <i class="icofont-calculator-alt-1"></i> Quote
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            <% } else { %>
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-4 text-muted">
+                                                        No site inspections recorded yet.
+                                                    </td>
+                                                </tr>
+                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QUICK ACTIONS & FINANCE CLEARANCE -->
+                    <div class="col-lg-4">
+                        <div class="fe-card">
+                            <div class="fe-card-header">
+                                <h5 class="mb-0 font-weight-bold">
+                                    <i class="icofont-flash text-warning me-2"></i> Quick Field Actions
+                                </h5>
+                            </div>
+                            <div class="fe-card-body d-grid gap-2">
+                                <button class="btn btn-outline-primary text-start p-3" onclick="openNewInspectionModal()">
+                                    <div class="font-weight-bold"><i class="icofont-ui-file"></i> Fill Feasibility Inspection</div>
+                                    <small class="text-muted">Record roof measurements, shadow analysis and phase</small>
+                                </button>
+                                <button class="btn btn-outline-success text-start p-3" onclick="openPaymentModal()">
+                                    <div class="font-weight-bold"><i class="icofont-bill"></i> Collect / Record Payment</div>
+                                    <small class="text-muted">Enter customer cash, cheque, or bank transfer receipt</small>
+                                </button>
+                                <button class="btn btn-outline-info text-start p-3" onclick="openDocUploadModal()">
+                                    <div class="font-weight-bold"><i class="icofont-upload-alt"></i> Upload Customer Documents</div>
+                                    <small class="text-muted">Upload Aadhaar, PAN, Electricity Bill or Bank Proof</small>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+    <!-- SCRIPT FOR GEOLOCATION AND AJAX -->
+    <script>
+        let currentGpsCoordinates = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            initGeolocation();
+        });
+
+        function initGeolocation() {
+            const badge = document.getElementById('gpsBadge');
+            if (!navigator.geolocation) {
+                if (badge) {
+                    badge.className = 'gps-status-pill gps-unverified';
+                    badge.innerHTML = '<i class="icofont-warning"></i> Geolocation Not Supported by Browser';
+                }
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    currentGpsCoordinates = {
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                        accuracyMeters: pos.coords.accuracy,
+                        isGpsVerified: true
+                    };
+                    if (badge) {
+                        badge.className = 'gps-status-pill gps-verified';
+                        badge.innerHTML = `<i class="icofont-check-circled"></i> GPS Ready (Lat: ${pos.coords.latitude.toFixed(4)}, Acc: ±${Math.round(pos.coords.accuracy)}m)`;
+                    }
+                },
+                function (err) {
+                    currentGpsCoordinates = {
+                        latitude: null,
+                        longitude: null,
+                        accuracyMeters: null,
+                        isGpsVerified: false,
+                        gpsUnavailableReason: err.message || 'Permission denied'
+                    };
+                    if (badge) {
+                        badge.className = 'gps-status-pill gps-unverified';
+                        badge.innerHTML = `<i class="icofont-warning"></i> GPS Unavailable (${err.message || 'Denied'})`;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+            );
+        }
+
+        function openNewInspectionModal() {
+            alert('Site inspection form can be initiated directly or from an assigned lead.');
+        }
+
+        function startInspectionForLead(leadId, name, mobile, address) {
+            const confirmed = confirm(`Start site inspection for ${name} (${mobile})?`);
+            if (!confirmed) return;
+
+            const postData = {
+                leadId,
+                customerName: name,
+                customerMobile: mobile,
+                siteAddress: address || '',
+                coordinates: currentGpsCoordinates || { isGpsVerified: false },
+                isSubmit: false
+            };
+
+            fetch('/api/inspections/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Inspection draft created: ${data.inspection.inspectionId}`);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Error creating inspection draft');
+                }
+            })
+            .catch(err => alert('Network error: ' + err.message));
+        }
+
+        function openPhotoUploadModal(inspectionId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp';
+            input.onchange = function () {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const payload = {
+                        fileObj: {
+                            name: file.name,
+                            type: file.type,
+                            data: e.target.result,
+                            category: 'ROOF_TOP'
+                        },
+                        latitude: currentGpsCoordinates?.latitude || null,
+                        longitude: currentGpsCoordinates?.longitude || null,
+                        accuracyMeters: currentGpsCoordinates?.accuracyMeters || null,
+                        gpsUnavailableReason: currentGpsCoordinates?.isGpsVerified ? '' : 'Device GPS was unavailable'
+                    };
+
+                    fetch(`/api/inspections/${inspectionId}/photo`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            window.location.reload();
+                        } else {
+                            alert(data.message || 'Photo upload failed');
+                        }
+                    })
+                    .catch(err => alert('Error uploading photo: ' + err.message));
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function openOnsiteQuoteModal(inspectionId, name, mobile, kw) {
+            const capacity = prompt(`Create onsite proposal for ${name}. Enter system capacity in kW:`, kw || '3');
+            if (!capacity) return;
+
+            fetch(`/api/inspections/${inspectionId}/quotation`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    plantCapacityKw: parseFloat(capacity) || 3,
+                    customerName: name,
+                    customerMobile: mobile
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert(data.message || 'Error generating onsite quotation');
+                }
+            })
+            .catch(err => alert('Network error: ' + err.message));
+        }
+
+        function openPaymentModal() {
+            const amount = prompt('Enter payment amount received (₹):');
+            if (!amount) return;
+            const mode = prompt('Enter payment mode (BANK_TRANSFER, CASH, CHEQUE, UPI_ONLINE):', 'BANK_TRANSFER');
+            const ref = prompt('Enter reference / Cheque / UTR number:', 'UTR-' + Date.now());
+
+            fetch('/api/payments/record', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    amount: parseFloat(amount),
+                    paymentMode: mode || 'BANK_TRANSFER',
+                    transactionRef: ref
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert(data.message || 'Error recording payment');
+                }
+            })
+            .catch(err => alert('Network error: ' + err.message));
+        }
+
+        function openDocUploadModal() {
+            alert('Upload document dialog: select file and document category (Aadhaar, Electricity Bill, etc.).');
+        }
+    </script>
+
+<%- include('../admin/partials/admin-footer') %>

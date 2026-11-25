@@ -8,6 +8,11 @@ const projectController = require('../../controllers/projectController');
 const materialController = require('../../controllers/materialController');
 const websiteCmsController = require('../../controllers/websiteCmsController');
 const enquiryController = require('../../controllers/enquiryController');
+const leadController = require('../../controllers/leadController');
+const fieldInspectionController = require('../../controllers/fieldInspectionController');
+const projectExecutionController = require('../../controllers/projectExecutionController');
+const complaintController = require('../../controllers/complaintController');
+const { EmployeeCardController } = require('../../controllers/employeeCardController');
 
 const {
     requireAuth,
@@ -30,6 +35,44 @@ router.get(['/admin/users', '/admin/employees'], requireAuth, requirePermission(
 router.get('/admin/users/:id/permissions', requireAuth, requirePermission('users.employees.manage'), validateObjectId('id'), adminController.getUserPermissions);
 router.get('/admin/managers', requireAuth, requirePermission('users.managers.view'), adminController.getManagers);
 router.get('/admin/customers', requireAuth, requirePermission('crm.customers.view'), customerController.getCustomersList);
+
+// CRM & Lead Management (Telecalling, Bulk Import, Lead Lifecycle)
+router.get('/admin/leads', requireAuth, requirePermission('crm.leads.view'), leadController.getLeadsPage);
+router.get('/admin/leads/export', requireAuth, requirePermission('crm.leads.export'), leadController.exportLeadsCsv);
+router.get('/admin/leads/:id', requireAuth, requirePermission('crm.leads.view'), validateObjectId('id'), leadController.getLeadDetails);
+router.post('/api/admin/leads/create', requireAuth, requirePermission('crm.leads.create'), verifyCsrf, leadController.createLead);
+router.post('/api/admin/leads/import-preview', requireAuth, requirePermission('crm.leads.import'), verifyCsrf, leadController.postImportPreview);
+router.post('/api/admin/leads/import-confirm', requireAuth, requirePermission('crm.leads.import'), verifyCsrf, leadController.postImportConfirm);
+router.post('/api/admin/leads/:id/call', requireAuth, requirePermission('crm.leads.call_update'), verifyCsrf, validateObjectId('id'), leadController.postRecordCall);
+router.post('/api/admin/leads/:id/reassign', requireAuth, requirePermission('crm.leads.reassign'), verifyCsrf, validateObjectId('id'), leadController.postReassign);
+router.post('/api/admin/leads/:id/convert', requireAuth, requirePermission('crm.customers.create'), verifyCsrf, validateObjectId('id'), leadController.postConvert);
+router.post('/api/admin/leads/:id/comment', requireAuth, requirePermission('crm.leads.edit'), verifyCsrf, validateObjectId('id'), leadController.postAddComment);
+
+// Field Engineer Workspace, Site Inspection & Payment Clearance (Phase 2)
+router.get(['/field-engineer/workspace', '/admin/inspections'], requireAuth, requireAnyPermission(['projects.tasks.view', 'projects.inspections.view']), fieldInspectionController.getWorkspace);
+router.get('/api/inspections/:id', requireAuth, requirePermission('projects.inspections.view'), fieldInspectionController.getInspection);
+router.post('/api/inspections/save', requireAuth, requirePermission('projects.inspections.create'), verifyCsrf, fieldInspectionController.postSaveInspection);
+router.post('/api/inspections/:id/photo', requireAuth, requirePermission('projects.inspections.photos'), verifyCsrf, fieldInspectionController.postUploadPhoto);
+router.post('/api/inspections/:id/verify', requireAuth, requirePermission('projects.inspections.approve'), verifyCsrf, fieldInspectionController.postVerifyInspection);
+router.post('/api/inspections/:id/quotation', requireAuth, requirePermission('quotations.preparation.create'), verifyCsrf, fieldInspectionController.postCreateOnsiteQuotation);
+router.post('/api/quotations/:quotationId/customer-response', requireAuth, requirePermission('quotations.customer_response.edit'), verifyCsrf, validateObjectId('quotationId'), fieldInspectionController.postRecordCustomerAcceptance);
+router.post('/api/customers/documents', requireAuth, requirePermission('projects.documents.create'), verifyCsrf, fieldInspectionController.postUploadCustomerDocument);
+router.post('/api/payments/record', requireAuth, requirePermission('invoices.payments.record'), verifyCsrf, fieldInspectionController.postRecordPayment);
+router.post('/api/payments/:paymentId/verify', requireAuth, requirePermission('invoices.payments.verify'), verifyCsrf, fieldInspectionController.postVerifyPayment);
+router.get('/api/projects/activation-status/:quotationId', requireAuth, requirePermission('projects.records.view'), validateObjectId('quotationId'), fieldInspectionController.getPaymentClearanceStatus);
+router.post('/api/projects/activate/:quotationId', requireAuth, requirePermission('projects.activation.create'), verifyCsrf, validateObjectId('quotationId'), fieldInspectionController.postActivateProject);
+
+// Project Execution, Material Allocation, Serials & Installation (Phase 3)
+router.get(['/installation/workspace', '/admin/installation/workspace'], requireAuth, requireAnyPermission(['projects.tasks.view', 'projects.installation.manage']), projectExecutionController.getInstallationWorkspace);
+router.post('/api/projects/:projectId/assign-employees', requireAuth, requirePermission('projects.assignment.assign'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postAssignEmployees);
+router.post('/api/projects/:projectId/status', requireAuth, requirePermission('projects.status.edit'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postUpdateStatus);
+router.post('/api/inventory/serials/register', requireAuth, requirePermission('inventory.serials.manage'), verifyCsrf, projectExecutionController.postRegisterSerial);
+router.post('/api/projects/:projectId/allocate-material', requireAuth, requirePermission('inventory.allocation.manage'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postAllocateMaterial);
+router.post('/api/projects/:projectId/dispatch-material', requireAuth, requireAnyPermission(['dispatch.orders.create', 'inventory.allocation.manage']), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postDispatchMaterial);
+router.post('/api/projects/:projectId/installation/start', requireAuth, requirePermission('projects.installation.manage'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postStartInstallation);
+router.post('/api/projects/:projectId/installation/submit', requireAuth, requirePermission('projects.installation.manage'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postSubmitInstallation);
+router.post('/api/projects/:projectId/approve-completion', requireAuth, requirePermission('projects.completion.approve'), verifyCsrf, validateObjectId('projectId'), projectExecutionController.postApproveCompletion);
+router.get('/api/projects/dashboard/executive', requireAuth, requireAnyPermission(['reports.analytics.view', 'projects.records.view']), projectExecutionController.getExecutiveDashboard);
 
 // Commercial Lifecycle: Quotations & Maker-Checker Approvals
 router.get('/admin/quotations', requireAuth, requirePermission('quotations.records.view'), quotationController.getAdminQuotations);
@@ -60,6 +103,7 @@ router.get('/admin/projects/:id/documents/:documentId', requireAuth, requirePerm
 
 // Financials, System Audit & Organization Management
 router.get('/admin/invoices', requireAuth, requirePermission('invoices.records.view'), adminController.getInvoices);
+router.get('/admin/invoices/:id/document', requireAuth, requirePermission('invoices.records.view'), adminController.getInvoiceDocumentPage);
 router.get('/admin/reports', requireAuth, requirePermission('reports.analytics.view'), adminController.getReports);
 router.get('/api/admin/reports/export/:type', requireAuth, requirePermission('reports.analytics.export'), adminController.exportReportCsv);
 router.get('/admin/activity-logs', requireAuth, requirePermission('settings.audit_logs.view'), adminController.getActivityLogs);
@@ -67,8 +111,18 @@ router.get('/admin/settings', requireAuth, requirePermission('settings.general.v
 router.get('/admin/profile', requireAuth, adminController.getProfile);
 router.get('/admin/branches', requireAuth, requirePermission('branches.offices.view'), adminController.getBranches);
 router.get('/admin/enquiries', requireAuth, requirePermission('crm.enquiries.view'), adminController.getDashboard);
-router.get('/admin/complaints', requireAuth, requirePermission('complaints.tickets.view'), adminController.getComplaints);
-router.post('/api/admin/complaints/status', requireAuth, requirePermission('complaints.tickets.edit'), verifyCsrf, adminController.updateComplaintStatus);
+router.get('/admin/complaints', requireAuth, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), complaintController.getAdminComplaints);
+router.get('/admin/complaints/:id', requireAuth, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), validateObjectId('id'), complaintController.getComplaintDetailPage);
+router.post('/api/admin/complaints/status', requireAuth, requireAnyPermission(['complaints.tickets.edit', 'complaints.records.edit']), verifyCsrf, complaintController.updateComplaintStatus);
+
+// Complaint Management Action APIs (Phase 4)
+router.post('/api/complaints/:id/link', requireAuth, requireAnyPermission(['complaints.records.edit', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postLinkCustomerProject);
+router.post('/api/complaints/:id/transfer-branch', requireAuth, requireAnyPermission(['complaints.branch_transfer', 'complaints.assign']), verifyCsrf, validateObjectId('id'), complaintController.postTransferBranch);
+router.post('/api/complaints/:id/assign-technician', requireAuth, requireAnyPermission(['complaints.technician_assign', 'complaints.assign', 'complaints.reassign', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postAssignTechnician);
+router.post('/api/complaints/:id/progress', requireAuth, requireAnyPermission(['complaints.progress.update', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postUpdateProgress);
+router.post('/api/complaints/:id/resolve', requireAuth, requireAnyPermission(['complaints.resolve', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postResolveComplaint);
+router.post('/api/complaints/:id/approve-closure', requireAuth, requireAnyPermission(['complaints.close', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postApproveClosure);
+router.post('/api/complaints/:id/reopen', requireAuth, requireAnyPermission(['complaints.reopen', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postReopenComplaint);
 
 // Super Admin / Governance Mutating APIs
 router.post('/api/admin/enquiries/status', requireAuth, requirePermission('crm.enquiries.edit'), verifyCsrf, adminController.updateEnquiryStatus);
@@ -76,11 +130,24 @@ router.post('/api/admin/quotations/save', requireAuth, requirePermission('quotat
 router.post('/api/admin/invoices/save', requireAuth, requireAnyPermission(['invoices.records.create', 'invoices.records.edit']), verifyCsrf, adminController.saveInvoice);
 router.post('/api/admin/invoices/delete', requireAuth, requirePermission('invoices.records.delete'), verifyCsrf, adminController.deleteInvoice);
 router.post('/api/admin/users/create', requireAuth, requireSuperAdmin, requirePermission('users.employees.create'), verifyCsrf, adminController.createUser);
+router.post('/api/admin/users/:id/update', requireAuth, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('id'), adminController.updateUserDetails);
 router.post('/api/admin/users/status', requireAuth, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('userId'), adminController.updateUserStatus);
 router.post('/api/admin/users/reset-password', requireAuth, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('userId'), adminController.resetUserPassword);
 router.post('/api/admin/employees/assign-manager', requireAuth, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('employeeId'), adminController.assignManager);
 router.get('/api/admin/users/:id/permissions', requireAuth, requirePermission('users.employees.manage'), validateObjectId('id'), adminController.getUserPermissionsJson);
 router.post('/api/admin/users/:id/permissions', requireAuth, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('id'), adminController.updateUserPermissions);
+
+// Employee Identity Card & Visiting Card Routes (Super Admin & Managers)
+router.get('/admin/employees/:id/id-card', requireAuth, validateObjectId('id'), EmployeeCardController.getIdCard);
+router.get('/admin/employees/:id/visiting-card', requireAuth, validateObjectId('id'), EmployeeCardController.getVisitingCard);
+router.get('/api/admin/employees/:id/share/:type', requireAuth, validateObjectId('id'), EmployeeCardController.getSharePayload);
+router.get('/cards/view/:type/:id', validateObjectId('id'), (req, res) => {
+    const type = req.params.type;
+    if (type === 'visiting-card' || type === 'visiting') {
+        return EmployeeCardController.getVisitingCard(req, res);
+    }
+    return EmployeeCardController.getIdCard(req, res);
+});
 router.post('/api/admin/branches/create', requireAuth, requireSuperAdmin, requirePermission('branches.offices.create'), verifyCsrf, adminController.createBranch);
 router.post('/api/admin/branches/update', requireAuth, requirePermission('branches.offices.edit'), verifyCsrf, adminController.updateBranch);
 router.post('/api/admin/branches/status', requireAuth, requirePermission('branches.offices.manage'), verifyCsrf, adminController.toggleBranchStatus);

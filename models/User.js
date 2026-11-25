@@ -132,7 +132,29 @@ const userSchema = new mongoose.Schema({
     },
     avatar: { 
         type: String, 
-        default: '/images/misc/cst-1.webp' 
+        default: '' 
+    },
+    bloodGroup: {
+        type: String,
+        trim: true,
+        default: 'B+'
+    },
+    alternateMobile: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    joiningDate: {
+        type: Date,
+        default: Date.now
+    },
+    expiryDate: {
+        type: Date,
+        default: () => new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000)
+    },
+    idCardNumber: {
+        type: String,
+        trim: true
     }
 }, { 
     timestamps: true 

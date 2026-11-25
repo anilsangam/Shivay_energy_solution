@@ -18,18 +18,18 @@
 <link rel="stylesheet" href="/css/private/invoices.css">
 
 <!-- Top Header & Action Banner -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2 no-print">
+<div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-between mb-3 mb-md-4 gap-2 no-print">
     <div>
-        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 23px;">
-            GST Tax Invoices & Customer Billing
+        <h2 class="font-weight-bold mb-1 inv-page-title" style="color: var(--admin-navy-primary);">
+            GST Tax Invoices &amp; Customer Billing
         </h2>
-        <p class="text-muted small mb-0">
-            Authorized GST Compliant Tax Invoices for Solar Rooftops, PM Surya Ghar Subsidies & MPPKVVCL Net-Metering.
+        <p class="text-muted small mb-0" style="font-size: 12px;">
+            Authorized Tax Invoices for Solar Rooftops, Subsidies &amp; Net-Metering.
         </p>
     </div>
     <% if (canCreateInvoice) { %>
-        <div class="d-flex align-items-center gap-2 mt-2 mt-md-0">
-            <button type="button" class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 7px 14px;">
+        <div class="d-flex align-items-center flex-shrink-0">
+            <button type="button" class="btn btn-sm btn-primary fw-bold d-inline-flex align-items-center justify-content-center gap-1 shadow-sm w-100 w-sm-auto" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()" style="background: var(--admin-navy-primary); border-radius: 8px; padding: 8px 14px;">
                 <i class="icofont-plus-circle fs-6"></i> Generate New Bill
             </button>
         </div>
@@ -44,29 +44,27 @@
     if (invoices && invoices.length > 0) {
         invoices.forEach(inv => {
             totalTaxable += Number(inv.subtotal || 0);
-            totalTax += Number((inv.cgst || 0) + (inv.sgst || 0) || inv.gstAmount || 0);
+            totalTax += Number((inv.totalTaxAmount !== undefined ? inv.totalTaxAmount : ((inv.cgst || 0) + (inv.sgst || 0))) || inv.gstAmount || 0);
             totalBilled += Number(inv.totalAmount || 0);
         });
     }
-    const primaryInvoice = (invoices && invoices.length > 0) ? invoices[0] : null;
 %>
 
 <!-- ========================================================================= -->
-<!-- 1. INVOICE LEDGER CARD (ALL BILLS WITH EDIT & PRINT ACTIONS) -->
+<!-- 1. INVOICE LEDGER CARD (DESKTOP TABLE + MOBILE CARDS)                     -->
 <!-- ========================================================================= -->
 <div class="inv-card no-print">
     <div class="inv-card-header">
-        <div>
-            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 15px; color: #0f2a4a;">
-                <i class="icofont-bill text-primary fs-5"></i>
-                Issued Tax Invoices Ledger
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace ms-1" style="font-size: 11.5px;">
+        <div class="min-w-0">
+            <h5 class="mb-0 fw-bold d-flex flex-wrap align-items-center gap-2" style="font-size: 14.5px; color: #0f2a4a;">
+                <span><i class="icofont-bill text-primary me-1"></i> Tax Invoices Ledger</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace" style="font-size: 11px;">
                     <%= invoices ? invoices.length : 0 %> Invoices
                 </span>
             </h5>
         </div>
         <% if (canCreateInvoice) { %>
-            <div class="d-flex gap-2">
+            <div class="d-none d-sm-flex gap-2">
                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#invoiceModal" onclick="openNewInvoiceModal()">
                     <i class="icofont-plus-circle me-1"></i> Create Bill
                 </button>
@@ -76,57 +74,58 @@
 
     <!-- Integrated Stats Ribbon Strip -->
     <div class="inv-stats-strip">
-        <div class="row g-2 align-items-center text-center text-sm-start">
-            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
+        <div class="row g-2 align-items-center text-start">
+            <div class="col-6 col-md-3 inv-stat-item border-end-sm">
                 <div class="inv-stat-label">Total Invoices</div>
                 <div class="inv-stat-value text-dark"><%= invoices ? invoices.length : 0 %></div>
             </div>
-            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
+            <div class="col-6 col-md-3 inv-stat-item border-end-sm">
                 <div class="inv-stat-label text-primary">Taxable Value</div>
                 <div class="inv-stat-value text-primary"><%= canViewMetrics ? ('₹' + Math.round(totalTaxable).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
-            <div class="col-6 col-sm-3 inv-stat-item border-end-sm">
-                <div class="inv-stat-label text-warning">12% GST Total</div>
+            <div class="col-6 col-md-3 inv-stat-item border-end-sm">
+                <div class="inv-stat-label text-warning">Total GST</div>
                 <div class="inv-stat-value text-warning"><%= canViewMetrics ? ('₹' + Math.round(totalTax).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
-            <div class="col-6 col-sm-3 inv-stat-item">
+            <div class="col-6 col-md-3 inv-stat-item">
                 <div class="inv-stat-label text-success">Total Billed</div>
                 <div class="inv-stat-value text-success"><%= canViewMetrics ? ('₹' + Math.round(totalBilled).toLocaleString('en-IN')) : '₹ ••••••' %></div>
             </div>
         </div>
     </div>
 
-    <!-- Invoices Table -->
-    <div class="inv-table-wrap">
+    <!-- Desktop Invoices Table -->
+    <div class="inv-table-wrap d-none d-md-block">
         <table class="inv-table table align-middle mb-0">
             <thead>
                 <tr>
-                    <th style="width: 18%;">INVOICE #</th>
-                    <th style="width: 25%;">CUSTOMER & SITE LOCATION</th>
-                    <th style="width: 11%;">CAPACITY</th>
-                    <th style="width: 14%;">TAXABLE (₹)</th>
+                    <th style="width: 17%;">INVOICE #</th>
+                    <th style="width: 24%;">CUSTOMER &amp; SITE LOCATION</th>
+                    <th style="width: 10%;">CAPACITY</th>
+                    <th style="width: 13%;">TAXABLE (₹)</th>
                     <th style="width: 14%;">TOTAL WITH GST (₹)</th>
                     <th style="width: 8%;" class="text-center">STATUS</th>
-                    <th style="width: 10%;" class="text-end pe-3">ACTIONS</th>
+                    <th style="width: 14%;" class="text-end pe-3">ACTIONS</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (invoices && invoices.length > 0) { %>
                     <% invoices.forEach((inv, index) => { 
-                        let isPaid = (inv.paymentStatus || 'paid').toLowerCase() === 'paid';
-                        let statusBadge = isPaid ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle';
+                        const isPaid = (inv.paymentStatus || 'paid').toLowerCase() === 'paid';
+                        const statusBadge = isPaid ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle';
+                        const docUrl = '/admin/invoices/' + encodeURIComponent(String(inv._id || inv.invoiceNumber)) + '/document';
                     %>
                         <tr>
                             <td>
                                 <strong class="text-primary font-monospace" style="font-size: 13px;"><%= inv.invoiceNumber %></strong>
-                                <small class="text-muted d-block font-monospace" style="font-size: 11px;"><%= inv.date || '07-11-2026' %></small>
+                                <small class="text-muted d-block font-monospace" style="font-size: 11px;"><%= inv.date || inv.invoiceDate || '-' %></small>
                             </td>
                             <td>
                                 <div class="fw-bold text-dark text-truncate" style="max-width: 210px; font-size: 13px;" title="<%= inv.customerName %>">
                                     <%= inv.customerName %>
                                 </div>
                                 <div class="text-muted text-truncate" style="max-width: 210px; font-size: 11px;">
-                                    <i class="icofont-location-pin text-muted"></i> <%= inv.customerAddress || 'Raisen, M.P.' %>
+                                    <i class="icofont-location-pin text-muted"></i> <%= inv.customerAddress || 'Raisen, Madhya Pradesh' %>
                                 </div>
                             </td>
                             <td>
@@ -151,16 +150,16 @@
                             </td>
                             <td class="text-end pe-3">
                                 <div class="d-inline-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-primary py-1 px-2" title="View & Print Document" onclick="selectInvoiceToPrint(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
-                                        <i class="icofont-print"></i>
-                                    </button>
+                                    <a href="<%= docUrl %>" class="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1" title="Open Tax Invoice PDF Page" style="font-size: 11.5px; border-radius: 5px;">
+                                        <i class="icofont-file-pdf"></i><span>PDF</span>
+                                    </a>
                                     <% if (canEditInvoice) { %>
-                                        <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Invoice Details" onclick="editInvoice(<%= index %>)" style="font-size: 11.5px; border-radius: 5px;">
                                             <i class="icofont-edit"></i>
                                         </button>
                                     <% } %>
                                     <% if (canDeleteInvoice) { %>
-                                        <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Archive Invoice" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
+                                        <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2" title="Archive Invoice" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="font-size: 11.5px; border-radius: 5px;">
                                             <i class="icofont-archive"></i>
                                         </button>
                                     <% } %>
@@ -173,181 +172,98 @@
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="icofont-bill fs-1 d-block mb-2 text-muted" style="font-size: 38px !important;"></i>
                             <p class="mb-1 fw-bold fs-6">No tax invoices recorded yet.</p>
-                            <small class="text-muted">Click "+ Generate New Bill" to create your first GST invoice.</small>
+                            <small class="text-muted">Click "Generate New Bill" to create your first GST invoice.</small>
                         </td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
-</div>
 
-<!-- ========================================================================= -->
-<!-- 2. PRINTABLE OFFICIAL GST TAX INVOICE DOCUMENT PREVIEW -->
-<!-- ========================================================================= -->
-<div class="invoice-paper" id="printableInvoiceCard" <%= primaryInvoice ? '' : 'hidden' %>>
-    <!-- Header with Company & Customer Info -->
-    <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
-        <div>
-            <h3 class="font-weight-bold mb-0 text-dark" style="font-size: 22px;"><%= company.name %></h3>
-            <span class="badge bg-success mb-2" style="font-size: 10px;">GST Compliant Tax Invoice</span>
-            <small class="text-muted d-block"><%= company.address.full %></small>
-            <small class="text-muted d-block">GSTIN: <strong><%= company.gstin %></strong> | State Code: 23 (Madhya Pradesh)</small>
-            <small class="text-muted">Contact: +91 70005 75496 | Email: <%= company.email %></small>
-        </div>
-        <div class="text-end">
-            <h4 class="text-dark font-weight-bold mb-1" style="font-size: 20px;">TAX INVOICE</h4>
-            <small class="d-block text-muted">Invoice No: <strong id="docInvNum" class="text-primary font-monospace"><%= primaryInvoice ? primaryInvoice.invoiceNumber : 'SES-INV-2026-0001' %></strong></small>
-            <small class="d-block text-muted">Date: <strong id="docInvDate"><%= primaryInvoice ? (primaryInvoice.date || '07-11-2026') : '07-11-2026' %></strong></small>
-            <small class="d-block text-muted mt-1">Payment: <strong class="badge bg-success" id="docPaymentStatus"><%= primaryInvoice ? (primaryInvoice.paymentStatus || 'PAID').toUpperCase() : 'PAID (NEFT)' %></strong></small>
-        </div>
-    </div>
+    <!-- Mobile Invoices Card List -->
+    <div class="d-md-none inv-mobile-list p-2">
+        <% if (invoices && invoices.length > 0) { %>
+            <% invoices.forEach((inv, index) => {
+                const isPaid = (inv.paymentStatus || 'paid').toLowerCase() === 'paid';
+                const statusBadge = isPaid ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-warning-subtle text-warning border border-warning-subtle';
+                const docUrl = '/admin/invoices/' + encodeURIComponent(String(inv._id || inv.invoiceNumber)) + '/document';
+            %>
+                <div class="inv-mobile-card">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                        <div class="min-w-0">
+                            <div class="fw-bold text-primary font-monospace" style="font-size: 13px;"><%= inv.invoiceNumber %></div>
+                            <div class="text-muted font-monospace" style="font-size: 11px;"><%= inv.date || inv.invoiceDate || '-' %></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span class="badge bg-light text-primary border border-primary-subtle font-monospace" style="font-size: 10.5px;">
+                                <%= inv.plantCapacityKw || 3 %> kW
+                            </span>
+                            <span class="badge <%= statusBadge %>" style="font-size: 10px;">
+                                <%= (inv.paymentStatus || 'PAID').toUpperCase() %>
+                            </span>
+                        </div>
+                    </div>
 
-    <!-- Customer & Technical Installation Details -->
-    <div class="row g-3 mb-4">
-        <div class="col-sm-6">
-            <div class="p-3 bg-light rounded-2 h-100 border">
-                <span class="text-muted small text-uppercase font-weight-bold d-block mb-1" style="font-size: 10.5px;">Billed To (Customer):</span>
-                <h6 class="font-weight-bold text-dark mb-1" id="docCustomerName" style="font-size: 14px;"><%= primaryInvoice ? primaryInvoice.customerName : 'Client Name' %></h6>
-                <small class="text-muted d-block" id="docCustomerAddress"><%= primaryInvoice ? (primaryInvoice.customerAddress || 'Raisen, M.P.') : 'Site Address' %></small>
-                <small class="text-muted d-block">Phone: <span id="docCustomerMobile"><%= primaryInvoice ? primaryInvoice.customerMobile : '+91 XXXXX XXXXX' %></span></small>
-                <small class="text-muted d-block">GSTIN: <span id="docCustomerGstin"><%= primaryInvoice ? (primaryInvoice.customerGstin || 'Consumer (URP)') : 'Consumer (URP)' %></span></small>
+                    <div class="fw-bold text-dark text-truncate" style="font-size: 13.5px;"><%= inv.customerName %></div>
+                    <div class="text-muted text-truncate mb-2" style="font-size: 11.5px;">
+                        <i class="icofont-location-pin"></i> <%= inv.customerAddress || 'Raisen, Madhya Pradesh' %>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top gap-2">
+                        <div>
+                            <div class="text-muted" style="font-size: 10px;">TOTAL (INCL. GST)</div>
+                            <div class="fw-bold font-monospace text-success" style="font-size: 15px;">
+                                <%= canViewMetrics ? ('₹' + Number(inv.totalAmount || 0).toLocaleString('en-IN')) : '₹ ••••••' %>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                            <a href="<%= docUrl %>" class="btn btn-sm btn-primary fw-bold px-2 py-1 d-inline-flex align-items-center gap-1" style="background: var(--admin-navy-primary); border-radius: 6px; font-size: 11.5px;">
+                                <i class="icofont-file-pdf"></i> View PDF
+                            </a>
+                            <% if (canEditInvoice) { %>
+                                <button type="button" class="btn btn-sm btn-outline-secondary px-2 py-1" title="Edit" onclick="editInvoice(<%= index %>)" style="border-radius: 6px; font-size: 12px;">
+                                    <i class="icofont-edit"></i>
+                                </button>
+                            <% } %>
+                            <% if (canDeleteInvoice) { %>
+                                <button type="button" class="btn btn-sm btn-outline-warning px-2 py-1" title="Archive" onclick="archiveInvoicePrompt('<%= inv.invoiceNumber %>')" style="border-radius: 6px; font-size: 12px;">
+                                    <i class="icofont-archive"></i>
+                                </button>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="text-center py-4 px-2 text-muted">
+                <i class="icofont-bill d-block mb-2" style="font-size: 34px;"></i>
+                <p class="mb-1 fw-bold small">No tax invoices recorded yet.</p>
+                <small style="font-size: 11.5px;">Tap "Generate New Bill" to create your first GST invoice.</small>
             </div>
-        </div>
-        <div class="col-sm-6">
-            <div class="p-3 bg-light rounded-2 h-100 border">
-                <span class="text-muted small text-uppercase font-weight-bold d-block mb-1" style="font-size: 10.5px;">Solar Installation & Site Details:</span>
-                <small class="d-block">Plant Capacity: <strong id="docCapacityKw"><%= primaryInvoice ? primaryInvoice.plantCapacityKw : 3 %></strong> kW On-Grid Solar Plant</small>
-                <small class="d-block">Modules: <strong>Tier-1 Mono PERC Half-Cut (ALMM Approved)</strong></small>
-                <small class="d-block">Inverter: <strong>Grid-Tie Dual MPPT Inverter with Wi-Fi</strong></small>
-                <small class="d-block">DISCOM: <strong>MPPKVVCL Net-Meter Approved (State Code 23)</strong></small>
-            </div>
-        </div>
-    </div>
-
-    <!-- Items Table -->
-    <div class="table-responsive mb-4">
-        <table class="table table-bordered small">
-            <thead class="table-light">
-                <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 45%;">Item & Description</th>
-                    <th style="width: 12%;">HSN/SAC</th>
-                    <th style="width: 10%;" class="text-center">Qty</th>
-                    <th style="width: 14%;" class="text-end">Rate (₹)</th>
-                    <th style="width: 14%;" class="text-end">Amount (₹)</th>
-                </tr>
-            </thead>
-            <tbody id="docItemsBody">
-                <!-- Dynamically filled or default -->
-                <tr>
-                    <td>1</td>
-                    <td>
-                        <strong>Supply of Tier-1 Mono PERC Solar PV Modules (ALMM Approved)</strong>
-                        <small class="text-muted d-block">25-Year Linear Performance Warranty</small>
-                    </td>
-                    <td>85414011</td>
-                    <td class="text-center">Set</td>
-                    <td class="text-end" id="docItem1Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.55).toLocaleString('en-IN') : '95,000' %></td>
-                    <td class="text-end" id="docItem1Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.55).toLocaleString('en-IN') : '95,000' %></td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>
-                        <strong>High-Efficiency Solar Inverter with Cloud Monitoring</strong>
-                        <small class="text-muted d-block">Dual MPPT with 5-Year Standard Warranty</small>
-                    </td>
-                    <td>85044090</td>
-                    <td class="text-center">1 No</td>
-                    <td class="text-end" id="docItem2Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.20).toLocaleString('en-IN') : '35,000' %></td>
-                    <td class="text-end" id="docItem2Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.20).toLocaleString('en-IN') : '35,000' %></td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>
-                        <strong>BOS Structures, DC/AC Distribution Boxes & UV Cables</strong>
-                    </td>
-                    <td>85371000</td>
-                    <td class="text-center">1 Set</td>
-                    <td class="text-end" id="docItem3Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.15).toLocaleString('en-IN') : '25,000' %></td>
-                    <td class="text-end" id="docItem3Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.15).toLocaleString('en-IN') : '25,000' %></td>
-                </tr>
-                <tr>
-                    <td>4</td>
-                    <td>
-                        <strong>Turnkey Installation, Testing, Commissioning & Net-Metering</strong>
-                    </td>
-                    <td>995461</td>
-                    <td class="text-center">1 Job</td>
-                    <td class="text-end" id="docItem4Rate">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.10).toLocaleString('en-IN') : '18,000' %></td>
-                    <td class="text-end" id="docItem4Amount">₹<%= primaryInvoice ? Math.round(primaryInvoice.subtotal * 0.10).toLocaleString('en-IN') : '18,000' %></td>
-                </tr>
-                <tr class="table-light">
-                    <td colspan="5" class="text-end fw-bold">Taxable Subtotal:</td>
-                    <td class="text-end fw-bold" id="docSubtotal">₹<%= primaryInvoice ? Number(primaryInvoice.subtotal).toLocaleString('en-IN') : '1,73,000' %></td>
-                </tr>
-                <tr>
-                    <td colspan="5" class="text-end">CGST @ 6%:</td>
-                    <td class="text-end" id="docCgst">₹<%= primaryInvoice ? Number(primaryInvoice.cgst || Math.round(primaryInvoice.subtotal * 0.06)).toLocaleString('en-IN') : '10,380' %></td>
-                </tr>
-                <tr>
-                    <td colspan="5" class="text-end">SGST @ 6%:</td>
-                    <td class="text-end" id="docSgst">₹<%= primaryInvoice ? Number(primaryInvoice.sgst || Math.round(primaryInvoice.subtotal * 0.06)).toLocaleString('en-IN') : '10,380' %></td>
-                </tr>
-                <tr class="table-dark text-white fw-bold">
-                    <td colspan="5" class="text-end">Total Invoice Amount (INR):</td>
-                    <td class="text-end text-success fs-6" id="docTotal">₹<%= primaryInvoice ? Number(primaryInvoice.totalAmount).toLocaleString('en-IN') : '1,93,760' %></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Bank Details & Signatory -->
-    <div class="row g-3 pt-3 border-top small text-muted">
-        <div class="col-sm-7">
-            <h6 class="fw-bold text-dark small mb-1">Company Bank Details for RTGS / NEFT / IMPS:</h6>
-            <small class="d-block">Account Name: <strong>SHIVAY ENERGY SOLUTIONS</strong></small>
-            <small class="d-block">Bank Name: State Bank of India (SBI), Raisen Branch</small>
-            <small class="d-block">Account No: <strong>409823100452</strong></small>
-            <small class="d-block">IFSC Code: <strong>SBIN0000462</strong></small>
-        </div>
-        <div class="col-sm-5 text-sm-end">
-            <small class="d-block fw-bold text-dark">For SHIVAY ENERGY SOLUTIONS</small>
-            <div class="my-2 text-secondary" style="font-family: cursive; font-size: 16px;">Deepak Kushwaha</div>
-            <small class="d-block text-muted">Authorized Finance Signatory</small>
-        </div>
-    </div>
-
-    <div class="text-center mt-4 pt-3 border-top no-print">
-        <button onclick="window.print()" class="btn btn-sm btn-dark me-2 px-3 fw-bold shadow-sm" style="background: var(--admin-navy-primary);">
-            <i class="icofont-print me-1"></i> Print / Download PDF
-        </button>
-        <button onclick="editCurrentDocInvoice()" class="btn btn-sm btn-outline-secondary px-3">
-            <i class="icofont-edit me-1"></i> Edit This Bill
-        </button>
+        <% } %>
     </div>
 </div>
 
 <!-- ========================================================================= -->
-<!-- 3. MODAL: GENERATE / EDIT TAX INVOICE -->
+<!-- 3. MODAL: GENERATE / EDIT TAX INVOICE WITH MANUAL SERIAL NUMBERS -->
 <!-- ========================================================================= -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header" style="background: var(--admin-navy-primary); color: white;">
-                <h5 class="modal-title fs-6 fw-bold d-flex align-items-center gap-2" id="modalTitle">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <form id="invoiceForm" class="modal-content shadow border-0" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header py-2 px-3 px-md-4 flex-shrink-0" style="background: var(--admin-navy-primary); color: white;">
+                <h5 class="modal-title fs-6 fw-bold d-flex align-items-center gap-2 mb-0" id="modalTitle">
                     <i class="icofont-bill"></i> Generate GST Tax Invoice
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeInvoiceModal('invoiceModal')" aria-label="Close"></button>
             </div>
-            <form id="invoiceForm">
+
+            <div class="modal-body p-2 p-sm-3 p-md-4">
                 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <input type="hidden" name="invoiceId" id="formInvoiceId">
-
-                <div class="modal-body p-4">
+                <input type="hidden" name="items" id="formItemsJson">
                     <!-- Customer Locked Notice for Updates -->
                     <div id="customerLockedNotice" class="alert alert-warning py-2 px-3 small mb-3 d-none" style="border-left: 4px solid #f59e0b; border-radius: 8px;">
-                        <i class="icofont-lock me-1 fw-bold"></i> <strong>Customer Details Locked:</strong> Client and site information cannot be altered on an existing invoice. You can revise items, plant capacity, subtotal amounts, and payment status.
+                        <i class="icofont-lock me-1 fw-bold"></i> <strong>Customer Details Locked:</strong> Client and site information cannot be altered on an existing invoice. You can revise items, serial numbers, tax rates, and payment amounts.
                     </div>
 
                     <!-- Quick Autofill Selector from Projects/Quotations -->
@@ -363,7 +279,7 @@
                                         <option value="PRJ_<%= p._id %>" 
                                             data-name="<%= (p.customer && p.customer.name) || (p.customerContact && p.customerContact.name) || '' %>"
                                             data-mobile="<%= (p.customer && p.customer.mobile) || (p.customerContact && p.customerContact.mobile) || '' %>"
-                                            data-address="<%= p.siteAddress || p.city || 'Raisen, M.P.' %>"
+                                            data-address="<%= p.siteAddress || p.city || 'Raisen, Madhya Pradesh' %>"
                                             data-kw="<%= p.capacityKw || 3 %>"
                                             data-consumer="<%= (p.customer && p.customer.consumerNumber) || '' %>"
                                             data-gstin="<%= (p.customer && p.customer.gstin) || '' %>"
@@ -379,7 +295,7 @@
                                         <option value="Q_<%= q._id %>"
                                             data-name="<%= (q.customerId && q.customerId.name) || (q.customer && q.customer.name) || q.customerName || '' %>"
                                             data-mobile="<%= (q.customerId && q.customerId.mobile) || (q.customer && q.customer.mobile) || q.customerMobile || '' %>"
-                                            data-address="<%= (q.customerId && q.customerId.address) || (q.customer && q.customer.address) || q.customerAddress || q.customerCity || 'Raisen, M.P.' %>"
+                                            data-address="<%= (q.customerId && q.customerId.address) || (q.customer && q.customer.address) || q.customerAddress || q.customerCity || 'Raisen, Madhya Pradesh' %>"
                                             data-kw="<%= q.systemCapacityKw || (q.pricing && q.pricing.systemCapacityKw) || 3 %>"
                                             data-subtotal="<%= (q.pricing && q.pricing.taxableBase) || (q.pricing && q.pricing.grossAmount) || 150000 %>"
                                             data-consumer="<%= (q.customerId && q.customerId.consumerNumber) || (q.customer && q.customer.consumerNumber) || '' %>"
@@ -394,96 +310,210 @@
                         <small class="text-muted d-block mt-1" style="font-size: 11px;">Select a project above to fill customer & kW details automatically, or fill manually below.</small>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Invoice Number *</label>
-                            <input type="text" class="form-control" name="invoiceNumber" id="formInvNum" required placeholder="SES-INV-2026-..." style="height: 38px; border-radius: 8px;">
+                    <!-- General Invoice Meta -->
+                    <div class="row g-2 g-md-3 mb-3">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label small fw-bold">Tax Invoice Number *</label>
+                            <input type="text" class="form-control" name="invoiceNumber" id="formInvNum" required placeholder="MP/SES/139" style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-6 col-md-4">
                             <label class="form-label small fw-bold">Invoice Date *</label>
-                            <input type="text" class="form-control" name="date" id="formDate" required placeholder="DD-MM-YYYY" style="height: 38px; border-radius: 8px;">
+                            <input type="text" class="form-control" name="date" id="formDate" required placeholder="DD/MM/YYYY" style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Customer Full Name *</label>
-                            <input type="text" class="form-control" name="customerName" id="formCustomerName" required placeholder="e.g. Ramesh Patel" style="height: 38px; border-radius: 8px;">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-bold">Invoice Title</label>
+                            <select class="form-select" name="invoiceTitle" id="formInvoiceTitle" style="height: 38px; border-radius: 8px;">
+                                <option value="TAX INVOICE ORIGINAL FOR RECIPIENT">TAX INVOICE ORIGINAL FOR RECIPIENT</option>
+                                <option value="TAX INVOICE DUPLICATE FOR TRANSPORTER">TAX INVOICE DUPLICATE FOR TRANSPORTER</option>
+                                <option value="TAX INVOICE TRIPLICATE FOR SUPPLIER">TAX INVOICE TRIPLICATE FOR SUPPLIER</option>
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Customer Mobile (10 digits) *</label>
-                            <input type="tel" class="form-control" name="customerMobile" id="formCustomerMobile" required placeholder="e.g. 9826012345" style="height: 38px; border-radius: 8px;">
+                        <div class="col-6 col-md-6">
+                            <label class="form-label small fw-bold">Customer Full Name (Bill To) *</label>
+                            <input type="text" class="form-control" name="customerName" id="formCustomerName" required placeholder="e.g. SURENDRA RAI" style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-8">
-                            <label class="form-label small fw-bold">Site Address & City *</label>
-                            <input type="text" class="form-control" name="customerAddress" id="formCustomerAddress" required placeholder="Plot No., Street, Raisen (M.P.)" style="height: 38px; border-radius: 8px;">
+                        <div class="col-6 col-md-6">
+                            <label class="form-label small fw-bold">Customer Contact No. *</label>
+                            <input type="tel" class="form-control" name="customerMobile" id="formCustomerMobile" required placeholder="e.g. 8103426738" style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Customer GSTIN (Optional)</label>
+                        <div class="col-12 col-md-8">
+                            <label class="form-label small fw-bold">Full Service / Site Address *</label>
+                            <input type="text" class="form-control" name="customerAddress" id="formCustomerAddress" required placeholder="Ward No. 4 Moniya Khedi road Raisen Madhya Pradesh 464551" style="height: 38px; border-radius: 8px;">
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label small fw-bold">Customer GSTIN</label>
                             <input type="text" class="form-control" name="customerGstin" id="formCustomerGstin" placeholder="e.g. 23AABCP..." style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-6 col-md-4">
                             <label class="form-label small fw-bold">Plant Capacity (kW) *</label>
-                            <input type="number" step="0.1" class="form-control" name="plantCapacityKw" id="formCapacityKw" required value="3" oninput="recalcInvoiceTotals()" style="height: 38px; border-radius: 8px;">
+                            <input type="number" step="0.1" class="form-control" name="plantCapacityKw" id="formCapacityKw" required value="3" style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Taxable Subtotal (₹) *</label>
-                            <input type="number" step="1" class="form-control" name="subtotal" id="formSubtotal" required value="150000" oninput="recalcInvoiceTotals()" style="height: 38px; border-radius: 8px;">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label small fw-bold">Company GSTIN</label>
+                            <input type="text" class="form-control bg-light" name="companyGstin" id="formCompanyGstin" value="23AFRFS0964B1Z0" readonly style="height: 38px; border-radius: 8px;">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold">Total with 12% GST (₹)</label>
-                            <input type="number" step="1" class="form-control bg-light" name="totalAmount" id="formTotalAmount" readonly style="height: 38px; border-radius: 8px; font-weight: bold; color: #15803d;">
-                        </div>
-
-                        <!-- Hidden CGST/SGST inputs -->
-                        <input type="hidden" name="cgst" id="formCgst">
-                        <input type="hidden" name="sgst" id="formSgst">
-                        <input type="hidden" name="projectId" id="formProjectId">
-                        <input type="hidden" name="quotationId" id="formQuotationId">
-
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Payment Status *</label>
-                            <select class="form-select" name="paymentStatus" id="formPaymentStatus" style="height: 38px; border-radius: 8px;">
-                                <option value="paid">PAID (Full Payment Received)</option>
-                                <option value="partially_paid">PARTIALLY PAID (Milestone Advance)</option>
-                                <option value="unpaid">UNPAID (Pending Payment)</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Payment Method</label>
-                            <select class="form-select" name="paymentMethod" id="formPaymentMethod" style="height: 38px; border-radius: 8px;">
-                                <option value="NEFT / RTGS (SBI Raisen)">NEFT / RTGS (SBI Raisen)</option>
-                                <option value="UPI / Direct Bank Transfer">UPI / Direct Bank Transfer</option>
-                                <option value="Cheque / Demand Draft">Cheque / Demand Draft</option>
-                                <option value="Cash Deposit">Cash Deposit</option>
-                            </select>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label small fw-bold">M.P.R.G. Number</label>
+                            <input type="text" class="form-control bg-light" name="mprgNo" id="formMprgNo" value="CZS2026042411080336" readonly style="height: 38px; border-radius: 8px;">
                         </div>
                     </div>
+
+                    <!-- ================================================================= -->
+                    <!-- DYNAMIC LINE ITEMS & MANUAL SERIAL NUMBERS BUILDER -->
+                    <!-- ================================================================= -->
+                    <div class="border rounded-3 p-2 p-sm-3 bg-white mb-3 shadow-sm inv-items-section">
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3 pb-2 border-bottom">
+                            <div class="min-w-0">
+                                <h6 class="fw-bold mb-1 text-dark inv-items-heading">
+                                    <i class="icofont-box text-primary me-1"></i> सामग्री एवं उपकरण विवरण <span class="text-muted fw-normal small d-block d-sm-inline">(Material Items, Serial Numbers &amp; Taxes)</span>
+                                </h6>
+                                <small class="text-muted d-block" style="font-size: 11px; line-height: 1.35;">प्रत्येक सामग्री का नाम, मॉडल, HSN, टैक्स दर (6%+6% या 2.5%+2.5%) व सीरियल नंबर दर्ज करें।</small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary fw-bold flex-shrink-0 text-nowrap" onclick="addNewItemRow()">
+                                <i class="icofont-plus-circle me-1"></i> Add Line Item
+                            </button>
+                        </div>
+
+                        <!-- Dynamic Items Container -->
+                        <div id="itemsContainer">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Summary & Payment Calculations -->
+                    <div class="p-2 p-sm-3 bg-light rounded-3 border mb-3">
+                        <div class="row g-2 g-md-3">
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold">Taxable Subtotal (₹)</label>
+                                <input type="number" class="form-control bg-white font-monospace fw-bold" name="subtotal" id="formSubtotal" readonly style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label small fw-bold">Total CGST (₹)</label>
+                                <input type="number" step="0.01" class="form-control bg-white font-monospace" name="cgst" id="formCgst" readonly style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label small fw-bold">Total SGST (₹)</label>
+                                <input type="number" step="0.01" class="form-control bg-white font-monospace" name="sgst" id="formSgst" readonly style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 col-md-2">
+                                <label class="form-label small fw-bold">Round Off (₹)</label>
+                                <input type="number" step="0.01" class="form-control bg-white font-monospace" name="roundOff" id="formRoundOff" value="-3.4" oninput="recalcInvoiceTotals()" style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small fw-bold">GRAND TOTAL (₹) *</label>
+                                <input type="number" class="form-control bg-white font-monospace fw-bold text-success" name="totalAmount" id="formTotalAmount" readonly style="height: 38px; border-radius: 8px; font-size: 16px;">
+                            </div>
+
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold">Payment Received %</label>
+                                <input type="text" class="form-control" name="paymentReceivedPercent" id="formPaymentPercent" value="100%" placeholder="100%" style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold">Received Amt (₹)</label>
+                                <input type="number" step="0.01" class="form-control" name="paymentReceivedAmount" id="formPaymentReceivedAmount" placeholder="185000" style="height: 38px; border-radius: 8px;">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold">Payment Status *</label>
+                                <select class="form-select" name="paymentStatus" id="formPaymentStatus" style="height: 38px; border-radius: 8px;">
+                                    <option value="paid">PAID (Full Payment Received)</option>
+                                    <option value="partially_paid">PARTIALLY PAID (Advance Received)</option>
+                                    <option value="unpaid">UNPAID (Pending Payment)</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold">Payment Method</label>
+                                <select class="form-select" name="paymentMethod" id="formPaymentMethod" style="height: 38px; border-radius: 8px;">
+                                    <option value="NEFT / RTGS (SBI Raisen)">NEFT / RTGS (SBI Raisen)</option>
+                                    <option value="UPI / Direct Bank Transfer">UPI / Direct Bank Transfer</option>
+                                    <option value="Cheque / Demand Draft">Cheque / Demand Draft</option>
+                                    <option value="Cash Deposit">Cash Deposit</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="projectId" id="formProjectId">
+                    <input type="hidden" name="quotationId" id="formQuotationId">
                 </div>
 
-                <div class="modal-footer bg-light">
+                <div class="modal-footer bg-light py-2 px-3 px-md-4 flex-shrink-0">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="closeInvoiceModal('invoiceModal')" style="border-radius: 6px;">Cancel</button>
                     <button type="submit" class="btn btn-primary btn-sm fw-bold px-3 shadow-sm" id="btnSaveInvoice" style="background: var(--admin-navy-primary); border-radius: 6px;">
                         <i class="icofont-check-circled me-1"></i> Save & Record Invoice
                     </button>
                 </div>
-            </form>
-        </div>
+        </form>
     </div>
 </div>
 
 <script type="application/json" id="invoicesData">
 <%- JSON.stringify(invoices || []).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %>
 </script>
+<script type="application/json" id="prefillProjectsData">
+<%- JSON.stringify(projects || []).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %>
+</script>
+<script type="application/json" id="prefillQuotationsData">
+<%- JSON.stringify(quotations || []).replace(/</g, '\\u003c').replace(/>/g, '\\u003e') %>
+</script>
+
 <script>
 // Loaded Invoices Data safely parsed from context-safe application/json container
 let allInvoices = [];
+let prefillProjects = [];
+let prefillQuotations = [];
 try {
     const rawData = document.getElementById('invoicesData')?.textContent;
     allInvoices = rawData ? JSON.parse(rawData) : [];
+    const rawP = document.getElementById('prefillProjectsData')?.textContent;
+    prefillProjects = rawP ? JSON.parse(rawP) : [];
+    const rawQ = document.getElementById('prefillQuotationsData')?.textContent;
+    prefillQuotations = rawQ ? JSON.parse(rawQ) : [];
 } catch (e) {
     console.error('Error parsing invoices data:', e);
 }
 let currentPreviewIndex = 0;
 
-// Pure DOM Modal Controls (independent of bootstrap JS bundle)
+// Active items state for current editing modal
+let modalItems = [];
+
+// Default 3 items template matching authentic Shivay Energy Solutions Bill
+const DEFAULT_SAMPLE_ITEMS = [
+    {
+        itemName: "SOLAR PANEL",
+        model: "Waaree 540 W",
+        serialNumbersRaw: "WS08269076438611\nWS08269076372841\nWS08269076438604\nWS08269076438608\nWS08269076438607\nWS08269076438615",
+        hsnCode: "85414012",
+        rate: 18793,
+        qty: 6,
+        amount: 112758,
+        cgstRate: 6,
+        sgstRate: 6
+    },
+    {
+        itemName: "ON GRID INVERTER",
+        model: "POLYCAB 3 kw, Model No. PSIS-3K6",
+        serialNumbersRaw: "3K6010926-2629-100018813P",
+        hsnCode: "85044010",
+        rate: 26350,
+        qty: 1,
+        amount: 26350,
+        cgstRate: 6,
+        sgstRate: 6
+    },
+    {
+        itemName: "Cable, Earthing, Acdb, Dcdb, STR.INS.,METER, ETC",
+        model: "Complete BOS & Installation Accessories",
+        serialNumbersRaw: "",
+        hsnCode: "-",
+        rate: 33000,
+        qty: 1,
+        amount: 33000,
+        cgstRate: 6,
+        sgstRate: 6
+    }
+];
+
+// Pure DOM Modal Controls
 function showInvoiceModal(modalId = 'invoiceModal') {
     const modalEl = document.getElementById(modalId);
     if (!modalEl) return;
@@ -492,6 +522,9 @@ function showInvoiceModal(modalId = 'invoiceModal') {
     modalEl.removeAttribute('aria-hidden');
     modalEl.setAttribute('aria-modal', 'true');
     document.body.classList.add('modal-open');
+
+    const bodyEl = modalEl.querySelector('.modal-body');
+    if (bodyEl) bodyEl.scrollTop = 0;
 
     let backdrop = document.querySelector('.modal-backdrop');
     if (!backdrop) {
@@ -517,7 +550,6 @@ function closeInvoiceModal(modalId = 'invoiceModal') {
     if (backdrop) backdrop.remove();
 }
 
-// Global bootstrap shim in case external code calls bootstrap.Modal
 if (typeof window.bootstrap === 'undefined') {
     window.bootstrap = {
         Modal: function(el) {
@@ -530,16 +562,358 @@ if (typeof window.bootstrap === 'undefined') {
     };
 }
 
+// Parse and keep exact unit-by-unit serial array matching item qty
+function getItemUnitCount(qtyVal) {
+    const parsed = parseFloat(qtyVal);
+    if (!parsed || parsed <= 0) return 1;
+    return Math.max(1, Math.min(200, Math.round(parsed)));
+}
+
+function normalizeItemUnitSerials(item) {
+    if (!item) return [''];
+    const unitCount = getItemUnitCount(item.qty);
+    let arr = Array.isArray(item.unitSerials) ? item.unitSerials.map(s => String(s || '')) : null;
+    if (!arr) {
+        if (Array.isArray(item.serialNumbers) && item.serialNumbers.length > 0) {
+            arr = item.serialNumbers.map(s => String(s || '').trim());
+        } else if (item.serialNumbersRaw) {
+            arr = String(item.serialNumbersRaw).split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+        } else {
+            arr = [];
+        }
+    }
+    const normalized = [];
+    for (let u = 0; u < unitCount; u++) {
+        normalized.push(arr[u] || '');
+    }
+    item.unitSerials = normalized;
+    return normalized;
+}
+
+function buildUnitSerialsHtml(item, index) {
+    const unitSerials = normalizeItemUnitSerials(item);
+    const unitCount = unitSerials.length;
+    const filledCount = unitSerials.filter(s => String(s || '').trim().length > 0).length;
+    const isComplete = filledCount >= unitCount;
+    const badgeClass = isComplete
+        ? 'bg-success-subtle text-success border-success-subtle'
+        : 'bg-warning-subtle text-dark border-warning-subtle';
+    const modelLabel = (item.model || item.itemName || 'Unit').trim();
+
+    let inputsHtml = '';
+    for (let u = 0; u < unitCount; u++) {
+        inputsHtml += `
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="input-group input-group-sm inv-unit-sn-group">
+                    <span class="input-group-text font-monospace bg-light text-muted px-2 inv-unit-sn-tag">#${u + 1}</span>
+                    <input type="text" class="form-control form-control-sm font-monospace inv-unit-sn-input"
+                        data-item-idx="${index}" data-unit-idx="${u}"
+                        value="${escapeHtml(unitSerials[u] || '')}"
+                        placeholder="${escapeHtml(modelLabel)} • Unit ${u + 1} SN"
+                        oninput="updateUnitSerial(${index}, ${u}, this.value)"
+                        onpaste="handleUnitSerialPaste(event, ${index}, ${u})">
+                </div>
+            </div>
+        `;
+    }
+
+    const rawText = unitSerials.map(s => s.trim()).filter(Boolean).join('\n');
+    return `
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-2">
+            <label class="form-label small fw-bold text-dark mb-0 inv-unit-sn-heading">
+                <i class="icofont-barcode text-primary"></i> All Units Serial Numbers (हर उत्पाद/मॉडल की सभी यूनिट का सीरियल नंबर):
+            </label>
+            <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="badge border ${badgeClass}" id="serialsBadge_${index}">
+                    ${filledCount} / ${unitCount} Unit${unitCount === 1 ? '' : 's'}
+                </span>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 10.5px;" onclick="toggleBulkPaste(${index})">
+                    Bulk Paste
+                </button>
+            </div>
+        </div>
+        <div class="row g-1 g-sm-2 inv-unit-sn-grid" id="unitSerialGrid_${index}">
+            ${inputsHtml}
+        </div>
+        <div class="d-none mt-2 p-2 bg-white border rounded-2" id="bulkPasteWrap_${index}">
+            <textarea class="form-control font-monospace mb-1" id="bulkPasteText_${index}" rows="2" style="font-size: 11.5px; border-radius: 6px;" placeholder="Paste all serial numbers (one per line or comma-separated)">${escapeHtml(rawText)}</textarea>
+            <div class="d-flex justify-content-between align-items-center gap-2">
+                <small class="text-muted" style="font-size: 10px;">Paste list & click Apply to fill Unit #1..#${unitCount}</small>
+                <button type="button" class="btn btn-primary btn-sm py-0 px-2" style="font-size: 11px;" onclick="applyBulkSerials(${index})">Apply to Units</button>
+            </div>
+        </div>
+    `;
+}
+
+// Render Item Row in Builder
+function renderItemRows() {
+    const container = document.getElementById('itemsContainer');
+    if (!container) return;
+
+    if (modalItems.length === 0) {
+        modalItems = JSON.parse(JSON.stringify(DEFAULT_SAMPLE_ITEMS));
+    }
+
+    let html = '';
+    modalItems.forEach((item, index) => {
+        normalizeItemUnitSerials(item);
+
+        html += `
+            <div class="item-builder-card" id="itemRow_${index}">
+                <div class="item-builder-header">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold font-monospace">
+                        ITEM #${index + 1}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" title="Remove Item" onclick="removeItemRow(${index})" ${modalItems.length <= 1 ? 'disabled' : ''}>
+                        <i class="icofont-trash"></i> Remove
+                    </button>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label small fw-bold mb-1">Item Title / Category *</label>
+                        <input type="text" class="form-control form-control-sm" value="${escapeHtml(item.itemName || '')}" placeholder="e.g. SOLAR PANEL" oninput="updateItemField(${index}, 'itemName', this.value)" required>
+                    </div>
+                    <div class="col-7 col-md-4">
+                        <label class="form-label small fw-bold mb-1">Model / Specs</label>
+                        <input type="text" class="form-control form-control-sm" value="${escapeHtml(item.model || '')}" placeholder="e.g. Waaree 540 W" oninput="updateItemField(${index}, 'model', this.value)">
+                    </div>
+                    <div class="col-5 col-md-3">
+                        <label class="form-label small fw-bold mb-1">HSN / SAC</label>
+                        <input type="text" class="form-control form-control-sm font-monospace" value="${escapeHtml(item.hsnCode || '85414012')}" placeholder="85414012" oninput="updateItemField(${index}, 'hsnCode', this.value)">
+                    </div>
+
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-bold mb-1">Rate (₹) *</label>
+                        <input type="number" step="1" class="form-control form-control-sm font-monospace" value="${item.rate || 0}" oninput="updateItemRate(${index}, this.value)" required>
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small fw-bold mb-1">Qty (Units) *</label>
+                        <input type="number" step="0.1" min="0.1" class="form-control form-control-sm font-monospace" value="${item.qty || 1}" oninput="updateItemQty(${index}, this.value)" required>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small fw-bold mb-1">Taxable Amt (₹)</label>
+                        <input type="number" step="0.01" class="form-control form-control-sm font-monospace bg-light" value="${item.amount || 0}" id="itemAmount_${index}" readonly>
+                    </div>
+
+                    <div class="col-6 col-md-4">
+                        <label class="form-label small fw-bold mb-1">GST Rate *</label>
+                        <select class="form-select form-select-sm" onchange="updateItemTaxPreset(${index}, this.value)">
+                            <option value="6_6" ${(item.cgstRate === 6 && item.sgstRate === 6) ? 'selected' : ''}>6% + 6% = 12% GST (Solar Standard)</option>
+                            <option value="2.5_2.5" ${(item.cgstRate === 2.5 && item.sgstRate === 2.5) ? 'selected' : ''}>2.5% + 2.5% = 5% GST (Solar Equipment)</option>
+                            <option value="9_9" ${(item.cgstRate === 9 && item.sgstRate === 9) ? 'selected' : ''}>9% + 9% = 18% GST (BOS & Services)</option>
+                            <option value="0_0" ${(item.cgstRate === 0 && item.sgstRate === 0) ? 'selected' : ''}>0% (Nil / Exempt)</option>
+                        </select>
+                    </div>
+
+                    <!-- Per-Unit Serial Numbers for All Units of This Product/Model -->
+                    <div class="col-12 mt-2" id="unitSerialsWrap_${index}">
+                        ${buildUnitSerialsHtml(item, index)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    recalcInvoiceTotals();
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function updateItemField(index, field, val) {
+    if (modalItems[index]) {
+        modalItems[index][field] = val;
+        if (field === 'model' || field === 'itemName') {
+            const label = (modalItems[index].model || modalItems[index].itemName || 'Unit').trim();
+            document.querySelectorAll(`.inv-unit-sn-input[data-item-idx="${index}"]`).forEach(inp => {
+                const uIdx = parseInt(inp.getAttribute('data-unit-idx'), 10) || 0;
+                inp.placeholder = `${label} • Unit ${uIdx + 1} SN`;
+            });
+        }
+    }
+}
+
+function updateItemRate(index, val) {
+    if (modalItems[index]) {
+        modalItems[index].rate = parseFloat(val) || 0;
+        modalItems[index].amount = Math.round(modalItems[index].rate * (modalItems[index].qty || 1) * 100) / 100;
+        const amtEl = document.getElementById(`itemAmount_${index}`);
+        if (amtEl) amtEl.value = modalItems[index].amount;
+        recalcInvoiceTotals();
+    }
+}
+
+function updateItemQty(index, val) {
+    if (modalItems[index]) {
+        const parsedQty = parseFloat(val);
+        modalItems[index].qty = (parsedQty > 0) ? parsedQty : 1;
+        modalItems[index].amount = Math.round((modalItems[index].rate || 0) * modalItems[index].qty * 100) / 100;
+        const amtEl = document.getElementById(`itemAmount_${index}`);
+        if (amtEl) amtEl.value = modalItems[index].amount;
+
+        const wrap = document.getElementById(`unitSerialsWrap_${index}`);
+        if (wrap) {
+            wrap.innerHTML = buildUnitSerialsHtml(modalItems[index], index);
+        }
+        recalcInvoiceTotals();
+    }
+}
+
+function updateItemTaxPreset(index, preset) {
+    if (modalItems[index]) {
+        const parts = preset.split('_');
+        modalItems[index].cgstRate = parseFloat(parts[0]) || 6;
+        modalItems[index].sgstRate = parseFloat(parts[1]) || 6;
+        recalcInvoiceTotals();
+    }
+}
+
+function syncItemSerialSummary(index) {
+    const item = modalItems[index];
+    if (!item) return;
+    const unitSerials = normalizeItemUnitSerials(item);
+    const clean = unitSerials.map(s => String(s || '').trim()).filter(Boolean);
+    item.serialNumbers = clean;
+    item.serialNumbersRaw = clean.join('\n');
+
+    const unitCount = unitSerials.length;
+    const filledCount = clean.length;
+    const badge = document.getElementById(`serialsBadge_${index}`);
+    if (badge) {
+        badge.innerText = `${filledCount} / ${unitCount} Unit${unitCount === 1 ? '' : 's'}`;
+        badge.className = filledCount >= unitCount
+            ? 'badge border bg-success-subtle text-success border-success-subtle'
+            : 'badge border bg-warning-subtle text-dark border-warning-subtle';
+    }
+    const bulkTxt = document.getElementById(`bulkPasteText_${index}`);
+    if (bulkTxt && document.activeElement !== bulkTxt) {
+        bulkTxt.value = item.serialNumbersRaw;
+    }
+    const jsonEl = document.getElementById('formItemsJson');
+    if (jsonEl) jsonEl.value = JSON.stringify(modalItems);
+}
+
+function updateUnitSerial(index, unitIdx, val) {
+    const item = modalItems[index];
+    if (!item) return;
+    normalizeItemUnitSerials(item);
+    item.unitSerials[unitIdx] = val;
+    syncItemSerialSummary(index);
+}
+
+function handleUnitSerialPaste(e, index, startUnitIdx) {
+    const pasteText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+    const tokens = pasteText.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+    if (tokens.length <= 1) return;
+
+    e.preventDefault();
+    const item = modalItems[index];
+    if (!item) return;
+    const unitSerials = normalizeItemUnitSerials(item);
+    for (let i = 0; i < tokens.length && (startUnitIdx + i) < unitSerials.length; i++) {
+        unitSerials[startUnitIdx + i] = tokens[i];
+    }
+    const wrap = document.getElementById(`unitSerialsWrap_${index}`);
+    if (wrap) wrap.innerHTML = buildUnitSerialsHtml(item, index);
+    syncItemSerialSummary(index);
+}
+
+function toggleBulkPaste(index) {
+    const box = document.getElementById(`bulkPasteWrap_${index}`);
+    if (box) box.classList.toggle('d-none');
+}
+
+function applyBulkSerials(index) {
+    const item = modalItems[index];
+    const bulkTxt = document.getElementById(`bulkPasteText_${index}`);
+    if (!item || !bulkTxt) return;
+    const tokens = bulkTxt.value.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+    const unitCount = getItemUnitCount(item.qty);
+    item.unitSerials = Array.from({ length: unitCount }, (_, u) => tokens[u] || '');
+    const wrap = document.getElementById(`unitSerialsWrap_${index}`);
+    if (wrap) wrap.innerHTML = buildUnitSerialsHtml(item, index);
+    syncItemSerialSummary(index);
+}
+
+function addNewItemRow() {
+    modalItems.push({
+        itemName: "SOLAR ACCESSORY / BOS",
+        model: "Standard Approved Material",
+        serialNumbersRaw: "",
+        hsnCode: "8541",
+        rate: 5000,
+        qty: 1,
+        amount: 5000,
+        cgstRate: 6,
+        sgstRate: 6
+    });
+    renderItemRows();
+    const newCard = document.getElementById(`itemRow_${modalItems.length - 1}`);
+    if (newCard) {
+        newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function removeItemRow(index) {
+    if (modalItems.length > 1) {
+        modalItems.splice(index, 1);
+        renderItemRows();
+    }
+}
+
 // Recalculate Totals in Modal
 function recalcInvoiceTotals() {
-    const subtotal = parseFloat(document.getElementById('formSubtotal').value) || 0;
-    const cgst = Math.round(subtotal * 0.06 * 100) / 100;
-    const sgst = Math.round(subtotal * 0.06 * 100) / 100;
-    const total = Math.round(subtotal + cgst + sgst);
+    let subtotal = 0;
+    let cgst = 0;
+    let sgst = 0;
 
+    modalItems.forEach(it => {
+        const lineAmt = Math.round((parseFloat(it.rate) || 0) * (parseFloat(it.qty) || 1) * 100) / 100;
+        it.amount = lineAmt;
+        const cRate = it.cgstRate !== undefined ? parseFloat(it.cgstRate) : 6;
+        const sRate = it.sgstRate !== undefined ? parseFloat(it.sgstRate) : 6;
+        const cAmt = Math.round(lineAmt * (cRate / 100) * 100) / 100;
+        const sAmt = Math.round(lineAmt * (sRate / 100) * 100) / 100;
+        it.cgstAmount = cAmt;
+        it.sgstAmount = sAmt;
+        it.itemTotal = Math.round((lineAmt + cAmt + sAmt) * 100) / 100;
+
+        const cleanSerials = normalizeItemUnitSerials(it).map(s => String(s || '').trim()).filter(Boolean);
+        it.serialNumbers = cleanSerials;
+        it.serialNumbersRaw = cleanSerials.join('\n');
+
+        subtotal += lineAmt;
+        cgst += cAmt;
+        sgst += sAmt;
+    });
+
+    subtotal = Math.round(subtotal * 100) / 100;
+    cgst = Math.round(cgst * 100) / 100;
+    sgst = Math.round(sgst * 100) / 100;
+
+    const roundOffEl = document.getElementById('formRoundOff');
+    let roundOff = roundOffEl ? parseFloat(roundOffEl.value) : 0;
+    if (isNaN(roundOff)) roundOff = 0;
+
+    const grandTotal = Math.round((subtotal + cgst + sgst + roundOff) * 100) / 100;
+
+    document.getElementById('formSubtotal').value = subtotal;
     document.getElementById('formCgst').value = cgst;
     document.getElementById('formSgst').value = sgst;
-    document.getElementById('formTotalAmount').value = total;
+    document.getElementById('formTotalAmount').value = grandTotal;
+
+    const payAmtEl = document.getElementById('formPaymentReceivedAmount');
+    if (payAmtEl && (!payAmtEl.value || payAmtEl.getAttribute('data-synced') === 'true')) {
+        payAmtEl.value = grandTotal;
+        payAmtEl.setAttribute('data-synced', 'true');
+    }
+
+    // Save JSON into hidden field
+    const jsonEl = document.getElementById('formItemsJson');
+    if (jsonEl) jsonEl.value = JSON.stringify(modalItems);
 }
 
 // Open Clean New Invoice Modal
@@ -554,7 +928,6 @@ function openNewInvoiceModal() {
         const idEl = document.getElementById('formInvoiceId');
         if (idEl) idEl.value = '';
 
-        // Enable prefill selector & unlock customer fields for new invoices
         const prefillBox = document.getElementById('prefillContainer');
         if (prefillBox) prefillBox.style.display = 'block';
         const prefillSel = document.getElementById('prefillSelector');
@@ -573,23 +946,25 @@ function openNewInvoiceModal() {
             }
         });
         
-        // Auto-generate invoice number
-        const randNum = Math.floor(100 + Math.random() * 900);
+        // Auto-generate invoice number in MP/SES/xxx or SES-INV-xxx format
+        const randNum = Math.floor(140 + Math.random() * 850);
         const invNumEl = document.getElementById('formInvNum');
-        if (invNumEl) invNumEl.value = 'SES-INV-2026-' + randNum;
+        if (invNumEl) invNumEl.value = 'MP/SES/' + randNum;
         
         const today = new Date();
-        const dStr = String(today.getDate()).padStart(2, '0') + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + today.getFullYear();
+        const dStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
         const dateEl = document.getElementById('formDate');
         if (dateEl) dateEl.value = dStr;
 
         const capEl = document.getElementById('formCapacityKw');
         if (capEl) capEl.value = 3;
-        
-        const subEl = document.getElementById('formSubtotal');
-        if (subEl) subEl.value = 150000;
-        
-        recalcInvoiceTotals();
+
+        document.getElementById('formRoundOff').value = "-3.4";
+        document.getElementById('formPaymentPercent').value = "100%";
+
+        // Load Default Sample Items
+        modalItems = JSON.parse(JSON.stringify(DEFAULT_SAMPLE_ITEMS));
+        renderItemRows();
     } catch(err) {
         console.error('Error initializing invoice form:', err);
     }
@@ -597,7 +972,7 @@ function openNewInvoiceModal() {
     showInvoiceModal('invoiceModal');
 }
 
-// Apply Autofill from Project / Quotation
+// Apply Autofill from Project / Quotation with Automated Materials & Serial Numbers Loading
 function applyPrefill(val) {
     if (!val) return;
     const sel = document.getElementById('prefillSelector');
@@ -611,58 +986,178 @@ function applyPrefill(val) {
     const kw = parseFloat(opt.getAttribute('data-kw')) || 3;
     document.getElementById('formCapacityKw').value = kw;
 
-    const sub = parseFloat(opt.getAttribute('data-subtotal')) || (kw * 50000);
-    document.getElementById('formSubtotal').value = sub;
-
     if (val.startsWith('PRJ_')) {
-        document.getElementById('formProjectId').value = opt.getAttribute('data-id');
+        const prjId = opt.getAttribute('data-id') || val.replace('PRJ_', '');
+        document.getElementById('formProjectId').value = prjId;
+
+        // Auto-load project's equipment, materials and allocated serial numbers
+        const prj = prefillProjects.find(p => String(p._id) === String(prjId));
+        if (prj) {
+            const projectItems = [];
+            const panelSerials = [];
+            const inverterSerials = [];
+            const otherSerials = [];
+
+            if (Array.isArray(prj.allocatedSerials)) {
+                prj.allocatedSerials.forEach(s => {
+                    if (!s || !s.serialNumber) return;
+                    const t = (s.itemType || s.category || '').toUpperCase();
+                    if (t.includes('PANEL') || t.includes('MODULE')) {
+                        panelSerials.push(s.serialNumber);
+                    } else if (t.includes('INVERTER')) {
+                        inverterSerials.push(s.serialNumber);
+                    } else {
+                        otherSerials.push({ label: t, serialNumber: s.serialNumber });
+                    }
+                });
+            }
+
+            const pSpecs = (prj.solarRequirements && prj.solarRequirements.panelSpecs) || 'ADANI/WAAREE TOPCON 620 Watt';
+            const pQty = (prj.solarRequirements && prj.solarRequirements.panelQty) || Math.max(1, Math.round((kw * 1000) / 540));
+            const pRate = 18793;
+            projectItems.push({
+                itemName: "SOLAR PANEL",
+                model: pSpecs,
+                serialNumbersRaw: panelSerials.join('\n'),
+                hsnCode: "85414012",
+                rate: pRate,
+                qty: pQty,
+                amount: Math.round(pRate * pQty),
+                cgstRate: 6,
+                sgstRate: 6
+            });
+
+            const invSpecs = (prj.solarRequirements && prj.solarRequirements.inverterSpecs) || `Solar Inverter ${kw} Kw (Microtech/Havells/Polycab)`;
+            const invQty = (prj.solarRequirements && prj.solarRequirements.inverterQty) || 1;
+            const invRate = 26350;
+            projectItems.push({
+                itemName: "ON GRID INVERTER",
+                model: invSpecs,
+                serialNumbersRaw: inverterSerials.join('\n'),
+                hsnCode: "85044010",
+                rate: invRate,
+                qty: invQty,
+                amount: Math.round(invRate * invQty),
+                cgstRate: 6,
+                sgstRate: 6
+            });
+
+            const structSpecs = (prj.solarRequirements && prj.solarRequirements.structureSpecs) || 'Complete BOS, Structure, UV Cable, Earthing & Accessories';
+            const bosSerials = otherSerials
+                .filter(o => !o.label.includes('BATTERY'))
+                .map(o => o.serialNumber);
+            projectItems.push({
+                itemName: "Cable, Earthing, Acdb, Dcdb, STR.INS., METER, ETC",
+                model: structSpecs,
+                serialNumbersRaw: bosSerials.join('\n'),
+                hsnCode: "-",
+                rate: 33000,
+                qty: Math.max(1, bosSerials.length || 1),
+                amount: 33000,
+                cgstRate: 6,
+                sgstRate: 6
+            });
+
+            if (Array.isArray(prj.materials) && prj.materials.length > 0) {
+                prj.materials.forEach(m => {
+                    const mName = (m.itemName || '').toUpperCase();
+                    if (!mName.includes('PANEL') && !mName.includes('INVERTER') && !mName.includes('STRUCTURE')) {
+                        const matchedSerials = otherSerials
+                            .filter(o => mName.includes(o.label) || o.label.includes(mName))
+                            .map(o => o.serialNumber);
+                        projectItems.push({
+                            itemName: m.itemName,
+                            model: m.remarks || 'Site Material',
+                            serialNumbersRaw: matchedSerials.join('\n'),
+                            hsnCode: "8541",
+                            rate: 2500,
+                            qty: m.requiredQty || 1,
+                            amount: 2500 * (m.requiredQty || 1),
+                            cgstRate: 6,
+                            sgstRate: 6
+                        });
+                    }
+                });
+            }
+
+            modalItems = projectItems;
+            renderItemRows();
+            return;
+        }
     } else if (val.startsWith('Q_')) {
-        document.getElementById('formQuotationId').value = opt.getAttribute('data-id');
+        const qId = opt.getAttribute('data-id') || val.replace('Q_', '');
+        document.getElementById('formQuotationId').value = qId;
+
+        // Auto-load quotation's materials
+        const q = prefillQuotations.find(item => String(item._id) === String(qId));
+        if (q) {
+            const quoteItems = [];
+            if (Array.isArray(q.lineItems) && q.lineItems.length > 0) {
+                q.lineItems.forEach(it => {
+                    quoteItems.push({
+                        itemName: it.description || 'Solar Component',
+                        model: it.sku || '',
+                        serialNumbersRaw: '',
+                        hsnCode: '85414012',
+                        rate: it.unitPrice || 10000,
+                        qty: it.quantity || 1,
+                        amount: it.lineTotal || (it.unitPrice * it.quantity),
+                        cgstRate: (it.gstRate || 12) / 2,
+                        sgstRate: (it.gstRate || 12) / 2
+                    });
+                });
+            } else {
+                const pSpecs = q.panelSpecs || `Tier-1 Mono PERC 540W (${q.systemType || 'On-Grid'})`;
+                const pQty = q.panelQty || Math.max(1, Math.round((kw * 1000) / 540));
+                quoteItems.push({
+                    itemName: "SOLAR PANEL",
+                    model: pSpecs,
+                    serialNumbersRaw: "",
+                    hsnCode: "85414012",
+                    rate: 18793,
+                    qty: pQty,
+                    amount: Math.round(18793 * pQty),
+                    cgstRate: 6,
+                    sgstRate: 6
+                });
+                const invSpecs = q.inverterSpecs || `Solar Inverter ${kw} Kw (${q.systemType || 'On-Grid'})`;
+                quoteItems.push({
+                    itemName: "ON GRID INVERTER",
+                    model: invSpecs,
+                    serialNumbersRaw: "",
+                    hsnCode: "85044010",
+                    rate: 26350,
+                    qty: 1,
+                    amount: 26350,
+                    cgstRate: 6,
+                    sgstRate: 6
+                });
+                quoteItems.push({
+                    itemName: "Cable, Earthing, Acdb, Dcdb, STR.INS., METER, ETC",
+                    model: "Complete BOS & Installation Accessories",
+                    serialNumbersRaw: "",
+                    hsnCode: "-",
+                    rate: 33000,
+                    qty: 1,
+                    amount: 33000,
+                    cgstRate: 6,
+                    sgstRate: 6
+                });
+            }
+            modalItems = quoteItems;
+            renderItemRows();
+            return;
+        }
     }
 
-    recalcInvoiceTotals();
-}
+    // Fallback scaling if project/quotation not in memory array
+    if (modalItems[0]) {
+        const panelsNeeded = Math.max(1, Math.round((kw * 1000) / 540));
+        modalItems[0].qty = panelsNeeded;
+        modalItems[0].amount = Math.round(modalItems[0].rate * panelsNeeded);
+    }
 
-// Select an invoice to preview on the printable document
-function selectInvoiceToPrint(index) {
-    if (!allInvoices || !allInvoices[index]) return;
-    currentPreviewIndex = index;
-    const inv = allInvoices[index];
-
-    document.getElementById('docInvNum').innerText = inv.invoiceNumber;
-    document.getElementById('docInvDate').innerText = inv.date || '07-11-2026';
-    document.getElementById('docPaymentStatus').innerText = (inv.paymentStatus || 'PAID').toUpperCase();
-
-    document.getElementById('docCustomerName').innerText = inv.customerName;
-    document.getElementById('docCustomerAddress').innerText = inv.customerAddress || 'Raisen, M.P.';
-    document.getElementById('docCustomerMobile').innerText = inv.customerMobile || 'N/A';
-    document.getElementById('docCustomerGstin').innerText = inv.customerGstin || 'Consumer (URP)';
-
-    document.getElementById('docCapacityKw').innerText = inv.plantCapacityKw || 3;
-
-    const sub = parseFloat(inv.subtotal) || 100000;
-    const cgst = parseFloat(inv.cgst) || Math.round(sub * 0.06);
-    const sgst = parseFloat(inv.sgst) || Math.round(sub * 0.06);
-    const total = parseFloat(inv.totalAmount) || (sub + cgst + sgst);
-
-    document.getElementById('docItem1Rate').innerText = '₹' + Math.round(sub * 0.55).toLocaleString('en-IN');
-    document.getElementById('docItem1Amount').innerText = '₹' + Math.round(sub * 0.55).toLocaleString('en-IN');
-
-    document.getElementById('docItem2Rate').innerText = '₹' + Math.round(sub * 0.20).toLocaleString('en-IN');
-    document.getElementById('docItem2Amount').innerText = '₹' + Math.round(sub * 0.20).toLocaleString('en-IN');
-
-    document.getElementById('docItem3Rate').innerText = '₹' + Math.round(sub * 0.15).toLocaleString('en-IN');
-    document.getElementById('docItem3Amount').innerText = '₹' + Math.round(sub * 0.15).toLocaleString('en-IN');
-
-    document.getElementById('docItem4Rate').innerText = '₹' + Math.round(sub * 0.10).toLocaleString('en-IN');
-    document.getElementById('docItem4Amount').innerText = '₹' + Math.round(sub * 0.10).toLocaleString('en-IN');
-
-    document.getElementById('docSubtotal').innerText = '₹' + Math.round(sub).toLocaleString('en-IN');
-    document.getElementById('docCgst').innerText = '₹' + Math.round(cgst).toLocaleString('en-IN');
-    document.getElementById('docSgst').innerText = '₹' + Math.round(sgst).toLocaleString('en-IN');
-    document.getElementById('docTotal').innerText = '₹' + Math.round(total).toLocaleString('en-IN');
-
-    document.getElementById('printableInvoiceCard').scrollIntoView({ behavior: 'smooth' });
+    renderItemRows();
 }
 
 // Edit existing invoice
@@ -676,7 +1171,8 @@ function editInvoice(index) {
         
         document.getElementById('formInvoiceId').value = inv._id || '';
         document.getElementById('formInvNum').value = inv.invoiceNumber;
-        document.getElementById('formDate').value = inv.date || '';
+        document.getElementById('formDate').value = inv.date || inv.invoiceDate || '';
+        if (inv.invoiceTitle) document.getElementById('formInvoiceTitle').value = inv.invoiceTitle;
 
         // STRICT LOCK: Customer details cannot be changed on an existing invoice
         const customerFields = ['formCustomerName', 'formCustomerMobile', 'formCustomerAddress', 'formCustomerGstin'];
@@ -689,7 +1185,6 @@ function editInvoice(index) {
             }
         });
 
-        // Hide prefill selector & show customer locked notice
         const prefillBox = document.getElementById('prefillContainer');
         if (prefillBox) prefillBox.style.display = 'none';
         const prefillSel = document.getElementById('prefillSelector');
@@ -703,20 +1198,41 @@ function editInvoice(index) {
         document.getElementById('formCustomerAddress').value = inv.customerAddress || '';
         document.getElementById('formCustomerGstin').value = inv.customerGstin || '';
         document.getElementById('formCapacityKw').value = inv.plantCapacityKw || 3;
-        document.getElementById('formSubtotal').value = inv.subtotal || 100000;
+        document.getElementById('formRoundOff').value = inv.roundOff !== undefined ? inv.roundOff : 0;
+        document.getElementById('formPaymentPercent').value = inv.paymentReceivedPercent || '100%';
+        document.getElementById('formPaymentReceivedAmount').value = inv.paymentReceivedAmount || inv.paidAmount || inv.totalAmount || 0;
         document.getElementById('formPaymentStatus').value = (inv.paymentStatus || 'paid').toLowerCase();
         document.getElementById('formPaymentMethod').value = inv.paymentMethod || 'NEFT / RTGS (SBI Raisen)';
 
-        recalcInvoiceTotals();
+        // Load Item Rows
+        if (Array.isArray(inv.items) && inv.items.length > 0) {
+            modalItems = inv.items.map(it => {
+                let sRaw = it.serialNumbersRaw || '';
+                if (!sRaw && Array.isArray(it.serialNumbers)) {
+                    sRaw = it.serialNumbers.join('\n');
+                }
+                return {
+                    itemName: it.itemName || it.description || 'SOLAR COMPONENT',
+                    model: it.model || '',
+                    serialNumbersRaw: sRaw,
+                    hsnCode: it.hsnCode || '85414012',
+                    rate: it.rate || 0,
+                    qty: it.qty || 1,
+                    amount: it.amount || 0,
+                    cgstRate: it.cgstRate !== undefined ? it.cgstRate : 6,
+                    sgstRate: it.sgstRate !== undefined ? it.sgstRate : 6
+                };
+            });
+        } else {
+            modalItems = JSON.parse(JSON.stringify(DEFAULT_SAMPLE_ITEMS));
+        }
+
+        renderItemRows();
     } catch(err) {
         console.error('Error editing invoice:', err);
     }
 
     showInvoiceModal('invoiceModal');
-}
-
-function editCurrentDocInvoice() {
-    editInvoice(currentPreviewIndex);
 }
 
 // Archive Invoice with prompt (No hard deletion)
@@ -751,8 +1267,12 @@ document.getElementById('invoiceForm')?.addEventListener('submit', async functio
     const btn = document.getElementById('btnSaveInvoice');
     btn.disabled = true;
 
+    // Ensure latest calculations and JSON items are packed
+    recalcInvoiceTotals();
+
     const formData = new FormData(this);
     const payload = Object.fromEntries(formData.entries());
+    payload.items = modalItems;
 
     try {
         const res = await fetch('/api/admin/invoices/save', {
@@ -766,7 +1286,11 @@ document.getElementById('invoiceForm')?.addEventListener('submit', async functio
         const data = await res.json();
         if (data.success) {
             alert(data.message || 'Invoice saved successfully!');
-            window.location.reload();
+            if (data.documentUrl) {
+                window.location.href = data.documentUrl;
+            } else {
+                window.location.reload();
+            }
         } else {
             alert(data.message || 'Error saving invoice.');
             btn.disabled = false;

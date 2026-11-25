@@ -3,239 +3,717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= quotation.quotationNumber %> - Shivay Energy Solutions Official Quotation</title>
+    <title><%= quotation ? quotation.quotationNumber : 'Quotation' %> - SHIVAY ENERGY SOLUTIONS</title>
     <link rel="icon" href="/images/brandlogo2.webp" type="image/webp">
-    
     <link rel="stylesheet" href="/css/private/quotation-document.css">
 </head>
 <body>
 
-    <!-- On-Screen Top Action Toolbar -->
-    <div class="no-print">
-        <div style="font-weight: 700; font-size: 14px;">
-            Shivay Energy Solutions • Official Document Viewer
+<%
+    // Derived Initial Quotation Parameters
+    const capacityKw = Number((quotation && (quotation.plantCapacityKw || quotation.systemCapacityKw)) || 10);
+    const systemTypeStr = (quotation && quotation.systemType) ? quotation.systemType : 'Ongrid Solar Rooftop';
+    const projectSizeTitle = `${capacityKw} kW ${systemTypeStr}.`;
+    
+    // Calculations (Respect TAX_INCLUSIVE complete package pricing vs legacy TAX_EXCLUSIVE)
+    const isTaxInclusive = quotation && quotation.pricingMode === 'TAX_INCLUSIVE';
+    const annualUnits = capacityKw * 1440; // 10kW = 14400 Units
+    const gstRate = Number(quotation && quotation.gstRate !== undefined ? quotation.gstRate : (isTaxInclusive ? 12 : 9));
+    let baseProjectCost = 0;
+    let gstAmount = 0;
+    let totalCost = 0;
+    if (isTaxInclusive && quotation && quotation.grandTotal > 0) {
+        totalCost = Number(quotation.grandTotal);
+        baseProjectCost = Number(quotation.taxableValue || Math.round(totalCost / (1 + gstRate / 100)));
+        gstAmount = Number(quotation.totalGstAmount || (totalCost - baseProjectCost));
+    } else {
+        baseProjectCost = Number(quotation && (quotation.totalProjectCost || quotation.taxableValue || quotation.subtotal) ? (quotation.totalProjectCost || quotation.taxableValue || quotation.subtotal) : (capacityKw * 39130));
+        gstAmount = Number(quotation && quotation.totalGstAmount ? quotation.totalGstAmount : Math.round(baseProjectCost * (gstRate / 100)));
+        totalCost = baseProjectCost + gstAmount;
+    }
+    const pricePerKw = Math.round(baseProjectCost / capacityKw);
+
+    // Number to Indian Words Helper
+    function numberToWords(num) {
+        num = Math.round(num);
+        if (num === 0) return 'Zero Rupees Only';
+        const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        function inWords(n) {
+            if (n < 20) return a[n];
+            if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
+            if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + inWords(n % 100) : '');
+            if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + inWords(n % 1000) : '');
+            if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + inWords(n % 100000) : '');
+            return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + inWords(n % 10000000) : '');
+        }
+        return inWords(num).trim() + ' Rupees Only';
+    }
+
+    const initialWords = numberToWords(totalCost);
+    const panelCount = Math.max(1, Math.round((capacityKw * 1000) / 540));
+    const quoteDate = quotation && quotation.createdAt ? new Date(quotation.createdAt).toLocaleDateString('en-GB') : '17/11/2026';
+    const proposalNo = (quotation && (quotation.quotationNumber || quotation.proposalNo)) || '210';
+%>
+
+<!-- ========================================================================= -->
+<!-- 1. TOP INTERACTIVE CONTROL TOOLBAR (SCREEN ONLY, HIDDEN IN PRINT) -->
+<!-- ========================================================================= -->
+<div class="no-print">
+    <div class="control-bar-inner">
+        <div style="font-weight: 800; font-size: 13px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+            <span style="background: #2563eb; padding: 2px 8px; border-radius: 4px;">4-Page Quotation</span>
+            <span>SHIVAY ENERGY SOLUTIONS</span>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn-action btn-back" onclick="window.close(); if(history.length > 1) history.back();">
-                ← Close / Back
-            </button>
-            <button class="btn-action btn-print" onclick="window.print();">
-                🖨️ Print / Save as PDF
-            </button>
+
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <!-- Capacity Selector -->
+            <div class="control-group">
+                <span class="control-label">Capacity:</span>
+                <select class="control-select" id="ctrlCapacity" onchange="onToolbarChange()">
+                    <option value="1">1 kW</option>
+                    <option value="2">2 kW</option>
+                    <option value="3">3 kW</option>
+                    <option value="4">4 kW</option>
+                    <option value="5">5 kW</option>
+                    <option value="6">6 kW</option>
+                    <option value="7">7 kW</option>
+                    <option value="8">8 kW</option>
+                    <option value="10" <%= capacityKw === 10 ? 'selected' : '' %>>10 kW</option>
+                    <option value="12">12 kW</option>
+                    <option value="15">15 kW</option>
+                    <option value="20">20 kW</option>
+                    <option value="25">25 kW</option>
+                </select>
+            </div>
+
+            <!-- System Name Selector -->
+            <div class="control-group">
+                <span class="control-label">System Type:</span>
+                <select class="control-select" id="ctrlSystemType" onchange="onToolbarChange()">
+                    <option value="Ongrid Solar Rooftop" selected>Ongrid Solar Rooftop</option>
+                    <option value="Offgrid Solar Rooftop">Offgrid Solar Rooftop</option>
+                    <option value="Hybrid Solar Rooftop">Hybrid Solar Rooftop</option>
+                    <option value="Commercial Solar Rooftop">Commercial Solar Rooftop</option>
+                </select>
+            </div>
+
+            <!-- Package Base Cost -->
+            <div class="control-group">
+                <span class="control-label">Package Cost (₹):</span>
+                <input type="number" class="control-input" id="ctrlBaseCost" value="<%= baseProjectCost %>" style="width: 105px;" oninput="onToolbarChange()">
+            </div>
+
+            <!-- GST % -->
+            <div class="control-group">
+                <span class="control-label">GST %:</span>
+                <select class="control-select" id="ctrlGstRate" onchange="onToolbarChange()">
+                    <option value="9" <%= gstRate === 9 ? 'selected' : '' %>>9% AVG</option>
+                    <option value="12" <%= gstRate === 12 ? 'selected' : '' %>>12% Solar</option>
+                    <option value="5">5% Concessional</option>
+                    <option value="18">18% Standard</option>
+                    <option value="0">0% Exempt</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-action btn-print" onclick="window.print()">
+                    🖨️ Print / Save as PDF
+                </button>
+                <button class="btn-action btn-close-doc" onclick="window.close(); if(history.length > 1) history.back();">
+                    ✕ Close
+                </button>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Official A4 Document Page -->
-    <div class="document-page">
-        <!-- 1. Letterhead Header -->
-        <div class="letterhead-header">
-            <div class="brand-logo-title">
-                <h1><%= company.name %></h1>
-                <div class="tagline">Solar EPC Solutions • Rooftop Power Plants • Raisen (M.P.)</div>
-                <div class="accreditation">MNRE Approved Channel Partner | MPPKVVCL Registered Rooftop Vendor | PM Surya Ghar Yojna Partner</div>
+<!-- ========================================================================= -->
+<!-- PAGE 1: COVER & ON-GRID SYSTEM OVERVIEW -->
+<!-- ========================================================================= -->
+<div class="quotation-page" id="page1">
+    <!-- Header -->
+    <div class="q-header-block">
+        <div class="q-header-top">
+            <div class="q-header-badge">1</div>
+            <div class="q-header-center">
+                <h1 class="q-company-title">SHIVAY ENERGY SOLUTIONS</h1>
+                <div class="q-company-tagline">Save Green Energy to Build of a Better Future</div>
+                <div class="q-company-address">Office add . F3 Plat No 8 Enclave Indpuri Bhopal( M P ) 462010</div>
+                <div class="q-company-phones">7580822407. 7000021510</div>
+                <div class="q-company-email">Mail ID:-Official@shivayenergysolutions.in</div>
+                <div class="q-company-phones">9399761750, 7000575496</div>
             </div>
-            <div class="company-contact-box">
-                <strong>Registered Office:</strong><br>
-                <%= (company.location && company.location.address) || (company.address && company.address.line1) || 'Ward No. 15, In front of PHE Office, Arjun Nagar' %><br>
-                <%= (company.location && company.location.city) || (company.address && company.address.city) || 'Raisen' %>, <%= (company.location && company.location.state) || (company.address && company.address.state) || 'Madhya Pradesh' %> - <%= (company.location && company.location.pincode) || (company.address && company.address.pincode) || '464551' %><br>
-                Phone: <%= (company.contact && company.contact.phone) || (company.contacts && company.contacts[0] && company.contacts[0].mobile) || '+91 70005 75496' %><br>
-                Email: <%= (company.contact && company.contact.email) || company.email || 'shivayenergysolutions@gmail.com' %><br>
-                GSTIN: <strong><%= company.gstin || '23AXXXX0000X1Z5' %></strong>
+            <div class="q-header-logo">
+                <svg width="48" height="34" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="22" r="14" fill="#F59E0B"/>
+                    <path d="M50 2 V8 M50 36 V42 M30 22 H36 M64 22 H70 M36 8 L40 12 M64 8 L60 12 M36 36 L40 32 M64 36 L60 32" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/>
+                    <polygon points="12,65 24,38 76,38 88,65" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                    <line x1="50" y1="38" x2="50" y2="65" stroke="#FFFFFF" stroke-width="2"/>
+                    <line x1="37" y1="38" x2="31" y2="65" stroke="#FFFFFF" stroke-width="1.5"/>
+                    <line x1="63" y1="38" x2="69" y2="65" stroke="#FFFFFF" stroke-width="1.5"/>
+                    <line x1="20" y1="51" x2="80" y2="51" stroke="#FFFFFF" stroke-width="1.5"/>
+                </svg>
+                <div class="q-header-logo-text">SHIVAY<br><span style="font-size: 7.5px; color: #444;">ENERGY SOLUTIONS</span></div>
+            </div>
+        </div>
+        <div class="q-header-divider"></div>
+    </div>
+
+    <!-- Body -->
+    <div class="q-page-body">
+        <% if (typeof isUnapprovedPreview !== 'undefined' && isUnapprovedPreview) { %>
+            <div style="background: #fef3c7; border: 1.5px solid #d97706; color: #92400e; padding: 6px 10px; font-size: 11px; font-weight: 800; text-align: center; margin-bottom: 8px; border-radius: 4px;">
+                INTERNAL DRAFT PREVIEW — AWAITING MANAGER APPROVAL (NOT FOR FINAL CLIENT ISSUANCE)
+            </div>
+        <% } %>
+        <h2 class="q-doc-title">Quotation</h2>
+
+        <div class="q-p1-top-grid">
+            <div class="q-p1-meta-col">
+                <div class="q-p1-meta-row"><strong>Date :</strong> <span id="docDate"><%= quoteDate %></span></div>
+                <div class="q-p1-meta-row"><strong>Proposal No.</strong> <span id="docProposalNo"><%= proposalNo %></span></div>
+                <div class="q-p1-meta-row" style="margin-top: 25px;">To,</div>
+                <div class="q-p1-meta-row" style="font-weight: 700; color: #000;" id="docCustomerName">
+                    <%= (quotation && quotation.customerName) || '---------------------' %>
+                </div>
+                <div class="q-p1-meta-row text-muted" id="docCustomerAddress">
+                    <%= (quotation && quotation.customerAddress) || (quotation && quotation.address) || '' %>
+                </div>
+                <div class="q-p1-project-size">
+                    Project Size:-<span id="docProjectSizeText"><%= projectSizeTitle %></span>
+                </div>
+            </div>
+
+            <!-- Vector Graphic: Solar On-Grid System Connection Diagram -->
+            <div class="q-p1-diagram-col">
+                <div class="q-diagram-card">
+                    <svg viewBox="0 0 320 220" width="100%" height="auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Sun -->
+                        <g transform="translate(45, 30)">
+                            <circle cx="0" cy="0" r="14" fill="#F59E0B" />
+                            <circle cx="0" cy="0" r="10" fill="#FBBF24" />
+                            <g stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="0" y1="-22" x2="0" y2="-17" />
+                                <line x1="0" y1="17" x2="0" y2="22" />
+                                <line x1="-22" y1="0" x2="-17" y2="0" />
+                                <line x1="17" y1="0" x2="22" y2="0" />
+                                <line x1="-15" y1="-15" x2="-11" y2="-11" />
+                                <line x1="11" y1="11" x2="15" y2="15" />
+                                <line x1="11" y1="-11" x2="15" y2="-15" />
+                                <line x1="-15" y1="11" x2="-11" y2="15" />
+                            </g>
+                            <text x="0" y="30" text-anchor="middle" font-size="9" font-weight="800" fill="#D97706">SUN</text>
+                        </g>
+
+                        <!-- Solar Panels -->
+                        <g transform="translate(90, 50)">
+                            <polygon points="0,55 18,15 75,15 93,55" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                            <line x1="46" y1="15" x2="46" y2="55" stroke="#FFFFFF" stroke-width="2"/>
+                            <line x1="28" y1="15" x2="20" y2="55" stroke="#FFFFFF" stroke-width="1.5"/>
+                            <line x1="64" y1="15" x2="72" y2="55" stroke="#FFFFFF" stroke-width="1.5"/>
+                            <line x1="8" y1="35" x2="85" y2="35" stroke="#FFFFFF" stroke-width="1.5"/>
+                            <text x="46" y="68" text-anchor="middle" font-size="8.5" font-weight="800" fill="#0369A1">SOLAR PANELS</text>
+                        </g>
+
+                        <!-- Sun rays to panels arrow -->
+                        <path d="M 68 35 L 85 45" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3,2" marker-end="url(#arrowAmber)"/>
+
+                        <!-- Inverter -->
+                        <g transform="translate(195, 60)">
+                            <rect x="0" y="0" width="36" height="52" rx="4" fill="#FFFFFF" stroke="#334155" stroke-width="2"/>
+                            <rect x="6" y="8" width="24" height="14" rx="2" fill="#0F172A"/>
+                            <text x="18" y="18" text-anchor="middle" font-size="6" fill="#10B981" font-family="monospace">SOLAX</text>
+                            <circle cx="18" cy="32" r="3" fill="#3B82F6"/>
+                            <line x1="8" y1="42" x2="28" y2="42" stroke="#CBD5E1" stroke-width="1"/>
+                            <text x="18" y="62" text-anchor="middle" font-size="8.5" font-weight="800" fill="#334155">INVERTER</text>
+                        </g>
+
+                        <!-- Panel to Inverter cable -->
+                        <path d="M 183 80 L 195 80" stroke="#0284C7" stroke-width="2"/>
+
+                        <!-- Net Meter -->
+                        <g transform="translate(255, 55)">
+                            <rect x="0" y="0" width="32" height="42" rx="3" fill="#F1F5F9" stroke="#059669" stroke-width="1.8"/>
+                            <rect x="5" y="6" width="22" height="12" fill="#D1FAE5" stroke="#10B981"/>
+                            <text x="16" y="15" text-anchor="middle" font-size="6" fill="#047857" font-weight="bold">14400</text>
+                            <circle cx="16" cy="27" r="3" fill="#EF4444"/>
+                            <text x="16" y="52" text-anchor="middle" font-size="8.5" font-weight="800" fill="#047857">NETMETER</text>
+                        </g>
+
+                        <!-- Inverter to Net Meter cable -->
+                        <path d="M 231 80 L 255 80" stroke="#10B981" stroke-width="2"/>
+
+                        <!-- Utility Grid -->
+                        <g transform="translate(290, 40)">
+                            <line x1="0" y1="0" x2="0" y2="45" stroke="#78350F" stroke-width="3"/>
+                            <line x1="-12" y1="8" x2="12" y2="8" stroke="#78350F" stroke-width="2"/>
+                            <line x1="-12" y1="18" x2="12" y2="18" stroke="#78350F" stroke-width="2"/>
+                            <!-- Power lines -->
+                            <line x1="-18" y1="8" x2="18" y2="8" stroke="#1E293B" stroke-width="1"/>
+                            <line x1="-18" y1="18" x2="18" y2="18" stroke="#1E293B" stroke-width="1"/>
+                            <text x="0" y="55" text-anchor="middle" font-size="8" font-weight="800" fill="#78350F">UTILITY</text>
+                            <text x="0" y="64" text-anchor="middle" font-size="8" font-weight="800" fill="#78350F">GRID</text>
+                        </g>
+
+                        <!-- Netmeter to Grid cable -->
+                        <path d="M 287 75 L 290 75" stroke="#475569" stroke-width="2"/>
+
+                        <!-- Home Residential Unit -->
+                        <g transform="translate(245, 135)">
+                            <polygon points="35,0 0,25 70,25" fill="#15803D" stroke="#14532D" stroke-width="1.5"/>
+                            <rect x="8" y="25" width="54" height="38" fill="#F8FAFC" stroke="#334155" stroke-width="1.5"/>
+                            <rect x="28" y="40" width="14" height="23" fill="#94A3B8"/>
+                            <rect x="14" y="32" width="10" height="10" fill="#93C5FD"/>
+                            <rect x="46" y="32" width="10" height="10" fill="#93C5FD"/>
+                            <text x="35" y="73" text-anchor="middle" font-size="8.5" font-weight="900" fill="#15803D">HOME</text>
+                        </g>
+
+                        <!-- Netmeter down to Home cable -->
+                        <path d="M 271 97 L 271 135" stroke="#2563EB" stroke-width="2"/>
+                    </svg>
+                </div>
             </div>
         </div>
 
-        <!-- 2. Proposal Banner -->
-        <div class="proposal-title-banner">
-            <h2>Commercial Techno-Financial Solar Proposal</h2>
-            <div class="doc-number"><%= quotation.quotationNumber %></div>
-        </div>
+        <div class="q-section-heading">About Us:–</div>
+        <p class="q-section-text">
+            Our sales community is always ready to help you to stay on track. Choosing our company means selecting are liable partner that prioritizes quality , innovation , customer satisfaction, and environmental responsibility.
+        </p>
 
-        <!-- 3. Metadata Grid: Client & Quotation Info -->
-        <div class="meta-grid">
-            <div class="meta-card">
-                <div class="meta-card-title">Client Information</div>
-                <div class="meta-row">
-                    <span class="meta-label">Customer Name:</span>
-                    <span class="meta-value"><%= quotation.customerName %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">Contact Mobile:</span>
-                    <span class="meta-value"><%= quotation.customerMobile %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">DISCOM & Consumer No:</span>
-                    <span class="meta-value"><%= quotation.discom || 'MPPKVVCL' %> / <%= quotation.consumerNumber || 'Pending' %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">Site Address:</span>
-                    <span class="meta-value"><%= quotation.address %>, <%= quotation.city %>, <%= quotation.state %> - <%= quotation.pincode %></span>
-                </div>
+        <div class="q-section-heading" id="docTechSystemTitle">What is Solar On-grid system?</div>
+        <p class="q-section-text" id="docTechSystemDesc">
+            On-grid means your solar system is tied to your local utility's GRID. This is what most residential homes will use because you are covered if your solar System under or over-produces in regard to your varying energy needs.
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="q-footer-bar">
+        <span>WWW.SHIVAYENERGYSOLUTIONS.IN</span>
+        <span>SE SSOLAR</span>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- PAGE 2: GENERATION SHORT VIEW & LIST OF MATERIALS -->
+<!-- ========================================================================= -->
+<div class="quotation-page" id="page2">
+    <!-- Header -->
+    <div class="q-header-block">
+        <div class="q-header-top">
+            <div class="q-header-badge">2</div>
+            <div class="q-header-center">
+                <h1 class="q-company-title">SHIVAY ENERGY SOLUTIONS</h1>
+                <div class="q-company-tagline">Save Green Energy to Build of a Better Future</div>
+                <div class="q-company-address">Office add . F3 Plat No 8 Enclave Indpuri Bhopal( M P ) 462010</div>
+                <div class="q-company-phones">7580822407. 7000021510</div>
+                <div class="q-company-email">Mail ID:-Official@shivayenergysolutions.in</div>
+                <div class="q-company-phones">9399761750, 7000575496</div>
             </div>
-
-            <div class="meta-card">
-                <div class="meta-card-title">Quotation Parameters</div>
-                <div class="meta-row">
-                    <span class="meta-label">Quotation Date:</span>
-                    <span class="meta-value"><%= new Date(quotation.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">Valid Until:</span>
-                    <span class="meta-value"><%= quotation.validityDate ? new Date(quotation.validityDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '30 Days from issue' %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">Prepared By:</span>
-                    <span class="meta-value"><%= quotation.preparedBy ? quotation.preparedBy.name : 'Engineering Team' %></span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-label">Authorized By:</span>
-                    <span class="meta-value"><%= quotation.approvedBy ? quotation.approvedBy.name : 'Branch Authority' %></span>
-                </div>
+            <div class="q-header-logo">
+                <svg width="48" height="34" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="22" r="14" fill="#F59E0B"/>
+                    <polygon points="12,65 24,38 76,38 88,65" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                </svg>
+                <div class="q-header-logo-text">SHIVAY<br><span style="font-size: 7.5px; color: #444;">ENERGY SOLUTIONS</span></div>
             </div>
         </div>
+        <div class="q-header-divider"></div>
+    </div>
 
-        <!-- 4. System Engineering Highlights -->
-        <div class="system-spec-bar">
-            <div class="spec-item">
-                <div class="spec-label">Proposed Solar Capacity</div>
-                <div class="spec-value"><%= quotation.plantCapacityKw %> kWp</div>
-            </div>
-            <div class="spec-item">
-                <div class="spec-label">System Architecture</div>
-                <div class="spec-value"><%= quotation.systemType %></div>
-            </div>
-            <div class="spec-item">
-                <div class="spec-label">Estimated Monthly Yield</div>
-                <div class="spec-value">~<%= Math.round(quotation.plantCapacityKw * 120) %> Units</div>
-            </div>
-            <div class="spec-item">
-                <div class="spec-label">Estimated Annual Savings</div>
-                <div class="spec-value">~₹<%= (Math.round(quotation.plantCapacityKw * 120 * 12 * 7.5)).toLocaleString('en-IN') %></div>
-            </div>
+    <!-- Body -->
+    <div class="q-page-body">
+        <div style="font-size: 11px; line-height: 1.45; margin-bottom: 12px;">
+            <div>To,</div>
+            <div style="font-weight: 700;">Respected Sir,</div>
+            <p style="margin-top: 4px; margin-bottom: 8px;">
+                We provid exceptional customer service. We offer a diverse range of products. Our goal is to ensure customer satisfaction.
+            </p>
+            <div style="font-weight: 800; font-size: 11.5px; margin-top: 6px;">Solar Generation Short View:-</div>
         </div>
 
-        <!-- 5. Bill of Materials (Line Items) -->
-        <table class="table-bom">
+        <!-- Solar Generation Table -->
+        <table class="q-blue-table" style="margin-bottom: 14px;">
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 48%;">Description & Equipment Specification</th>
-                    <th style="width: 10%;" class="text-center">Qty</th>
-                    <th style="width: 15%;" class="text-right">Unit Price (₹)</th>
-                    <th style="width: 7%;" class="text-center">GST</th>
-                    <th style="width: 15%;" class="text-right">Amount (₹)</th>
+                    <th style="width: 35%;">Project Size</th>
+                    <th style="width: 65%;">Estimate Project Generation [kWh/Year]</th>
                 </tr>
             </thead>
             <tbody>
-                <% quotation.lineItems.forEach((item, index) => { %>
-                    <tr>
-                        <td class="text-center"><%= index + 1 %></td>
-                        <td>
-                            <strong><%= item.description %></strong>
-                            <% if (item.sku) { %><div style="font-size: 7.5pt; color: #64748b;">Model/SKU: <%= item.sku %></div><% } %>
-                        </td>
-                        <td class="text-center"><%= item.quantity %> <%= item.unit %></td>
-                        <td class="text-right"><%= Number(item.unitPrice).toLocaleString('en-IN') %></td>
-                        <td class="text-center"><%= item.gstRate %>%</td>
-                        <td class="text-right fw-bold"><%= Number(item.lineTotal).toLocaleString('en-IN') %></td>
-                    </tr>
-                <% }) %>
+                <tr>
+                    <td class="text-center" style="font-weight: 700;" id="docP2Cap"><%= capacityKw %> kW</td>
+                    <td class="text-center" style="font-weight: 700;" id="docP2Gen"><%= annualUnits.toLocaleString('en-IN') %> Units</td>
+                </tr>
             </tbody>
         </table>
 
-        <!-- 6. Financial Summary & Milestones -->
-        <div class="financial-container">
-            <div class="payment-terms-box">
-                <h4>Payment Milestones & Commercial Scope</h4>
-                <div style="font-size: 7.5pt; color: #64748b; margin-bottom: 6px;">
-                    Basis: <strong><%= (quotation.paymentPolicy && quotation.paymentPolicy.basis === 'CUSTOMER_CONTRIBUTION') ? 'Net Customer Investment' : 'Gross Contract Value' %></strong> (Subject to Confirmed Payment Terms)
-                </div>
-                <ul>
-                    <li><strong>1. Advance Payment (<%= (quotation.paymentPolicy && quotation.paymentPolicy.advancePercentage) || 20 %>%):</strong> ₹ <%= Number(quotation.advanceAmount).toLocaleString('en-IN') %> along with formal purchase order.</li>
-                    <li><strong>2. Material Delivery (<%= (quotation.paymentPolicy && quotation.paymentPolicy.deliveryPercentage) || 60 %>%):</strong> ₹ <%= Number((quotation.paymentPolicy && quotation.paymentPolicy.deliveryAmount) || (quotation.grandTotal * 0.60)).toLocaleString('en-IN') %> upon dispatch of modules & inverter at site.</li>
-                    <li><strong>3. Commissioning (<%= (quotation.paymentPolicy && quotation.paymentPolicy.commissioningPercentage) || 20 %>%):</strong> ₹ <%= Number((quotation.paymentPolicy && quotation.paymentPolicy.commissioningAmount) || (quotation.grandTotal * 0.20)).toLocaleString('en-IN') %> post DISCOM bidirectional net-meter inspection.</li>
-                </ul>
-                <div style="margin-top: 8px; font-size: 7.5pt; color: #475569;">
-                    <strong>Delivery Timeline:</strong> <%= quotation.deliveryTerms || 'Material delivery within 7-10 working days from advance payment.' %>
-                </div>
+        <!-- List Of Material Table with Watermark -->
+        <div class="q-watermark-wrap">
+            <div class="q-watermark-bg">SE SSOLAR</div>
+            <div style="text-align: center; font-weight: 800; font-size: 12px; margin-bottom: 6px; position: relative; z-index: 1;">
+                ListOfMaterial
             </div>
 
-            <div class="financial-totals-box">
-                <div class="fin-row">
-                    <span>Taxable Base Value:</span>
-                    <span>₹ <%= Number(quotation.taxableValue).toLocaleString('en-IN') %></span>
-                </div>
-                <div class="fin-row">
-                    <span>CGST (6% Intra-State MP):</span>
-                    <span>₹ <%= Number(quotation.cgstAmount).toLocaleString('en-IN') %></span>
-                </div>
-                <div class="fin-row">
-                    <span>SGST (6% Intra-State MP):</span>
-                    <span>₹ <%= Number(quotation.sgstAmount).toLocaleString('en-IN') %></span>
-                </div>
-                <% if (quotation.specialDiscount > 0) { %>
-                    <div class="fin-row" style="color: #dc2626;">
-                        <span>Commercial Discount:</span>
-                        <span>- ₹ <%= Number(quotation.specialDiscount).toLocaleString('en-IN') %></span>
-                    </div>
-                <% } %>
-                <div class="fin-row" style="font-weight: 700; border-top: 1px solid #cbd5e1;">
-                    <span>Gross Project Cost:</span>
-                    <span>₹ <%= Number(quotation.grandTotal).toLocaleString('en-IN') %></span>
-                </div>
-                <div class="fin-row subsidy">
-                    <span>PM Surya Ghar Govt Subsidy (Direct Benefit):</span>
-                    <span>- ₹ <%= Number(quotation.estimatedSubsidy).toLocaleString('en-IN') %></span>
-                </div>
-                <div class="fin-row grand-total">
-                    <span class="net-label">Net Customer Investment:</span>
-                    <span>₹ <%= Number(quotation.netPayableAfterSubsidy).toLocaleString('en-IN') %></span>
-                </div>
-                <div style="padding: 7px 10px; font-size: 7pt; color: #78350f; background: #fffbeb; border-top: 1px solid #fde68a; line-height: 1.35;">
-                    <strong>* Statutory Subsidy Notice:</strong> Subsidy shown is an indicative estimate subject to applicable government scheme guidelines, customer eligibility, DISCOM verification, installation requirements and final government approval. Actual subsidy may differ.
-                </div>
-            </div>
+            <table class="q-blue-table">
+                <thead>
+                    <tr>
+                        <th style="width: 6%;">Sr.No</th>
+                        <th style="width: 22%;">Item</th>
+                        <th style="width: 38%;">Specification</th>
+                        <th style="width: 22%;">Make</th>
+                        <th style="width: 12%;">Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="docMaterialsTableBody">
+                    <tr>
+                        <td class="text-center">1</td>
+                        <td>Solar Panel <span id="docMatPanelQty"><%= (quotation && quotation.panelQty) || panelCount %></span></td>
+                        <td><%= (quotation && quotation.panelSpecs) ? quotation.panelSpecs : 'ADANI/WAAREE TOPCON 620 Watt' %></td>
+                        <td><%= (quotation && quotation.companyBrand) ? quotation.companyBrand : 'ADANI' %></td>
+                        <td class="text-center" id="docMatPanelKw"><%= capacityKw %>kW</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">2</td>
+                        <td>Solar Inverter <span id="docMatInvKw"><%= capacityKw %></span> Kw</td>
+                        <td><span id="docMatInvKw2"><%= capacityKw %></span> Kw</td>
+                        <td><%= (quotation && quotation.inverterSpecs) ? quotation.inverterSpecs : 'Microtech/havells Polycab' %></td>
+                        <td class="text-center">1</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">3</td>
+                        <td>Structure</td>
+                        <td>8x6ft<br>LEG – 140X50 =12<br>RAFTER -80X40=6<br>PERLIN – 41X41=12</td>
+                        <td>JSW</td>
+                        <td class="text-center" id="docMatStructKw"><%= capacityKw %>kW</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">4</td>
+                        <td>ACDB /DCDB</td>
+                        <td>SPD used according requirement type IP 68 / MCCB / SPD</td>
+                        <td>Havells/ SIMILAR</td>
+                        <td class="text-center">APR</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">5</td>
+                        <td>DC Cable</td>
+                        <td>4.0 sq.mm wire</td>
+                        <td>Microtech/ Havells</td>
+                        <td class="text-center">APR</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">6</td>
+                        <td>AC Cable</td>
+                        <td>4.0 sq.mm</td>
+                        <td>Microtech /<br>Polycab</td>
+                        <td class="text-center">APR</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">7</td>
+                        <td>Lightening Arrestor</td>
+                        <td>Conventional Type</td>
+                        <td>Standard</td>
+                        <td class="text-center">APR</td>
+                    </tr>
+                    <tr>
+                        <td class="text-center">8</td>
+                        <td>Earthing pits, Strips &Cable</td>
+                        <td>16 sq.mm cable for Structure Earthing 16 Sq mm Cable for Inverter Earthing<br>Earthing Rod: Depth -1Mtr14mmx3</td>
+                        <td>Standard</td>
+                        <td class="text-center">APR</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
-        <!-- 7. Warranty & Bank Details -->
-        <div class="footer-clauses-grid">
-            <div class="bank-details-box">
-                <strong>NEFT / RTGS Bank Coordinates:</strong><br>
-                Beneficiary: <strong>SHIVAY ENERGY SOLUTIONS</strong><br>
-                Bank: <strong>State Bank of India (SBI)</strong><br>
-                Account Number: <strong>39820000000000</strong><br>
-                IFSC Code: <strong>SBIN0000465</strong> | Branch: Raisen Main
+        <p style="font-size: 10px; line-height: 1.35; margin-top: 4px;">
+            All the material is MNRE & ALMM approved with complete guidelines and completely authorizes material which is required for proper generation of units.
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="q-footer-bar">
+        <span>WWW.SHIVAYENERGYSOLUTIONS.IN</span>
+        <span>SE SSOLAR</span>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- PAGE 3: FULL PACKAGE COMMERCIAL PRICING TABLE -->
+<!-- ========================================================================= -->
+<div class="quotation-page" id="page3">
+    <!-- Header -->
+    <div class="q-header-block">
+        <div class="q-header-top">
+            <div class="q-header-badge">3</div>
+            <div class="q-header-center">
+                <h1 class="q-company-title">SHIVAY ENERGY SOLUTIONS</h1>
+                <div class="q-company-tagline">Save Green Energy to Build of a Better Future</div>
+                <div class="q-company-address">Office add . F3 Plat No 8 Enclave Indpuri Bhopal( M P ) 462010</div>
+                <div class="q-company-phones">7580822407. 7000021510</div>
+                <div class="q-company-email">Mail ID:-Official@shivayenergysolutions.in</div>
+                <div class="q-company-phones">9399761750, 7000575496</div>
             </div>
-            <div class="bank-details-box">
-                <strong>Standard Guarantees & Warranties:</strong><br>
-                • PV Modules: 25 Years 80% Performance Warranty.<br>
-                • Inverter: 5 Years Comprehensive Manufacturer Replacement.<br>
-                • Installation & BoS: 5 Years On-Site Free Maintenance.
+            <div class="q-header-logo">
+                <svg width="48" height="34" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="22" r="14" fill="#F59E0B"/>
+                    <polygon points="12,65 24,38 76,38 88,65" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                </svg>
+                <div class="q-header-logo-text">SHIVAY<br><span style="font-size: 7.5px; color: #444;">ENERGY SOLUTIONS</span></div>
             </div>
         </div>
+        <div class="q-header-divider"></div>
+    </div>
 
-        <!-- 8. Signatures Section -->
-        <div class="signatures-grid">
-            <div class="sig-block">
-                <div style="font-size: 8pt; color: #64748b;">Customer Acceptance Sign & Stamp</div>
-                <div class="sig-line">Accepted By: <%= quotation.customerName %></div>
-            </div>
-            <div class="sig-block">
-                <div style="font-size: 8pt; color: #64748b;">For SHIVAY ENERGY SOLUTIONS</div>
-                <div class="sig-line">
-                    Authorized Signatory & Engineering Stamp<br>
-                    <span style="font-size: 7.5pt; color: #64748b;"><%= quotation.approvedBy ? quotation.approvedBy.name : 'Managing Director' %> • Branch Operations</span>
-                </div>
-            </div>
+    <!-- Body -->
+    <div class="q-page-body">
+        <!-- Full Package Table (Rows 1-7 Grouped into Package Price) -->
+        <table class="q-package-table">
+            <thead>
+                <tr>
+                    <th style="width: 7%;">No</th>
+                    <th style="width: 48%;">Items</th>
+                    <th style="width: 20%;">Per kW</th>
+                    <th style="width: 25%;">Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>Solar mono crystal line PV module (MNRE & ALMM Approved)</td>
+                    <td rowspan="7" class="q-package-merged-cell" id="docPackagePerKw">
+                        <%= pricePerKw.toLocaleString('en-IN') %>
+                    </td>
+                    <td rowspan="7" class="q-package-merged-cell" id="docPackageTotalCost">
+                        <%= baseProjectCost.toLocaleString('en-IN') %>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td>Metal Flexi Conducts, GIT ray, PVC Conducts.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">3</td>
+                    <td>Junction Boxes, DCDB with MOV/SPD.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">4</td>
+                    <td>ACD board with SPD.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">5</td>
+                    <td>Copper lightning arrester &GI earthing system.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">6</td>
+                    <td>Installation & Service.</td>
+                </tr>
+                <tr>
+                    <td class="text-center">7</td>
+                    <td>Transportation</td>
+                </tr>
+
+                <!-- Summary Rows -->
+                <tr style="font-weight: 800;">
+                    <td class="text-center">8</td>
+                    <td colspan="2">Total Project Cost</td>
+                    <td class="text-center font-monospace" id="docTotalProjectCost"><%= baseProjectCost.toLocaleString('en-IN') %></td>
+                </tr>
+                <tr style="font-weight: 800;">
+                    <td class="text-center">9</td>
+                    <td>AVG .GST (<span id="docGstLabel"><%= gstRate %></span>%)</td>
+                    <td class="text-center" id="docGstRateCell"><%= gstRate %>%</td>
+                    <td class="text-center font-monospace" id="docGstAmount"><%= gstAmount.toLocaleString('en-IN') %></td>
+                </tr>
+                <tr class="q-total-row-highlight">
+                    <td class="text-center">10</td>
+                    <td colspan="2">Total Cost</td>
+                    <td class="text-center font-monospace" id="docGrandTotal"><%= totalCost.toLocaleString('en-IN') %></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <% if (quotation && Array.isArray(quotation.lineItems) && quotation.lineItems.length > 1) { %>
+            <table class="q-blue-table" style="margin-top: 8px; margin-bottom: 8px;">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">Sr.</th>
+                        <th style="width: 52%;">Extra Site Materials &amp; Add-Ons Included</th>
+                        <th style="width: 18%;">Qty</th>
+                        <th style="width: 22%;">Amount (Tax Incl.)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% quotation.lineItems.slice(1).forEach((extra, idx) => { %>
+                        <tr>
+                            <td class="text-center"><%= idx + 1 %></td>
+                            <td><%= extra.description %></td>
+                            <td class="text-center"><%= extra.quantity %> <%= extra.unit %></td>
+                            <td class="text-end font-monospace">₹ <%= Number(extra.lineTotal || (extra.quantity * extra.unitPrice)).toLocaleString('en-IN') %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        <% } %>
+
+        <!-- Amount In Words Banner -->
+        <div class="q-amount-words-bar">
+            Amount In Words : <span id="docAmountInWords"><%= initialWords %></span>
+        </div>
+
+        <div class="q-warning-notice">
+            *This is an important documents reproduction is strictly prohibited*
         </div>
     </div>
 
-    <% if (autoPrint) { %>
-        <script>
-            window.addEventListener('load', () => {
-                setTimeout(() => window.print(), 500);
-            });
-        </script>
-    <% } %>
+    <!-- Footer -->
+    <div class="q-footer-bar">
+        <span>WWW.SHIVAYENERGYSOLUTIONS.IN</span>
+        <span>SE SSOLAR</span>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- PAGE 4: WARRANTY, PAYMENT TERMS, TERMS & CONDITIONS, BANK DETAILS -->
+<!-- ========================================================================= -->
+<div class="quotation-page" id="page4">
+    <!-- Header -->
+    <div class="q-header-block">
+        <div class="q-header-top">
+            <div class="q-header-badge">4</div>
+            <div class="q-header-center">
+                <h1 class="q-company-title">SHIVAY ENERGY SOLUTIONS</h1>
+                <div class="q-company-tagline">Save Green Energy to Build of a Better Future</div>
+                <div class="q-company-address">Office add . F3 Plat No 8 Enclave Indpuri Bhopal( M P ) 462010</div>
+                <div class="q-company-phones">7580822407. 7000021510</div>
+                <div class="q-company-email">Mail ID:-Official@shivayenergysolutions.in</div>
+                <div class="q-company-phones">9399761750, 7000575496</div>
+            </div>
+            <div class="q-header-logo">
+                <svg width="48" height="34" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="22" r="14" fill="#F59E0B"/>
+                    <polygon points="12,65 24,38 76,38 88,65" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                </svg>
+                <div class="q-header-logo-text">SHIVAY<br><span style="font-size: 7.5px; color: #444;">ENERGY SOLUTIONS</span></div>
+            </div>
+        </div>
+        <div class="q-header-divider"></div>
+    </div>
+
+    <!-- Body -->
+    <div class="q-page-body">
+        <div class="q-section-heading" style="margin-top: 4px;">Warranty:-</div>
+        <ul class="q-p4-list">
+            <li>PV Modules warranty is in the scope of manufacturer.(30 Years)</li>
+            <li>AMC will be charge extra after 5 years ,AMC after 5 years will be signed separately</li>
+            <li>All Similar Products warranty for manufacturer.</li>
+        </ul>
+
+        <div class="q-section-heading">Payment Terms:-</div>
+        <div style="font-size: 11px; margin-left: 20px; margin-bottom: 12px;">
+            100% payment advance for Booking.
+        </div>
+
+        <div class="q-section-heading">Terms & Condition:-</div>
+        <ul class="q-p4-bullets">
+            <li>Understand are conditions ,we will install the system within 20 -25 days upon receipt of 100% advance and clearance, if needed ,from appropriate agencies.</li>
+            <li>An actual quotation is given after complete site survey.</li>
+            <li>Electricity Board Charges and process are Exclusive.</li>
+            <li>The price mentioned in the proposal is valid for 10 days.</li>
+            <li>The above-mentioned price includes Maintenance of the rooftop solar system for 1 years.</li>
+        </ul>
+
+        <div class="q-p4-bank-box">
+            <div style="font-weight: 800; margin-bottom: 3px;">BANK DETAILS :</div>
+            <div><strong>NAME :-</strong> STATE BANK OF INDIA</div>
+            <div><strong>IFSC :-</strong> SBIN0000462</div>
+            <div><strong>ACCOUNT NO. :-</strong> 44391949170</div>
+            <div><strong>BRANCH ADD.</strong> YASHWANT NAGAR,SAUGOR ROAD RAISEN , 464551</div>
+        </div>
+
+        <div class="q-p4-signoff">
+            <div>Regards,</div>
+            <div style="color: #0284c7; font-weight: 700;">Official@shivayenergysolutions.in,</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="q-footer-bar">
+        <span>WWW.SHIVAYENERGYSOLUTIONS.IN</span>
+        <span>SE SSOLAR</span>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: DYNAMIC CONTROLS & LIVE RECALCULATION -->
+<!-- ========================================================================= -->
+<script>
+function numberToIndianWords(num) {
+    num = Math.round(num);
+    if (num === 0) return 'Zero Rupees Only';
+    const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    function inWords(n) {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
+        if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + inWords(n % 100) : '');
+        if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 !== 0 ? ' ' + inWords(n % 1000) : '');
+        if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 !== 0 ? ' ' + inWords(n % 100000) : '');
+        return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 !== 0 ? ' ' + inWords(n % 10000000) : '');
+    }
+    return inWords(num).trim() + ' Rupees Only';
+}
+
+function onToolbarChange() {
+    const cap = parseFloat(document.getElementById('ctrlCapacity').value) || 10;
+    const sysType = document.getElementById('ctrlSystemType').value;
+    let baseCost = parseFloat(document.getElementById('ctrlBaseCost').value);
+    const gstRate = parseFloat(document.getElementById('ctrlGstRate').value) || 9;
+
+    // Default base cost formula if adjusted capacity
+    if (isNaN(baseCost) || baseCost <= 0) {
+        baseCost = cap * 39130;
+        document.getElementById('ctrlBaseCost').value = baseCost;
+    }
+
+    const pricePerKw = Math.round(baseCost / cap);
+    const gstAmt = Math.round(baseCost * (gstRate / 100));
+    const totalCost = baseCost + gstAmt;
+    const annualGen = cap * 1440;
+    const panels = Math.max(1, Math.round((cap * 1000) / 540));
+
+    // Update Page 1
+    document.getElementById('docProjectSizeText').innerText = `${cap} kW ${sysType}.`;
+    document.getElementById('docTechSystemTitle').innerText = `What is Solar ${sysType}?`;
+
+    // Update Page 2
+    document.getElementById('docP2Cap').innerText = `${cap} kW`;
+    document.getElementById('docP2Gen').innerText = `${annualGen.toLocaleString('en-IN')} Units`;
+    document.getElementById('docMatPanelQty').innerText = panels;
+    document.getElementById('docMatPanelKw').innerText = `${cap}kW`;
+    document.getElementById('docMatInvKw').innerText = cap;
+    document.getElementById('docMatInvKw2').innerText = cap;
+    document.getElementById('docMatStructKw').innerText = `${cap}kW`;
+
+    // Update Page 3 (Full Package Pricing Table)
+    document.getElementById('docPackagePerKw').innerText = pricePerKw.toLocaleString('en-IN');
+    document.getElementById('docPackageTotalCost').innerText = baseCost.toLocaleString('en-IN');
+    document.getElementById('docTotalProjectCost').innerText = baseCost.toLocaleString('en-IN');
+    document.getElementById('docGstLabel').innerText = gstRate;
+    document.getElementById('docGstRateCell').innerText = `${gstRate}%`;
+    document.getElementById('docGstAmount').innerText = gstAmt.toLocaleString('en-IN');
+    document.getElementById('docGrandTotal').innerText = totalCost.toLocaleString('en-IN');
+    document.getElementById('docAmountInWords').innerText = numberToIndianWords(totalCost);
+}
+
+// Auto-print if query param print=true
+<% if (typeof autoPrint !== 'undefined' && autoPrint) { %>
+    window.addEventListener('load', () => {
+        setTimeout(() => window.print(), 500);
+    });
+<% } %>
+</script>
 
 </body>
 </html>

@@ -356,6 +356,7 @@ body.admin-body {
    ============================================================ */
 .admin-main {
     flex: 1;
+    min-width: 0;
     margin-left: var(--admin-sidebar-width);
     display: flex;
     flex-direction: column;
@@ -364,6 +365,7 @@ body.admin-body {
     transition: var(--admin-transition);
     position: relative;
     width: calc(100% - var(--admin-sidebar-width));
+    max-width: calc(100% - var(--admin-sidebar-width));
 }
 
 .admin-header {
@@ -610,10 +612,12 @@ body.admin-body {
     background: var(--admin-bg-card);
     border: 1px solid var(--admin-border);
     border-radius: var(--admin-radius);
-    padding: 24px;
+    padding: 20px;
     box-shadow: var(--admin-shadow-sm);
     margin-bottom: 24px;
     transition: var(--admin-transition);
+    min-width: 0;
+    max-width: 100%;
 }
 
 .admin-card:hover {
@@ -622,8 +626,10 @@ body.admin-body {
 
 .admin-card-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: 10px 14px;
     margin-bottom: 20px;
     padding-bottom: 14px;
     border-bottom: 1px solid var(--admin-border-subtle);
@@ -795,6 +801,31 @@ i[class*="icofont-search"] {
     box-sizing: border-box !important;
 }
 
+.input-group.input-group-sm > input.form-control,
+.input-group.input-group-sm > .input-group-text,
+.input-group.input-group-sm > .btn {
+    height: 31px !important;
+    min-height: 31px !important;
+    font-size: 12px !important;
+}
+
+/* Mobile Form Row Uniform Baseline Alignment */
+.mobile-form-uniform .form-label {
+    display: block;
+    font-size: 11px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.mobile-form-uniform .form-control-sm,
+.mobile-form-uniform .form-select-sm {
+    height: 32px;
+    min-height: 32px;
+}
+
 /* Clean Admin Filter Bar Container */
 .admin-filter-card {
     background: #ffffff;
@@ -810,17 +841,11 @@ i[class*="icofont-search"] {
    ============================================================ */
 .admin-table-container {
     width: 100%;
+    max-width: 100%;
     border-radius: 8px;
     position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-}
-
-@media (min-width: 992px) {
-    .admin-table-container {
-        overflow-x: visible;
-        overflow-y: visible;
-    }
 }
 
 .admin-table {
@@ -828,26 +853,43 @@ i[class*="icofont-search"] {
     border-collapse: separate;
     border-spacing: 0;
     margin-bottom: 0;
-    font-size: 12.5px;
+    font-size: 12px;
 }
 
 .admin-table thead th {
     background-color: #f8fafc;
     color: #475569;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 10px 12px;
+    letter-spacing: 0.4px;
+    padding: 9px 8px;
     border-bottom: 1px solid var(--admin-border);
     white-space: nowrap;
 }
 
 .admin-table tbody td {
-    padding: 12px 14px;
+    padding: 10px 8px;
     vertical-align: middle;
     border-bottom: 1.5px solid #cbd5e1;
     color: var(--admin-text-main);
+}
+
+.admin-table-col-contact {
+    max-width: 155px;
+}
+
+.admin-table-col-contact .contact-email {
+    max-width: 148px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-table-col-mgr {
+    max-width: 145px;
+    line-height: 1.3;
+    word-break: break-word;
 }
 
 .admin-table tbody tr:hover td {
@@ -871,12 +913,45 @@ i[class*="icofont-search"] {
     border-radius: 5px;
 }
 
-.admin-table .dropdown-menu {
-    z-index: 1050;
-    font-size: 12px;
+.admin-table .dropdown-menu,
+.admin-mobile-staff-list .dropdown-menu {
+    z-index: 1055;
+    font-size: 12.5px;
     border: 1px solid var(--admin-border);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-    min-width: 180px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.14);
+    min-width: 205px;
+}
+
+/* Ensure right-aligned dropdowns open leftward even without Popper data-bs-popper */
+.dropdown-menu.dropdown-menu-end {
+    right: 0;
+    left: auto;
+}
+
+/* Mobile Staff Cards (< 992px) */
+.admin-mobile-staff-card {
+    background: #ffffff;
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    box-shadow: var(--admin-shadow-sm);
+}
+
+.admin-mobile-staff-card + .admin-mobile-staff-card {
+    margin-top: 8px;
+}
+
+.admin-mobile-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 10px;
+    font-size: 11.5px;
+    line-height: 1.35;
+}
+
+.admin-mobile-meta-item {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 /* ============================================================
@@ -915,12 +990,14 @@ i[class*="icofont-search"] {
 }
 
 .badge-role {
-    padding: 3px 8px;
+    padding: 3px 7px;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.3px;
     text-transform: uppercase;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .badge-role-superadmin {
@@ -1040,6 +1117,7 @@ i[class*="icofont-search"] {
     .admin-main {
         margin-left: 0;
         width: 100%;
+        max-width: 100%;
     }
 
     .admin-sidebar-toggle {
@@ -1054,7 +1132,12 @@ i[class*="icofont-search"] {
     }
 
     .admin-content {
+        padding: 14px;
+    }
+
+    .admin-card {
         padding: 16px;
+        border-radius: 10px;
     }
 
     .admin-footer {

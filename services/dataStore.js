@@ -149,6 +149,11 @@ let inMemoryUsers = [
         branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
         managerId: managerSeedId,
         manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        bloodGroup: 'B+',
+        alternateMobile: '+91 98260 11223',
+        joiningDate: new Date('2026-02-01'),
+        expiryDate: new Date('2029-02-01'),
+        idCardNumber: 'SES-EMP-03',
         lastLogin: new Date(),
         createdAt: new Date('2026-02-01')
     },
@@ -169,6 +174,11 @@ let inMemoryUsers = [
         branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
         managerId: managerSeedId,
         manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        bloodGroup: 'O+',
+        alternateMobile: '+91 94250 11990',
+        joiningDate: new Date('2026-02-15'),
+        expiryDate: new Date('2029-02-15'),
+        idCardNumber: 'SES-EMP-99',
         lastLogin: new Date(),
         createdAt: new Date('2026-02-15')
     },
@@ -189,6 +199,11 @@ let inMemoryUsers = [
         branchId: { _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' },
         managerId: managerSeedId,
         manager: { _id: managerSeedId, name: 'Rahul Saini', email: 'rahul@shivayenergy.com', mobile: '+91 93997 61750' },
+        bloodGroup: 'AB+',
+        alternateMobile: '+91 99933 99881',
+        joiningDate: new Date('2026-03-01'),
+        expiryDate: new Date('2029-03-01'),
+        idCardNumber: 'SES-EMP-04',
         lastLogin: new Date(),
         createdAt: new Date('2026-03-01')
     }
@@ -361,7 +376,14 @@ class DataStore {
             existing.subtotal = parseFloat(data.subtotal) || existing.subtotal;
             existing.cgst = parseFloat(data.cgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100;
             existing.sgst = parseFloat(data.sgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100;
+            existing.roundOff = data.roundOff !== undefined ? parseFloat(data.roundOff) : (existing.roundOff || 0);
+            existing.totalTaxAmount = data.totalTaxAmount !== undefined ? parseFloat(data.totalTaxAmount) : ((existing.cgst || 0) + (existing.sgst || 0));
             existing.totalAmount = parseFloat(data.totalAmount) || existing.totalAmount;
+            existing.paymentReceivedPercent = data.paymentReceivedPercent || existing.paymentReceivedPercent || '100%';
+            existing.paymentReceivedAmount = data.paymentReceivedAmount !== undefined ? parseFloat(data.paymentReceivedAmount) : (parseFloat(data.totalAmount) || existing.totalAmount);
+            existing.mprgNo = data.mprgNo || existing.mprgNo || 'CZS2026042411080336';
+            existing.companyGstin = data.companyGstin || existing.companyGstin || '23AFRFS0964B1Z0';
+            existing.invoiceTitle = data.invoiceTitle || existing.invoiceTitle || 'TAX INVOICE ORIGINAL FOR RECIPIENT';
             existing.paymentStatus = data.paymentStatus || existing.paymentStatus;
             existing.paymentMethod = data.paymentMethod || existing.paymentMethod;
             existing.date = todayStr;
@@ -383,7 +405,14 @@ class DataStore {
             subtotal: parseFloat(data.subtotal) || 100000,
             cgst: parseFloat(data.cgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100,
             sgst: parseFloat(data.sgst) || Math.round((parseFloat(data.subtotal) || 100000) * 0.06 * 100) / 100,
+            roundOff: data.roundOff !== undefined ? parseFloat(data.roundOff) : 0,
+            totalTaxAmount: data.totalTaxAmount !== undefined ? parseFloat(data.totalTaxAmount) : (parseFloat(data.cgst || 0) + parseFloat(data.sgst || 0)),
             totalAmount: parseFloat(data.totalAmount) || 112000,
+            paymentReceivedPercent: data.paymentReceivedPercent || '100%',
+            paymentReceivedAmount: data.paymentReceivedAmount !== undefined ? parseFloat(data.paymentReceivedAmount) : (parseFloat(data.totalAmount) || 112000),
+            mprgNo: data.mprgNo || 'CZS2026042411080336',
+            companyGstin: data.companyGstin || '23AFRFS0964B1Z0',
+            invoiceTitle: data.invoiceTitle || 'TAX INVOICE ORIGINAL FOR RECIPIENT',
             paymentStatus: data.paymentStatus || 'paid',
             paymentMethod: data.paymentMethod || 'NEFT / RTGS (SBI Raisen)',
             date: todayStr,

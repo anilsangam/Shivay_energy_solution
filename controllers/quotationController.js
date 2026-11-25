@@ -11,6 +11,7 @@ const UploadService = require('../services/uploadService');
 const AuditService = require('../services/auditService');
 const AuthorizationService = require('../services/authorizationService');
 const companyData = require('../config/company');
+const { SOLAR_PACKAGES, EXTRA_MATERIAL_PRESETS, QUOTATION_PRICING_POLICY, evaluatePackagePricing } = require('../config/solarPackages');
 
 /**
  * Safely associates unlinked quotation requests with quotations in-memory.
@@ -82,6 +83,147 @@ class QuotationController {
     // -------------------------------------------------------------
     // 1. EMPLOYEE: QUOTATION REQUESTS
     // -------------------------------------------------------------
+    /**
+     * Render Self-Service Solar Grid Package Quotation Generator (Employee / Manager / Admin)
+     */
+    static async getGeneratePackageQuotationPage(req, res) {
+        try {
+            const sessionUser = req.session.user;
+            const isSuperAdmin = sessionUser.role === 'SUPER_ADMIN';
+            const isManager = sessionUser.role === 'MANAGER' || sessionUser.role === 'BRANCH_MANAGER';
+            const parentUrl = isSuperAdmin ? '/admin/quotations' : (isManager ? '/manager/quotations' : '/employee/quotations');
+            const parentLabel = isSuperAdmin ? 'Quotations' : (isManager ? 'Quotation Requests' : 'My Quotations');
+
+            res.render('private/employee/quotation-generate', {
+                title: `Generate Solar Grid Quotation | ${companyData.company.name}`,
+                company: companyData.company,
+                data: companyData,
+                user: sessionUser,
+                currentUser: sessionUser,
+                packages: SOLAR_PACKAGES,
+                extraPresets: EXTRA_MATERIAL_PRESETS,
+                pricingPolicy: QUOTATION_PRICING_POLICY,
+                parentUrl,
+                csrfToken: req.session ? req.session.csrfToken : '',
+                activePage: 'employee-quotations-generate',
+                pageTitle: 'Generate Client Quotation',
+                breadcrumbs: [{ label: parentLabel, url: parentUrl }, { label: 'Generate Quotation' }]
+            });
+        } catch (err) {
+            console.error('Error rendering package quotation generator:', err);
+            res.status(500).render('private/errors/403', {
+                title: 'Error | Shivay Energy Solutions',
+                message: 'Unable to load quotation generator.'
+            });
+        }
+    }
+
+    /**
+     * Live Package Pricing, Tax-Included Split & Threshold Preview API
+     */
+    static previewPackageQuotation(req, res) {
+        try {
+            const evalResult = evaluatePackagePricing(req.body || {});
+            return res.json({ success: true, evaluation: evalResult });
+        } catch (err) {
+            console.error('Preview Package Quotation Error:', err);
+            return res.status(400).json({ success: false, message: err.message || 'Unable to evaluate package pricing.' });
+        }
+    }
+
+    /**
+     * Create & Save Package Quotation from Employee / Staff Generator
+     * - Auto-approves when price >= minThreshold AND discount <= 3% & <= ₹10,000
+     * - Routes to Manager Approval when discount exceeds threshold
+     */
+    static async postGenerateEmployeeQuotation(req, res) {
+        try {
+            const sessionUser = req.session.user;
+            const body = req.body || {};
+
+            if (!body.customerName || !body.customerName.trim()) {
+                return res.status(400).json({ success: false, message: 'Customer full name is required.' });
+            }
+            if (!body.customerMobile || !body.customerMobile.trim()) {
+                return res.status(400).json({ success: false, message: 'Customer mobile number is required.' });
+            }
+
+            const cleanMobile = body.customerMobile.replace(/[^0-9]/g, '').slice(-10);
+            if (cleanMobile.length !== 10) {
+                return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number.' });
+            }
+
+            let customer = null;
+            if (mongoose.connection && mongoose.connection.readyState === 1) {
+                customer = await Customer.findOne({ mobile: { $regex: cleanMobile + '$' } });
+                if (!customer) {
+                    const evalTmp = evaluatePackagePricing(body);
+                    customer = new Customer({
+                        name: body.customerName.trim(),
+                        mobile: `+91 ${cleanMobile}`,
+                        email: body.customerEmail ? body.customerEmail.trim().toLowerCase() : '',
+                        address: body.customerAddress ? body.customerAddress.trim() : '',
+                        city: body.city ? body.city.trim() : 'Raisen',
+                        district: body.district ? body.district.trim() : 'Raisen',
+                        state: body.state ? body.state.trim() : 'Madhya Pradesh',
+                        pincode: body.pincode ? body.pincode.trim() : '',
+                        consumerNumber: body.consumerNumber ? body.consumerNumber.trim() : '',
+                        discom: body.discom ? body.discom.trim() : 'MPPKVVCL',
+                        customerType: evalTmp.customerType,
+                        status: 'ACTIVE',
+                        assignedEmployee: sessionUser._id,
+                        assignedBranch: sessionUser.branchId || null,
+                        createdBy: sessionUser._id
+                    });
+                    await customer.save();
+                }
+            }
+
+            const { quotation, evaluation, autoApproved } = await QuotationService.createEmployeePackageQuotation({
+                ...body,
+                customerId: customer ? customer._id : null,
+                customerMobile: `+91 ${cleanMobile}`
+            }, sessionUser);
+
+            const redirectUrl = sessionUser.role === 'SUPER_ADMIN'
+                ? '/admin/quotations'
+                : (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role) ? '/manager/quotations' : '/employee/quotations');
+
+            return res.json({
+                success: true,
+                quotationId: quotation._id,
+                quotationNumber: quotation.quotationNumber,
+                status: quotation.status,
+                autoApproved,
+                acceptanceToken: quotation.customerResponse ? quotation.customerResponse.acceptanceToken : '',
+                quotation: {
+                    id: quotation._id,
+                    quotationNumber: quotation.quotationNumber,
+                    customerName: quotation.customerName,
+                    customerMobile: quotation.customerMobile,
+                    capacity: quotation.plantCapacityKw,
+                    systemType: quotation.systemType,
+                    grandTotal: quotation.grandTotal,
+                    subsidy: quotation.estimatedSubsidy,
+                    netPayable: quotation.netPayableAfterSubsidy,
+                    discountPercent: quotation.discountPercent,
+                    discountAmount: evaluation.discountAmount,
+                    minimumThresholdPrice: quotation.minimumThresholdPrice,
+                    requiresManagerApproval: quotation.requiresManagerApproval,
+                    approvalTriggerReason: quotation.approvalTriggerReason,
+                    token: quotation.customerResponse ? quotation.customerResponse.acceptanceToken : ''
+                },
+                redirectUrl,
+                message: autoApproved
+                    ? `Quotation ${quotation.quotationNumber} generated & AUTO-APPROVED! Ready to download PDF and share with the client.`
+                    : `Quotation ${quotation.quotationNumber} created and sent for MANAGER APPROVAL because discount exceeds the self-approval threshold.`
+            });
+        } catch (err) {
+            console.error('Generate Employee Quotation Error:', err);
+            return res.status(400).json({ success: false, message: err.message || 'Error generating quotation.' });
+        }
+    }
+
     /**
      * Render "New Quotation Request" Form
      */
@@ -980,11 +1122,15 @@ class QuotationController {
             }
 
             // Authorization
-            if (sessionUser.role === 'EMPLOYEE' && String(quotation.preparedBy._id) !== String(sessionUser._id)) {
-                return res.status(403).render('private/errors/403', {
-                    title: 'Access Denied | Shivay Energy Solutions',
-                    message: 'You are not authorized to view this quotation.'
-                });
+            if (sessionUser.role === 'EMPLOYEE') {
+                const isPreparer = quotation.preparedBy && String(quotation.preparedBy._id || quotation.preparedBy) === String(sessionUser._id);
+                const isAssignedEmp = quotation.assignedEmployee && String(quotation.assignedEmployee._id || quotation.assignedEmployee) === String(sessionUser._id);
+                if (!isPreparer && !isAssignedEmp) {
+                    return res.status(403).render('private/errors/403', {
+                        title: 'Access Denied | Shivay Energy Solutions',
+                        message: 'You are not authorized to view this quotation.'
+                    });
+                }
             }
 
             // Fetch History Trail
@@ -1060,8 +1206,9 @@ class QuotationController {
             if (sessionUser) {
                 if (sessionUser.role === 'EMPLOYEE') {
                     const isPreparer = quotation.preparedBy && String(quotation.preparedBy._id || quotation.preparedBy) === String(sessionUser._id);
+                    const isAssigned = quotation.assignedEmployee && String(quotation.assignedEmployee._id || quotation.assignedEmployee) === String(sessionUser._id);
                     const isApprovedState = ['APPROVED', 'SHARED', 'CUSTOMER_ACCEPTED'].includes(quotation.status);
-                    if (!isPreparer && !isApprovedState) {
+                    if (!isPreparer && !isAssigned && !isApprovedState) {
                         return res.status(403).render('private/errors/403', {
                             title: 'Access Denied',
                             message: 'Unauthorized access to quotation document.'
@@ -1070,10 +1217,13 @@ class QuotationController {
                 }
             }
 
+            const isUnapprovedPreview = ['DRAFT', 'PENDING_APPROVAL', 'CANCELLED', 'REJECTED', 'ARCHIVED'].includes(quotation.status);
+
             res.render('private/admin/quotation-document', {
                 title: `Quotation Document - ${quotation.quotationNumber}`,
                 company: companyData.company,
                 quotation,
+                isUnapprovedPreview,
                 autoPrint: req.query.print === 'true'
             });
         } catch (err) {
@@ -1251,6 +1401,14 @@ class QuotationController {
                 });
             }
 
+            if (['DRAFT', 'PENDING_APPROVAL', 'CANCELLED', 'REJECTED', 'ARCHIVED'].includes(quotation.status)) {
+                return res.status(403).render('public-site/404', {
+                    title: 'Quotation Awaiting Approval | Shivay Energy Solutions',
+                    data: companyData,
+                    message: 'This quotation is pending internal approval and is not yet active for client sharing.'
+                });
+            }
+
             const isExpired = quotation.customerResponse.tokenExpiresAt && quotation.customerResponse.tokenExpiresAt < new Date();
 
             res.render('public-site/quotation-accept', {
@@ -1282,6 +1440,10 @@ class QuotationController {
             const quotation = await Quotation.findOne({ 'customerResponse.acceptanceToken': token });
             if (!quotation) {
                 return res.status(404).json({ success: false, message: 'Invalid or expired acceptance token.' });
+            }
+
+            if (['DRAFT', 'PENDING_APPROVAL', 'CANCELLED', 'REJECTED', 'ARCHIVED'].includes(quotation.status)) {
+                return res.status(403).json({ success: false, message: 'This quotation is awaiting management approval and cannot be accepted yet.' });
             }
 
             if (quotation.customerResponse.tokenExpiresAt && quotation.customerResponse.tokenExpiresAt < new Date()) {

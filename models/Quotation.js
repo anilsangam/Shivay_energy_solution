@@ -54,7 +54,15 @@ const quotationSchema = new mongoose.Schema({
     consumerNumber: { type: String, trim: true },
     discom: { type: String, default: 'MPPKVVCL', trim: true },
 
-    // Technical Specifications
+    // Technical Specifications & Package Rate-Sheet Snapshot
+    packageId: { type: String, trim: true },
+    packageCategory: { type: String, enum: ['RESIDENTIAL_DCR', 'COMMERCIAL_NON_DCR', 'CUSTOM'], default: 'CUSTOM' },
+    companyBrand: { type: String, trim: true },
+    moduleWattage: { type: String, trim: true },
+    unitPerDay: { type: String, trim: true },
+    monthlyUnits: { type: String, trim: true },
+    financeInterestRate: { type: String, trim: true },
+    estimatedEmi: { type: String, trim: true },
     plantCapacityKw: { type: Number, required: true, min: 0.5 },
     systemType: { type: String, default: 'ON_GRID', trim: true },
     panelSpecs: { type: String, default: '540W Mono PERC Half-Cut (DCR Compliant)', trim: true },
@@ -68,6 +76,10 @@ const quotationSchema = new mongoose.Schema({
     lineItems: [lineItemSchema],
 
     // Financial Values (Server-Side Authoritative)
+    pricingMode: { type: String, enum: ['TAX_EXCLUSIVE', 'TAX_INCLUSIVE'], default: 'TAX_EXCLUSIVE' },
+    packageCatalogPrice: { type: Number, default: 0 },
+    minimumThresholdPrice: { type: Number, default: 0 },
+    discountPercent: { type: Number, default: 0 },
     subtotal: { type: Number, required: true, default: 0 },
     itemDiscountsTotal: { type: Number, default: 0 },
     specialDiscount: { type: Number, default: 0 },
@@ -206,6 +218,16 @@ const quotationSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    approvalMode: {
+        type: String,
+        enum: ['MANUAL', 'AUTO_THRESHOLD', 'MANAGER_REQUIRED', 'DIRECT_APPROVED'],
+        default: 'MANUAL'
+    },
+    requiresManagerApproval: {
+        type: Boolean,
+        default: false
+    },
+    approvalTriggerReason: { type: String, trim: true },
     approvalComments: { type: String, trim: true },
     rejectionReason: { type: String, trim: true },
     branch: {

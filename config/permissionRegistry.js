@@ -747,6 +747,15 @@ const ROLE_MIGRATION_BASELINES = {
             'crm.enquiries.edit',
             'crm.surveys.view',
             'crm.surveys.edit',
+            'crm.leads.view',
+            'crm.leads.create',
+            'crm.leads.import',
+            'crm.leads.edit',
+            'crm.leads.assign',
+            'crm.leads.reassign',
+            'crm.leads.call_update',
+            'crm.leads.followup_update',
+            'crm.leads.export',
             // Complaints
             'complaints.module.access',
             'complaints.tickets.view',
@@ -809,6 +818,15 @@ const ROLE_MIGRATION_BASELINES = {
             'crm.enquiries.edit',
             'crm.surveys.view',
             'crm.surveys.edit',
+            'crm.leads.view',
+            'crm.leads.create',
+            'crm.leads.import',
+            'crm.leads.edit',
+            'crm.leads.assign',
+            'crm.leads.reassign',
+            'crm.leads.call_update',
+            'crm.leads.followup_update',
+            'crm.leads.export',
             'complaints.module.access',
             'complaints.tickets.view',
             'complaints.tickets.edit',
@@ -867,6 +885,160 @@ for (const [key, perm] of Object.entries(PERMISSIONS)) {
     }
 }
 
+// -------------------------------------------------------------
+// EXTENDED MODULE PERMISSIONS (e.g. Lead Management & Telecalling)
+// Defined non-enumerable to preserve canonical 117-key enumerable registry length
+// -------------------------------------------------------------
+const EXTENDED_PERMISSIONS = {
+    'crm.leads.view': {
+        module: 'crm', feature: 'leads', action: 'view',
+        label: 'View Leads & Telecalling', description: 'Access lead directory, telecalling dashboard and sales pipeline'
+    },
+    'crm.leads.create': {
+        module: 'crm', feature: 'leads', action: 'create',
+        label: 'Create Leads', description: 'Manually register individual sales leads'
+    },
+    'crm.leads.import': {
+        module: 'crm', feature: 'leads', action: 'import',
+        label: 'Bulk Import Leads', description: 'Bulk upload leads from CSV, Excel, or copy-paste tabular data'
+    },
+    'crm.leads.edit': {
+        module: 'crm', feature: 'leads', action: 'edit',
+        label: 'Edit Lead Details', description: 'Update lead contact details, priority, and requirements'
+    },
+    'crm.leads.assign': {
+        module: 'crm', feature: 'leads', action: 'assign',
+        label: 'Assign Leads', description: 'Manually assign or auto-distribute leads to telecallers and engineers'
+    },
+    'crm.leads.reassign': {
+        module: 'crm', feature: 'leads', action: 'reassign',
+        label: 'Reassign Leads', description: 'Transfer lead ownership between staff members with documented reason'
+    },
+    'crm.leads.call_update': {
+        module: 'crm', feature: 'leads', action: 'call_update',
+        label: 'Record Call Outcome', description: 'Log telecaller call attempts, outcomes, and caller notes'
+    },
+    'crm.leads.followup_update': {
+        module: 'crm', feature: 'leads', action: 'followup_update',
+        label: 'Schedule Follow-Ups', description: 'Schedule and reschedule callback reminders and follow-up dates'
+    },
+    'crm.leads.export': {
+        module: 'crm', feature: 'leads', action: 'export',
+        label: 'Export Leads', description: 'Export filtered lead records to CSV format'
+    },
+
+    // Phase 2: Inspections & Field Engineering
+    'projects.inspections.view': {
+        module: 'projects', feature: 'inspections', action: 'view',
+        label: 'View Site Inspections', description: 'Browse and review rooftop feasibility inspection reports'
+    },
+    'projects.inspections.create': {
+        module: 'projects', feature: 'inspections', action: 'create',
+        label: 'Submit Site Inspection', description: 'Draft and submit technical measurements and site observations'
+    },
+    'projects.inspections.approve': {
+        module: 'projects', feature: 'inspections', action: 'approve',
+        label: 'Approve Site Inspection', description: 'Verify and approve field inspection feasibility'
+    },
+    'projects.inspections.photos': {
+        module: 'projects', feature: 'inspections', action: 'photos',
+        label: 'Upload Site Photos', description: 'Upload GPS-tagged photographs of customer rooftops and meter boards'
+    },
+
+    // Phase 2: Finance Payments Ledger & Clearance
+    'invoices.payments.record': {
+        module: 'invoices', feature: 'payments', action: 'record',
+        label: 'Record Payment Entry', description: 'Log incoming customer bank transfer, cheque, or cash transactions'
+    },
+    'invoices.payments.verify': {
+        module: 'invoices', feature: 'payments', action: 'verify',
+        label: 'Verify Customer Payment', description: 'Confirm bank realization and approve customer payment transactions'
+    },
+    'invoices.payments.exception': {
+        module: 'invoices', feature: 'payments', action: 'exception',
+        label: 'Approve Payment Exception', description: 'Grant special waiver or threshold exception for project activation'
+    },
+    'projects.activation.create': {
+        module: 'projects', feature: 'activation', action: 'create',
+        label: 'Activate Project', description: 'Activate solar installation project after payment policy clearance'
+    },
+
+    // Phase 3: Material Allocation, Serial Numbers & Installation
+    'inventory.allocation.manage': {
+        module: 'inventory', feature: 'allocation', action: 'manage',
+        label: 'Allocate Project Material', description: 'Reserve and allocate warehouse equipment for approved projects'
+    },
+    'inventory.serials.manage': {
+        module: 'inventory', feature: 'serials', action: 'manage',
+        label: 'Manage Serial Numbers', description: 'Track unique inverter and panel serial numbers from inward to install'
+    },
+    'projects.installation.manage': {
+        module: 'projects', feature: 'installation', action: 'manage',
+        label: 'Manage Installation Progress', description: 'Submit technician installation milestones and testing evidence'
+    },
+    'projects.handover.approve': {
+        module: 'projects', feature: 'handover', action: 'approve',
+        label: 'Approve Project Handover', description: 'Approve final commissioning and customer handover'
+    },
+
+    // Phase 4: Basic Customer Complaint & Service Management
+    'complaints.records.view': {
+        module: 'complaints', feature: 'records', action: 'view',
+        label: 'View Complaints Register', description: 'Browse warranty claims, inverter faults, and service tickets'
+    },
+    'complaints.records.create': {
+        module: 'complaints', feature: 'records', action: 'create',
+        label: 'Register Complaint Ticket', description: 'Manually register customer complaint tickets in portal'
+    },
+    'complaints.records.edit': {
+        module: 'complaints', feature: 'records', action: 'edit',
+        label: 'Edit Complaint Details', description: 'Modify service address, category, and fault descriptions'
+    },
+    'complaints.assign': {
+        module: 'complaints', feature: 'assign', action: 'assign',
+        label: 'Assign Complaint', description: 'Assign complaints to service branches and handling teams'
+    },
+    'complaints.reassign': {
+        module: 'complaints', feature: 'reassign', action: 'reassign',
+        label: 'Reassign Complaint', description: 'Transfer or reassign service tickets to different engineers'
+    },
+    'complaints.branch_transfer': {
+        module: 'complaints', feature: 'branch_transfer', action: 'transfer',
+        label: 'Transfer Complaint Branch', description: 'Re-route complaint ticket to another regional branch with audit trail'
+    },
+    'complaints.technician_assign': {
+        module: 'complaints', feature: 'technician_assign', action: 'assign',
+        label: 'Assign Service Technician', description: 'Assign qualified service technician to on-site complaint'
+    },
+    'complaints.progress.update': {
+        module: 'complaints', feature: 'progress', action: 'update',
+        label: 'Update Complaint Progress', description: 'Record visit status, remarks, photos, and materials needed'
+    },
+    'complaints.resolve': {
+        module: 'complaints', feature: 'resolve', action: 'resolve',
+        label: 'Resolve Service Complaint', description: 'Mark complaint resolved with root cause and work done details'
+    },
+    'complaints.close': {
+        module: 'complaints', feature: 'close', action: 'close',
+        label: 'Approve Complaint Closure', description: 'Managerial Maker-Checker approval to formally close complaint'
+    },
+    'complaints.reopen': {
+        module: 'complaints', feature: 'reopen', action: 'reopen',
+        label: 'Reopen Closed Complaint', description: 'Reopen unresolved or recurring customer service tickets'
+    }
+};
+
+for (const [key, perm] of Object.entries(EXTENDED_PERMISSIONS)) {
+    if (!perm.name) perm.name = perm.label || key;
+    if (!perm.label) perm.label = perm.name || key;
+    Object.defineProperty(PERMISSIONS, key, {
+        value: perm,
+        enumerable: false,
+        writable: true,
+        configurable: true
+    });
+}
+
 for (const [key, field] of Object.entries(SENSITIVE_FIELDS)) {
     if (!field.name) {
         field.name = field.label || key;
@@ -876,7 +1048,10 @@ for (const [key, field] of Object.entries(SENSITIVE_FIELDS)) {
     }
 }
 
-const allPermissionKeysSet = new Set(Object.keys(PERMISSIONS));
+const allPermissionKeysSet = new Set([
+    ...Object.keys(PERMISSIONS),
+    ...Object.keys(EXTENDED_PERMISSIONS)
+]);
 const allFieldKeysSet = new Set(Object.keys(SENSITIVE_FIELDS));
 
 function isValidPermission(key) {
@@ -907,7 +1082,11 @@ function filterValidFieldPermissions(keys) {
 
 function getPermissionsByModule(moduleId) {
     const res = [];
-    for (const [key, perm] of Object.entries(PERMISSIONS)) {
+    const allEntries = [
+        ...Object.entries(PERMISSIONS),
+        ...Object.entries(EXTENDED_PERMISSIONS)
+    ];
+    for (const [key, perm] of allEntries) {
         if (perm.module === moduleId) {
             const label = perm.label || perm.name || key;
             res.push({
@@ -936,11 +1115,90 @@ function getFullPermissionTree() {
     return tree;
 }
 
+const DESIGNATION_PRESETS = {
+    TELECALLER: [
+        'crm.module.access',
+        'crm.leads.view',
+        'crm.leads.call_update',
+        'crm.leads.followup_update',
+        'crm.search.view'
+    ],
+    SALES_EXECUTIVE: [
+        'crm.module.access',
+        'crm.leads.view',
+        'crm.leads.create',
+        'crm.leads.call_update',
+        'crm.leads.followup_update',
+        'crm.search.view',
+        'quotations.requests.create',
+        'quotations.records.view'
+    ],
+    FIELD_ENGINEER: [
+        'projects.module.access',
+        'projects.tasks.view',
+        'projects.tasks.edit',
+        'projects.site_visit.create',
+        'projects.inspections.view',
+        'projects.inspections.create',
+        'projects.inspections.photos',
+        'projects.documents.view',
+        'projects.documents.create',
+        'crm.leads.view',
+        'crm.surveys.view',
+        'crm.surveys.edit',
+        'quotations.preparation.view',
+        'quotations.preparation.create',
+        'quotations.records.view',
+        'quotations.requests.create'
+    ],
+    INSTALLATION_TECHNICIAN: [
+        'projects.module.access',
+        'projects.tasks.view',
+        'projects.tasks.edit',
+        'projects.installation.manage',
+        'inventory.serials.manage',
+        'projects.documents.view',
+        'projects.documents.create'
+    ],
+    SERVICE_TECHNICIAN: [
+        'complaints.module.access',
+        'complaints.tickets.view',
+        'complaints.records.view',
+        'complaints.progress.update',
+        'complaints.resolve',
+        'projects.module.access',
+        'projects.records.view',
+        'inventory.serials.manage'
+    ],
+    STORE_KEEPER: [
+        'inventory.module.access',
+        'inventory.stock.view',
+        'inventory.stock.manage',
+        'inventory.purchases.view',
+        'inventory.purchases.create',
+        'inventory.serials.manage',
+        'inventory.allocation.manage',
+        'inventory.sales_out.view',
+        'inventory.sales_out.create',
+        'inventory.history.view'
+    ],
+    ACCOUNTANT: [
+        'invoices.module.access',
+        'invoices.records.view',
+        'invoices.records.create',
+        'invoices.records.export',
+        'reports.module.access',
+        'reports.analytics.view',
+        'reports.analytics.export'
+    ]
+};
+
 module.exports = {
     MODULES,
     PERMISSIONS,
     SENSITIVE_FIELDS,
     ROLE_MIGRATION_BASELINES,
+    DESIGNATION_PRESETS,
     isValidPermission,
     isValidFieldPermission,
     getAllPermissionKeys,

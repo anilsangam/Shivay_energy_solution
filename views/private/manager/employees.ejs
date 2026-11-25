@@ -1,76 +1,705 @@
 <%- include('../admin/partials/admin-head') %>
 
+<!-- Feedback Alert Banner -->
+<div id="managerEmpToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="managerEmpToastMsg">Staff updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('managerEmpToast').classList.add('d-none')"></button>
+</div>
+
 <!-- Header Controls -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+<div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
-            Assigned Branch Personnel
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: clamp(19px, 3.5vw, 24px);">
+            Branch Personnel &amp; Staff Governance
         </h2>
         <p class="text-muted small mb-0">
-            Employees supervised by <strong><%= currentUser ? currentUser.name : 'Branch Manager' %></strong>
+            Employees supervised by <strong><%= currentUser ? currentUser.name : 'Branch Manager' %></strong> &bull; Official ID &amp; Visiting Cards Generation Enabled
         </p>
     </div>
-    <div class="d-flex gap-2 mt-3 mt-md-0">
-        <a href="/manager/attendance" class="btn btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-warning font-weight-bold text-dark flex-grow-1 flex-sm-grow-0" data-bs-toggle="modal" data-bs-target="#createEmpModal" style="border-radius: 8px;">
+            <i class="icofont-plus-circle me-1"></i> Add Branch Employee
+        </button>
+        <a href="/manager/attendance" class="btn btn-outline-primary flex-grow-1 flex-sm-grow-0 text-center" style="border-radius: 8px;">
             <i class="icofont-location-pin me-1"></i> Attendance Logs
         </a>
     </div>
 </div>
 
+<%
+    function formatEmpDate(d) {
+        if (!d) return 'N/A';
+        const dt = new Date(d);
+        if (isNaN(dt.getTime())) return 'N/A';
+        return dt.toLocaleDateString('en-GB');
+    }
+%>
+<% function renderManagerStaffActions(e) { %>
+    <div class="d-inline-flex align-items-center justify-content-end gap-1">
+        <!-- Visible Action 1: Edit Profile & Photo -->
+        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Employee Profile & Photo" onclick="openEditModalById('<%= e._id %>')">
+            <i class="icofont-edit"></i>
+        </button>
+
+        <!-- Visible Action 2: Manage Permissions -->
+        <a href="/manager/employees/<%= e._id %>/permissions" class="btn btn-sm btn-outline-warning py-1 px-2" title="Manage Staff Permissions">
+            <i class="icofont-key"></i>
+        </a>
+
+        <!-- 3-Dot Menu Containing ALL Actions (Left-Aligned on Open) -->
+        <div class="dropdown d-inline-block">
+            <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="All Actions">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;">
+                    <circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="8" cy="13" r="1.5"/>
+                </svg>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-1" style="min-width: 210px; max-height: 75vh; overflow-y: auto; font-size: 13px; z-index: 1055;">
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/manager/employees/<%= e._id %>/id-card" target="_blank">
+                        <i class="icofont-id-card text-primary"></i> View / Print ID Card
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/manager/employees/<%= e._id %>/visiting-card" target="_blank">
+                        <i class="icofont-credit-card text-info"></i> View / Print Visiting Card
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                    <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2" onclick="openEditModalById('<%= e._id %>')">
+                        <i class="icofont-edit text-secondary"></i> Edit Profile &amp; Photo
+                    </button>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/manager/employees/<%= e._id %>/permissions">
+                        <i class="icofont-key text-warning"></i> Manage Permissions
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+<% } %>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <div>
             <h5 class="admin-card-title">Staff Members (<%= employees ? employees.length : 0 %>)</h5>
-            <div class="admin-card-subtitle">Technicians and site survey specialists assigned to this branch</div>
+            <div class="admin-card-subtitle">Field engineers, technicians and survey personnel assigned to this branch</div>
         </div>
-        <span class="badge bg-light text-dark border">Raisen Operations</span>
+        <span class="badge bg-light text-dark border">
+            <%= (currentUser && currentUser.branchId && currentUser.branchId.name) ? currentUser.branchId.name : 'Branch Operations' %>
+        </span>
     </div>
 
-    <div class="admin-table-container">
+    <!-- Desktop / Large Screen Table -->
+    <div class="admin-table-container d-none d-lg-block">
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>Staff Name</th>
-                    <th>Employee ID</th>
-                    <th>Email</th>
-                    <th>Mobile</th>
-                    <th>Designation</th>
+                    <th>Emp ID</th>
+                    <th class="admin-table-col-contact">Contact</th>
+                    <th>Blood / Alt</th>
+                    <th>Joining / Valid</th>
+                    <th class="admin-table-col-mgr">Designation</th>
                     <th>Status</th>
+                    <th>Permissions</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (employees && employees.length > 0) { %>
-                    <% employees.forEach(e => { %>
-                        <tr>
+                    <% employees.forEach(e => {
+                        const pCount = e.permissions ? e.permissions.length : 0;
+                        const joinStr = formatEmpDate(e.joiningDate || e.createdAt);
+                        const expStr = formatEmpDate(e.expiryDate);
+                    %>
+                        <tr id="emp-row-<%= e._id %>">
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="admin-avatar-circle" style="width: 32px; height: 32px; font-size: 11px;">
-                                        <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
-                                    </div>
+                                    <% if (e.avatar && e.avatar !== '/images/misc/cst-1.webp') { %>
+                                        <img src="<%= e.avatar %>" alt="<%= e.name %>" class="rounded-circle border flex-shrink-0" style="width: 34px; height: 34px; object-fit: cover;">
+                                    <% } else { %>
+                                        <div class="admin-avatar-circle flex-shrink-0" style="width: 34px; height: 34px; font-size: 11px;">
+                                            <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                        </div>
+                                    <% } %>
                                     <div>
-                                        <strong class="text-dark"><%= e.name %></strong>
+                                        <strong class="text-dark" style="font-size: 12.5px;"><%= e.name %></strong>
+                                        <div class="text-muted" style="font-size: 11px;"><%= e.department || 'Field Operations' %></div>
                                     </div>
                                 </div>
                             </td>
-                            <td><code><%= e.employeeId || 'N/A' %></code></td>
-                            <td><%= e.email %></td>
-                            <td><strong><%= e.mobile %></strong></td>
-                            <td><%= e.designation || 'Technical Personnel' %></td>
+                            <td style="font-size: 11px;"><code><%= e.employeeId || 'N/A' %></code></td>
+                            <td class="admin-table-col-contact">
+                                <div class="contact-email" style="font-size: 11.5px;" title="<%= e.email %>"><i class="icofont-envelope text-muted me-1"></i><%= e.email %></div>
+                                <div style="font-size: 11.5px; white-space: nowrap;"><strong><i class="icofont-phone text-muted me-1"></i><%= e.mobile %></strong></div>
+                            </td>
                             <td>
-                                <span class="badge-status <%= e.status === 'ACTIVE' ? 'badge-status-active' : 'badge-status-inactive' %>">
-                                    <%= e.status %>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-weight-bold" style="font-size: 10.5px;">
+                                    <i class="icofont-blood-drop"></i> <%= e.bloodGroup || 'B+' %>
                                 </span>
+                                <div class="text-muted mt-1" style="font-size: 10.5px; white-space: nowrap;">
+                                    <i class="icofont-ui-call text-muted me-1"></i><%= e.alternateMobile || 'None' %>
+                                </div>
+                            </td>
+                            <td style="white-space: nowrap;">
+                                <div style="font-size: 11px;"><i class="icofont-calendar text-muted me-1"></i><%= joinStr %></div>
+                                <div style="font-size: 11px; color: #b91c1c;"><i class="icofont-clock-time text-muted me-1"></i><%= expStr %></div>
+                            </td>
+                            <td class="admin-table-col-mgr">
+                                <span class="font-weight-bold text-dark" style="font-size: 11.5px;"><%= e.designation || 'Solar Technician' %></span>
+                            </td>
+                            <td>
+                                <% if (e.status === 'PENDING') { %>
+                                    <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 10px;">PENDING</span>
+                                    <div class="text-muted" style="font-size: 9.5px;">Super Approval</div>
+                                <% } else if (e.status === 'REJECTED') { %>
+                                    <span class="badge bg-danger font-weight-bold" style="font-size: 10px;">REJECTED</span>
+                                <% } else { %>
+                                    <span class="badge-status <%= e.status === 'ACTIVE' ? 'badge-status-active' : 'badge-status-inactive' %>">
+                                        <%= e.status %>
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <a href="/manager/employees/<%= e._id %>/permissions" class="badge <%= pCount > 0 ? 'bg-primary' : 'bg-secondary' %> text-decoration-none" title="Configure granular permissions">
+                                    <i class="icofont-key me-1"></i> <%= pCount %> / 117
+                                </a>
+                            </td>
+                            <td class="text-end" style="white-space: nowrap;">
+                                <% renderManagerStaffActions(e); %>
                             </td>
                         </tr>
                     <% }); %>
                 <% } else { %>
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">No employees registered under this branch yet.</td>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="icofont-users text-muted d-block mb-2" style="font-size: 32px;"></i>
+                            No employees registered under this branch yet. Click <strong>"Add Branch Employee"</strong> above to register your team members.
+                        </td>
                     </tr>
                 <% } %>
             </tbody>
         </table>
     </div>
+
+    <!-- Mobile & Tablet Responsive Compact Card List (< 992px) -->
+    <div class="admin-mobile-staff-list d-lg-none">
+        <% if (employees && employees.length > 0) { %>
+            <% employees.forEach(e => {
+                const pCount = e.permissions ? e.permissions.length : 0;
+                const joinStr = formatEmpDate(e.joiningDate || e.createdAt);
+                const expStr = formatEmpDate(e.expiryDate);
+            %>
+                <div class="admin-mobile-staff-card" data-mobile-emp-row="<%= e._id %>">
+                    <!-- Compact Header Row -->
+                    <div class="d-flex align-items-center justify-content-between gap-2 pb-1 mb-1 border-bottom">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <% if (e.avatar && e.avatar !== '/images/misc/cst-1.webp') { %>
+                                <img src="<%= e.avatar %>" alt="<%= e.name %>" class="rounded-circle border flex-shrink-0" style="width: 34px; height: 34px; object-fit: cover;">
+                            <% } else { %>
+                                <div class="admin-avatar-circle flex-shrink-0" style="width: 34px; height: 34px; font-size: 11px;">
+                                    <%= (e.name || 'E').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                </div>
+                            <% } %>
+                            <div class="min-w-0">
+                                <div class="font-weight-bold text-dark text-truncate" style="font-size: 13.5px; line-height: 1.2;"><%= e.name %></div>
+                                <div class="text-muted text-truncate" style="font-size: 11px;">
+                                    <%= e.designation || 'Solar Technician' %><% if (e.department) { %> &bull; <%= e.department %><% } %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 text-end">
+                            <% if (e.status === 'PENDING') { %>
+                                <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 10px;">PENDING</span>
+                            <% } else if (e.status === 'REJECTED') { %>
+                                <span class="badge bg-danger font-weight-bold" style="font-size: 10px;">REJECTED</span>
+                            <% } else { %>
+                                <span class="badge-status <%= e.status === 'ACTIVE' ? 'badge-status-active' : 'badge-status-inactive' %>" style="font-size: 10px; padding: 2px 7px;">
+                                    <%= e.status %>
+                                </span>
+                            <% } %>
+                            <div class="mt-1"><code style="font-size: 10px;"><%= e.employeeId || 'N/A' %></code></div>
+                        </div>
+                    </div>
+
+                    <!-- Compact 2-Column Data Grid -->
+                    <div class="admin-mobile-meta-grid my-1">
+                        <div class="admin-mobile-meta-item">
+                            <i class="icofont-phone text-muted me-1"></i><strong><%= e.mobile %></strong>
+                        </div>
+                        <div class="admin-mobile-meta-item">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1" style="font-size: 10px; padding: 1px 5px;">
+                                <i class="icofont-blood-drop"></i> <%= e.bloodGroup || 'B+' %>
+                            </span>
+                            <span class="text-muted" style="font-size: 11px;">Alt: <%= e.alternateMobile || 'None' %></span>
+                        </div>
+                        <div class="admin-mobile-meta-item" style="grid-column: span 2;">
+                            <i class="icofont-envelope text-muted me-1"></i><span class="text-dark"><%= e.email %></span>
+                        </div>
+                        <div class="admin-mobile-meta-item text-muted">
+                            <i class="icofont-calendar me-1"></i>Joined: <%= joinStr %>
+                        </div>
+                        <div class="admin-mobile-meta-item" style="color: #b91c1c;">
+                            <i class="icofont-clock-time me-1"></i>Valid: <%= expStr %>
+                        </div>
+                    </div>
+
+                    <!-- Compact Footer: Permissions + 3-Button Actions -->
+                    <div class="d-flex align-items-center justify-content-between gap-2 pt-1 mt-1 border-top">
+                        <a href="/manager/employees/<%= e._id %>/permissions" class="badge <%= pCount > 0 ? 'bg-primary' : 'bg-secondary' %> text-decoration-none" style="font-size: 10.5px;">
+                            <i class="icofont-key me-1"></i><%= pCount %> / 117
+                        </a>
+                        <% renderManagerStaffActions(e); %>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="text-center py-4 text-muted">
+                <i class="icofont-users text-muted d-block mb-2" style="font-size: 32px;"></i>
+                No employees registered under this branch yet.
+            </div>
+        <% } %>
+    </div>
 </div>
+
+<!-- Modal 1: Add New Branch Employee (By Manager) -->
+<div class="modal fade" id="createEmpModal" tabindex="-1" aria-labelledby="createEmpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary);">
+                <h5 class="modal-title font-weight-bold" id="createEmpModalLabel">
+                    <i class="icofont-plus-circle me-1 text-warning"></i> Add New Branch Staff Member
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="handleManagerCreateEmp(event)">
+                <div class="modal-body p-3 p-sm-4">
+                    <div id="createEmpErr" class="alert alert-danger d-none small"></div>
+
+                    <div class="alert alert-warning py-2 px-3 small mb-3">
+                        <i class="icofont-shield-alt me-1"></i> Employee will be registered under <strong><%= (currentUser && currentUser.branchId && currentUser.branchId.name) ? currentUser.branchId.name : 'Your Assigned Branch' %></strong> with <strong>PENDING</strong> status. <strong>Super Admin approval is required</strong> before the employee can log in.
+                    </div>
+
+                    <!-- Profile Picture Upload (for ID Card) -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border d-flex flex-wrap align-items-center gap-3">
+                        <img id="addAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ccircle cx='32' cy='24' r='12' fill='%2394a3b8'/%3E%3Cpath d='M12 56c0-11 9-18 20-18s20 7 20 18' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Profile Preview" class="rounded-circle border border-2 border-warning" style="width: 62px; height: 62px; object-fit: cover; flex-shrink: 0;">
+                        <div class="flex-grow-1 min-w-0">
+                            <label class="form-label small font-weight-bold mb-1">Profile Picture (ID Card Photo)</label>
+                            <input type="file" id="addAvatarFile" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp" onchange="previewStaffAvatar(this, 'addAvatarPreview')">
+                            <div class="form-text" style="font-size: 11px;">JPG, PNG or WEBP (Max 5 MB). Shown on employee's official ID Card.</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Full Name *</label>
+                            <input type="text" id="addName" class="form-control" required placeholder="e.g. Vikram Solanki">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Official Email *</label>
+                            <input type="email" id="addEmail" class="form-control" required placeholder="e.g. vikram@shivayenergy.com">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Mobile Phone *</label>
+                            <input type="tel" id="addMobile" class="form-control" required placeholder="+91 99933 11204">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Initial Password * (Min 8 chars)</label>
+                            <input type="password" id="addPassword" class="form-control" required minlength="8" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Designation</label>
+                            <input type="text" id="addDesig" class="form-control" placeholder="e.g. Electrical & Net-Meter Testing Engineer">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Department</label>
+                            <input type="text" id="addDept" class="form-control" placeholder="e.g. EPC Grid Integration">
+                        </div>
+                    </div>
+
+                    <!-- ID Card Specific Fields -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border">
+                        <h6 class="font-weight-bold text-dark mb-2" style="font-size: 13px;">
+                            <i class="icofont-id-card text-warning me-1"></i> Identity Card Details
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label class="form-label small font-weight-bold">Blood Group *</label>
+                                <select id="addBlood" class="form-select">
+                                    <option value="B+" selected>B+ (Positive)</option>
+                                    <option value="O+">O+ (Positive)</option>
+                                    <option value="A+">A+ (Positive)</option>
+                                    <option value="AB+">AB+ (Positive)</option>
+                                    <option value="B-">B- (Negative)</option>
+                                    <option value="O-">O- (Negative)</option>
+                                    <option value="A-">A- (Negative)</option>
+                                    <option value="AB-">AB- (Negative)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+                                <label class="form-label small font-weight-bold">Alternate / Emergency Contact</label>
+                                <input type="tel" id="addAltMobile" class="form-control" placeholder="+91 98260 00000">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small font-weight-bold">Employee ID (Optional)</label>
+                                <input type="text" id="addEmpId" class="form-control" placeholder="Auto-generated if blank">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Joining Date</label>
+                                <input type="date" id="addJoinDate" class="form-control">
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Card Expiry Date</label>
+                                <input type="date" id="addExpDate" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3" style="background: var(--admin-navy-primary);">
+                        Create Staff & Generate ID Card
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Branch Employee (By Manager) -->
+<div class="modal fade" id="editEmpModal" tabindex="-1" aria-labelledby="editEmpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header text-white" style="background: var(--admin-navy-primary);">
+                <h5 class="modal-title font-weight-bold" id="editEmpModalLabel">
+                    <i class="icofont-edit me-1 text-warning"></i> Modify Staff Member Profile
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form onsubmit="handleManagerUpdateEmp(event)">
+                <input type="hidden" id="editEmpId">
+                <div class="modal-body p-3 p-sm-4">
+                    <div id="editEmpErr" class="alert alert-danger d-none small"></div>
+                    <div id="editPendingNote" class="alert alert-warning py-2 px-3 small d-none">
+                        <i class="icofont-clock-time me-1"></i> This account is currently awaiting <strong>Super Admin approval</strong> before login. Managers cannot self-activate pending accounts.
+                    </div>
+
+                    <!-- Profile Picture Upload in Edit -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border d-flex flex-wrap align-items-center gap-3">
+                        <img id="editAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ccircle cx='32' cy='24' r='12' fill='%2394a3b8'/%3E%3Cpath d='M12 56c0-11 9-18 20-18s20 7 20 18' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Current Photo" class="rounded-circle border border-2 border-warning" style="width: 62px; height: 62px; object-fit: cover; flex-shrink: 0;">
+                        <div class="flex-grow-1 min-w-0">
+                            <label class="form-label small font-weight-bold mb-1">Change Profile Picture (ID Card Photo)</label>
+                            <input type="file" id="editAvatarFile" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp" onchange="previewStaffAvatar(this, 'editAvatarPreview')">
+                            <div class="form-text" style="font-size: 11px;">Leave blank to keep existing photo. JPG, PNG or WEBP (Max 5 MB).</div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Full Name *</label>
+                            <input type="text" id="editName" class="form-control" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Official Email *</label>
+                            <input type="email" id="editEmail" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Mobile Phone *</label>
+                            <input type="tel" id="editMobile" class="form-control" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Account Status</label>
+                            <select id="editStatus" class="form-select">
+                                <option value="ACTIVE">ACTIVE</option>
+                                <option value="INACTIVE">INACTIVE</option>
+                                <option value="SUSPENDED">SUSPENDED</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Designation</label>
+                            <input type="text" id="editDesig" class="form-control">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small font-weight-bold">Department</label>
+                            <input type="text" id="editDept" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- ID Card Details in Edit -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border">
+                        <h6 class="font-weight-bold text-dark mb-2" style="font-size: 13px;">
+                            <i class="icofont-id-card text-warning me-1"></i> Identity Card Details
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Blood Group</label>
+                                <select id="editBlood" class="form-select">
+                                    <option value="B+">B+ (Positive)</option>
+                                    <option value="O+">O+ (Positive)</option>
+                                    <option value="A+">A+ (Positive)</option>
+                                    <option value="AB+">AB+ (Positive)</option>
+                                    <option value="B-">B- (Negative)</option>
+                                    <option value="O-">O- (Negative)</option>
+                                    <option value="A-">A- (Negative)</option>
+                                    <option value="AB-">AB- (Negative)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Alternate / Emergency Contact</label>
+                                <input type="tel" id="editAltMobile" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Joining Date</label>
+                                <input type="date" id="editJoinDate" class="form-control">
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Card Expiry Date</label>
+                                <input type="date" id="editExpDate" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small font-weight-bold">Reset Password (Leave blank to keep unchanged)</label>
+                        <input type="password" id="editPass" class="form-control" placeholder="Min 8 characters if changing" minlength="8">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm font-weight-bold px-3" style="background: var(--admin-navy-primary);">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const DEFAULT_AVATAR_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ccircle cx='32' cy='24' r='12' fill='%2394a3b8'/%3E%3Cpath d='M12 56c0-11 9-18 20-18s20 7 20 18' fill='%2394a3b8'/%3E%3C/svg%3E";
+    const MANAGER_STAFF_MAP = <%- JSON.stringify((employees || []).reduce((acc, e) => {
+        acc[String(e._id)] = {
+            id: String(e._id),
+            name: e.name || '',
+            email: e.email || '',
+            mobile: e.mobile || '',
+            designation: e.designation || '',
+            department: e.department || '',
+            bloodGroup: e.bloodGroup || 'B+',
+            alternateMobile: e.alternateMobile || '',
+            joiningDate: e.joiningDate ? new Date(e.joiningDate).toISOString().split('T')[0] : '',
+            expiryDate: e.expiryDate ? new Date(e.expiryDate).toISOString().split('T')[0] : '',
+            status: e.status || 'PENDING',
+            avatar: (e.avatar && e.avatar !== '/images/misc/cst-1.webp') ? e.avatar : ''
+        };
+        return acc;
+    }, {})) %>;
+
+    function getCsrf() {
+        return '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+    }
+
+    function readAvatarInput(fileInputId) {
+        return new Promise((resolve, reject) => {
+            const input = document.getElementById(fileInputId);
+            if (!input || !input.files || input.files.length === 0) return resolve(null);
+            const file = input.files[0];
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                return reject(new Error('Profile picture must be a JPG, PNG, or WEBP image.'));
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                return reject(new Error('Profile picture must be smaller than 5 MB.'));
+            }
+            const reader = new FileReader();
+            reader.onload = () => resolve({
+                avatarData: reader.result,
+                avatarFilename: file.name,
+                avatarMimeType: file.type
+            });
+            reader.onerror = () => reject(new Error('Failed to read selected profile image.'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function previewStaffAvatar(input, previewId) {
+        const img = document.getElementById(previewId);
+        if (!img || !input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => { img.src = ev.target.result; };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    // Default dates setup on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date().toISOString().split('T')[0];
+        const threeYears = new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        if (document.getElementById('addJoinDate')) document.getElementById('addJoinDate').value = today;
+        if (document.getElementById('addExpDate')) document.getElementById('addExpDate').value = threeYears;
+    });
+
+    async function handleManagerCreateEmp(e) {
+        e.preventDefault();
+        const errAlert = document.getElementById('createEmpErr');
+        errAlert.classList.add('d-none');
+
+        let avatarPayload = {};
+        try {
+            const imgObj = await readAvatarInput('addAvatarFile');
+            if (imgObj) avatarPayload = imgObj;
+        } catch (imgErr) {
+            errAlert.textContent = imgErr.message;
+            errAlert.classList.remove('d-none');
+            return;
+        }
+
+        const payload = Object.assign({
+            name: document.getElementById('addName').value.trim(),
+            email: document.getElementById('addEmail').value.trim(),
+            mobile: document.getElementById('addMobile').value.trim(),
+            password: document.getElementById('addPassword').value,
+            designation: document.getElementById('addDesig').value.trim(),
+            department: document.getElementById('addDept').value.trim(),
+            bloodGroup: document.getElementById('addBlood').value,
+            alternateMobile: document.getElementById('addAltMobile').value.trim(),
+            employeeId: document.getElementById('addEmpId').value.trim(),
+            joiningDate: document.getElementById('addJoinDate').value,
+            expiryDate: document.getElementById('addExpDate').value,
+            _csrf: getCsrf()
+        }, avatarPayload);
+
+        try {
+            const res = await fetch('/api/manager/employees/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createEmpModal'));
+                if (modal) modal.hide();
+                window.location.reload();
+            } else {
+                errAlert.textContent = data.message || 'Error creating staff member.';
+                errAlert.classList.remove('d-none');
+            }
+        } catch (err) {
+            errAlert.textContent = 'Network or server error occurred.';
+            errAlert.classList.remove('d-none');
+        }
+    }
+
+    function openEditModalById(id) {
+        const emp = MANAGER_STAFF_MAP[id];
+        if (!emp) return;
+        document.getElementById('editEmpId').value = emp.id;
+        document.getElementById('editName').value = emp.name;
+        document.getElementById('editEmail').value = emp.email;
+        document.getElementById('editMobile').value = emp.mobile;
+        document.getElementById('editDesig').value = emp.designation;
+        document.getElementById('editDept').value = emp.department;
+        document.getElementById('editBlood').value = emp.bloodGroup || 'B+';
+        document.getElementById('editAltMobile').value = emp.alternateMobile || '';
+        document.getElementById('editJoinDate').value = emp.joiningDate || '';
+        document.getElementById('editExpDate').value = emp.expiryDate || '';
+        document.getElementById('editPass').value = '';
+        document.getElementById('editAvatarFile').value = '';
+        document.getElementById('editAvatarPreview').src = emp.avatar || DEFAULT_AVATAR_PLACEHOLDER;
+
+        const statusSelect = document.getElementById('editStatus');
+        const pendingNote = document.getElementById('editPendingNote');
+        if (emp.status === 'PENDING' || emp.status === 'REJECTED') {
+            pendingNote.classList.remove('d-none');
+            if (![...statusSelect.options].some(o => o.value === emp.status)) {
+                const opt = new Option(emp.status, emp.status);
+                statusSelect.add(opt);
+            }
+            statusSelect.value = emp.status;
+            statusSelect.disabled = true;
+        } else {
+            pendingNote.classList.add('d-none');
+            statusSelect.disabled = false;
+            statusSelect.value = emp.status || 'ACTIVE';
+        }
+
+        document.getElementById('editEmpErr').classList.add('d-none');
+        const modal = new bootstrap.Modal(document.getElementById('editEmpModal'));
+        modal.show();
+    }
+
+    async function handleManagerUpdateEmp(e) {
+        e.preventDefault();
+        const errAlert = document.getElementById('editEmpErr');
+        errAlert.classList.add('d-none');
+        const empId = document.getElementById('editEmpId').value;
+
+        let avatarPayload = {};
+        try {
+            const imgObj = await readAvatarInput('editAvatarFile');
+            if (imgObj) avatarPayload = imgObj;
+        } catch (imgErr) {
+            errAlert.textContent = imgErr.message;
+            errAlert.classList.remove('d-none');
+            return;
+        }
+
+        const statusSelect = document.getElementById('editStatus');
+        const payload = Object.assign({
+            name: document.getElementById('editName').value.trim(),
+            email: document.getElementById('editEmail').value.trim(),
+            mobile: document.getElementById('editMobile').value.trim(),
+            designation: document.getElementById('editDesig').value.trim(),
+            department: document.getElementById('editDept').value.trim(),
+            bloodGroup: document.getElementById('editBlood').value,
+            alternateMobile: document.getElementById('editAltMobile').value.trim(),
+            joiningDate: document.getElementById('editJoinDate').value,
+            expiryDate: document.getElementById('editExpDate').value,
+            status: statusSelect.disabled ? undefined : statusSelect.value,
+            password: document.getElementById('editPass').value,
+            _csrf: getCsrf()
+        }, avatarPayload);
+
+        try {
+            const res = await fetch(`/api/manager/employees/${empId}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editEmpModal'));
+                if (modal) modal.hide();
+                window.location.reload();
+            } else {
+                errAlert.textContent = data.message || 'Error updating staff member.';
+                errAlert.classList.remove('d-none');
+            }
+        } catch (err) {
+            errAlert.textContent = 'Network or server error occurred.';
+            errAlert.classList.remove('d-none');
+        }
+    }
+</script>
 
 <%- include('../admin/partials/admin-footer') %>

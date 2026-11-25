@@ -131,6 +131,123 @@
     </div>
 </div>
 
+<% if (canEdit) { %>
+<!-- ⚡ QUICK ONE-CLICK JOB ROLE PRESETS -->
+<div class="admin-card mb-4 border-primary shadow-sm">
+    <div class="admin-card-header bg-primary text-white d-flex flex-wrap align-items-center justify-content-between gap-2 py-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="icofont-magic fs-20 text-warning"></i>
+            <div>
+                <h5 class="admin-card-title mb-0 text-white font-weight-bold">⚡ Quick One-Click Job Role Presets (फास्ट रोल असाइनमेंट)</h5>
+                <div class="text-white-50 small">Click any card to automatically configure recommended permissions, sensitive field access, and data scope.</div>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="grantAllViewPermissions()" title="Grant all View permissions across every module">
+                <i class="icofont-eye me-1"></i> Read-Only View (All)
+            </button>
+            <button type="button" class="btn btn-sm btn-danger font-weight-bold" onclick="confirmRevokeAll()">
+                <i class="icofont-trash me-1"></i> Revoke All
+            </button>
+        </div>
+    </div>
+    <div class="p-3 bg-light">
+        <div class="row g-2">
+            <!-- Telecaller -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('TELECALLER')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-info-subtle text-info border border-info-subtle p-1"><i class="icofont-phone fs-6"></i></span>
+                        <strong class="text-dark small">Telecaller</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">CRM Calling, Follow-ups &amp; Call Logs</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">5 perms • Assigned Scope</span>
+                </button>
+            </div>
+            <!-- Sales Executive -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('SALES_EXECUTIVE')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-1"><i class="icofont-briefcase fs-6"></i></span>
+                        <strong class="text-dark small">Sales Executive</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Leads, Site Surveys, Quote Requests</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">8 perms • Assigned Scope</span>
+                </button>
+            </div>
+            <!-- Field Engineer -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('FIELD_ENGINEER')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle p-1"><i class="icofont-ruler-pencil fs-6"></i></span>
+                        <strong class="text-dark small">Field Engineer</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Roof Survey, GPS Photos, Feasibility</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">16 perms • Assigned Scope</span>
+                </button>
+            </div>
+            <!-- Installation Tech -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('INSTALLATION_TECHNICIAN')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-1"><i class="icofont-tools fs-6"></i></span>
+                        <strong class="text-dark small">Installation Tech</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Site Execution, Serials &amp; Testing</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">7 perms • Assigned Scope</span>
+                </button>
+            </div>
+            <!-- Service Tech -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('SERVICE_TECHNICIAN')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle p-1"><i class="icofont-wrench fs-6"></i></span>
+                        <strong class="text-dark small">Service Tech</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Complaints, Site Repair &amp; Resolution</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">8 perms • Assigned Scope</span>
+                </button>
+            </div>
+            <!-- Store Keeper -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('STORE_KEEPER')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle p-1"><i class="icofont-box fs-6"></i></span>
+                        <strong class="text-dark small">Store Keeper</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Stock Inward, Allocations &amp; Serials</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">10 perms • Branch Scope</span>
+                </button>
+            </div>
+            <!-- Branch Manager -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('BRANCH_MANAGER')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle p-1"><i class="icofont-building fs-6"></i></span>
+                        <strong class="text-dark small">Branch Manager</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Branch Approvals, Staff &amp; Invoices</div>
+                    <span class="badge bg-light text-dark border mt-1" style="font-size: 10px;">52 perms • Branch Scope</span>
+                </button>
+            </div>
+            <!-- Super Admin -->
+            <% if (isCallerPrimaryAdmin) { %>
+            <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="btn btn-white w-100 p-2 text-start border border-warning shadow-sm h-100 role-preset-card" onclick="applyQuickPreset('SUPER_ADMIN')">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark p-1"><i class="icofont-crown fs-6"></i></span>
+                        <strong class="text-dark small">Full Super Admin</strong>
+                    </div>
+                    <div class="text-muted" style="font-size: 11px;">Full System Control &amp; All 6 Fields</div>
+                    <span class="badge bg-warning-subtle text-dark border border-warning mt-1" style="font-size: 10px;">117 perms • Global Scope</span>
+                </button>
+            </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+<% } %>
+
 <!-- Action & Search Toolbar -->
 <div class="admin-card mb-4">
     <div class="p-3">
@@ -165,7 +282,7 @@
                     <!-- Quick Presets Dropdown -->
                     <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="icofont-magic me-1"></i> Preset Templates
+                            <i class="icofont-magic me-1"></i> More Presets
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                             <li><h6 class="dropdown-header">Apply Canonical Baseline</h6></li>
@@ -175,6 +292,7 @@
                                 <li><a class="dropdown-item" href="javascript:void(0)" onclick="applyRoleTemplate('SUPER_ADMIN')"><i class="icofont-crown text-warning me-2"></i> Full Super Admin (117 perms)</a></li>
                             <% } %>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="grantAllViewPermissions()"><i class="icofont-eye text-primary me-2"></i> Grant All View / Read-Only</a></li>
                             <li><a class="dropdown-item text-danger" href="javascript:void(0)" onclick="confirmRevokeAll()"><i class="icofont-trash text-danger me-2"></i> Revoke All Permissions</a></li>
                         </ul>
                     </div>
@@ -228,6 +346,25 @@
                     <div class="form-text small text-muted">
                         Backend authorization enforces query filtering automatically based on this scope.
                     </div>
+
+                    <!-- Scope Explanation Helper Card -->
+                    <div class="mt-2 p-2 bg-white border rounded small" id="dataScopeExplanationBox">
+                        <div id="scopeExpl_BRANCH" class="scope-expl <%= (!targetUser.dataScope || targetUser.dataScope === 'BRANCH') ? '' : 'd-none' %>">
+                            <i class="icofont-check-circled text-success me-1"></i><strong>Branch Scope (Standard):</strong> User strictly sees records belonging to their assigned branch office (e.g. Bhopal or Raisen). Cross-branch records are hidden.
+                        </div>
+                        <div id="scopeExpl_ASSIGNED" class="scope-expl <%= targetUser.dataScope === 'ASSIGNED' ? '' : 'd-none' %>">
+                            <i class="icofont-user-alt-3 text-primary me-1"></i><strong>Assigned &amp; Reporting Scope:</strong> User strictly sees records assigned to them (or created by them or their direct subordinates). Ideal for telecallers, field engineers, and installation technicians.
+                        </div>
+                        <div id="scopeExpl_OWN" class="scope-expl <%= targetUser.dataScope === 'OWN' ? '' : 'd-none' %>">
+                            <i class="icofont-lock text-warning me-1"></i><strong>Own Records Only:</strong> Strictly records created by this user.
+                        </div>
+                        <div id="scopeExpl_MULTI_BRANCH" class="scope-expl <%= targetUser.dataScope === 'MULTI_BRANCH' ? '' : 'd-none' %>">
+                            <i class="icofont-building-alt text-info me-1"></i><strong>Multi-Branch Scope:</strong> Access across designated authorized branches selected on the right.
+                        </div>
+                        <div id="scopeExpl_GLOBAL" class="scope-expl <%= targetUser.dataScope === 'GLOBAL' ? '' : 'd-none' %>">
+                            <i class="icofont-globe text-danger me-1"></i><strong>Global Enterprise Scope:</strong> Unrestricted visibility across ALL branches company-wide (Director / Super Admin only).
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Multi-Branch Checkboxes (Visible only when MULTI_BRANCH is selected) -->
@@ -254,15 +391,32 @@
 
     <!-- SECTION 2: SENSITIVE FIELD-LEVEL PERMISSIONS -->
     <div class="admin-card mb-4 border-danger">
-        <div class="admin-card-header text-white" style="background: #991b1b;">
+        <div class="admin-card-header text-white d-flex flex-wrap align-items-center justify-content-between gap-2" style="background: #991b1b;">
             <div class="d-flex align-items-center gap-2">
                 <i class="icofont-shield-alt fs-20 text-warning"></i>
                 <div>
-                    <h5 class="admin-card-title mb-0 text-white">Elevated Sensitive Field Access</h5>
+                    <h5 class="admin-card-title mb-0 text-white font-weight-bold">Elevated Sensitive Field Access (गोपनीय रेट्स एवं PII सुरक्षा)</h5>
                     <div class="text-white-50 small">Independently assignable permissions for confidential procurement rates, margins, and PII</div>
                 </div>
             </div>
-            <span class="badge bg-warning text-dark font-weight-bold">Field-Level Access Control</span>
+            <% if (canEdit) { %>
+            <div class="d-flex flex-wrap gap-1">
+                <button type="button" class="btn btn-sm btn-outline-light py-1 px-2" style="font-size: 11px;" onclick="setFieldPreset('NONE')" title="Hide all confidential purchase rates, margins and unmasked PII">
+                    <i class="icofont-shield text-warning me-1"></i> Hide All (Field Safe)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light py-1 px-2" style="font-size: 11px;" onclick="setFieldPreset('SALES')" title="Grant Customer PII and Quotation Cost Breakdown for Sales">
+                    <i class="icofont-user text-info me-1"></i> Sales (PII + Cost Sheet)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light py-1 px-2" style="font-size: 11px;" onclick="setFieldPreset('FINANCE')" title="Grant Purchase Rates, WAC and Margins for Finance">
+                    <i class="icofont-money text-success me-1"></i> Finance (Procurement + WAC)
+                </button>
+                <% if (isCallerPrimaryAdmin) { %>
+                <button type="button" class="btn btn-sm btn-warning text-dark font-weight-bold py-1 px-2" style="font-size: 11px;" onclick="setFieldPreset('ALL')">
+                    <i class="icofont-check-circled me-1"></i> Grant All 6 Fields
+                </button>
+                <% } %>
+            </div>
+            <% } %>
         </div>
         <div class="p-4 bg-light">
             <div class="row g-3">
@@ -619,6 +773,12 @@ function handleDataScopeChange(val) {
         multiContainer.style.display = (val === 'MULTI_BRANCH') ? 'block' : 'none';
     }
     if (badge) badge.innerText = `Scope: ${val}`;
+
+    // Toggle scope explanation chips
+    document.querySelectorAll('.scope-expl').forEach(el => el.classList.add('d-none'));
+    const activeExpl = document.getElementById(`scopeExpl_${val}`);
+    if (activeExpl) activeExpl.classList.remove('d-none');
+
     markUnsaved();
 }
 
@@ -688,6 +848,133 @@ function clearAllInFeature(modId, featureKey) {
 }
 
 const ROLE_BASELINES = <%- JSON.stringify(roleBaselines || {}) %>;
+const DESIGNATION_PRESETS = <%- JSON.stringify(typeof designationPresets !== 'undefined' ? designationPresets : {}) %>;
+
+function applyQuickPreset(presetKey) {
+    if (!CAN_EDIT) return;
+
+    let targetPerms = [];
+    let targetScope = 'ASSIGNED';
+    let targetFields = [];
+    let roleLabel = presetKey;
+
+    if (presetKey === 'SUPER_ADMIN') {
+        applyRoleTemplate('SUPER_ADMIN');
+        return;
+    } else if (presetKey === 'BRANCH_MANAGER') {
+        const bmBaseline = ROLE_BASELINES['BRANCH_MANAGER'] || {};
+        targetPerms = bmBaseline.permissions || [];
+        targetScope = 'BRANCH';
+        targetFields = ['fields.quotation.cost_breakdown.view', 'fields.customer.pii.view'];
+        roleLabel = 'Branch Manager';
+    } else if (DESIGNATION_PRESETS[presetKey]) {
+        targetPerms = DESIGNATION_PRESETS[presetKey];
+        if (presetKey === 'STORE_KEEPER') {
+            targetScope = 'BRANCH';
+            targetFields = [];
+            roleLabel = 'Store Keeper';
+        } else {
+            targetScope = 'ASSIGNED';
+            targetFields = [];
+            roleLabel = presetKey.replace(/_/g, ' ');
+        }
+    } else {
+        return;
+    }
+
+    const permSet = new Set(targetPerms);
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        cb.checked = permSet.has(cb.value);
+        const card = cb.closest('.perm-card');
+        if (card) {
+            if (cb.checked) card.classList.add('border-primary');
+            else card.classList.remove('border-primary');
+        }
+    });
+
+    const fieldSet = new Set(targetFields);
+    document.querySelectorAll('.field-perm-checkbox').forEach(cb => {
+        cb.checked = fieldSet.has(cb.value);
+        const card = cb.closest('.card');
+        if (card) {
+            if (cb.checked) card.classList.add('border-primary');
+            else card.classList.remove('border-primary');
+        }
+    });
+
+    const scopeSelect = document.getElementById('dataScopeSelect');
+    if (scopeSelect) {
+        scopeSelect.value = targetScope;
+        handleDataScopeChange(targetScope);
+    }
+
+    markUnsaved();
+
+    const toast = document.getElementById('permToast');
+    const toastMsg = document.getElementById('permToastMsg');
+    if (toast && toastMsg) {
+        toastMsg.innerHTML = `<i class="icofont-check-circled me-2"></i><strong>Applied "${roleLabel}" Preset:</strong> ${targetPerms.length} permissions set, Data Scope set to <code>${targetScope}</code>, ${targetFields.length} sensitive fields enabled.`;
+        toast.className = 'alert alert-info alert-dismissible fade show';
+        toast.classList.remove('d-none');
+    }
+}
+
+function grantAllViewPermissions() {
+    if (!CAN_EDIT) return;
+    let count = 0;
+    document.querySelectorAll('.perm-checkbox').forEach(cb => {
+        if (cb.value.endsWith('.view') || cb.value.endsWith('.access')) {
+            cb.checked = true;
+            count++;
+            const card = cb.closest('.perm-card');
+            if (card) card.classList.add('border-primary');
+        }
+    });
+    markUnsaved();
+    const toast = document.getElementById('permToast');
+    const toastMsg = document.getElementById('permToastMsg');
+    if (toast && toastMsg) {
+        toastMsg.innerHTML = `<i class="icofont-eye me-2"></i><strong>Read-Only Mode:</strong> Granted all ${count} View/Access permissions across all 15 modules.`;
+        toast.className = 'alert alert-info alert-dismissible fade show';
+        toast.classList.remove('d-none');
+    }
+}
+
+function setFieldPreset(presetType) {
+    if (!CAN_EDIT) return;
+    let targetKeys = new Set();
+    let label = 'None';
+    if (presetType === 'SALES') {
+        targetKeys = new Set(['fields.quotation.cost_breakdown.view', 'fields.customer.pii.view']);
+        label = 'Sales (PII & Quotation Cost Breakdown)';
+    } else if (presetType === 'FINANCE') {
+        targetKeys = new Set(['fields.material.purchase_price.view', 'fields.inventory.wac.view', 'fields.inventory.profit_margin.view', 'fields.invoice.financial_metrics.view']);
+        label = 'Finance (Procurement, WAC & Financial Metrics)';
+    } else if (presetType === 'ALL') {
+        targetKeys = new Set(['fields.material.purchase_price.view', 'fields.inventory.wac.view', 'fields.inventory.profit_margin.view', 'fields.quotation.cost_breakdown.view', 'fields.invoice.financial_metrics.view', 'fields.customer.pii.view']);
+        label = 'All 6 Sensitive Fields';
+    } else {
+        label = 'Hidden All (Field Staff Safe)';
+    }
+
+    document.querySelectorAll('.field-perm-checkbox').forEach(cb => {
+        cb.checked = targetKeys.has(cb.value);
+        const card = cb.closest('.card');
+        if (card) {
+            if (cb.checked) card.classList.add('border-primary');
+            else card.classList.remove('border-primary');
+        }
+    });
+    markUnsaved();
+
+    const toast = document.getElementById('permToast');
+    const toastMsg = document.getElementById('permToastMsg');
+    if (toast && toastMsg) {
+        toastMsg.innerHTML = `<i class="icofont-shield-alt me-2"></i><strong>Sensitive Fields Updated:</strong> ${label} applied.`;
+        toast.className = 'alert alert-warning alert-dismissible fade show';
+        toast.classList.remove('d-none');
+    }
+}
 
 function applyRoleTemplate(roleKey) {
     if (!CAN_EDIT) return;
@@ -871,8 +1158,12 @@ async function savePermissions() {
         _csrf: CSRF_TOKEN
     };
 
+    const saveEndpoint = window.location.pathname.startsWith('/manager') 
+        ? `/api/manager/employees/${USER_ID}/permissions` 
+        : `/api/admin/users/${USER_ID}/permissions`;
+
     try {
-        const res = await fetch(`/api/admin/users/${USER_ID}/permissions`, {
+        const res = await fetch(saveEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

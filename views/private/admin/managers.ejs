@@ -1,84 +1,180 @@
 <%- include('partials/admin-head') %>
 
+<%
+    const authUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const checkPerm = (typeof hasPermission === 'function')
+        ? hasPermission
+        : ((k) => authUser && (authUser.isPrimarySuperAdmin || (Array.isArray(authUser.permissions) && authUser.permissions.includes(k))));
+    const canManageUser = checkPerm('users.employees.manage');
+%>
+
+<!-- Action Feedback Alert Banner -->
+<div id="empToast" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="empToastMsg">Manager updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('empToast').classList.add('d-none')"></button>
+</div>
+
 <!-- Header Controls -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+<div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 mb-4">
     <div>
-        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
-            Branch Managers & Operational Leadership
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: clamp(19px, 3.5vw, 24px);">
+            Branch Managers &amp; Operational Leadership
         </h2>
         <p class="text-muted small mb-0">
-            Overview of branch managers, supervision hierarchy, and assigned staff members for Shivay Energy Solutions
+            Overview of branch managers, branch scope, assigned teams, and direct profile management
         </p>
     </div>
-    <div class="d-flex gap-2 mt-3 mt-md-0">
-        <a href="/admin/employees" class="btn btn-warning font-weight-bold text-dark" style="border-radius: 8px;">
-            <i class="icofont-users-alt-2 me-1"></i> All Employees
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/admin/employees" class="btn btn-warning font-weight-bold text-dark flex-grow-1 flex-sm-grow-0 text-center" style="border-radius: 8px;">
+            <i class="icofont-users-alt-2 me-1"></i> Manage All Staff
         </a>
     </div>
 </div>
 
-<!-- Manager Cards Grid -->
-<div class="row g-4 mb-4">
+<!-- Compact Manager Cards Grid -->
+<div class="row g-3 mb-4">
     <% if (managers && managers.length > 0) { %>
-        <% managers.forEach(m => { %>
-            <div class="col-lg-6">
-                <div class="admin-card h-100">
-                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="admin-avatar-circle" style="width: 48px; height: 48px; font-size: 16px;">
-                                <%= (m.name || 'M').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
-                            </div>
-                            <div>
-                                <h5 class="font-weight-bold text-dark mb-0"><%= m.name %></h5>
-                                <div class="text-muted small"><%= m.designation || 'Operations Manager' %> • <%= m.email %></div>
+        <% managers.forEach(m => {
+            const branchObj = (m.branchId && typeof m.branchId === 'object') ? m.branchId : null;
+            const branchLabel = branchObj && branchObj.name
+                ? `${branchObj.name}${branchObj.code ? ' (' + branchObj.code + ')' : ''}`
+                : 'Raisen Central Branch';
+
+            let statusClass = 'badge-status-active';
+            if (m.status === 'PENDING') statusClass = 'badge-status-pending';
+            else if (m.status === 'SUSPENDED' || m.status === 'REJECTED') statusClass = 'badge-status-suspended';
+            else if (m.status === 'INACTIVE') statusClass = 'badge-status-inactive';
+
+            const pCount = m.permissions ? m.permissions.length : 0;
+            const assignedList = m.assignedEmployees || [];
+            const assignedTotal = m.assignedCount || assignedList.length;
+        %>
+            <div class="col-12 col-xl-6">
+                <div class="admin-card h-100 p-3 mb-0 d-flex flex-column">
+                    <!-- Compact Header -->
+                    <div class="d-flex align-items-start justify-content-between gap-2 pb-2 mb-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <% if (m.avatar && m.avatar !== '/images/misc/cst-1.webp') { %>
+                                <img src="<%= m.avatar %>" alt="<%= m.name %>" class="rounded-circle border flex-shrink-0" style="width: 40px; height: 40px; object-fit: cover;">
+                            <% } else { %>
+                                <div class="admin-avatar-circle flex-shrink-0" style="width: 40px; height: 40px; font-size: 13px;">
+                                    <%= (m.name || 'M').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                </div>
+                            <% } %>
+                            <div class="min-w-0">
+                                <div class="font-weight-bold text-dark text-truncate" style="font-size: 15px; line-height: 1.2;"><%= m.name %></div>
+                                <div class="text-muted text-truncate" style="font-size: 11.5px;">
+                                    <%= m.designation || 'Branch Manager' %><% if (m.department) { %> &bull; <%= m.department %><% } %>
+                                </div>
                             </div>
                         </div>
-                        <span class="badge-role badge-role-manager"><%= m.role %></span>
+                        <div class="flex-shrink-0 text-end">
+                            <span class="badge-status <%= statusClass %>" style="font-size: 10px; padding: 2px 7px;"><%= m.status %></span>
+                            <div class="mt-1"><span class="badge-role badge-role-manager" style="font-size: 9.5px; padding: 2px 6px;">Branch Manager</span></div>
+                        </div>
                     </div>
 
-                    <div class="row g-2 mb-3 small">
-                        <div class="col-sm-6">
-                            <span class="text-muted d-block">Employee ID:</span>
-                            <code><%= m.employeeId || 'N/A' %></code>
+                    <!-- Compact 2-Column Info Grid -->
+                    <div class="admin-mobile-meta-grid mb-2">
+                        <div class="admin-mobile-meta-item">
+                            <i class="icofont-building text-info me-1"></i><strong><%= branchLabel %></strong>
                         </div>
-                        <div class="col-sm-6">
-                            <span class="text-muted d-block">Mobile Contact:</span>
-                            <strong><%= m.mobile %></strong>
+                        <div class="admin-mobile-meta-item">
+                            <span class="text-muted">ID:</span> <code><%= m.employeeId || 'N/A' %></code>
                         </div>
-                        <div class="col-sm-6">
-                            <span class="text-muted d-block">Branch:</span>
-                            <span><%= (m.branchId && m.branchId.name) ? m.branchId.name : 'Raisen Central Branch' %></span>
+                        <div class="admin-mobile-meta-item">
+                            <i class="icofont-phone text-muted me-1"></i><strong><%= m.mobile %></strong><% if (m.alternateMobile) { %> <span class="text-muted">/ <%= m.alternateMobile %></span><% } %>
                         </div>
-                        <div class="col-sm-6">
-                            <span class="text-muted d-block">Account Status:</span>
-                            <span class="badge-status badge-status-active"><%= m.status %></span>
+                        <div class="admin-mobile-meta-item">
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1" style="font-size: 10px; padding: 1px 5px;"><i class="icofont-blood-drop"></i> <%= m.bloodGroup || 'B+' %></span>
+                            <a href="/admin/users/<%= m._id %>/permissions" class="badge <%= pCount > 0 ? 'bg-primary' : 'bg-secondary' %> text-decoration-none" style="font-size: 10px;">
+                                <i class="icofont-key me-1"></i><%= pCount %> / 117
+                            </a>
+                        </div>
+                        <div class="admin-mobile-meta-item" style="grid-column: span 2;">
+                            <i class="icofont-envelope text-muted me-1"></i><%= m.email %>
                         </div>
                     </div>
 
-                    <!-- Assigned Employees Subsection -->
-                    <div class="p-3 bg-light rounded-3 border">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="font-weight-bold text-dark small">
-                                <i class="icofont-users-alt-5 text-warning me-1"></i> Assigned Field Employees:
+                    <!-- Compact Assigned Employees Subsection -->
+                    <div class="p-2 bg-light rounded-3 border mb-2 flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="font-weight-bold text-dark" style="font-size: 11.5px;">
+                                <i class="icofont-users-alt-5 text-warning me-1"></i>Assigned Team
                             </span>
-                            <span class="badge bg-primary rounded-pill"><%= m.assignedCount || (m.assignedEmployees ? m.assignedEmployees.length : 0) %> Staff</span>
+                            <span class="badge bg-primary rounded-pill" style="font-size: 10px;"><%= assignedTotal %> Staff</span>
                         </div>
 
-                        <% if (m.assignedEmployees && m.assignedEmployees.length > 0) { %>
-                            <ul class="list-unstyled mb-0 small">
-                                <% m.assignedEmployees.forEach(emp => { %>
-                                    <li class="d-flex justify-content-between align-items-center py-1 border-bottom border-white">
-                                        <div>
+                        <% if (assignedList.length > 0) { %>
+                            <ul class="list-unstyled mb-0" style="max-height: 105px; overflow-y: auto; font-size: 11.5px;">
+                                <% assignedList.forEach(emp => { %>
+                                    <li class="d-flex justify-content-between align-items-center gap-2 py-1 border-bottom border-white">
+                                        <div class="text-truncate">
                                             <strong class="text-dark"><%= emp.name %></strong>
-                                            <span class="text-muted" style="font-size: 11px;">(<%= emp.employeeId %>)</span>
+                                            <span class="text-muted" style="font-size: 10.5px;">(<%= emp.employeeId || 'N/A' %>)</span>
                                         </div>
-                                        <span class="badge bg-light text-dark border"><%= emp.designation || 'Field Staff' %></span>
+                                        <span class="badge bg-white text-dark border flex-shrink-0" style="font-size: 10px;"><%= emp.designation || 'Field Staff' %></span>
                                     </li>
                                 <% }); %>
                             </ul>
                         <% } else { %>
-                            <p class="text-muted small mb-0 fst-italic">No employees currently assigned to this manager.</p>
+                            <p class="text-muted mb-0 fst-italic" style="font-size: 11px;">No employees assigned to this manager yet.</p>
                         <% } %>
+                    </div>
+
+                    <!-- Reusable Footer Actions -->
+                    <div class="d-flex align-items-center justify-content-between gap-2 pt-2 border-top mt-auto">
+                        <a href="/admin/users/<%= m._id %>/permissions" class="btn btn-sm btn-outline-warning py-1 px-2 text-dark font-weight-bold" style="font-size: 11.5px;" title="Manage Manager Permissions">
+                            <i class="icofont-key me-1"></i> Permissions
+                        </a>
+
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <% if (canManageUser) { %>
+                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 font-weight-bold" style="font-size: 11.5px;" onclick="openEditUserModal('<%= m._id %>')" title="Edit Manager Profile & Photo">
+                                    <i class="icofont-edit me-1"></i> Edit Manager
+                                </button>
+                            <% } %>
+
+                            <div class="dropdown d-inline-block">
+                                <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="More Actions">
+                                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;">
+                                        <circle cx="8" cy="3" r="1.5"/>
+                                        <circle cx="8" cy="8" r="1.5"/>
+                                        <circle cx="8" cy="13" r="1.5"/>
+                                    </svg>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-1" style="min-width: 205px; max-height: 75vh; overflow-y: auto; font-size: 13px; z-index: 1055;">
+                                    <li>
+                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/employees/<%= m._id %>/id-card" target="_blank">
+                                            <i class="icofont-id-card text-primary"></i> View / Print ID Card
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/employees/<%= m._id %>/visiting-card" target="_blank">
+                                            <i class="icofont-credit-card text-info"></i> View / Print Visiting Card
+                                        </a>
+                                    </li>
+                                    <% if (canManageUser) { %>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li>
+                                            <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2" onclick="openEditUserModal('<%= m._id %>')">
+                                                <i class="icofont-edit text-secondary"></i> Edit Profile &amp; Photo
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/users/<%= m._id %>/permissions">
+                                                <i class="icofont-key text-warning"></i> Manage Permissions
+                                            </a>
+                                        </li>
+                                    <% } %>
+                                    <li>
+                                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/employees?edit=<%= m._id %>">
+                                            <i class="icofont-users-alt-2 text-dark"></i> Open in Staff Directory
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,5 +190,7 @@
         </div>
     <% } %>
 </div>
+
+<%- include('partials/staff-edit-modal', { staffList: managers, branches, managers }) %>
 
 <%- include('partials/admin-footer') %>

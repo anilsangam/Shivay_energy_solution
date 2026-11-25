@@ -1,0 +1,358 @@
+<%- include('../admin/partials/admin-head') %>
+
+<!-- Feedback Toast -->
+<div id="techToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="techToastMsg">Action completed successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('techToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-tools-alt-2 me-2 text-warning"></i> My Assigned Service Complaints &amp; Tasks
+        </h2>
+        <p class="text-muted small mb-0">
+            Field service technician portal: schedule customer visits, update on-site repair progress, and submit work resolution.
+        </p>
+    </div>
+</div>
+
+<!-- Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">My Active Tasks</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= complaints.length %></div>
+            <div class="small text-muted mt-1">Assigned service tickets</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Pending Visit</span>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1">
+                <%= complaints.filter(c => ['submitted', 'assigned', 'visit scheduled'].includes((c.status || '').toLowerCase())).length %>
+            </div>
+            <div class="small text-warning mt-1"><i class="icofont-clock-time me-1"></i>To be visited</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">In Progress</span>
+            <div class="h3 font-weight-bold text-primary mb-0 mt-1">
+                <%= complaints.filter(c => ['on the way', 'site visited', 'work in progress', 'in_progress'].includes((c.status || '').toLowerCase())).length %>
+            </div>
+            <div class="small text-primary mt-1"><i class="icofont-wrench me-1"></i>Work underway</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Resolved / Review</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1">
+                <%= complaints.filter(c => ['resolved', 'closed'].includes((c.status || '').toLowerCase())).length %>
+            </div>
+            <div class="small text-success mt-1"><i class="icofont-check-circled me-1"></i>Work completed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Complaints List / Cards -->
+<div class="row g-3">
+    <% if (complaints && complaints.length > 0) { %>
+        <% complaints.forEach(c => { %>
+            <div class="col-12 col-lg-6">
+                <div class="card border shadow-sm rounded-3 h-100">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="font-monospace fw-bold text-primary fs-6"><%= c.ticketId %></span>
+                            <span class="badge bg-light text-primary border ms-2 font-monospace" style="font-size: 11px;">
+                                <%= (c.category || 'general_service').replace(/_/g, ' ').toUpperCase() %>
+                            </span>
+                        </div>
+                        <% const st = (c.status || 'submitted').toLowerCase(); %>
+                        <% if (st === 'resolved') { %>
+                            <span class="badge bg-info-subtle text-info border border-info">RESOLVED</span>
+                        <% } else if (st === 'closed') { %>
+                            <span class="badge bg-success-subtle text-success border border-success">CLOSED</span>
+                        <% } else if (st === 'waiting for material' || st === 'waiting_for_material') { %>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary">WAITING MATERIAL</span>
+                        <% } else if (st === 'in_progress' || st === 'work in progress' || st === 'site visited' || st === 'on the way' || st === 'visit scheduled') { %>
+                            <span class="badge bg-warning-subtle text-warning border border-warning">IN PROGRESS</span>
+                        <% } else { %>
+                            <span class="badge bg-danger-subtle text-danger border border-danger">ASSIGNED</span>
+                        <% } %>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <strong class="text-dark fs-6 d-block"><%= c.customerName %></strong>
+                                <a href="tel:<%= c.mobile %>" class="font-monospace text-dark text-decoration-none fw-bold small">
+                                    <i class="icofont-phone text-success me-1"></i><%= c.mobile %>
+                                </a>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Service PIN</small>
+                                <span class="font-monospace fw-bold text-dark"><%= c.pinCode || '464551' %></span>
+                            </div>
+                        </div>
+
+                        <div class="p-2 bg-light rounded border small mb-3">
+                            <div class="text-dark">
+                                <i class="icofont-location-pin text-danger me-1"></i>
+                                <%= (c.originalServiceAddress && c.originalServiceAddress.address) || c.serviceAddress || 'Customer Site Location' %>,
+                                <%= c.city || '' %>, <%= c.district || '' %>
+                            </div>
+                            <div class="text-muted mt-1">
+                                <i class="icofont-warning text-warning me-1"></i><strong>Issue:</strong> <%= c.description %>
+                            </div>
+                            <% if (c.scheduledVisitDate) { %>
+                                <div class="text-primary mt-1 fw-bold">
+                                    <i class="icofont-calendar me-1"></i>Scheduled: <%= new Date(c.scheduledVisitDate).toLocaleString('en-IN') %>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Technician Action Triggers -->
+                        <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openScheduleModal('<%= c._id %>')">
+                                <i class="icofont-calendar me-1"></i> Schedule
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="openProgressModal('<%= c._id %>', '<%= c.status %>')">
+                                <i class="icofont-wrench me-1"></i> Update Progress
+                            </button>
+                            <% if (st !== 'resolved' && st !== 'closed') { %>
+                                <button class="btn btn-sm btn-success" onclick="openResolveModal('<%= c._id %>')">
+                                    <i class="icofont-check-circled me-1"></i> Submit Resolution
+                                </button>
+                            <% } %>
+                            <a href="/employee/complaints/<%= c._id %>" class="btn btn-sm btn-outline-secondary ms-auto">
+                                <i class="icofont-eye me-1"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } else { %>
+        <div class="col-12">
+            <div class="card border p-5 text-center text-muted">
+                <i class="icofont-check-circled fs-1 text-success mb-2"></i>
+                <h5 class="fw-bold text-dark">No Active Service Complaints Assigned</h5>
+                <p class="small text-muted mb-0">You currently have no pending service tickets in your queue. Great job!</p>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<!-- MODAL: SCHEDULE VISIT -->
+<div class="modal fade" id="scheduleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold" style="font-size: 16px;">Schedule Customer Site Visit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitSchedule();">
+                <input type="hidden" id="schedComplaintId">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Visit Date &amp; Time *</label>
+                        <input type="datetime-local" class="form-control" id="schedVisitTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Notes / Customer Confirmation</label>
+                        <textarea class="form-control" id="schedRemarks" rows="2" placeholder="Customer confirmed time slot..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold" id="schedBtn">Confirm Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: UPDATE PROGRESS -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold" style="font-size: 16px;">Update Site Repair Progress</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitProgress();">
+                <input type="hidden" id="progComplaintId">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">New Status *</label>
+                        <select class="form-select" id="progStatus" required onchange="toggleDelayFields()">
+                            <option value="On The Way">On The Way to Site</option>
+                            <option value="Site Visited">Site Visited (Inspecting)</option>
+                            <option value="Work In Progress">Work In Progress (Repairing)</option>
+                            <option value="Waiting for Material">Waiting for Material / Spares</option>
+                            <option value="Waiting for Customer">Waiting for Customer Access</option>
+                            <option value="Unable to Resolve">Unable to Resolve (Need Senior Assistance)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="materialField" style="display: none;">
+                        <label class="form-label small font-weight-bold text-danger">Material / Spares Required *</label>
+                        <input type="text" class="form-control" id="progMaterial" placeholder="e.g. 5kW Inverter Motherboard, MC4 Connector">
+                    </div>
+                    <div class="mb-3" id="delayField" style="display: none;">
+                        <label class="form-label small font-weight-bold text-danger">Delay Reason *</label>
+                        <input type="text" class="form-control" id="progDelay" placeholder="Describe reason for delay or pending access">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Remarks &amp; Work Performed</label>
+                        <textarea class="form-control" id="progRemarks" rows="3" placeholder="Tested DC voltage, cleaned inverter fans, verified earthing..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-4 fw-bold" id="progBtn">Save Progress</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: SUBMIT RESOLUTION -->
+<div class="modal fade" id="resolveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-bottom">
+                <h5 class="modal-title font-weight-bold text-success" style="font-size: 16px;">
+                    <i class="icofont-check-circled me-1"></i> Submit Work Resolution
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form onsubmit="event.preventDefault(); submitResolution();">
+                <input type="hidden" id="resolveComplaintId">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info small p-2 mb-3">
+                        <i class="icofont-info-circle me-1"></i> Once submitted, your work will be reviewed by the Branch Manager for formal closure approval.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Root Cause Analysis *</label>
+                        <input type="text" class="form-control" id="resRootCause" required placeholder="e.g. Loose DC string wire caused inverter error code E04">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Work Performed *</label>
+                        <textarea class="form-control" id="resWorkPerformed" rows="3" required placeholder="Describe full repair steps taken and tests performed..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Replaced Spare Parts (Comma Separated)</label>
+                        <input type="text" class="form-control" id="resReplacedParts" placeholder="e.g. 25A SPD, MC4 Connector">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" id="resolveBtn">Submit Resolution</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+function showToast(msg) {
+    const toast = document.getElementById('techToast');
+    const toastMsg = document.getElementById('techToastMsg');
+    toastMsg.innerText = msg;
+    toast.classList.remove('d-none');
+    setTimeout(() => window.location.reload(), 800);
+}
+
+function openScheduleModal(id) {
+    document.getElementById('schedComplaintId').value = id;
+    new bootstrap.Modal(document.getElementById('scheduleModal')).show();
+}
+
+function submitSchedule() {
+    const id = document.getElementById('schedComplaintId').value;
+    const visitDateTime = document.getElementById('schedVisitTime').value;
+    const remarks = document.getElementById('schedRemarks').value.trim();
+    const btn = document.getElementById('schedBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ status: 'Visit Scheduled', visitDateTime, remarks, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast('Visit scheduled successfully.');
+        else alert(data.message || 'Error scheduling visit.');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed.'); });
+}
+
+function openProgressModal(id, currentStatus) {
+    document.getElementById('progComplaintId').value = id;
+    new bootstrap.Modal(document.getElementById('progressModal')).show();
+}
+
+function toggleDelayFields() {
+    const status = document.getElementById('progStatus').value;
+    document.getElementById('materialField').style.display = (status === 'Waiting for Material') ? 'block' : 'none';
+    document.getElementById('delayField').style.display = (status === 'Waiting for Material' || status === 'Waiting for Customer' || status === 'Unable to Resolve') ? 'block' : 'none';
+}
+
+function submitProgress() {
+    const id = document.getElementById('progComplaintId').value;
+    const status = document.getElementById('progStatus').value;
+    const remarks = document.getElementById('progRemarks').value.trim();
+    const materialRequired = document.getElementById('progMaterial').value.trim();
+    const delayReason = document.getElementById('progDelay').value.trim();
+    const btn = document.getElementById('progBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${id}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ status, remarks, materialRequired, delayReason, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast('Progress updated successfully.');
+        else alert(data.message || 'Error updating progress.');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed.'); });
+}
+
+function openResolveModal(id) {
+    document.getElementById('resolveComplaintId').value = id;
+    new bootstrap.Modal(document.getElementById('resolveModal')).show();
+}
+
+function submitResolution() {
+    const id = document.getElementById('resolveComplaintId').value;
+    const rootCause = document.getElementById('resRootCause').value.trim();
+    const workPerformed = document.getElementById('resWorkPerformed').value.trim();
+    const replacedPartsStr = document.getElementById('resReplacedParts').value.trim();
+    const replacedParts = replacedPartsStr ? replacedPartsStr.split(',').map(s => s.trim()) : [];
+    const btn = document.getElementById('resolveBtn');
+    btn.disabled = true;
+
+    fetch(`/api/complaints/${id}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+        body: JSON.stringify({ rootCause, workPerformed, replacedParts, _csrf: csrfToken })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) showToast(data.message || 'Resolution submitted.');
+        else alert(data.message || 'Error submitting resolution.');
+    })
+    .catch(() => { btn.disabled = false; alert('Request failed.'); });
+}
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

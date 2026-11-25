@@ -84,36 +84,566 @@
     background-color: #f5f9ff;
 }
 
-/* Printable Document Layout */
-.invoice-paper {
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-top: 6px solid #163563 !important;
-    border-radius: 12px;
-    padding: 36px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.06);
-    max-width: 920px;
+/* =========================================================================
+   AUTHENTIC SHIVAY ENERGY SOLUTIONS TAX INVOICE DOCUMENT (PRINTABLE A4)
+   ========================================================================= */
+.ses-bill-wrapper {
+    max-width: 900px;
     margin: 0 auto 30px auto;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+}
+
+.ses-bill-frame {
+    border: 1.5px solid #000;
+    background: #ffffff;
+    color: #000000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 11.5px;
+    line-height: 1.35;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.ses-bill-title-bar {
+    text-align: center;
+    font-weight: 800;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 4px 10px;
+    border-bottom: 1.5px solid #000;
+    background: #ffffff;
+}
+
+.ses-bill-header-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-bottom: 1.5px solid #000;
+    gap: 15px;
+}
+
+.ses-bill-logo-box {
+    width: 130px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.ses-bill-logo-box svg {
+    display: block;
+    margin: 0 auto;
+}
+
+.ses-bill-logo-text {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #000;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+    line-height: 1.1;
+}
+
+.ses-bill-brand-box {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.ses-bill-brand-title {
+    font-family: "Arial Black", Gadget, sans-serif;
+    font-size: 27px;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    margin: 0;
+    line-height: 1.1;
+    color: #000;
+    text-transform: uppercase;
+}
+
+.ses-bill-brand-tagline {
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-top: 4px;
+    color: #111;
+    letter-spacing: 0.2px;
+}
+
+/* Two boxes: Office Add & Bill To */
+.ses-bill-address-row {
+    display: flex;
+    border-bottom: 1.5px solid #000;
+}
+
+.ses-bill-office-col {
+    width: 50%;
+    border-right: 1.5px solid #000;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.ses-bill-billto-col {
+    width: 50%;
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.ses-bill-billto-heading {
+    text-align: center;
+    font-weight: 800;
+    font-size: 12px;
+    margin-bottom: 3px;
+}
+
+.ses-bill-customer-name {
+    font-weight: 800;
+    font-size: 12.5px;
+    color: #000;
+}
+
+/* Bar: Date & Invoice No */
+.ses-bill-meta-bar {
+    display: flex;
+    border-bottom: 1.5px solid #000;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ses-bill-meta-date {
+    width: 50%;
+    border-right: 1.5px solid #000;
+    padding: 4px 10px;
+}
+
+.ses-bill-meta-invnum {
+    width: 50%;
+    padding: 4px 10px;
+}
+
+/* Items Table */
+.ses-bill-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-bottom: 0;
+}
+
+.ses-bill-table th,
+.ses-bill-table td {
+    border: 1px solid #000;
+    padding: 4px 5px;
+    vertical-align: top;
+    color: #000;
+}
+
+.ses-bill-table thead th {
+    font-weight: 800;
+    text-align: center;
+    background: #ffffff;
+    font-size: 11px;
+    padding: 4px 3px;
+}
+
+.ses-bill-table tbody td {
+    background: #ffffff;
+}
+
+.ses-item-title {
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 11.5px;
+    display: block;
+}
+
+.ses-item-model {
+    font-weight: 600;
+    font-size: 11px;
+    color: #111;
+    display: block;
+    margin-top: 1px;
+}
+
+.ses-item-serials {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 10px;
+    margin-top: 3px;
+    line-height: 1.25;
+    color: #111;
+    font-weight: 500;
+    white-space: pre-line;
+    word-break: break-all;
+}
+
+/* Summary Rows */
+.ses-summary-label {
+    font-weight: 800;
+    text-align: left;
+    padding-left: 10px !important;
+}
+
+.ses-summary-val {
+    font-weight: 800;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.ses-grand-total-row {
+    font-size: 12.5px;
+    font-weight: 900;
+}
+
+/* Footer Section */
+.ses-bill-footer-row {
+    display: flex;
+    border-top: 1.5px solid #000;
+    min-height: 100px;
+}
+
+.ses-bill-bank-col {
+    width: 37%;
+    border-right: 1.5px solid #000;
+    padding: 6px 9px;
+    font-size: 10.5px;
+    line-height: 1.4;
+}
+
+.ses-bill-terms-col {
+    width: 37%;
+    border-right: 1.5px solid #000;
+    padding: 6px 9px;
+    font-size: 10.5px;
+    line-height: 1.4;
+}
+
+.ses-bill-stamp-col {
+    width: 26%;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+}
+
+/* Official Verified Stamp Seal */
+.ses-seal-stamp {
+    width: 96px;
+    height: 96px;
+    border: 2px dashed #1a237e;
+    border-radius: 50%;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #1a237e;
+    font-family: Arial, sans-serif;
+    transform: rotate(-3deg);
+    position: relative;
+    background: rgba(26, 35, 126, 0.02);
+    box-shadow: inset 0 0 0 1px #1a237e;
+}
+
+.ses-seal-ring-top {
+    font-size: 6.5px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    text-align: center;
+}
+
+.ses-seal-center {
+    font-size: 13.5px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #1a237e;
+    border-top: 1px solid #1a237e;
+    border-bottom: 1px solid #1a237e;
+    padding: 2px 5px;
+    margin: 2px 0;
+    position: relative;
+}
+
+.ses-seal-center::after {
+    content: "✓";
+    position: absolute;
+    top: -5px;
+    right: -7px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #1a237e;
+}
+
+.ses-seal-ring-bottom {
+    font-size: 6px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    line-height: 1;
+    text-align: center;
+}
+
+/* Item Builder inside Modal */
+.item-builder-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: border-color 0.2s ease;
+}
+
+.item-builder-card:hover {
+    border-color: #cbd5e1;
+}
+
+.item-builder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* Modal Scrollability & Mobile Responsiveness for Tax Invoice Builder */
+#invoiceModal {
+    overflow-x: hidden;
+    overflow-y: auto;
+    z-index: 1060;
+}
+#invoiceModal .modal-dialog-scrollable {
+    height: calc(100% - 1rem);
+    max-height: calc(100dvh - 1rem);
+    margin: 0.5rem auto;
+}
+@media (min-width: 576px) {
+    #invoiceModal .modal-dialog-scrollable {
+        height: calc(100% - 2rem);
+        max-height: calc(100dvh - 2rem);
+        margin: 1rem auto;
+    }
+}
+#invoiceModal .modal-dialog-scrollable .modal-content {
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#invoiceModal .modal-dialog-scrollable .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+.inv-items-heading {
+    font-size: 14px;
+    line-height: 1.35;
+}
+@media (max-width: 768px) {
+    #invoiceModal .modal-dialog {
+        margin: 0.4rem;
+        max-width: calc(100vw - 0.8rem);
+    }
+    #invoiceModal .modal-body {
+        padding: 10px !important;
+    }
+    #invoiceModal .item-builder-card {
+        padding: 10px !important;
+        margin-bottom: 10px;
+    }
+    #invoiceModal .form-label {
+        font-size: 11.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+    .inv-items-heading {
+        font-size: 13px;
+    }
+}
+.inv-unit-sn-heading {
+    font-size: 11.5px;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+.inv-unit-sn-tag {
+    font-size: 10.5px;
+    min-width: 34px;
+    justify-content: center;
+}
+.inv-unit-sn-input {
+    height: 31px !important;
+    min-height: 31px !important;
+    font-size: 11.5px !important;
+}
+
+/* Mobile Ledger Cards & Page Responsiveness */
+.inv-page-title {
+    font-size: 22px;
+}
+.inv-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8fafc;
+}
+.inv-mobile-card {
+    background: #ffffff;
+    border: 1px solid #d5e1ef;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 1px 4px rgba(15, 42, 74, 0.05);
+}
+
+/* Dedicated Standalone Tax Invoice Document Page */
+.ses-bill-doc-body {
+    background: #eef3f8;
+    margin: 0;
+    padding: 0;
+}
+.ses-doc-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #0f2a4a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 10px 14px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14);
+}
+.ses-doc-topbar-inner {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.ses-doc-page-container {
+    max-width: 940px;
+    margin: 14px auto;
+    padding: 0 10px 24px 10px;
+}
+.ses-bill-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media screen and (max-width: 768px) {
+    .inv-page-title {
+        font-size: 18px !important;
+    }
+    .inv-stat-item {
+        padding: 6px 8px !important;
+    }
+    .inv-stat-value {
+        font-size: 16px !important;
+    }
+    .ses-doc-page-container {
+        margin: 8px auto;
+        padding: 0 6px 20px 6px;
+    }
+    .ses-bill-wrapper {
+        padding: 8px !important;
+        margin-bottom: 14px !important;
+        border-radius: 6px;
+    }
+    .ses-bill-header-row {
+        padding: 8px 10px !important;
+        gap: 10px !important;
+    }
+    .ses-bill-logo-box {
+        width: 72px !important;
+    }
+    .ses-bill-brand-title {
+        font-size: 16px !important;
+        letter-spacing: 0.3px !important;
+    }
+    .ses-bill-brand-tagline {
+        font-size: 10.5px !important;
+    }
+    .ses-bill-address-row,
+    .ses-bill-meta-bar,
+    .ses-bill-footer-row {
+        flex-direction: column !important;
+    }
+    .ses-bill-office-col,
+    .ses-bill-billto-col,
+    .ses-bill-meta-date,
+    .ses-bill-meta-invnum,
+    .ses-bill-bank-col,
+    .ses-bill-terms-col,
+    .ses-bill-stamp-col {
+        width: 100% !important;
+        border-right: none !important;
+    }
+    .ses-bill-office-col,
+    .ses-bill-meta-date,
+    .ses-bill-bank-col,
+    .ses-bill-terms-col {
+        border-bottom: 1px solid #000 !important;
+    }
+    .ses-bill-stamp-col {
+        padding: 10px 6px !important;
+    }
+    .ses-bill-table {
+        min-width: 680px;
+    }
+}
+
+@media print {
+    .ses-bill-doc-body {
+        background: #ffffff !important;
+    }
+    .ses-doc-page-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    .ses-bill-table-scroll {
+        overflow: visible !important;
+    }
+}
+
+/* Print Rules */
+@page {
+    size: A4 portrait;
+    margin: 8mm;
 }
 
 @media print {
     body * {
         visibility: hidden !important;
     }
-    .invoice-paper, .invoice-paper * {
+    #printableInvoiceCard, #printableInvoiceCard * {
         visibility: visible !important;
     }
-    .invoice-paper {
+    #printableInvoiceCard {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
         border: none !important;
         box-shadow: none !important;
-        padding: 0 !important;
+        background: transparent !important;
     }
-    .no-print, .admin-sidebar, .admin-header, .admin-footer {
+    .ses-bill-frame {
+        border: 1.5px solid #000 !important;
+        page-break-inside: avoid;
+    }
+    .no-print, .admin-sidebar, .admin-header, .admin-footer, .modal-backdrop {
         display: none !important;
     }
 }

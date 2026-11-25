@@ -4,6 +4,9 @@ const router = express.Router();
 const managerController = require('../../controllers/managerController');
 const quotationController = require('../../controllers/quotationController');
 const projectController = require('../../controllers/projectController');
+const leadController = require('../../controllers/leadController');
+const complaintController = require('../../controllers/complaintController');
+const { EmployeeCardController } = require('../../controllers/employeeCardController');
 
 const {
     requireAuth,
@@ -22,6 +25,13 @@ const {
 // Dashboard, Branch Staff & Attendance Overview
 router.get('/manager/dashboard', requireAuth, requireBranchManager, managerController.getDashboard);
 router.get('/manager/employees', requireAuth, requireBranchManager, requirePermission('users.employees.view'), managerController.getEmployees);
+router.post('/api/manager/employees/create', requireAuth, requireBranchManager, verifyCsrf, managerController.postCreateEmployee);
+router.post('/api/manager/employees/:id/update', requireAuth, requireBranchManager, verifyCsrf, validateObjectId('id'), managerController.postUpdateEmployee);
+router.get('/manager/employees/:id/permissions', requireAuth, requireBranchManager, requirePermission('users.employees.manage'), validateObjectId('id'), managerController.getEmployeePermissions);
+router.post('/api/manager/employees/:id/permissions', requireAuth, requireBranchManager, requirePermission('users.employees.manage'), verifyCsrf, validateObjectId('id'), managerController.postUpdateEmployeePermissions);
+router.get('/manager/employees/:id/id-card', requireAuth, requireBranchManager, validateObjectId('id'), EmployeeCardController.getIdCard);
+router.get('/manager/employees/:id/visiting-card', requireAuth, requireBranchManager, validateObjectId('id'), EmployeeCardController.getVisitingCard);
+router.get('/api/manager/employees/:id/share/:type', requireAuth, requireBranchManager, validateObjectId('id'), EmployeeCardController.getSharePayload);
 router.get('/manager/attendance', requireAuth, requireBranchManager, requirePermission('attendance.branch.view'), managerController.getAttendance);
 
 // Commercial Lifecycle: Branch Quotations & Verification
@@ -56,8 +66,10 @@ router.get('/manager/projects/:id/documents/:documentId', requireAuth, requireBr
 // Financials, Profile & Inquiries
 router.get('/manager/invoices', requireAuth, requireBranchManager, requirePermission('invoices.records.view'), managerController.getInvoices);
 router.get('/manager/profile', requireAuth, requireBranchManager, managerController.getProfile);
+router.get('/manager/leads', requireAuth, requireBranchManager, requirePermission('crm.leads.view'), leadController.getLeadsPage);
 router.get('/manager/enquiries', requireAuth, requireBranchManager, requirePermission('crm.enquiries.view'), managerController.getDashboard);
-router.get('/manager/complaints', requireAuth, requireBranchManager, requirePermission('complaints.tickets.view'), managerController.getDashboard);
+router.get('/manager/complaints', requireAuth, requireBranchManager, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), complaintController.getAdminComplaints);
+router.get('/manager/complaints/:id', requireAuth, requireBranchManager, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), validateObjectId('id'), complaintController.getComplaintDetailPage);
 router.get('/manager/reports', requireAuth, requireBranchManager, requirePermission('reports.analytics.view'), managerController.getDashboard);
 
 module.exports = router;

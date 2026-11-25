@@ -6,6 +6,7 @@ const QuotationRequest = require('../models/QuotationRequest');
 const QuotationStatusHistory = require('../models/QuotationStatusHistory');
 const AuditService = require('./auditService');
 const User = require('../models/User');
+const { evaluatePackagePricing } = require('../config/solarPackages');
 
 class QuotationService {
     // -------------------------------------------------------------
@@ -97,9 +98,12 @@ class QuotationService {
             advancePercentage = 20,
             paymentBasis = 'CONTRACT_VALUE', // Supported: 'CONTRACT_VALUE' | 'CUSTOMER_CONTRIBUTION'
             deliveryPercentage = 60,
-            commissioningPercentage = 20
+            commissioningPercentage = 20,
+            pricingMode = 'TAX_EXCLUSIVE',
+            subsidyOverride = null
         } = params;
 
+        const isTaxInclusive = pricingMode === 'TAX_INCLUSIVE';
         let subtotal = 0;
         let itemDiscountsTotal = 0;
         let taxableValue = 0;
@@ -113,10 +117,21 @@ class QuotationService {
             const discount = Math.max(0, Number(item.discount) || 0);
 
             const itemGross = Number((quantity * unitPrice).toFixed(2));
-            const itemTaxable = Math.max(0, Number((itemGross - discount).toFixed(2)));
             const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 12; // Standard 12% on solar EPC
-            const lineGst = Number(((itemTaxable * gstRate) / 100).toFixed(2));
-            const lineTotal = Number((itemTaxable + lineGst).toFixed(2));
+
+            let itemTaxable = 0;
+            let lineGst = 0;
+            let lineTotal = 0;
+
+            if (isTaxInclusive) {
+                lineTotal = Math.max(0, Number((itemGross - discount).toFixed(2)));
+                itemTaxable = Number((lineTotal / (1 + gstRate / 100)).toFixed(2));
+                lineGst = Number((lineTotal - itemTaxable).toFixed(2));
+            } else {
+                itemTaxable = Math.max(0, Number((itemGross - discount).toFixed(2)));
+                lineGst = Number(((itemTaxable * gstRate) / 100).toFixed(2));
+                lineTotal = Number((itemTaxable + lineGst).toFixed(2));
+            }
 
             subtotal += itemGross;
             itemDiscountsTotal += discount;
@@ -139,8 +154,23 @@ class QuotationService {
 
         subtotal = Number(subtotal.toFixed(2));
         itemDiscountsTotal = Number(itemDiscountsTotal.toFixed(2));
-        taxableValue = Number(taxableValue.toFixed(2));
-        totalGstAmount = Number(totalGstAmount.toFixed(2));
+
+        const cleanSpecialDiscount = Math.max(0, Number(specialDiscount) || 0);
+        const primaryGstRate = validatedItems[0] ? validatedItems[0].gstRate : 12;
+        let grossTotal = 0;
+        let grandTotal = 0;
+
+        if (isTaxInclusive) {
+            grossTotal = subtotal;
+            grandTotal = Math.max(0, Number((subtotal - itemDiscountsTotal - cleanSpecialDiscount).toFixed(2)));
+            taxableValue = Number((grandTotal / (1 + primaryGstRate / 100)).toFixed(2));
+            totalGstAmount = Number((grandTotal - taxableValue).toFixed(2));
+        } else {
+            taxableValue = Number(taxableValue.toFixed(2));
+            totalGstAmount = Number(totalGstAmount.toFixed(2));
+            grossTotal = Number((taxableValue + totalGstAmount).toFixed(2));
+            grandTotal = Math.max(0, Number((grossTotal - cleanSpecialDiscount).toFixed(2)));
+        }
 
         // State Tax vs Inter-State Tax (MP intra-state: CGST 6% + SGST 6%)
         const isIntraState = !customerState || customerState.toLowerCase().includes('madhya pradesh');
@@ -158,11 +188,9 @@ class QuotationService {
             igstAmount = totalGstAmount;
         }
 
-        const cleanSpecialDiscount = Math.max(0, Number(specialDiscount) || 0);
-        const grossTotal = Number((taxableValue + totalGstAmount).toFixed(2));
-        const grandTotal = Math.max(0, Number((grossTotal - cleanSpecialDiscount).toFixed(2)));
-
-        const estimatedSubsidy = QuotationService.calculateSubsidy(plantCapacityKw, customerType);
+        const estimatedSubsidy = (subsidyOverride !== null && subsidyOverride !== undefined)
+            ? Math.max(0, Number(subsidyOverride) || 0)
+            : QuotationService.calculateSubsidy(plantCapacityKw, customerType);
         const netPayableAfterSubsidy = Math.max(0, Number((grandTotal - estimatedSubsidy).toFixed(2)));
 
         // -------------------------------------------------------------
@@ -206,21 +234,22 @@ class QuotationService {
 
         const taxSnapshot = {
             isIntraState,
-            gstRate: 12,
-            cgstRate: isIntraState ? 6 : 0,
-            sgstRate: isIntraState ? 6 : 0,
-            igstRate: isIntraState ? 0 : 12,
-            taxMethod: 'STANDARD_SOLAR_GST',
+            gstRate: primaryGstRate,
+            cgstRate: isIntraState ? primaryGstRate / 2 : 0,
+            sgstRate: isIntraState ? primaryGstRate / 2 : 0,
+            igstRate: isIntraState ? 0 : primaryGstRate,
+            taxMethod: isTaxInclusive ? 'TAX_INCLUSIVE_PACKAGE' : 'STANDARD_SOLAR_GST',
             caVerificationStatus: 'PENDING_CA_REVIEW'
         };
 
         return {
+            pricingMode: isTaxInclusive ? 'TAX_INCLUSIVE' : 'TAX_EXCLUSIVE',
             lineItems: validatedItems,
             subtotal,
             itemDiscountsTotal,
             specialDiscount: cleanSpecialDiscount,
             taxableValue,
-            gstRate: 12,
+            gstRate: primaryGstRate,
             cgstAmount,
             sgstAmount,
             igstAmount,
@@ -237,6 +266,143 @@ class QuotationService {
             subsidyDetails,
             taxSnapshot
         };
+    }
+
+    /**
+     * Employee Self-Service Complete Package Quotation Generator.
+     * Enforces tax-included package pricing, minimum price threshold, and discount governance:
+     * - If total >= minimumThresholdPrice AND discount <= 3% & <= ₹10,000 => Auto-APPROVED (shareable immediately)
+     * - Otherwise (>= hardFloorPrice) => PENDING_APPROVAL (requires Manager/Super Admin approval before sharing)
+     * - Below hardFloorPrice => rejected with validation error
+     */
+    static async createEmployeePackageQuotation(quotationData, creatorUser) {
+        const evalResult = evaluatePackagePricing({
+            packageId: quotationData.packageId,
+            packageCategory: quotationData.packageCategory,
+            plantCapacityKw: quotationData.plantCapacityKw,
+            packagePrice: quotationData.packagePrice,
+            extraMaterials: quotationData.extraMaterials || [],
+            discountPercent: quotationData.discountPercent,
+            discountAmount: quotationData.discountAmount,
+            state: quotationData.state || 'Madhya Pradesh',
+            systemType: quotationData.systemType
+        });
+
+        if (!evalResult.meetsHardFloor) {
+            throw new Error(
+                `Minimum Project Threshold Violation: Final package total ₹${evalResult.grandTotal.toLocaleString('en-IN')} cannot be below ₹${evalResult.hardFloorPrice.toLocaleString('en-IN')}.`
+            );
+        }
+
+        const financials = QuotationService.calculateFinancials({
+            lineItems: evalResult.lineItems,
+            plantCapacityKw: evalResult.capacityKw,
+            customerType: evalResult.customerType,
+            customerState: quotationData.state || 'Madhya Pradesh',
+            specialDiscount: evalResult.discountAmount,
+            pricingMode: 'TAX_INCLUSIVE',
+            subsidyOverride: evalResult.estimatedSubsidy
+        });
+
+        const isManagerOrAdmin = ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(creatorUser.role);
+        const autoApprove = !evalResult.requiresManagerApproval || isManagerOrAdmin;
+        const initialStatus = autoApprove ? 'APPROVED' : 'PENDING_APPROVAL';
+        const approvalMode = isManagerOrAdmin
+            ? 'DIRECT_APPROVED'
+            : (autoApprove ? 'AUTO_THRESHOLD' : 'MANAGER_REQUIRED');
+
+        const quotationNumber = await QuotationService.generateQuotationNumber();
+        const acceptanceToken = crypto.randomBytes(24).toString('hex');
+        const tokenExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+        const quotation = new Quotation({
+            quotationNumber,
+            customerId: quotationData.customerId || null,
+            customerName: (quotationData.customerName || '').trim(),
+            customerMobile: (quotationData.customerMobile || '').trim(),
+            customerEmail: quotationData.customerEmail ? quotationData.customerEmail.trim().toLowerCase() : '',
+            customerAddress: (quotationData.customerAddress || quotationData.address || '').trim(),
+            city: (quotationData.city || 'Raisen').trim(),
+            district: (quotationData.district || 'Raisen').trim(),
+            state: (quotationData.state || 'Madhya Pradesh').trim(),
+            pincode: (quotationData.pincode || '').trim(),
+            consumerNumber: (quotationData.consumerNumber || '').trim(),
+            discom: (quotationData.discom || 'MPPKVVCL').trim(),
+            packageId: evalResult.packageId,
+            packageCategory: evalResult.packageCategory,
+            companyBrand: evalResult.companyBrand,
+            moduleWattage: evalResult.moduleWattage,
+            unitPerDay: evalResult.unitPerDay,
+            monthlyUnits: evalResult.monthlyUnits,
+            financeInterestRate: evalResult.financeInterestRate,
+            estimatedEmi: evalResult.estimatedEmi,
+            plantCapacityKw: evalResult.capacityKw,
+            systemType: evalResult.systemType,
+            panelSpecs: `${evalResult.companyBrand} ${evalResult.moduleWattage} (${evalResult.panelQty} Nos)`,
+            panelQty: evalResult.panelQty,
+            inverterSpecs: evalResult.inverterSpecs,
+            inverterQty: 1,
+            notes: (quotationData.notes || '').trim(),
+            ...financials,
+            pricingMode: 'TAX_INCLUSIVE',
+            packageCatalogPrice: evalResult.catalogPrice,
+            minimumThresholdPrice: evalResult.minimumThresholdPrice,
+            discountPercent: evalResult.discountPercent,
+            version: 1,
+            previousVersion: null,
+            status: initialStatus,
+            approvalMode,
+            requiresManagerApproval: !autoApprove,
+            approvalTriggerReason: evalResult.approvalTriggerReason,
+            approvalComments: autoApprove
+                ? (isManagerOrAdmin ? 'Direct approval by management' : evalResult.approvalTriggerReason)
+                : null,
+            preparedBy: creatorUser._id,
+            assignedEmployee: creatorUser._id,
+            approvedBy: autoApprove ? creatorUser._id : null,
+            approvedAt: autoApprove ? new Date() : null,
+            branch: creatorUser.branchId ? (creatorUser.branchId._id || creatorUser.branchId) : null,
+            validUntil: quotationData.validUntil || new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+            paymentTerms: '20% Advance with Work Order, 60% on Material Delivery, 20% on Commissioning (Complete Tax-Inclusive Package).',
+            customerResponse: {
+                status: 'PENDING',
+                acceptanceToken,
+                tokenExpiresAt
+            }
+        });
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            await quotation.save();
+
+            await QuotationStatusHistory.create({
+                recordType: 'QUOTATION',
+                quotation: quotation._id,
+                documentNumber: quotationNumber,
+                previousStatus: 'NEW',
+                newStatus: initialStatus,
+                changedBy: creatorUser._id,
+                role: creatorUser.role,
+                comments: evalResult.approvalTriggerReason
+            });
+
+            AuditService.log({
+                action: autoApprove ? 'QUOTATION_AUTO_APPROVED' : 'QUOTATION_PENDING_DISCOUNT_APPROVAL',
+                user: creatorUser._id,
+                role: creatorUser.role,
+                details: {
+                    quotationNumber,
+                    packageId: evalResult.packageId,
+                    grandTotal: quotation.grandTotal,
+                    discountPercent: evalResult.discountPercent,
+                    discountAmount: evalResult.discountAmount,
+                    minimumThresholdPrice: evalResult.minimumThresholdPrice,
+                    requiresManagerApproval: !autoApprove
+                }
+            });
+        }
+
+        QuotationService._memoryQuotes.set(String(quotation._id), quotation);
+        return { quotation, evaluation: evalResult, autoApproved: autoApprove };
     }
 
     // -------------------------------------------------------------

@@ -10,10 +10,10 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
     <div>
         <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
-            <i class="icofont-tools-alt-2 me-2 text-warning"></i> Solar Service & Customer Complaints Console
+            <i class="icofont-tools-alt-2 me-2 text-warning"></i> Customer Complaints & Service Management Console
         </h2>
         <p class="text-muted small mb-0">
-            Track customer technical issues, inverter fault codes, generation drop, and assign field engineers for service.
+            Intelligent branch routing, technician dispatch, real-time site progress tracking, and Maker-Checker closure.
         </p>
     </div>
     <div class="d-flex gap-2">
@@ -25,59 +25,117 @@
 
 <!-- Metrics Summary Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
-            <span class="text-muted small font-weight-bold text-uppercase">Total Complaints</span>
-            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= counts.total %></div>
-            <div class="small text-muted mt-1">All recorded service tickets</div>
+            <span class="text-muted small font-weight-bold text-uppercase">Total Tickets</span>
+            <div class="h3 font-weight-bold text-dark mb-0 mt-1"><%= (counts && counts.total) || complaints.length %></div>
+            <div class="small text-muted mt-1">Recorded service tickets</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
-            <span class="text-muted small font-weight-bold text-uppercase">Submitted / Pending</span>
-            <div class="h3 font-weight-bold text-danger mb-0 mt-1"><%= counts.submitted %></div>
-            <div class="small text-danger mt-1"><i class="icofont-clock-time me-1"></i>Awaiting engineer action</div>
+            <span class="text-muted small font-weight-bold text-uppercase">Submitted</span>
+            <div class="h3 font-weight-bold text-danger mb-0 mt-1"><%= (counts && counts.submitted) || 0 %></div>
+            <div class="small text-danger mt-1"><i class="icofont-clock-time me-1"></i>New / unassigned</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
             <span class="text-muted small font-weight-bold text-uppercase">In Progress</span>
-            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= counts.in_progress %></div>
+            <div class="h3 font-weight-bold text-warning mb-0 mt-1"><%= (counts && counts.in_progress) || 0 %></div>
             <div class="small text-warning mt-1"><i class="icofont-wrench me-1"></i>Technician on-site</div>
         </div>
     </div>
-    <div class="col-6 col-lg-3">
+    <div class="col-6 col-md-3 col-xl">
         <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
-            <span class="text-muted small font-weight-bold text-uppercase">Resolved & Closed</span>
-            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= counts.resolved %></div>
-            <div class="small text-success mt-1"><i class="icofont-check-circled me-1"></i>Customer satisfied</div>
+            <span class="text-muted small font-weight-bold text-uppercase">Waiting Material</span>
+            <div class="h3 font-weight-bold text-secondary mb-0 mt-1"><%= (counts && counts.waiting_material) || 0 %></div>
+            <div class="small text-secondary mt-1"><i class="icofont-box me-1"></i>Spares pending</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Resolved</span>
+            <div class="h3 font-weight-bold text-info mb-0 mt-1"><%= (counts && counts.resolved) || 0 %></div>
+            <div class="small text-info mt-1"><i class="icofont-sand-clock me-1"></i>Closure review</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+        <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+            <span class="text-muted small font-weight-bold text-uppercase">Closed</span>
+            <div class="h3 font-weight-bold text-success mb-0 mt-1"><%= (counts && counts.closed) || 0 %></div>
+            <div class="small text-success mt-1"><i class="icofont-check-circled me-1"></i>Formally closed</div>
         </div>
     </div>
 </div>
 
 <!-- Filter & Search Toolbar -->
-<div class="admin-filter-card mb-4 shadow-sm">
-    <form method="GET" action="/admin/complaints" class="row g-2 align-items-center m-0 w-100">
-        <div class="col-12 col-md-5 p-0 pe-md-2">
-            <div class="input-group admin-search-group">
+<% const baseComplaintUrl = (currentUser && currentUser.role === 'BRANCH_MANAGER') ? '/manager/complaints' : '/admin/complaints'; %>
+<div class="admin-filter-card mb-4 shadow-sm p-3 bg-white rounded-3 border">
+    <form method="GET" action="<%= baseComplaintUrl %>" class="row g-2 align-items-center m-0 w-100">
+        <div class="col-12 col-md-3 p-1">
+            <div class="input-group">
                 <span class="input-group-text bg-light border-end-0"><i class="icofont-search text-muted"></i></span>
-                <input type="text" class="form-control border-start-0" name="search" placeholder="Search ticket #, customer name, mobile..." value="<%= search %>">
+                <input type="text" class="form-control border-start-0" name="search" placeholder="Search ticket #, name, mobile, PIN..." value="<%= search || '' %>">
             </div>
         </div>
-        <div class="col-6 col-md-4 p-0 px-1">
+
+        <div class="col-6 col-md-2 p-1">
             <select name="status" class="form-select">
                 <option value="">All Statuses</option>
-                <option value="submitted" <%= currentStatus === 'submitted' ? 'selected' : '' %>>Submitted (Pending)</option>
-                <option value="in_progress" <%= currentStatus === 'in_progress' ? 'selected' : '' %>>In Progress</option>
-                <option value="resolved" <%= currentStatus === 'resolved' ? 'selected' : '' %>>Resolved</option>
-                <option value="closed" <%= currentStatus === 'closed' ? 'selected' : '' %>>Closed</option>
+                <option value="submitted" <%= (currentStatus === 'submitted') ? 'selected' : '' %>>Submitted</option>
+                <option value="assigned" <%= (currentStatus === 'assigned') ? 'selected' : '' %>>Assigned</option>
+                <option value="visit_scheduled" <%= (currentStatus === 'visit_scheduled') ? 'selected' : '' %>>Visit Scheduled</option>
+                <option value="on_the_way" <%= (currentStatus === 'on_the_way') ? 'selected' : '' %>>On The Way</option>
+                <option value="site_visited" <%= (currentStatus === 'site_visited') ? 'selected' : '' %>>Site Visited</option>
+                <option value="in_progress" <%= (currentStatus === 'in_progress') ? 'selected' : '' %>>Work In Progress</option>
+                <option value="waiting_for_material" <%= (currentStatus === 'waiting_for_material') ? 'selected' : '' %>>Waiting for Material</option>
+                <option value="waiting_for_customer" <%= (currentStatus === 'waiting_for_customer') ? 'selected' : '' %>>Waiting for Customer</option>
+                <option value="unable_to_resolve" <%= (currentStatus === 'unable_to_resolve') ? 'selected' : '' %>>Unable to Resolve</option>
+                <option value="resolved" <%= (currentStatus === 'resolved') ? 'selected' : '' %>>Resolved</option>
+                <option value="closed" <%= (currentStatus === 'closed') ? 'selected' : '' %>>Closed</option>
+                <option value="reopened" <%= (currentStatus === 'reopened') ? 'selected' : '' %>>Reopened</option>
             </select>
         </div>
-        <div class="col-6 col-md-3 p-0 ps-1 d-flex gap-2">
+
+        <div class="col-6 col-md-2 p-1">
+            <select name="category" class="form-select">
+                <option value="">All Categories</option>
+                <option value="inverter_error" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'inverter_error') ? 'selected' : '' %>>Inverter Fault</option>
+                <option value="generation_drop" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'generation_drop') ? 'selected' : '' %>>Generation Drop</option>
+                <option value="panel_physical_damage" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'panel_physical_damage') ? 'selected' : '' %>>Panel Damage</option>
+                <option value="metering_issue" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'metering_issue') ? 'selected' : '' %>>Net Metering</option>
+                <option value="wiring_loose" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'wiring_loose') ? 'selected' : '' %>>Wiring / Earthing</option>
+                <option value="general_service" <%= (typeof currentCategory !== 'undefined' && currentCategory === 'general_service') ? 'selected' : '' %>>General / AMC</option>
+            </select>
+        </div>
+
+        <% if (currentUser && currentUser.role === 'SUPER_ADMIN' && typeof branches !== 'undefined' && branches.length > 0) { %>
+            <div class="col-6 col-md-2 p-1">
+                <select name="branch" class="form-select">
+                    <option value="">All Service Branches</option>
+                    <% branches.forEach(b => { %>
+                        <option value="<%= b._id %>" <%= (typeof currentBranch !== 'undefined' && currentBranch == b._id.toString()) ? 'selected' : '' %>>
+                            <%= b.name %> (<%= b.code %>)
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+        <% } %>
+
+        <div class="col-6 col-md-2 p-1">
+            <select name="queue" class="form-select">
+                <option value="">Standard Queues</option>
+                <option value="unassigned" <%= (typeof currentQueue !== 'undefined' && currentQueue === 'unassigned') ? 'selected' : '' %>>Unassigned Branch</option>
+                <option value="multiple_matches" <%= (typeof currentQueue !== 'undefined' && currentQueue === 'multiple_matches') ? 'selected' : '' %>>Multiple Branch Match</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-1 p-1 d-flex gap-1">
             <button type="submit" class="btn btn-primary w-100 fw-bold" style="background: var(--admin-navy-primary);">
-                Filter
+                <i class="icofont-filter"></i>
             </button>
-            <a href="/admin/complaints" class="btn btn-outline-secondary" title="Clear Filters">
+            <a href="<%= baseComplaintUrl %>" class="btn btn-outline-secondary" title="Reset Filters">
                 <i class="icofont-refresh"></i>
             </a>
         </div>
@@ -85,92 +143,128 @@
 </div>
 
 <!-- Complaints Table -->
-<div class="admin-card border shadow-sm p-0 overflow-hidden mb-4" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px;">
+<div class="admin-card border shadow-sm p-0 overflow-hidden mb-4" style="border: 1px solid var(--admin-border, #cbd5e1) !important; border-radius: 12px; background: #fff;">
     <div class="admin-card-header bg-white p-3 border-bottom d-flex justify-content-between align-items-center mb-0">
         <div>
             <h5 class="admin-card-title mb-0">
                 <i class="icofont-list me-2 text-primary"></i> Service Tickets Directory
             </h5>
-            <div class="admin-card-subtitle small text-muted">Grievance logs, technical tickets & engineer assignment</div>
+            <div class="admin-card-subtitle small text-muted">Customer grievances, technician dispatch & resolution life-cycle</div>
         </div>
-        <span class="badge bg-light text-dark border font-monospace"><%= complaints.length %> tickets found</span>
+        <span class="badge bg-light text-dark border font-monospace"><%= complaints.length %> tickets displayed</span>
     </div>
 
-    <div class="admin-table-container">
-        <table class="admin-table">
-            <thead>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-uppercase small text-muted" style="font-size: 11px;">
                 <tr>
-                    <th class="ps-3 py-3">TICKET ID</th>
-                    <th>CUSTOMER</th>
-                    <th>CONTACT</th>
-                    <th>CATEGORY</th>
-                    <th>DESCRIPTION</th>
-                    <th>ASSIGNED ENGINEER</th>
-                    <th>STATUS</th>
-                    <th class="text-end" style="padding-right: 16px;">ACTION</th>
+                    <th class="ps-3 py-3">Ticket / Complaint ID</th>
+                    <th>Customer &amp; Project</th>
+                    <th>Contact &amp; Address</th>
+                    <th>Category</th>
+                    <th>Service Branch</th>
+                    <th>Assigned Technician</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Action</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (complaints && complaints.length > 0) { %>
                     <% complaints.forEach(c => { %>
                         <tr>
-                            <td style="padding: 12px 16px;">
-                                <strong class="font-monospace text-primary fw-bold"><%= c.ticketId %></strong>
+                            <td class="ps-3 py-3">
+                                <a href="<%= baseComplaintUrl %>/<%= c._id || c.ticketId %>" class="fw-bold text-primary font-monospace text-decoration-none">
+                                    <%= c.ticketId %>
+                                </a>
+                                <% if (c.complaintId && c.complaintId !== c.ticketId) { %>
+                                    <small class="text-muted d-block font-monospace" style="font-size: 10px;"><%= c.complaintId %></small>
+                                <% } %>
                                 <small class="text-muted d-block" style="font-size: 10.5px;">
                                     <%= c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : '' %>
                                 </small>
                             </td>
+
                             <td>
                                 <strong class="text-dark d-block"><%= c.customerName %></strong>
-                                <% if (c.systemCapacity) { %>
-                                    <span class="badge bg-light text-dark border" style="font-size: 10.5px;"><%= c.systemCapacity %> kW Plant</span>
+                                <% if (c.project && (c.project.projectNumber || c.project.title)) { %>
+                                    <small class="text-success d-block font-monospace" style="font-size: 11px;">
+                                        <i class="icofont-solar-panel me-1"></i><%= c.project.projectNumber || c.project.title %> (<%= c.project.capacityKw || c.systemCapacity || '' %> kW)
+                                    </small>
+                                <% } else if (c.customer) { %>
+                                    <span class="badge bg-light text-primary border" style="font-size: 10px;">Customer Linked</span>
+                                <% } else { %>
+                                    <span class="badge bg-light text-muted border" style="font-size: 10px;">Unlinked</span>
                                 <% } %>
                             </td>
+
                             <td>
                                 <a href="tel:<%= c.mobile %>" class="text-dark fw-bold text-decoration-none font-monospace">
                                     <i class="icofont-phone text-success me-1"></i><%= c.mobile %>
                                 </a>
-                                <% if (c.email) { %>
-                                    <small class="text-muted d-block text-truncate" style="max-width: 140px;"><%= c.email %></small>
-                                <% } %>
+                                <small class="text-muted d-block text-truncate" style="max-width: 170px;" title="<%= (c.originalServiceAddress && c.originalServiceAddress.address) || c.serviceAddress || '' %>">
+                                    <%= c.city || '' %>, PIN: <%= c.pinCode || '' %>
+                                </small>
                             </td>
+
                             <td>
                                 <span class="badge bg-light text-primary border" style="font-size: 11px;">
                                     <%= (c.category || 'general_service').replace(/_/g, ' ').toUpperCase() %>
                                 </span>
-                            </td>
-                            <td>
-                                <div class="text-truncate" style="max-width: 220px;" title="<%= c.description %>">
+                                <div class="text-truncate text-muted small mt-1" style="max-width: 170px;" title="<%= c.description %>">
                                     <%= c.description %>
                                 </div>
-                                <% if (c.resolutionNotes) { %>
-                                    <small class="text-success d-block text-truncate" style="max-width: 220px;" title="<%= c.resolutionNotes %>">
-                                        <i class="icofont-check me-1"></i><%= c.resolutionNotes %>
-                                    </small>
-                                <% } %>
                             </td>
+
                             <td>
-                                <% if (c.assignedEngineer && c.assignedEngineer.name) { %>
-                                    <strong class="text-dark d-block" style="font-size: 12px;"><%= c.assignedEngineer.name %></strong>
-                                    <small class="text-muted font-monospace"><%= c.assignedEngineer.employeeId %></small>
+                                <% if (c.branch && c.branch.name) { %>
+                                    <strong class="text-dark d-block" style="font-size: 12px;"><%= c.branch.name %></strong>
+                                    <small class="text-muted font-monospace"><%= c.branchRoutingMethod || 'AUTO' %></small>
+                                <% } else if (c.branchRoutingMethod === 'MULTIPLE_MATCHES') { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning">Multiple Match Queue</span>
                                 <% } else { %>
-                                    <span class="text-muted small fst-italic">Unassigned</span>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger">Unassigned Branch</span>
                                 <% } %>
                             </td>
+
                             <td>
-                                <% if (c.status === 'resolved' || c.status === 'closed') { %>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">RESOLVED</span>
-                                <% } else if (c.status === 'in_progress' || c.status === 'assigned') { %>
-                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">IN PROGRESS</span>
+                                <% const assignedStaff = c.assignedTechnician || c.assignedEngineer; %>
+                                <% if (assignedStaff && assignedStaff.name) { %>
+                                    <strong class="text-dark d-block" style="font-size: 12px;"><%= assignedStaff.name %></strong>
+                                    <small class="text-muted font-monospace"><%= assignedStaff.employeeId || assignedStaff.designation || 'Technician' %></small>
                                 <% } else { %>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">SUBMITTED</span>
+                                    <span class="text-muted small fst-italic">Not Assigned</span>
                                 <% } %>
                             </td>
-                            <td class="text-end" style="padding-right: 16px;">
-                                <button class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 4px 9px; border-radius: 6px;"
-                                    onclick="openUpdateModal('<%= c.ticketId %>', '<%= c.status %>', '<%= (c.resolutionNotes || '').replace(/'/g, '\\\'') %>', '<%= (c.assignedEngineer && c.assignedEngineer._id) ? c.assignedEngineer._id : '' %>')">
-                                    <i class="icofont-edit me-1"></i> Update
-                                </button>
+
+                            <td>
+                                <% const st = (c.status || 'submitted').toLowerCase(); %>
+                                <% if (st === 'resolved') { %>
+                                    <span class="badge bg-info-subtle text-info border border-info px-2 py-1">RESOLVED</span>
+                                <% } else if (st === 'closed') { %>
+                                    <span class="badge bg-success-subtle text-success border border-success px-2 py-1">CLOSED</span>
+                                <% } else if (st === 'waiting for material' || st === 'waiting_for_material') { %>
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary px-2 py-1">WAITING MATERIAL</span>
+                                <% } else if (st === 'in_progress' || st === 'work in progress' || st === 'site visited' || st === 'on the way' || st === 'visit scheduled') { %>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning px-2 py-1">IN PROGRESS</span>
+                                <% } else if (st === 'assigned') { %>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary px-2 py-1">ASSIGNED</span>
+                                <% } else if (st === 'reopened') { %>
+                                    <span class="badge bg-danger text-white px-2 py-1">REOPENED</span>
+                                <% } else { %>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">SUBMITTED</span>
+                                <% } %>
+                            </td>
+
+                            <td class="text-end pe-3">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="<%= baseComplaintUrl %>/<%= c._id || c.ticketId %>" class="btn btn-sm btn-outline-primary" style="font-size: 11px; padding: 4px 9px; border-radius: 6px;">
+                                        <i class="icofont-eye me-1"></i> Detail
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-secondary" style="font-size: 11px; padding: 4px 9px; border-radius: 6px;"
+                                        onclick="openUpdateModal('<%= c.ticketId %>', '<%= c.status %>', '<%= (c.resolutionNotes || '').replace(/'/g, '\\\'') %>', '<%= (assignedStaff && assignedStaff._id) ? assignedStaff._id : '' %>')">
+                                        <i class="icofont-edit"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     <% }); %>
@@ -216,7 +310,7 @@
     <% } %>
 </div>
 
-<!-- Modal: Update Complaint Status -->
+<!-- Modal: Quick Update Complaint Status -->
 <div class="modal fade" id="updateComplaintModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -235,34 +329,43 @@
                         <select class="form-select" id="complaintStatus" required>
                             <option value="submitted">Submitted (New / Pending)</option>
                             <option value="assigned">Assigned to Field Engineer</option>
-                            <option value="in_progress">In Progress (Engineer On-Site)</option>
-                            <option value="waiting_for_parts">Waiting for Inverter / Spare Parts</option>
+                            <option value="visit_scheduled">Visit Scheduled</option>
+                            <option value="on_the_way">On The Way</option>
+                            <option value="site_visited">Site Visited</option>
+                            <option value="in_progress">Work In Progress</option>
+                            <option value="waiting_for_material">Waiting for Material / Spares</option>
+                            <option value="waiting_for_customer">Waiting for Customer</option>
+                            <option value="unable_to_resolve">Unable to Resolve</option>
                             <option value="resolved">Resolved (Issue Fixed)</option>
                             <option value="closed">Closed</option>
+                            <option value="reopened">Reopened</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small font-weight-bold">Assign Field Engineer / Technician</label>
+                        <label class="form-label small font-weight-bold">Assign Field Technician / Engineer</label>
+                        <% const staffList = (typeof technicians !== 'undefined' && technicians.length > 0) ? technicians : ((typeof engineers !== 'undefined') ? engineers : []); %>
                         <select class="form-select" id="complaintEngineer">
                             <option value="">-- Select Field Staff --</option>
-                            <% if (typeof engineers !== 'undefined' && engineers && engineers.length > 0) { %>
-                                <% engineers.forEach(eng => { %>
-                                    <option value="<%= eng._id %>"><%= eng.name %> (<%= eng.employeeId %> - <%= eng.designation || 'Technician' %>)</option>
+                            <% if (staffList && staffList.length > 0) { %>
+                                <% staffList.forEach(eng => { %>
+                                    <option value="<%= eng._id %>">
+                                        <%= eng.name %> (<%= eng.employeeId || 'Staff' %>) <%= eng.designation ? '- ' + eng.designation : '' %>
+                                    </option>
                                 <% }); %>
                             <% } %>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small font-weight-bold">Resolution Notes / Action Taken</label>
-                        <textarea class="form-control" id="complaintNotes" rows="3" placeholder="Enter inspection findings, component replacements, inverter error code cleared, etc."></textarea>
+                        <label class="form-label small font-weight-bold">Resolution / Service Notes</label>
+                        <textarea class="form-control" id="complaintResolutionNotes" rows="3" placeholder="Technical inspection remarks, parts replaced, or visit summary..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer bg-light border-top">
-                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm px-4 font-weight-bold" style="background: var(--admin-navy-primary);">
-                        Save Ticket Updates
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold" id="updateComplaintBtn" style="background: var(--admin-navy-primary);">
+                        Save Update
                     </button>
                 </div>
             </form>
@@ -271,56 +374,70 @@
 </div>
 
 <script>
-const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
-
 function openUpdateModal(ticketId, status, notes, engineerId) {
     document.getElementById('complaintTicketId').value = ticketId;
-    document.getElementById('modalTicketId').innerText = ticketId;
-    document.getElementById('complaintStatus').value = status || 'submitted';
-    document.getElementById('complaintNotes').value = notes || '';
-    if (document.getElementById('complaintEngineer')) {
-        document.getElementById('complaintEngineer').value = engineerId || '';
+    document.getElementById('modalTicketId').innerText = '#' + ticketId;
+    document.getElementById('complaintStatus').value = (status || 'submitted').toLowerCase().replace(/ /g, '_');
+    document.getElementById('complaintResolutionNotes').value = notes || '';
+    if (engineerId) {
+        document.getElementById('complaintEngineer').value = engineerId;
+    } else {
+        document.getElementById('complaintEngineer').value = '';
     }
-    const modal = new bootstrap.Modal(document.getElementById('updateComplaintModal'));
+    const modalEl = document.getElementById('updateComplaintModal');
+    const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
 
-async function submitComplaintUpdate() {
+function submitComplaintUpdate() {
     const ticketId = document.getElementById('complaintTicketId').value;
     const status = document.getElementById('complaintStatus').value;
-    const resolutionNotes = document.getElementById('complaintNotes').value;
-    const assignedEngineer = document.getElementById('complaintEngineer') ? document.getElementById('complaintEngineer').value : '';
+    const resolutionNotes = document.getElementById('complaintResolutionNotes').value.trim();
+    const assignedEngineer = document.getElementById('complaintEngineer').value;
 
-    try {
-        const res = await fetch('/api/admin/complaints/status', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': CSRF_TOKEN
-            },
-            body: JSON.stringify({
-                ticketId,
-                status,
-                resolutionNotes,
-                assignedEngineer,
-                _csrf: CSRF_TOKEN
-            })
-        });
+    const btn = document.getElementById('updateComplaintBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
 
-        const data = await res.json();
+    const csrfToken = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+    fetch('/api/admin/complaints/status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken
+        },
+        body: JSON.stringify({
+            ticketId,
+            status,
+            resolutionNotes,
+            assignedEngineer: assignedEngineer || null,
+            _csrf: csrfToken
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = 'Save Update';
         if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('updateComplaintModal')).hide();
+            const modalEl = document.getElementById('updateComplaintModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
             const toast = document.getElementById('complaintToast');
             const toastMsg = document.getElementById('complaintToastMsg');
-            toastMsg.innerText = data.message || 'Ticket updated.';
+            toastMsg.innerText = data.message || 'Ticket updated successfully.';
             toast.classList.remove('d-none');
-            setTimeout(() => location.reload(), 1200);
+            setTimeout(() => window.location.reload(), 800);
         } else {
-            alert(data.message || 'Error updating complaint.');
+            alert(data.message || 'Error updating complaint ticket.');
         }
-    } catch (err) {
-        alert('Server connection error.');
-    }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = 'Save Update';
+        alert('Network or server error while updating ticket.');
+    });
 }
 </script>
 

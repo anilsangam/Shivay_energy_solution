@@ -212,3 +212,49 @@ exports.getProfile = async (req, res) => {
         breadcrumbs: [{ label: 'Account' }, { label: 'My Profile' }]
     });
 };
+
+// Employee Assigned Complaints & Service Tasks (Phase 4)
+exports.getAssignedComplaints = async (req, res) => {
+    try {
+        const user = req.session.user;
+        let complaints = [];
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            const Complaint = require('../models/Complaint');
+            complaints = await Complaint.find({
+                $or: [
+                    { assignedTechnician: user._id },
+                    { assignedEngineer: user._id }
+                ]
+            })
+            .populate('branch', 'name code city')
+            .populate('customer', 'name mobile')
+            .populate('project', 'projectNumber title capacityKw')
+            .sort({ createdAt: -1 })
+            .lean();
+        } else if (DataStore && DataStore.getAllComplaints) {
+            complaints = DataStore.getAllComplaints().filter(c =>
+                (c.assignedTechnician && c.assignedTechnician.toString() === user._id.toString()) ||
+                (c.assignedEngineer && c.assignedEngineer.toString() === user._id.toString())
+            );
+        }
+
+        res.render('private/employee/complaints', {
+            title: `My Assigned Complaints | ${data.company.name}`,
+            data,
+            company: data.company,
+            user,
+            currentUser: user,
+            complaints,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            activePage: 'employee-complaints',
+            pageTitle: 'My Assigned Complaints',
+            breadcrumbs: [{ label: 'Field Portal' }, { label: 'Service Complaints' }]
+        });
+    } catch (err) {
+        console.error('[Error fetching employee assigned complaints]:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error',
+            message: 'Error loading assigned complaints.'
+        });
+    }
+};

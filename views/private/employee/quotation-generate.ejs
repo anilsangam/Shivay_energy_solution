@@ -1,0 +1,721 @@
+<%- include('../admin/partials/admin-head') %>
+<%
+    const authGenUser = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : ((typeof user !== 'undefined' && user) ? user : null);
+    const genRole = authGenUser && authGenUser.role ? String(authGenUser.role).trim().toUpperCase() : 'EMPLOYEE';
+    const customRequestUrl = genRole === 'SUPER_ADMIN'
+        ? '/admin/quotations/new'
+        : ((genRole === 'MANAGER' || genRole === 'BRANCH_MANAGER') ? '/manager/quotations/new' : '/employee/quotations/new');
+%>
+
+<!-- Compact Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+    <h2 class="font-weight-bold mb-0" style="color: var(--admin-navy-primary); font-size: clamp(17px, 3.5vw, 22px);">
+        <i class="icofont-solar-panel text-warning me-1"></i> Quotation Generate
+    </h2>
+    <div class="d-flex justify-content-end gap-1 ms-auto">
+        <a href="<%= parentUrl %>" class="btn btn-sm btn-outline-secondary py-1 px-2" style="border-radius: 6px; font-size: 12px;">
+            <i class="icofont-arrow-left"></i> Back
+        </a>
+        <a href="<%= customRequestUrl %>" class="btn btn-sm btn-outline-primary py-1 px-2 fw-bold" style="border-radius: 6px; font-size: 12px;">
+            <i class="icofont-plus-circle"></i> Custom Request
+        </a>
+    </div>
+</div>
+
+<!-- Post-Generate Quick Action Banner -->
+<div id="quoteSuccessBanner" class="alert alert-success border-success d-none mb-2 py-2 px-3 shadow-sm">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+        <div>
+            <h6 class="font-weight-bold mb-1" id="quoteSuccessTitle">Quotation Generated</h6>
+            <div class="small" id="quoteSuccessDesc"></div>
+        </div>
+        <div class="d-flex flex-wrap gap-2" id="quoteSuccessActions"></div>
+    </div>
+</div>
+
+<form id="empQuoteForm" onsubmit="handleSubmitEmpQuote(event)">
+    <div class="row g-2 g-lg-3">
+        <!-- LEFT COLUMN: CLIENT & PACKAGE SELECTION -->
+        <div class="col-12 col-lg-8">
+            <!-- 1. Compact Client Details -->
+            <div class="admin-card p-2 p-sm-3 mb-2">
+                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                    <h6 class="admin-card-title mb-0" style="font-size: 14px;">1. Customer Details</h6>
+                    <span class="badge bg-light text-primary border" style="font-size: 10px;">Tax Included</span>
+                </div>
+
+                <div class="row g-2 mobile-form-uniform">
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold">Mobile *</label>
+                        <div class="input-group input-group-sm">
+                            <input type="tel" id="qMobile" class="form-control" required placeholder="10-digit">
+                            <button type="button" class="btn btn-outline-primary px-2" onclick="lookupCustomerByMobile()" title="Search Client">
+                                <i class="icofont-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold">Customer Name *</label>
+                        <input type="text" id="qName" class="form-control form-control-sm" required placeholder="Client name">
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold">Site Address *</label>
+                        <input type="text" id="qAddress" class="form-control form-control-sm" required placeholder="Locality / Street">
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold">Email</label>
+                        <input type="email" id="qEmail" class="form-control form-control-sm" placeholder="Optional">
+                    </div>
+                    <div class="col-4 col-md-3">
+                        <label class="form-label mb-1 fw-bold">City</label>
+                        <input type="text" id="qCity" class="form-control form-control-sm" value="Raisen">
+                    </div>
+                    <div class="col-4 col-md-3">
+                        <label class="form-label mb-1 fw-bold">State</label>
+                        <input type="text" id="qState" class="form-control form-control-sm" value="Madhya Pradesh" oninput="updateLivePricing()">
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <label class="form-label mb-1 fw-bold">Pincode</label>
+                        <input type="text" id="qPincode" class="form-control form-control-sm" placeholder="464551">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label mb-1 fw-bold">DISCOM</label>
+                        <input type="text" id="qDiscom" class="form-control form-control-sm" value="MPPKVVCL">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label mb-1 fw-bold">Consumer / IVRS #</label>
+                        <input type="text" id="qConsumerNo" class="form-control form-control-sm" placeholder="Optional">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Solar Grid Rate Card Catalog -->
+            <div class="admin-card p-2 p-sm-3 mb-2">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
+                    <h6 class="admin-card-title mb-0" style="font-size: 14px;">2. Select Solar Package</h6>
+                    <div class="btn-group btn-group-sm" id="capFilterGroup">
+                        <button type="button" class="btn btn-outline-secondary active py-0 px-2" style="font-size: 11px;" onclick="setCapacityFilter('ALL', this)">All</button>
+                        <button type="button" class="btn btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="setCapacityFilter('3', this)">3–3.5 kW</button>
+                        <button type="button" class="btn btn-outline-secondary py-0 px-2" style="font-size: 11px;" onclick="setCapacityFilter('5', this)">5–5.2 kW</button>
+                    </div>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                    <button type="button" class="btn btn-primary active py-1" style="font-size: 11px;" id="tabDcr" onclick="setCategoryTab('RESIDENTIAL_DCR')">
+                        Subsidy DCR
+                    </button>
+                    <button type="button" class="btn btn-outline-primary py-1" style="font-size: 11px;" id="tabNdcr" onclick="setCategoryTab('COMMERCIAL_NON_DCR')">
+                        Commercial Non-DCR
+                    </button>
+                    <button type="button" class="btn btn-outline-dark py-1" style="font-size: 11px;" id="tabCustom" onclick="setCategoryTab('CUSTOM')">
+                        Custom kW
+                    </button>
+                </div>
+
+                <!-- Rate Card Package Grid (2 cards per row on mobile, 3 on desktop) -->
+                <div id="packageGrid" class="row g-2"></div>
+
+                <!-- Custom Capacity Panel (when Custom tab selected) -->
+                <div id="customPackageBox" class="p-2 bg-light rounded border d-none">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1 fw-bold" style="font-size: 11px;">Category</label>
+                            <select id="customCat" class="form-select form-select-sm" onchange="updateLivePricing()">
+                                <option value="RESIDENTIAL_DCR">DCR (Subsidy)</option>
+                                <option value="COMMERCIAL_NON_DCR">Non-DCR (No Sub.)</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1 fw-bold" style="font-size: 11px;">Capacity (kW) *</label>
+                            <input type="number" id="customKw" class="form-control form-control-sm" min="1" max="500" step="0.5" value="6" oninput="updateLivePricing()">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label mb-1 fw-bold" style="font-size: 11px;">Brand / Specs</label>
+                            <input type="text" id="customBrand" class="form-control form-control-sm" value="Waaree / Tier-1 DCR" oninput="updateLivePricing()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Extra Materials / Site Add-ons (Compact) -->
+            <div class="admin-card p-2 p-sm-3 mb-2">
+                <div class="d-flex align-items-center justify-content-between gap-2 pb-2 mb-2 border-bottom">
+                    <h6 class="admin-card-title mb-0" style="font-size: 14px;">3. Extra Materials <small class="text-muted fw-normal">(Optional)</small></h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11px;" onclick="addExtraMaterialRow()">
+                        + Custom Item
+                    </button>
+                </div>
+
+                <!-- Quick Preset Chips -->
+                <div class="d-flex flex-wrap gap-1 mb-2" id="extraPresetBar">
+                    <% if (typeof extraPresets !== 'undefined' && extraPresets && extraPresets.length > 0) { %>
+                        <% extraPresets.forEach((preset, idx) => { %>
+                            <button type="button" class="btn btn-sm btn-light border text-dark py-0 px-2" style="font-size: 10.5px;" onclick="addPresetExtraMaterial(<%= idx %>)">
+                                + <%= preset.description.split('(')[0].trim() %> (₹<%= preset.unitPrice.toLocaleString('en-IN') %>)
+                            </button>
+                        <% }); %>
+                    <% } %>
+                </div>
+
+                <div id="extraMaterialsList" class="d-flex flex-column gap-2">
+                    <div class="text-muted fst-italic" style="font-size: 11px;" id="noExtrasMsg">No extra items added.</div>
+                </div>
+            </div>
+
+            <!-- 4. Pricing & Discount (Compact) -->
+            <div class="admin-card p-2 p-sm-3 mb-0">
+                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                    <h6 class="admin-card-title mb-0" style="font-size: 14px;">4. Pricing &amp; Discount</h6>
+                    <span class="badge bg-light text-dark border" style="font-size: 10px;">Self: ≤<%= pricingPolicy.MAX_SELF_DISCOUNT_PERCENT %>% / ₹<%= pricingPolicy.MAX_SELF_DISCOUNT_AMOUNT.toLocaleString('en-IN') %></span>
+                </div>
+
+                <div class="row g-2 align-items-start mobile-form-uniform">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 11px;">
+                            Base Rate (₹) <span class="text-muted fw-normal">• Min <strong id="lblCatalogRate">₹0</strong></span>
+                        </label>
+                        <input type="number" id="qPackagePrice" class="form-control form-control-sm fw-bold" min="1000" step="500" oninput="onBasePriceEdited()">
+                    </div>
+
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 11px;">Discount (%)</label>
+                        <input type="number" id="qDiscountPct" class="form-control form-control-sm" min="0" max="20" step="0.25" value="0" oninput="onDiscountPctInput()">
+                        <div class="d-flex gap-1 mt-1">
+                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-1 flex-fill" style="font-size: 10px;" onclick="applyDiscountPct(0)">0%</button>
+                            <button type="button" class="btn btn-outline-success btn-sm py-0 px-1 flex-fill" style="font-size: 10px;" onclick="applyDiscountPct(1)">1%</button>
+                            <button type="button" class="btn btn-outline-success btn-sm py-0 px-1 flex-fill" style="font-size: 10px;" onclick="applyDiscountPct(2)">2%</button>
+                            <button type="button" class="btn btn-outline-success btn-sm py-0 px-1 flex-fill" style="font-size: 10px;" onclick="applyDiscountPct(3)">3%</button>
+                        </div>
+                    </div>
+
+                    <div class="col-6 col-md-4">
+                        <label class="form-label mb-1 fw-bold" style="font-size: 11px;">Discount (₹)</label>
+                        <input type="number" id="qDiscountAmt" class="form-control form-control-sm" min="0" step="100" value="0" oninput="onDiscountAmtInput()">
+                    </div>
+
+                    <div class="col-12">
+                        <input type="text" id="qNotes" class="form-control form-control-sm" placeholder="Optional note (e.g. structure requirement or discount reason)...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: COMPACT TAX-INCLUSIVE SUMMARY -->
+        <div class="col-12 col-lg-4">
+            <div class="admin-card p-2 p-sm-3 sticky-top" style="top: 76px;">
+                <div class="d-flex align-items-center justify-content-between pb-1 mb-2 border-bottom">
+                    <h6 class="font-weight-bold text-primary mb-0" style="font-size: 14px;"><i class="icofont-calculator-alt me-1"></i> Quote Summary</h6>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 9.5px;">GST Included</span>
+                </div>
+
+                <!-- Approval Routing Status Pill -->
+                <div id="approvalStatusBox" class="alert alert-success py-1 px-2 mb-2 d-flex align-items-center justify-content-between gap-1" style="font-size: 11px; line-height: 1.25;">
+                    <span class="font-weight-bold" id="approvalStatusHeading"><i class="icofont-check-circled me-1"></i>Instant Approval</span>
+                    <span id="approvalStatusReason" class="text-end" style="font-size: 10px;">Share Ready</span>
+                </div>
+
+                <div class="p-2 bg-light rounded border small mb-2">
+                    <div class="fw-bold text-dark" style="font-size: 12px;" id="sumPkgName">-</div>
+                    <div class="text-muted" style="font-size: 10.5px;" id="sumPkgSpecs">-</div>
+                    <div class="d-flex justify-content-between mt-1 text-primary" style="font-size: 10.5px;">
+                        <span id="sumGenDaily">-</span>
+                        <span id="sumGenMonthly">-</span>
+                    </div>
+                </div>
+
+                <div class="small mb-2" style="font-size: 12px;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Package (Incl. Tax):</span>
+                        <strong id="sumBasePrice">₹0</strong>
+                    </div>
+                    <div class="d-none justify-content-between mb-1" id="sumExtraRow">
+                        <span class="text-muted">Extra Materials:</span>
+                        <strong class="text-info" id="sumExtrasTotal">+ ₹0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1 text-danger">
+                        <span>Discount (<span id="sumDiscPct">0</span>%):</span>
+                        <span id="sumDiscAmt">- ₹0</span>
+                    </div>
+                    <div class="d-flex justify-content-between pt-1 border-top fw-bold" style="font-size: 13.5px;">
+                        <span>Final Total:</span>
+                        <span class="text-primary" id="sumGrandTotal">₹0</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 10px;">
+                        Incl. Taxable <span id="sumTaxable">₹0</span> + GST (<span id="sumGstRate">12</span>%) <span id="sumGstAmt">₹0</span>
+                    </div>
+                </div>
+
+                <div class="p-2 rounded border mb-2" style="background: #ecfdf5; border-color: #a7f3d0 !important;">
+                    <div class="d-flex justify-content-between align-items-center" style="font-size: 11.5px;">
+                        <span class="text-success fw-bold">Govt Subsidy:</span>
+                        <strong class="text-success" id="sumSubsidy">- ₹0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-1 mt-1 border-top border-success-subtle">
+                        <span class="fw-bold text-dark" style="font-size: 12px;">Net Client Cost:</span>
+                        <strong class="h5 mb-0 text-primary fw-bold" id="sumNetCost">₹0</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-between gap-1 p-2 bg-light rounded border mb-2" style="font-size: 10.5px;">
+                    <span>Auto Min: <strong id="sumMinThreshold">₹0</strong></span>
+                    <span class="text-danger">Floor: <strong id="sumHardFloor">₹0</strong></span>
+                    <span>EMI: <strong id="sumEmi">-</strong></span>
+                </div>
+
+                <div id="quoteErrAlert" class="alert alert-danger py-1 px-2 small d-none mb-2"></div>
+
+                <button type="submit" id="btnGenerateQuote" class="btn btn-success w-100 fw-bold py-2 shadow-sm">
+                    <i class="icofont-check-circled me-1"></i> Generate Quotation
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<%- include('../admin/partials/share-quotation-modal') %>
+
+<script>
+const SOLAR_PACKAGES = <%- JSON.stringify(packages || []) %>;
+const EXTRA_PRESETS = <%- JSON.stringify(typeof extraPresets !== 'undefined' ? (extraPresets || []) : []) %>;
+const POLICY = <%- JSON.stringify(pricingPolicy || {}) %>;
+const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+let activeCategory = 'RESIDENTIAL_DCR';
+let activeCapFilter = 'ALL';
+let selectedPkg = SOLAR_PACKAGES[0] || null;
+let extraMaterials = [];
+
+function setCategoryTab(cat) {
+    activeCategory = cat;
+    document.getElementById('tabDcr').className = cat === 'RESIDENTIAL_DCR' ? 'btn btn-primary active' : 'btn btn-outline-primary';
+    document.getElementById('tabNdcr').className = cat === 'COMMERCIAL_NON_DCR' ? 'btn btn-primary active' : 'btn btn-outline-primary';
+    document.getElementById('tabCustom').className = cat === 'CUSTOM' ? 'btn btn-dark active' : 'btn btn-outline-dark';
+
+    const capGroup = document.getElementById('capFilterGroup');
+    const customBox = document.getElementById('customPackageBox');
+    const pkgGrid = document.getElementById('packageGrid');
+
+    if (cat === 'CUSTOM') {
+        capGroup.classList.add('d-none');
+        pkgGrid.classList.add('d-none');
+        customBox.classList.remove('d-none');
+        selectedPkg = null;
+        resetBasePriceFromCatalog();
+    } else {
+        capGroup.classList.remove('d-none');
+        pkgGrid.classList.remove('d-none');
+        customBox.classList.add('d-none');
+        const firstInCat = SOLAR_PACKAGES.find(p => p.category === cat);
+        if (firstInCat) selectPackage(firstInCat.id);
+        renderPackageGrid();
+    }
+}
+
+function setCapacityFilter(cap, btn) {
+    activeCapFilter = cap;
+    document.querySelectorAll('#capFilterGroup .btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    renderPackageGrid();
+}
+
+function renderPackageGrid() {
+    const grid = document.getElementById('packageGrid');
+    const filtered = SOLAR_PACKAGES.filter(p => {
+        if (p.category !== activeCategory) return false;
+        if (activeCapFilter === '3') return p.capacityKw >= 3 && p.capacityKw < 4;
+        if (activeCapFilter === '5') return p.capacityKw >= 5;
+        return true;
+    });
+
+    grid.innerHTML = filtered.map(p => {
+        const isSel = selectedPkg && selectedPkg.id === p.id;
+        return `
+            <div class="col-6 col-md-4">
+                <div class="p-2 rounded border h-100 d-flex flex-column justify-content-between ${isSel ? 'border-primary bg-primary-subtle shadow-sm' : 'bg-white'}"
+                     style="cursor: pointer; transition: all 0.15s;" onclick="selectPackage('${p.id}')">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-start gap-1 mb-1">
+                            <strong class="text-dark text-truncate" style="font-size: 11.5px; line-height: 1.2;" title="${p.company}">${p.company}</strong>
+                            <span class="badge flex-shrink-0 ${isSel ? 'bg-primary' : 'bg-dark'}" style="font-size: 9.5px; padding: 2px 5px;">${p.capacityKw} kW</span>
+                        </div>
+                        <div class="text-muted mb-1" style="font-size: 10px; line-height: 1.25;">
+                            ${p.moduleWattage} &times; ${p.panelQty} Panels<br>
+                            <span class="text-truncate d-block" title="${p.inverterSpecs}">${p.inverterSpecs}</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 pt-1 border-top">
+                            <strong class="text-primary" style="font-size: 12px;">₹${p.standardRate.toLocaleString('en-IN')}</strong>
+                            <span class="badge ${p.subsidyAmount > 0 ? 'bg-success-subtle text-success' : 'bg-light text-muted'} border" style="font-size: 9px; padding: 1px 4px;">
+                                ${p.subsidyAmount > 0 ? 'Sub ₹' + (p.subsidyAmount / 1000) + 'k' : 'No Sub'}
+                            </span>
+                        </div>
+                        <div class="text-muted text-truncate mt-1" style="font-size: 9.5px;">
+                            ${p.unitPerDay}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function addPresetExtraMaterial(presetIdx) {
+    const p = EXTRA_PRESETS[presetIdx];
+    if (!p) return;
+    extraMaterials.push({
+        description: p.description,
+        quantity: 1,
+        unit: p.unit || 'Nos',
+        unitPrice: p.unitPrice || 0
+    });
+    renderExtraMaterials();
+}
+
+function addExtraMaterialRow() {
+    extraMaterials.push({ description: '', quantity: 1, unit: 'Nos', unitPrice: 0 });
+    renderExtraMaterials();
+}
+
+function updateExtraMaterialField(idx, field, value) {
+    if (!extraMaterials[idx]) return;
+    if (field === 'quantity' || field === 'unitPrice') {
+        extraMaterials[idx][field] = Math.max(0, parseFloat(value) || 0);
+        const rowTotalEl = document.getElementById('extraRowTotal-' + idx);
+        if (rowTotalEl) {
+            const lineAmt = Math.round((extraMaterials[idx].quantity || 0) * (extraMaterials[idx].unitPrice || 0));
+            rowTotalEl.textContent = '₹' + lineAmt.toLocaleString('en-IN');
+        }
+        onDiscountPctInput();
+    } else {
+        extraMaterials[idx][field] = value;
+    }
+}
+
+function removeExtraMaterial(idx) {
+    extraMaterials.splice(idx, 1);
+    renderExtraMaterials();
+}
+
+function renderExtraMaterials() {
+    const container = document.getElementById('extraMaterialsList');
+    if (!extraMaterials.length) {
+        container.innerHTML = '<div class="text-muted small fst-italic" id="noExtrasMsg">No extra material add-ons selected. Tap any quick chip above or "Add Custom Item".</div>';
+        onDiscountPctInput();
+        return;
+    }
+
+    container.innerHTML = extraMaterials.map((item, idx) => {
+        const lineAmt = Math.round((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0));
+        return `
+            <div class="p-2 bg-light rounded border">
+                <div class="row g-2 align-items-center">
+                    <div class="col-12 col-md-5">
+                        <input type="text" class="form-control form-control-sm" placeholder="Extra material / work description *"
+                               value="${String(item.description || '').replace(/"/g, '&quot;')}"
+                               oninput="updateExtraMaterialField(${idx}, 'description', this.value)">
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <input type="number" class="form-control form-control-sm" min="0.5" step="0.5" placeholder="Qty"
+                               value="${item.quantity}" oninput="updateExtraMaterialField(${idx}, 'quantity', this.value)">
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <select class="form-select form-select-sm" onchange="updateExtraMaterialField(${idx}, 'unit', this.value)">
+                            <option value="Nos" ${item.unit === 'Nos' ? 'selected' : ''}>Nos</option>
+                            <option value="Mtr" ${item.unit === 'Mtr' ? 'selected' : ''}>Mtr</option>
+                            <option value="Set" ${item.unit === 'Set' ? 'selected' : ''}>Set</option>
+                            <option value="Job" ${item.unit === 'Job' ? 'selected' : ''}>Job</option>
+                        </select>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <input type="number" class="form-control form-control-sm" min="0" step="50" placeholder="Rate ₹"
+                               value="${item.unitPrice}" oninput="updateExtraMaterialField(${idx}, 'unitPrice', this.value)">
+                    </div>
+                    <div class="col-12 col-md-1 d-flex justify-content-between justify-content-md-end align-items-center gap-2">
+                        <strong class="text-primary small d-md-none" id="extraRowTotal-${idx}">₹${lineAmt.toLocaleString('en-IN')}</strong>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" onclick="removeExtraMaterial(${idx})" title="Remove Item">
+                            <i class="icofont-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    onDiscountPctInput();
+}
+
+function getExtrasTotal() {
+    return extraMaterials.reduce((sum, item) => {
+        if (!item || !String(item.description || '').trim()) return sum;
+        return sum + Math.round((Number(item.quantity) || 0) * (Number(item.unitPrice) || 0));
+    }, 0);
+}
+
+function getCurrentCatalogPrice() {
+    if (selectedPkg) return selectedPkg.standardRate;
+    const cat = document.getElementById('customCat').value;
+    const kw = Math.max(1, parseFloat(document.getElementById('customKw').value) || 3);
+    const ratePerKw = (POLICY.CUSTOM_BENCHMARK_RATE_PER_KW && POLICY.CUSTOM_BENCHMARK_RATE_PER_KW[cat]) || 58000;
+    return Math.round(kw * ratePerKw);
+}
+
+function selectPackage(pkgId) {
+    selectedPkg = SOLAR_PACKAGES.find(p => p.id === pkgId) || null;
+    renderPackageGrid();
+    resetBasePriceFromCatalog();
+}
+
+function resetBasePriceFromCatalog() {
+    const catPrice = getCurrentCatalogPrice();
+    document.getElementById('qPackagePrice').value = catPrice;
+    document.getElementById('qPackagePrice').min = catPrice;
+    document.getElementById('lblCatalogRate').textContent = '₹' + catPrice.toLocaleString('en-IN');
+    onDiscountPctInput();
+}
+
+function onBasePriceEdited() {
+    const catPrice = getCurrentCatalogPrice();
+    const el = document.getElementById('qPackagePrice');
+    if ((parseFloat(el.value) || 0) < catPrice) {
+        // Keep base rate >= catalogPrice; employee uses discount fields to reduce price
+        el.value = catPrice;
+    }
+    onDiscountPctInput();
+}
+
+function applyDiscountPct(pct) {
+    document.getElementById('qDiscountPct').value = pct;
+    onDiscountPctInput();
+}
+
+function onDiscountPctInput() {
+    const pkgBase = Math.max(getCurrentCatalogPrice(), parseFloat(document.getElementById('qPackagePrice').value) || 0);
+    const totalGross = pkgBase + getExtrasTotal();
+    const pct = Math.max(0, parseFloat(document.getElementById('qDiscountPct').value) || 0);
+    const amt = Math.round((totalGross * pct) / 100);
+    document.getElementById('qDiscountAmt').value = amt;
+    updateLivePricing();
+}
+
+function onDiscountAmtInput() {
+    const pkgBase = Math.max(getCurrentCatalogPrice(), parseFloat(document.getElementById('qPackagePrice').value) || 0);
+    const totalGross = pkgBase + getExtrasTotal();
+    const amt = Math.max(0, parseFloat(document.getElementById('qDiscountAmt').value) || 0);
+    const pct = totalGross > 0 ? Number(((amt / totalGross) * 100).toFixed(2)) : 0;
+    document.getElementById('qDiscountPct').value = pct;
+    updateLivePricing();
+}
+
+function updateLivePricing() {
+    const catPrice = getCurrentCatalogPrice();
+    const pkgBase = Math.max(catPrice, parseFloat(document.getElementById('qPackagePrice').value) || catPrice);
+    const extrasTotal = getExtrasTotal();
+    const totalGross = pkgBase + extrasTotal;
+    const discPct = Math.max(0, parseFloat(document.getElementById('qDiscountPct').value) || 0);
+    const discAmt = Math.max(0, parseFloat(document.getElementById('qDiscountAmt').value) || 0);
+    const finalTotal = Math.max(0, Math.round(totalGross - discAmt));
+
+    const minThresh = Math.round(catPrice * (POLICY.MIN_THRESHOLD_FACTOR || 0.97)) + extrasTotal;
+    const hardFloor = Math.round(catPrice * (POLICY.HARD_FLOOR_FACTOR || 0.85)) + extrasTotal;
+
+    const gstRate = POLICY.DEFAULT_INCLUDED_GST_RATE || 12;
+    const taxable = Math.round(finalTotal / (1 + gstRate / 100));
+    const gstAmt = finalTotal - taxable;
+
+    const customCat = document.getElementById('customCat')?.value || 'RESIDENTIAL_DCR';
+    const kw = selectedPkg ? selectedPkg.capacityKw : Math.max(1, parseFloat(document.getElementById('customKw').value) || 3);
+    const subsidy = selectedPkg
+        ? selectedPkg.subsidyAmount
+        : (customCat === 'COMMERCIAL_NON_DCR' ? 0 : (kw < 1.5 ? 30000 : (kw < 2.5 ? 60000 : 78000)));
+    const netCost = Math.max(0, finalTotal - subsidy);
+
+    // Update Summary Labels
+    document.getElementById('lblCatalogRate').textContent = '₹' + catPrice.toLocaleString('en-IN');
+    document.getElementById('sumPkgName').textContent = selectedPkg
+        ? `${selectedPkg.capacityKw} kW ${selectedPkg.company} (${selectedPkg.categoryLabel})`
+        : `${kw} kW Custom Solar Package (${customCat === 'COMMERCIAL_NON_DCR' ? 'Non-DCR Commercial' : 'DCR Subsidy'})`;
+    document.getElementById('sumPkgSpecs').textContent = selectedPkg
+        ? `${selectedPkg.moduleWattage} x ${selectedPkg.panelQty} Panels | ${selectedPkg.inverterSpecs}`
+        : `${document.getElementById('customBrand').value || 'Tier-1'} Solar Grid Package`;
+    document.getElementById('sumGenDaily').textContent = selectedPkg ? selectedPkg.unitPerDay : `${Math.round(kw * 4)}-${Math.round(kw * 5)} Units/Day`;
+    document.getElementById('sumGenMonthly').textContent = selectedPkg ? `${selectedPkg.monthlyUnits}/mo` : `${Math.round(kw * 100)}-${Math.round(kw * 125)} Units/mo`;
+
+    document.getElementById('sumBasePrice').textContent = '₹' + pkgBase.toLocaleString('en-IN');
+    const sumExtraRow = document.getElementById('sumExtraRow');
+    if (sumExtraRow) {
+        sumExtraRow.classList.toggle('d-none', extrasTotal <= 0);
+        sumExtraRow.classList.toggle('d-flex', extrasTotal > 0);
+        document.getElementById('sumExtrasTotal').textContent = '+ ₹' + extrasTotal.toLocaleString('en-IN');
+    }
+    document.getElementById('sumDiscPct').textContent = discPct;
+    document.getElementById('sumDiscAmt').textContent = '- ₹' + discAmt.toLocaleString('en-IN');
+    document.getElementById('sumGrandTotal').textContent = '₹' + finalTotal.toLocaleString('en-IN');
+    document.getElementById('sumTaxable').textContent = '₹' + taxable.toLocaleString('en-IN');
+    document.getElementById('sumGstRate').textContent = gstRate;
+    document.getElementById('sumGstAmt').textContent = '₹' + gstAmt.toLocaleString('en-IN');
+    document.getElementById('sumSubsidy').textContent = '- ₹' + subsidy.toLocaleString('en-IN');
+    document.getElementById('sumNetCost').textContent = '₹' + netCost.toLocaleString('en-IN');
+    document.getElementById('sumMinThreshold').textContent = '₹' + minThresh.toLocaleString('en-IN');
+    document.getElementById('sumHardFloor').textContent = '₹' + hardFloor.toLocaleString('en-IN');
+    document.getElementById('sumEmi').textContent = selectedPkg ? selectedPkg.estimatedEmi : 'Per Bank Rules';
+
+    // Update Threshold Status Box
+    const box = document.getElementById('approvalStatusBox');
+    const heading = document.getElementById('approvalStatusHeading');
+    const reason = document.getElementById('approvalStatusReason');
+    const submitBtn = document.getElementById('btnGenerateQuote');
+
+    const maxPct = POLICY.MAX_SELF_DISCOUNT_PERCENT || 3;
+    const maxAmt = POLICY.MAX_SELF_DISCOUNT_AMOUNT || 10000;
+
+    if (finalTotal < hardFloor) {
+        box.className = 'alert alert-danger py-1 px-2 mb-2 d-flex align-items-center justify-content-between gap-1';
+        heading.innerHTML = '<i class="icofont-ban me-1"></i>Below Floor';
+        reason.textContent = `Min ₹${hardFloor.toLocaleString('en-IN')}`;
+        submitBtn.disabled = true;
+    } else if (finalTotal >= minThresh && discPct <= maxPct + 0.01 && discAmt <= maxAmt) {
+        box.className = 'alert alert-success py-1 px-2 mb-2 d-flex align-items-center justify-content-between gap-1';
+        heading.innerHTML = '<i class="icofont-check-circled me-1"></i>Instant Approval';
+        reason.textContent = 'Share Ready';
+        submitBtn.disabled = false;
+        submitBtn.className = 'btn btn-success w-100 fw-bold py-2 shadow-sm';
+        submitBtn.innerHTML = '<i class="icofont-check-circled me-1"></i> Generate & Shareable Quotation';
+    } else {
+        box.className = 'alert alert-warning py-1 px-2 mb-2 d-flex align-items-center justify-content-between gap-1';
+        heading.innerHTML = '<i class="icofont-shield-alt me-1"></i>Manager Approval';
+        reason.textContent = `>${maxPct}% / <₹${minThresh.toLocaleString('en-IN')}`;
+        submitBtn.disabled = false;
+        submitBtn.className = 'btn btn-warning text-dark w-100 fw-bold py-2 shadow-sm';
+        submitBtn.innerHTML = '<i class="icofont-clock-time me-1"></i> Submit for Manager Approval';
+    }
+}
+
+async function lookupCustomerByMobile() {
+    const mobile = document.getElementById('qMobile').value.replace(/\D/g, '').slice(-10);
+    if (mobile.length < 10) {
+        alert('Enter 10-digit mobile number to search.');
+        return;
+    }
+    try {
+        const res = await fetch('/api/customers/search?mobile=' + encodeURIComponent(mobile));
+        const data = await res.json();
+        if (data.success && data.customer) {
+            const c = data.customer;
+            if (c.name) document.getElementById('qName').value = c.name;
+            if (c.email) document.getElementById('qEmail').value = c.email;
+            if (c.address) document.getElementById('qAddress').value = c.address;
+            if (c.city) document.getElementById('qCity').value = c.city;
+            if (c.district) document.getElementById('qDistrict') && (document.getElementById('qDistrict').value = c.district);
+            if (c.state) document.getElementById('qState').value = c.state;
+            if (c.pincode) document.getElementById('qPincode').value = c.pincode;
+            if (c.consumerNumber) document.getElementById('qConsumerNo').value = c.consumerNumber;
+            updateLivePricing();
+        } else {
+            alert('No existing client found. Please fill customer details below.');
+        }
+    } catch (e) {
+        alert('Unable to search customer database.');
+    }
+}
+
+async function handleSubmitEmpQuote(e) {
+    e.preventDefault();
+    const errBox = document.getElementById('quoteErrAlert');
+    errBox.classList.add('d-none');
+
+    const btn = document.getElementById('btnGenerateQuote');
+    btn.disabled = true;
+
+    const payload = {
+        _csrf: CSRF_TOKEN,
+        customerName: document.getElementById('qName').value.trim(),
+        customerMobile: document.getElementById('qMobile').value.trim(),
+        customerEmail: document.getElementById('qEmail').value.trim(),
+        customerAddress: document.getElementById('qAddress').value.trim(),
+        city: document.getElementById('qCity').value.trim(),
+        state: document.getElementById('qState').value.trim(),
+        pincode: document.getElementById('qPincode').value.trim(),
+        discom: document.getElementById('qDiscom').value.trim(),
+        consumerNumber: document.getElementById('qConsumerNo').value.trim(),
+        packageId: selectedPkg ? selectedPkg.id : null,
+        packageCategory: selectedPkg ? selectedPkg.category : document.getElementById('customCat').value,
+        plantCapacityKw: selectedPkg ? selectedPkg.capacityKw : parseFloat(document.getElementById('customKw').value),
+        companyBrand: selectedPkg ? selectedPkg.company : document.getElementById('customBrand').value.trim(),
+        packagePrice: parseFloat(document.getElementById('qPackagePrice').value),
+        extraMaterials: extraMaterials.filter(it => it && String(it.description || '').trim()),
+        discountPercent: parseFloat(document.getElementById('qDiscountPct').value) || 0,
+        discountAmount: parseFloat(document.getElementById('qDiscountAmt').value) || 0,
+        notes: document.getElementById('qNotes').value.trim()
+    };
+
+    try {
+        const res = await fetch('/employee/quotations/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN,
+                'CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!data.success) {
+            errBox.textContent = data.message || 'Error generating quotation.';
+            errBox.classList.remove('d-none');
+            btn.disabled = false;
+            return;
+        }
+
+        const banner = document.getElementById('quoteSuccessBanner');
+        const titleEl = document.getElementById('quoteSuccessTitle');
+        const descEl = document.getElementById('quoteSuccessDesc');
+        const actEl = document.getElementById('quoteSuccessActions');
+
+        banner.className = data.autoApproved
+            ? 'alert alert-success border-success mb-3 shadow-sm'
+            : 'alert alert-warning border-warning mb-3 shadow-sm';
+        titleEl.textContent = data.autoApproved
+            ? `Approved & Ready to Share: ${data.quotationNumber}`
+            : `Submitted for Manager Approval: ${data.quotationNumber}`;
+        descEl.textContent = data.message;
+
+        actEl.innerHTML = '';
+        const pdfLink = document.createElement('a');
+        pdfLink.href = `/quotations/${data.quotationId}/document`;
+        pdfLink.target = '_blank';
+        pdfLink.className = 'btn btn-sm btn-outline-danger fw-bold';
+        pdfLink.innerHTML = '<i class="icofont-file-pdf me-1"></i> Preview PDF';
+        actEl.appendChild(pdfLink);
+
+        if (data.autoApproved) {
+            const shareBtn = document.createElement('button');
+            shareBtn.type = 'button';
+            shareBtn.className = 'btn btn-sm btn-success fw-bold';
+            shareBtn.innerHTML = '<i class="icofont-share me-1"></i> Share to Client';
+            shareBtn.onclick = () => openShareQuotationModal(data.quotation);
+            actEl.appendChild(shareBtn);
+        }
+
+        const listLink = document.createElement('a');
+        listLink.href = data.redirectUrl || '/employee/quotations';
+        listLink.className = 'btn btn-sm btn-primary fw-bold';
+        listLink.innerHTML = '<i class="icofont-list me-1"></i> View All Quotations';
+        actEl.appendChild(listLink);
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        btn.disabled = false;
+    } catch (err) {
+        errBox.textContent = 'Network or server error.';
+        errBox.classList.remove('d-none');
+        btn.disabled = false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderPackageGrid();
+    resetBasePriceFromCatalog();
+});
+</script>
+
+<%- include('../admin/partials/admin-footer') %>

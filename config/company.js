@@ -7,19 +7,27 @@ module.exports = {
     company: {
         name: "SHIVAY ENERGY SOLUTIONS",
         shortName: "Shivay Energy",
-        tagline: "Save Green Energy To Build A Better Future",
+        tagline: "Save Green Energy To Build a Better Future",
         establishedYear: 2021,
-        gstin: "23AXXXX0000X1Z5", // Indian GST state code 23 for Madhya Pradesh
-        email: "shivayenergysolutions@gmail.com",
+        gstin: "23AFRFS0964B1Z0", // Official GSTIN
+        mprgNo: "CZS2026042411080336", // Official M.P.R.G. Registration Number
+        email: "sesraisen@gmail.com",
+        alternateEmail: "shivayenergysolutions@gmail.com",
         website: "https://shivayenergysolutions.com",
+        bankDetails: {
+            name: "STATE BANK OF INDIA",
+            ifsc: "SBIN0000462",
+            accountNo: "44391949170",
+            branchAddress: "YASHWANT NAGAR, SAUGOR ROAD RAISEN"
+        },
         address: {
-            line1: "Ward No. 15, In front of PHE Office, Arjun Nagar",
+            line1: "In Front Of P.H.E. Office Arjun Nagar",
             city: "Raisen",
             district: "Raisen",
             state: "Madhya Pradesh",
             pincode: "464551",
             country: "India",
-            full: "Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen, Madhya Pradesh – 464551, India."
+            full: "In Front Of P.H.E. Office Arjun Nagar Raisen, Madhya Pradesh 464551."
         },
         location: {
             address: "Ward No. 15, In front of PHE Office, Arjun Nagar",

@@ -24,7 +24,11 @@
                     Enter customer premises, electrical requirements & technical specifications to create an authoritative quotation.
                     </p>
                 </div>
-
+                <div class="d-flex justify-content-end flex-shrink-0">
+                    <a href="/employee/quotations/generate" class="btn btn-sm btn-outline-primary py-1 px-3 fw-bold" style="border-radius: 8px; font-size: 12px;">
+                        <i class="icofont-arrow-left me-1"></i> Quotation Generate
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -61,77 +65,60 @@
                         <div id="customerSearchFeedback" class="small mt-2 d-none"></div>
                     </div>
 
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Customer Full Name <span class="text-danger fw-bold">*</span></label>
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Customer Name <span class="text-danger">*</span></label>
                             <input type="text" id="custName" name="customerName" class="form-control" required placeholder="e.g. Ramesh Patel">
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Primary Mobile Number <span class="text-danger fw-bold">*</span></label>
-                            <input type="tel" id="custMobile" name="customerMobile" class="form-control" required placeholder="10-digit mobile number" maxlength="10">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+                            <input type="tel" id="custMobile" name="customerMobile" class="form-control" required placeholder="10-digit" maxlength="10">
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Alternate Mobile Number</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="tel" id="custAltMobile" name="customerAlternateMobile" class="form-control" placeholder="Alternate contact number">
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">Alt. Mobile</label>
+                            <input type="tel" id="custAltMobile" name="customerAlternateMobile" class="form-control" placeholder="Optional">
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Email Address</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="email" id="custEmail" name="customerEmail" class="form-control" placeholder="client@gmail.com">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="custEmail" name="customerEmail" class="form-control" placeholder="Optional (client@gmail.com)">
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label">Complete Site / Premises Address <span class="text-danger fw-bold">*</span></label>
-                            <textarea id="siteAddress" name="siteAddress" class="form-control" rows="2" required placeholder="House/Plot No., Street, Landmark, Village/Ward"></textarea>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Site Address <span class="text-danger">*</span></label>
+                            <input type="text" id="siteAddress" name="siteAddress" class="form-control" required placeholder="House/Plot No., Street, Locality">
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">City / Tehsil <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-4 col-md-3">
+                            <label class="form-label">City <span class="text-danger">*</span></label>
                             <input type="text" id="siteCity" name="city" class="form-control" value="Raisen" required>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">District <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-4 col-md-3">
+                            <label class="form-label">District <span class="text-danger">*</span></label>
                             <input type="text" id="siteDistrict" name="district" class="form-control" value="Raisen" required>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">PIN Code <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-4 col-md-2">
+                            <label class="form-label">PIN Code <span class="text-danger">*</span></label>
                             <input type="text" id="sitePincode" name="pincode" class="form-control" placeholder="464551" maxlength="6" required>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">Customer Category <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
                             <select id="custType" name="customerType" class="form-select" onchange="handleCustomerTypeChange()">
-                                <option value="RESIDENTIAL" selected>Residential (PM Surya Ghar Eligible)</option>
-                                <option value="COMMERCIAL">Commercial / Retail</option>
-                                <option value="INDUSTRIAL">Industrial / Factory</option>
-                                <option value="AGRICULTURAL">Agricultural / Solar Pump</option>
+                                <option value="RESIDENTIAL" selected>Residential (DCR)</option>
+                                <option value="COMMERCIAL">Commercial</option>
+                                <option value="INDUSTRIAL">Industrial</option>
+                                <option value="AGRICULTURAL">Agricultural</option>
                             </select>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">DISCOM Power Board</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="text" id="custDiscom" name="discom" class="form-control" value="MPPKVVCL (Madhya Kshetra)">
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Electricity Consumer (IVRS) No.</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="text" id="consumerNumber" name="consumerNumber" class="form-control" placeholder="e.g. N123456789">
+                        <div class="col-6 col-md-2">
+                            <label class="form-label">IVRS / Consumer #</label>
+                            <input type="text" id="consumerNumber" name="consumerNumber" class="form-control" placeholder="Optional">
                         </div>
                     </div>
                 </div>
@@ -144,199 +131,175 @@
                 <div class="req-card-header">
                     <div>
                         <h5 class="req-card-title">
-                            <i class="icofont-solar-panel text-warning"></i> 2. Solar Technical Requirements
+                            <i class="icofont-solar-panel text-warning"></i> 2. Solar Configuration &amp; Brand Selection
                         </h5>
-                        <div class="req-card-subtitle">Proposed plant capacity, system configuration and existing electrical load</div>
+                        <div class="req-card-subtitle">Select capacity, panel company, module wattage and site conditions</div>
                     </div>
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle font-monospace" style="font-size: 11px;">Technical Specs</span>
                 </div>
 
                 <div class="req-card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label text-primary">Required Solar Plant Capacity (kW) <span class="text-danger fw-bold">*</span></label>
-                            <div class="input-group">
-                                <input type="number" id="proposedKw" name="proposedCapacityKw" class="form-control fw-bold font-monospace" min="1" max="100" step="0.5" value="3" required oninput="updateSubsidyIndicator()">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label text-primary">Plant Capacity <span class="text-danger">*</span></label>
+                            <select id="kwPresetSelect" class="form-select fw-bold" onchange="onCapacityPresetChange(this.value)">
+                                <option value="2">2 kW</option>
+                                <option value="3" selected>3 kW (Popular)</option>
+                                <option value="3.5">3.5 kW (Tata)</option>
+                                <option value="5">5 kW</option>
+                                <option value="5.2">5.2 kW (Tata)</option>
+                                <option value="6">6 kW</option>
+                                <option value="8">8 kW</option>
+                                <option value="10">10 kW</option>
+                                <option value="15">15 kW</option>
+                                <option value="CUSTOM">Custom kW...</option>
+                            </select>
+                            <div id="customKwInputWrap" class="input-group mt-2 d-none">
+                                <input type="number" id="proposedKw" name="proposedCapacityKw" class="form-control fw-bold font-monospace" min="0.5" max="500" step="0.5" value="3" required oninput="onCustomKwInput()">
                                 <span class="input-group-text bg-light fw-bold font-monospace">kW</span>
-                            </div>
-                            <!-- Subsidy Display Container: Strictly displayed ONLY for residential rooftop eligible quotes -->
-                            <div id="subsidyContainer" class="mt-2" style="display: block;">
-                                <div id="subsidyHint" class="d-inline-flex align-items-center gap-1 px-2.5 py-1 rounded-2 bg-success-subtle text-success border border-success-subtle small fw-bold" style="font-size: 11.5px; padding: 4px 10px;">
-                                    <i class="icofont-check-circled fs-6"></i>
-                                    <span>Estimated PM Surya Ghar Subsidy: ₹78,000</span>
-                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">Solar System Type <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label">Solar Company <span class="text-danger">*</span></label>
+                            <select id="preferredBrand" class="form-select fw-bold" onchange="syncBrandAndSpecsToEquipment()">
+                                <option value="Waaree" selected>Waaree Energies</option>
+                                <option value="Adani">Adani Solar</option>
+                                <option value="Tata Power Solar">Tata Power Solar</option>
+                                <option value="Kosol">Kosol Energie</option>
+                                <option value="Havells">Havells Solar</option>
+                                <option value="Oswal">Oswal Solar</option>
+                                <option value="Premier Energy">Premier Energies</option>
+                                <option value="Microtek">Microtek Solar</option>
+                                <option value="Rayzon Solar">Rayzon Solar</option>
+                                <option value="Any Tier-1 Brand">Any Tier-1 Brand</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4 d-flex align-items-end" id="subsidyContainer" style="display: block;">
+                            <div id="subsidyHint" class="d-inline-flex align-items-center justify-content-center gap-1 rounded-2 bg-success-subtle text-success border border-success-subtle fw-bold w-100" style="font-size: 11px; height: 38px; padding: 0 10px;">
+                                <i class="icofont-check-circled"></i>
+                                <span>Govt Subsidy: ₹78,000</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1">Module Wattage</label>
+                            <select id="preferredModuleSpec" class="form-select" onchange="syncBrandAndSpecsToEquipment()">
+                                <option value="540W Mono PERC (DCR)" selected>540W Mono PERC (DCR)</option>
+                                <option value="545W Mono PERC (DCR)">545W Mono PERC (DCR)</option>
+                                <option value="550W Mono PERC (DCR)">550W Mono PERC (DCR)</option>
+                                <option value="580W Bifacial (DCR)">580W Bifacial (DCR)</option>
+                                <option value="600W NDCR TOPCon">600W NDCR TOPCon</option>
+                                <option value="620W NDCR TOPCon">620W NDCR TOPCon</option>
+                            </select>
+                        </div>
+
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1">System Type <span class="text-danger fw-bold">*</span></label>
                             <select name="systemType" class="form-select" onchange="updateSubsidyIndicator()">
-                                <option value="ON_GRID" selected>On-Grid (Grid-Tied with Net Metering)</option>
-                                <option value="HYBRID">Hybrid (Grid-Tied with Battery Storage)</option>
-                                <option value="OFF_GRID">Off-Grid (Standalone Battery Bank)</option>
+                                <option value="ON_GRID" selected>On-Grid (Net Metering)</option>
+                                <option value="HYBRID">Hybrid (With Battery)</option>
+                                <option value="OFF_GRID">Off-Grid (Standalone)</option>
                                 <option value="SOLAR_PUMP">Solar Agricultural Pump</option>
                             </select>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">Roof Type <span class="text-danger fw-bold">*</span></label>
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1">Roof Type <span class="text-danger fw-bold">*</span></label>
                             <select name="roofType" class="form-select">
-                                <option value="RCC_FLAT" selected>RCC Flat Concrete Roof</option>
-                                <option value="TIN_SHED">Industrial Metal / Tin Shed</option>
+                                <option value="RCC_FLAT" selected>RCC Flat Roof</option>
+                                <option value="TIN_SHED">Metal / Tin Shed</option>
                                 <option value="TILED">Slanted Tile Roof</option>
-                                <option value="GROUND_MOUNT">Ground Mounted Installation</option>
-                                <option value="OTHER">Other / Mixed Structure</option>
+                                <option value="GROUND_MOUNT">Ground Mounted</option>
+                                <option value="OTHER">Other / Elevated</option>
                             </select>
                         </div>
 
-                        <div class="col-md-3">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Shadow-Free Area (Sq. Ft.)</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="number" name="roofAreaSqFt" class="form-control" placeholder="e.g. 350" min="50">
+                        <div class="col-6 col-md-4">
+                            <label class="form-label mb-1">Inverter Brand</label>
+                            <select id="preferredInverter" class="form-select" onchange="syncBrandAndSpecsToEquipment()">
+                                <option value="Polycab / Similar" selected>Polycab / Similar</option>
+                                <option value="GoodWe / Similar">GoodWe / Similar</option>
+                                <option value="Havells / Similar">Havells / Similar</option>
+                                <option value="Microtek / Polycab">Microtek / Polycab</option>
+                                <option value="Growatt / Solis">Growatt / Solis</option>
+                            </select>
                         </div>
 
-                        <div class="col-md-3">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Monthly Electricity Bill (₹)</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <div class="input-group">
-                                <span class="input-group-text">₹</span>
-                                <input type="number" name="monthlyElectricityBill" class="form-control" placeholder="e.g. 4500" min="0">
-                            </div>
+                        <div class="col-4 col-md-4">
+                            <label class="form-label mb-1">Area (Sq.Ft)</label>
+                            <input type="number" name="roofAreaSqFt" class="form-control" placeholder="e.g. 300" min="50">
                         </div>
 
-                        <div class="col-md-3">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Monthly Units (kWh)</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
+                        <div class="col-4 col-md-4">
+                            <label class="form-label mb-1">Avg Bill (₹)</label>
+                            <input type="number" name="monthlyElectricityBill" class="form-control" placeholder="e.g. 4500" min="0">
+                        </div>
+
+                        <div class="col-4 col-md-4">
+                            <label class="form-label mb-1">Units / Mo</label>
                             <input type="number" name="monthlyUnitsKwh" class="form-control" placeholder="e.g. 400" min="0">
                         </div>
 
-                        <div class="col-md-3">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Expected Budget (₹)</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <div class="input-group">
-                                <span class="input-group-text">₹</span>
-                                <input type="number" name="expectedBudget" class="form-control" placeholder="Target budget" min="0">
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Existing Solar System Already Installed?</label>
-                            <div class="d-flex align-items-center gap-4 mt-2">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Existing Solar Already Installed?</label>
+                            <div class="d-flex align-items-center gap-4 mt-1">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="existingSolar" id="solarNo" value="false" checked>
-                                    <label class="form-check-label small" for="solarNo">No (Fresh Installation)</label>
+                                    <label class="form-check-label small" for="solarNo">No (Fresh Setup)</label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="existingSolar" id="solarYes" value="true">
-                                    <label class="form-check-label small" for="solarYes">Yes (Capacity Enhancement)</label>
+                                    <label class="form-check-label small" for="solarYes">Yes (Upgrade)</label>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Installation Location / Floor</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <input type="text" name="installationLocation" class="form-control" placeholder="e.g. 2nd Floor Terrace / Main Factory Shed">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label mb-1">Installation Floor / Note</label>
+                            <input type="text" name="installationLocation" class="form-control" placeholder="e.g. 2nd Floor Terrace">
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- ==========================================
-                 SECTION 3: REQUESTED EQUIPMENT & LINE ITEMS
+                 SECTION 3: REQUESTED EQUIPMENT & MATERIALS (MOBILE FRIENDLY CARDS)
                  ========================================== -->
             <div class="req-card">
                 <div class="req-card-header">
                     <div>
                         <h5 class="req-card-title">
-                            <i class="icofont-tools-alt-2 text-info"></i> 3. Requested Equipment & BoS Requirements
+                            <i class="icofont-tools-alt-2 text-info"></i> 3. Materials &amp; BoS Components
                         </h5>
-                        <div class="req-card-subtitle">Specify equipment modules or leave default recommendations for pricing review</div>
+                        <div class="req-card-subtitle">Select brand, component specs &amp; quantities (or tap chips to add)</div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-primary fw-bold" onclick="addEquipmentRow()" style="border-radius: 8px;">
-                        <i class="icofont-plus-circle me-1"></i> Add Equipment Item
+                        <i class="icofont-plus-circle me-1"></i> Add Material
                     </button>
                 </div>
 
                 <div class="req-card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle small mb-3" id="equipmentTable">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 32%;">Item / Component Name <span class="text-danger">*</span></th>
-                                    <th style="width: 15%;">Quantity</th>
-                                    <th style="width: 25%;">Required Specifications</th>
-                                    <th style="width: 20%;">Remarks / Special Brand</th>
-                                    <th style="width: 8%; text-align: center;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="equipmentBody">
-                                <tr>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[0][itemName]" value="Solar PV Modules (Mono PERC DCR)" required style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" name="equipment[0][quantity]" value="6" min="1" style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[0][specs]" value="540W Tier-1 DCR ALMM Compliant" style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[0][remarks]" value="Adani / Waaree / Vikram" style="height: 34px;">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
-                                            <i class="icofont-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[1][itemName]" value="On-Grid Solar Inverter" required style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="form-control form-control-sm" name="equipment[1][quantity]" value="1" min="1" style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[1][specs]" value="3.3 kW Dual MPPT, IP65, Wi-Fi Monitoring" style="height: 34px;">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control form-control-sm" name="equipment[1][remarks]" value="Growatt / Havells / Solis" style="height: 34px;">
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
-                                            <i class="icofont-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- Quick Add BoS Material Chips -->
+                    <div class="d-flex flex-wrap gap-1 mb-3">
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="font-size: 11px;" onclick="addPresetEquipment('HDG Mounting Structure', 1, 'Hot Dip Galvanized Elevated 8x6ft', 'JSW / Standard')">+ HDG Structure</button>
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="font-size: 11px;" onclick="addPresetEquipment('ACDB / DCDB Box', 1, 'IP65 SPD + MCB Protection', 'Havells / Polycab')">+ ACDB / DCDB</button>
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="font-size: 11px;" onclick="addPresetEquipment('DC Solar Cable (4 sq.mm)', 30, 'UV Resistant Tinned Copper (Mtr)', 'Polycab / Havells')">+ DC Cable</button>
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="font-size: 11px;" onclick="addPresetEquipment('AC Cable (4 sq.mm)', 20, 'Armoured / Copper Wire (Mtr)', 'Polycab / Microtek')">+ AC Cable</button>
+                        <button type="button" class="btn btn-sm btn-light border py-1 px-2" style="font-size: 11px;" onclick="addPresetEquipment('Earthing & Lightning Arrester', 3, 'Copper LA + GI Chemical Earthing Pits', 'Standard IS Approved')">+ Earthing &amp; LA</button>
                     </div>
 
-                    <div class="row g-3">
+                    <div id="equipmentRowsContainer" class="d-flex flex-column gap-2 mb-3"></div>
+
+                    <div class="row g-2">
                         <div class="col-md-6">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Additional Technical Requirements</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <textarea name="additionalRequirements" class="form-control" rows="2" placeholder="e.g. Elevated structure required (8 ft clearance for terrace walkability); Earthing pits needed."></textarea>
+                            <label class="form-label mb-1 fw-bold small">Additional Requirements <span class="badge-optional">Optional</span></label>
+                            <textarea name="additionalRequirements" class="form-control form-control-sm" rows="2" placeholder="e.g. Elevated structure 8 ft clearance, net-meter urgency..."></textarea>
                         </div>
                         <div class="col-md-6">
-                            <div class="req-field-label">
-                                <label class="form-label mb-0">Internal Staff Notes (For Pricing Review)</label>
-                                <span class="badge-optional">Optional</span>
-                            </div>
-                            <textarea name="employeeNotes" class="form-control" rows="2" placeholder="e.g. Client is ready to pay 50% advance; wants net-meter liaison within 15 days."></textarea>
+                            <label class="form-label mb-1 fw-bold small">Internal Staff Notes <span class="badge-optional">Optional</span></label>
+                            <textarea name="employeeNotes" class="form-control form-control-sm" rows="2" placeholder="Manager notes / advance commitment..."></textarea>
                         </div>
                     </div>
                 </div>
@@ -359,9 +322,6 @@
                 <div class="req-card-body">
                     <div class="p-3 bg-light rounded-3 border">
                         <input type="file" id="fileAttachmentInput" class="form-control" multiple accept=".jpg,.jpeg,.png,.webp,.pdf" onchange="handleFileSelection(event)">
-                        <small class="text-muted mt-2 d-block">
-                            <i class="icofont-shield-alt text-success"></i> Server-side magic-byte inspection enabled. Files stored in secure vault.
-                        </small>
 
                         <!-- Preview of Selected Files -->
                         <div id="fileListContainer" class="mt-3 d-none">
@@ -385,25 +345,11 @@
 
             <!-- Submit Action Footer (Responsive Full Width Card) -->
             <div class="req-footer-box mb-5">
-                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                    <div class="req-footer-notice d-flex align-items-start gap-2">
-                        <i class="icofont-info-circle text-primary fs-5 mt-0.5 flex-shrink-0"></i> 
-                        <div class="small text-muted req-footer-text">
-                            <% if (currentUser && currentUser.role === 'SUPER_ADMIN') { %>
-                                Quotation request will be logged under your administrator account and immediately available for pricing & approval.
-                            <% } else if (currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) { %>
-                                Quotation request will be logged under your branch account and immediately available for pricing review.
-                            <% } else { %>
-                                Quotation request will be routed directly to your branch manager for review and pricing approval.
-                            <% } %>
-                        </div>
-                    </div>
-                    <div class="req-footer-btn-wrap d-flex gap-2 align-items-center flex-shrink-0">
-                        <a href="<%= (typeof parentUrl !== 'undefined') ? parentUrl : ((currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations' : ((currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) ? '/manager/quotations' : '/employee/quotations')) %>" class="btn btn-outline-secondary px-4 py-2 font-weight-bold" style="border-radius: 8px;">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4 py-2 font-weight-bold shadow-sm" id="submitBtn" style="background: var(--admin-navy-primary); border-color: var(--admin-navy-primary); border-radius: 8px;">
-                            <i class="icofont-paper-plane me-1"></i> Submit Quotation Request
-                        </button>
-                    </div>
+                <div class="req-footer-btn-wrap d-flex gap-2 align-items-center justify-content-end w-100">
+                    <a href="<%= (typeof parentUrl !== 'undefined') ? parentUrl : ((currentUser && currentUser.role === 'SUPER_ADMIN') ? '/admin/quotations' : ((currentUser && (currentUser.role === 'MANAGER' || currentUser.role === 'BRANCH_MANAGER')) ? '/manager/quotations' : '/employee/quotations')) %>" class="btn btn-outline-secondary px-3 px-md-4 py-2 font-weight-bold" style="border-radius: 8px;">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-3 px-md-4 py-2 font-weight-bold shadow-sm" id="submitBtn" style="background: var(--admin-navy-primary); border-color: var(--admin-navy-primary); border-radius: 8px;">
+                        <i class="icofont-paper-plane me-1"></i><span>Submit Request</span>
+                    </button>
                 </div>
             </div>
         </form>
@@ -488,7 +434,6 @@ async function searchCustomerByMobile() {
             if (c.district) document.getElementById('siteDistrict').value = c.district;
             if (c.pincode) document.getElementById('sitePincode').value = c.pincode;
             if (c.consumerNumber) document.getElementById('consumerNumber').value = c.consumerNumber;
-            if (c.discom) document.getElementById('custDiscom').value = c.discom;
             if (c.customerType) {
                 document.getElementById('custType').value = c.customerType;
                 updateSubsidyIndicator();
@@ -504,32 +449,151 @@ async function searchCustomerByMobile() {
     }
 }
 
-// Add Dynamic Equipment Row
-function addEquipmentRow() {
-    const tbody = document.getElementById('equipmentBody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][itemName]" placeholder="e.g. ACDB / DCDB Box" required style="height: 34px;"></td>
-        <td><input type="number" class="form-control form-control-sm" name="equipment[${equipmentIndex}][quantity]" value="1" min="1" style="height: 34px;"></td>
-        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][specs]" placeholder="e.g. 1000V DC SPD + MCB" style="height: 34px;"></td>
-        <td><input type="text" class="form-control form-control-sm" name="equipment[${equipmentIndex}][remarks]" placeholder="Remarks" style="height: 34px;"></td>
-        <td class="text-center">
-            <button type="button" class="btn btn-sm btn-outline-danger p-1" onclick="removeEquipmentRow(this)" title="Remove item" style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;">
-                <i class="icofont-trash"></i>
-            </button>
-        </td>
-    `;
-    tbody.appendChild(tr);
-    equipmentIndex++;
+const EQUIPMENT_CATALOG = [
+    'Solar PV Modules',
+    'On-Grid Solar Inverter',
+    'Hybrid Solar Inverter',
+    'HDG Mounting Structure',
+    'ACDB / DCDB Box',
+    'DC Solar Cable (4 sq.mm)',
+    'AC Cable (4 sq.mm)',
+    'Earthing & Lightning Arrester',
+    'Net Meter & DISCOM Kit',
+    'Custom Material'
+];
+
+const BRAND_CATALOG = [
+    'Waaree', 'Adani', 'Tata Power Solar', 'Kosol', 'Havells',
+    'Oswal', 'Premier Energy', 'Microtek', 'Rayzon Solar',
+    'Polycab', 'GoodWe', 'Growatt / Solis', 'Standard IS Approved'
+];
+
+let reqEquipmentList = [
+    { itemName: 'Solar PV Modules', quantity: 6, specs: '540W Mono PERC (DCR)', brand: 'Waaree' },
+    { itemName: 'On-Grid Solar Inverter', quantity: 1, specs: '3 kW Dual MPPT, IP65', brand: 'Polycab' },
+    { itemName: 'HDG Mounting Structure', quantity: 1, specs: 'Hot Dip Galvanized Elevated 8x6ft', brand: 'Standard IS Approved' },
+    { itemName: 'ACDB / DCDB Box', quantity: 1, specs: 'IP65 SPD + MCB Protection', brand: 'Havells' }
+];
+
+function renderEquipmentCards() {
+    const container = document.getElementById('equipmentRowsContainer');
+    if (!container) return;
+    container.innerHTML = reqEquipmentList.map((eq, idx) => {
+        const itemOpts = EQUIPMENT_CATALOG.map(n =>
+            `<option value="${n}" ${eq.itemName === n ? 'selected' : ''}>${n}</option>`
+        ).join('');
+        const isCustomItem = !EQUIPMENT_CATALOG.includes(eq.itemName);
+        const brandOpts = BRAND_CATALOG.map(b =>
+            `<option value="${b}" ${(eq.brand || '').includes(b) || b === eq.brand ? 'selected' : ''}>${b}</option>`
+        ).join('');
+
+        return `
+            <div class="p-2 bg-light rounded border" data-eq-row="${idx}">
+                <div class="row g-2 align-items-end">
+                    <div class="col-8 col-md-4">
+                        <label class="form-label mb-1" style="font-size: 10.5px;">Material *</label>
+                        <select class="form-select form-select-sm eq-item-select" onchange="onEqItemSelect(${idx}, this.value)">
+                            ${itemOpts}
+                            ${isCustomItem ? `<option value="${String(eq.itemName).replace(/"/g, '&quot;')}" selected>${eq.itemName}</option>` : ''}
+                        </select>
+                        <input type="text" class="form-control form-control-sm mt-1 eq-custom-name ${eq.itemName === 'Custom Material' || isCustomItem ? '' : 'd-none'}"
+                               value="${isCustomItem ? String(eq.itemName).replace(/"/g, '&quot;') : ''}"
+                               placeholder="Enter custom material..."
+                               oninput="reqEquipmentList[${idx}].itemName = this.value">
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <label class="form-label mb-1" style="font-size: 10.5px;">Qty *</label>
+                        <input type="number" class="form-control form-control-sm" value="${eq.quantity || 1}" min="1"
+                               oninput="reqEquipmentList[${idx}].quantity = parseFloat(this.value) || 1">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label mb-1" style="font-size: 10.5px;">Specs</label>
+                        <input type="text" class="form-control form-control-sm" value="${String(eq.specs || '').replace(/"/g, '&quot;')}"
+                               placeholder="Wattage / Rating"
+                               oninput="reqEquipmentList[${idx}].specs = this.value">
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <label class="form-label mb-1" style="font-size: 10.5px;">Company</label>
+                        <select class="form-select form-select-sm" onchange="reqEquipmentList[${idx}].brand = this.value">
+                            ${brandOpts}
+                        </select>
+                    </div>
+                    <div class="col-2 col-md-1 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100 d-inline-flex align-items-center justify-content-center" style="height: 34px;" onclick="removeEquipmentRow(${idx})" title="Remove">
+                            <i class="icofont-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-function removeEquipmentRow(btn) {
-    const row = btn.closest('tr');
-    if (document.querySelectorAll('#equipmentBody tr').length > 1) {
-        row.remove();
+function onEqItemSelect(idx, val) {
+    if (!reqEquipmentList[idx]) return;
+    reqEquipmentList[idx].itemName = val;
+    if (val === 'Custom Material') {
+        renderEquipmentCards();
+    }
+}
+
+function addEquipmentRow() {
+    reqEquipmentList.push({ itemName: 'Custom Material', quantity: 1, specs: '', brand: document.getElementById('preferredBrand')?.value || 'Standard IS Approved' });
+    renderEquipmentCards();
+}
+
+function addPresetEquipment(itemName, quantity, specs, brand) {
+    reqEquipmentList.push({ itemName, quantity, specs, brand });
+    renderEquipmentCards();
+}
+
+function removeEquipmentRow(idx) {
+    if (reqEquipmentList.length > 1) {
+        reqEquipmentList.splice(idx, 1);
+        renderEquipmentCards();
     } else {
         alert('At least one equipment item is recommended.');
     }
+}
+
+function onCapacityPresetChange(val) {
+    const customWrap = document.getElementById('customKwInputWrap');
+    const kwInput = document.getElementById('proposedKw');
+    if (val === 'CUSTOM') {
+        customWrap.classList.remove('d-none');
+    } else {
+        customWrap.classList.add('d-none');
+        kwInput.value = val;
+    }
+    syncBrandAndSpecsToEquipment();
+    updateSubsidyIndicator();
+}
+
+function onCustomKwInput() {
+    syncBrandAndSpecsToEquipment();
+    updateSubsidyIndicator();
+}
+
+function syncBrandAndSpecsToEquipment() {
+    const kw = parseFloat(document.getElementById('proposedKw')?.value) || 3;
+    const brand = document.getElementById('preferredBrand')?.value || 'Waaree';
+    const modSpec = document.getElementById('preferredModuleSpec')?.value || '540W Mono PERC (DCR)';
+    const invBrand = (document.getElementById('preferredInverter')?.value || 'Polycab / Similar').split('/')[0].trim();
+
+    const wattMatch = modSpec.match(/(\d{3})/);
+    const watts = wattMatch ? parseInt(wattMatch[1], 10) : 540;
+    const panelQty = Math.max(1, Math.ceil((kw * 1000) / watts));
+
+    if (reqEquipmentList[0] && reqEquipmentList[0].itemName.includes('Module')) {
+        reqEquipmentList[0].quantity = panelQty;
+        reqEquipmentList[0].specs = modSpec;
+        reqEquipmentList[0].brand = brand === 'Any Tier-1 Brand' ? 'Waaree' : brand;
+    }
+    if (reqEquipmentList[1] && reqEquipmentList[1].itemName.includes('Inverter')) {
+        reqEquipmentList[1].specs = `${kw} kW Dual MPPT, IP65`;
+        reqEquipmentList[1].brand = invBrand;
+    }
+    renderEquipmentCards();
 }
 
 // Handle Attachments via FileReader (Base64)
@@ -602,7 +666,7 @@ function showSubmissionError(msg, title = 'Validation Error', focusElementId = n
 
     if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="icofont-paper-plane me-1"></i> Submit Quotation Request';
+        btn.innerHTML = '<i class="icofont-paper-plane me-1"></i><span>Submit Request</span>';
     }
 
     if (focusElementId) {
@@ -648,7 +712,7 @@ async function handleRequestSubmit(e) {
     if (bottomAlert) bottomAlert.classList.add('d-none');
 
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Validating & Submitting...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span><span>Submitting...</span>';
 
     const form = document.getElementById('quotationRequestForm');
     const formData = new FormData(form);
@@ -700,7 +764,7 @@ async function handleRequestSubmit(e) {
         state: formData.get('state') || 'Madhya Pradesh',
         pincode: pincode,
         customerType: formData.get('customerType') || 'RESIDENTIAL',
-        discom: formData.get('discom') || 'MPPKVVCL',
+        discom: 'MPPKVVCL',
         consumerNumber: (formData.get('consumerNumber') || '').trim(),
         proposedCapacityKw: kw,
         systemType: formData.get('systemType') || 'ON_GRID',
@@ -708,28 +772,21 @@ async function handleRequestSubmit(e) {
         roofAreaSqFt: parseFloat(formData.get('roofAreaSqFt')) || 0,
         monthlyElectricityBill: parseFloat(formData.get('monthlyElectricityBill')) || 0,
         monthlyUnitsKwh: parseFloat(formData.get('monthlyUnitsKwh')) || 0,
-        expectedBudget: parseFloat(formData.get('expectedBudget')) || 0,
+        expectedBudget: 0,
         existingSolar: formData.get('existingSolar') === 'true' || formData.get('existingSolar') === true,
         installationLocation: formData.get('installationLocation') || siteAddress,
         additionalRequirements: formData.get('additionalRequirements') || '',
         employeeNotes: formData.get('employeeNotes') || '',
-        equipment: [],
+        equipment: reqEquipmentList
+            .filter(eq => eq && eq.itemName && eq.itemName !== 'Custom Material' && String(eq.itemName).trim())
+            .map(eq => ({
+                itemName: String(eq.itemName).trim(),
+                quantity: parseFloat(eq.quantity) || 1,
+                specs: String(eq.specs || '').trim(),
+                remarks: String(eq.brand || '').trim()
+            })),
         attachments: uploadedFilesPayload || []
     };
-
-    // Extract Equipment Rows
-    const rows = document.querySelectorAll('#equipmentBody tr');
-    rows.forEach(r => {
-        const inputs = r.querySelectorAll('input');
-        if (inputs.length >= 4 && inputs[0].value.trim()) {
-            payload.equipment.push({
-                itemName: inputs[0].value.trim(),
-                quantity: parseFloat(inputs[1].value) || 1,
-                specs: inputs[2].value.trim(),
-                remarks: inputs[3].value.trim()
-            });
-        }
-    });
 
     try {
         const res = await fetch('/api/quotations/request', {
@@ -763,7 +820,10 @@ async function handleRequestSubmit(e) {
 }
 
 // Initialize on DOM load
-document.addEventListener('DOMContentLoaded', updateSubsidyIndicator);
+document.addEventListener('DOMContentLoaded', () => {
+    renderEquipmentCards();
+    updateSubsidyIndicator();
+});
 </script>
 
 <%- include('../admin/partials/admin-footer') %>

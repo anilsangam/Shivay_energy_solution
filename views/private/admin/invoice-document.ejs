@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || ((invoice && invoice.invoiceNumber ? invoice.invoiceNumber + ' | ' : '') + 'Tax Invoice | Shivay Energy Solutions') %></title>
+    <link rel="icon" href="/images/brandlogo2.webp" type="image/webp" sizes="16x16">
+    <link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+    <link href="/fonts/icofont/icofont.min.css" rel="stylesheet" type="text/css">
+    <link href="/css/private/invoices.css" rel="stylesheet" type="text/css">
+</head>
+<body class="ses-bill-doc-body">
+
+<%
+    const inv = invoice || {};
+    const comp = company || {};
+    const itemsList = (Array.isArray(inv.items) && inv.items.length > 0) ? inv.items : [];
+    const sub = parseFloat(inv.subtotal) || 0;
+    const cgst = parseFloat(inv.cgst) || 0;
+    const sgst = parseFloat(inv.sgst) || 0;
+    const totalTax = parseFloat(inv.totalTaxAmount !== undefined ? inv.totalTaxAmount : (cgst + sgst)) || 0;
+    const roundOff = parseFloat(inv.roundOff !== undefined ? inv.roundOff : 0) || 0;
+    const total = parseFloat(inv.totalAmount) || (sub + totalTax + roundOff);
+    const percent = inv.paymentReceivedPercent || '100%';
+    const receivedAmt = parseFloat(inv.paymentReceivedAmount !== undefined ? inv.paymentReceivedAmount : (inv.paidAmount || total)) || 0;
+    const backUrl = (typeof returnUrl !== 'undefined' && returnUrl) ? returnUrl : '/admin/invoices';
+%>
+
+<!-- Sticky Mobile-Friendly Action Bar (Hidden in Print / PDF) -->
+<div class="ses-doc-topbar no-print">
+    <div class="ses-doc-topbar-inner">
+        <div class="d-flex align-items-center gap-2 min-w-0">
+            <a href="<%= backUrl %>" class="btn btn-sm btn-outline-light fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0">
+                <i class="icofont-arrow-left"></i> <span>Back</span>
+            </a>
+            <div class="text-truncate">
+                <div class="fw-bold text-white font-monospace" style="font-size: 13px;"><%= inv.invoiceNumber || 'TAX INVOICE' %></div>
+                <div class="text-white-50 text-truncate" style="font-size: 11px;"><%= inv.customerName || 'Customer' %></div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <button type="button" onclick="window.print()" class="btn btn-sm btn-warning fw-bold text-dark d-inline-flex align-items-center gap-1 shadow-sm">
+                <i class="icofont-print"></i> <span>Print / PDF</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="ses-doc-page-container">
+    <div class="d-md-none text-center text-muted small mb-2 no-print" style="font-size: 11px;">
+        <i class="icofont-hand-drag1 me-1"></i> Swipe item table left/right • Tap <strong>Print / PDF</strong> for A4 PDF
+    </div>
+
+    <div class="ses-bill-wrapper" id="printableInvoiceCard">
+        <div class="ses-bill-frame">
+            <!-- 1. Top Title Bar -->
+            <div class="ses-bill-title-bar">
+                <%= inv.invoiceTitle || 'TAX INVOICE ORIGINAL FOR RECIPIENT' %>
+            </div>
+
+            <!-- 2. Header Row: Logo & Brand -->
+            <div class="ses-bill-header-row">
+                <div class="ses-bill-logo-box">
+                    <svg width="60" height="42" viewBox="0 0 100 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="22" r="14" fill="#F59E0B"/>
+                        <path d="M50 2 V8 M50 36 V42 M30 22 H36 M64 22 H70 M36 8 L40 12 M64 8 L60 12 M36 36 L40 32 M64 36 L60 32" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round"/>
+                        <polygon points="12,65 24,38 76,38 88,65" fill="#0284C7" stroke="#0369A1" stroke-width="2"/>
+                        <line x1="50" y1="38" x2="50" y2="65" stroke="#FFFFFF" stroke-width="2"/>
+                        <line x1="37" y1="38" x2="31" y2="65" stroke="#FFFFFF" stroke-width="1.5"/>
+                        <line x1="63" y1="38" x2="69" y2="65" stroke="#FFFFFF" stroke-width="1.5"/>
+                        <line x1="20" y1="51" x2="80" y2="51" stroke="#FFFFFF" stroke-width="1.5"/>
+                    </svg>
+                    <div class="ses-bill-logo-text">SHIVAY<br><span style="font-size: 8px; color: #444;">ENERGY SOLUTIONS</span></div>
+                </div>
+                <div class="ses-bill-brand-box">
+                    <h1 class="ses-bill-brand-title"><%= comp.name || 'SHIVAY ENERGY SOLUTIONS' %></h1>
+                    <div class="ses-bill-brand-tagline"><%= comp.tagline || 'Save Green Energy To Build a Better Future' %></div>
+                </div>
+            </div>
+
+            <!-- 3. Address Row: Office Add. (Left) & Bill To (Right) -->
+            <div class="ses-bill-address-row">
+                <div class="ses-bill-office-col">
+                    <div><strong>Office Add.:-</strong> <%= (comp.address && comp.address.full) || 'In Front Of P.H.E. Office Arjun Nagar Raisen, Madhya Pradesh 464551.' %></div>
+                    <div><strong>Email :-</strong> <%= (comp.contact && comp.contact.email) || 'sesraisen@gmail.com' %></div>
+                    <div><strong>Contact NO.:-</strong> <%= (comp.contact && comp.contact.phone) || '9399761750, 7000575496' %></div>
+                    <div><strong>GSTIN :-</strong> <%= inv.companyGstin || comp.gstin || '23AFRFS0964B1Z0' %></div>
+                    <div><strong>M.P.R.G. NO.:-</strong> <%= inv.mprgNo || comp.mprgNo || 'CZS2026042411080336' %></div>
+                </div>
+                <div class="ses-bill-billto-col">
+                    <div class="ses-bill-billto-heading">Bill To</div>
+                    <div class="ses-bill-customer-name"><%= inv.customerName || '-' %></div>
+                    <div><strong>Add. :-</strong> <%= inv.customerAddress || 'Raisen, Madhya Pradesh' %></div>
+                    <div><strong>Contact NO.:-</strong> <%= inv.customerMobile || '-' %></div>
+                    <% if (inv.customerGstin) { %>
+                        <div><strong>GSTIN :-</strong> <%= inv.customerGstin %></div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- 4. Bar: Date & Invoice No -->
+            <div class="ses-bill-meta-bar">
+                <div class="ses-bill-meta-date">
+                    DATE :- <%= inv.date || inv.invoiceDate || '-' %>
+                </div>
+                <div class="ses-bill-meta-invnum">
+                    Tax invoice No. :- <%= inv.invoiceNumber || '-' %>
+                </div>
+            </div>
+
+            <!-- 5. Items Table (Scrolls horizontally on narrow mobile screens, full width on Print/A4) -->
+            <div class="ses-bill-table-scroll">
+                <table class="ses-bill-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width: 4%;">S.N.</th>
+                            <th rowspan="2" style="width: 32%;">ITEMS</th>
+                            <th rowspan="2" style="width: 9%;">HSN NO.</th>
+                            <th rowspan="2" style="width: 8%;">RATE</th>
+                            <th rowspan="2" style="width: 5%;">QTY.</th>
+                            <th rowspan="2" style="width: 10%;">AMOUNT</th>
+                            <th colspan="2" style="width: 14%;">CGST</th>
+                            <th colspan="2" style="width: 14%;">SGST</th>
+                            <th rowspan="2" style="width: 11%;">TOTAL</th>
+                        </tr>
+                        <tr>
+                            <th style="width: 6%;">RATE %</th>
+                            <th style="width: 8%;">AMOUNT</th>
+                            <th style="width: 6%;">RATE %</th>
+                            <th style="width: 8%;">AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (itemsList.length > 0) { %>
+                            <% itemsList.forEach((it, idx) => { 
+                                const snList = (Array.isArray(it.serialNumbers) && it.serialNumbers.length > 0)
+                                    ? it.serialNumbers.map(x => String(x || '').trim()).filter(Boolean)
+                                    : (it.serialNumbersRaw ? String(it.serialNumbersRaw).split(/[\r\n,]+/).map(x => x.trim()).filter(Boolean) : []);
+                            %>
+                                <tr>
+                                    <td class="text-center"><%= idx + 1 %></td>
+                                    <td>
+                                        <span class="ses-item-title"><%= it.itemName || it.description || 'SOLAR ITEM' %></span>
+                                        <% if (it.model) { %><span class="ses-item-model"><%= it.model %></span><% } %>
+                                        <% if (snList.length > 1) { %>
+                                            <div class="ses-item-serials"><strong>S/N (<%= snList.length %> Units):</strong><%= '\n' + snList.map((sn, sIdx) => `${sIdx + 1}) ${sn}`).join('\n') %></div>
+                                        <% } else if (snList.length === 1) { %>
+                                            <div class="ses-item-serials"><strong>S/N:</strong> <%= snList[0] %></div>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center font-monospace"><%= it.hsnCode || '85414012' %></td>
+                                    <td class="text-end font-monospace"><%= Number(it.rate || 0).toLocaleString('en-IN') %></td>
+                                    <td class="text-center font-monospace"><%= it.qty || 1 %></td>
+                                    <td class="text-end font-monospace"><%= Number(it.amount || 0).toLocaleString('en-IN') %></td>
+                                    <td class="text-center font-monospace"><%= (it.cgstRate !== undefined ? it.cgstRate : 6) %>%</td>
+                                    <td class="text-end font-monospace"><%= Number(it.cgstAmount || 0).toLocaleString('en-IN') %></td>
+                                    <td class="text-center font-monospace"><%= (it.sgstRate !== undefined ? it.sgstRate : 6) %>%</td>
+                                    <td class="text-end font-monospace"><%= Number(it.sgstAmount || 0).toLocaleString('en-IN') %></td>
+                                    <td class="text-end font-monospace"><strong><%= Number(it.itemTotal || ((it.amount || 0) + (it.cgstAmount || 0) + (it.sgstAmount || 0))).toLocaleString('en-IN') %></strong></td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="11" class="text-center py-3 text-muted">No line items recorded.</td>
+                            </tr>
+                        <% } %>
+
+                        <tr>
+                            <td colspan="10" class="text-end fw-bold" style="padding-right: 10px;">Round off</td>
+                            <td class="text-end font-monospace fw-bold"><%= roundOff %></td>
+                        </tr>
+                        <tr style="font-weight: 800;">
+                            <td colspan="5" class="ses-summary-label">Total :-</td>
+                            <td class="text-end font-monospace"><%= sub.toLocaleString('en-IN') %></td>
+                            <td></td>
+                            <td class="text-end font-monospace"><%= cgst.toLocaleString('en-IN') %></td>
+                            <td></td>
+                            <td class="text-end font-monospace"><%= sgst.toLocaleString('en-IN') %></td>
+                            <td class="text-end font-monospace"><%= total.toLocaleString('en-IN') %></td>
+                        </tr>
+                        <tr style="font-weight: 800;">
+                            <td colspan="8" class="ses-summary-label">Total Tax Amount :-</td>
+                            <td colspan="3" class="text-end font-monospace"><%= totalTax.toLocaleString('en-IN') %></td>
+                        </tr>
+                        <tr class="ses-grand-total-row">
+                            <td colspan="8" class="ses-summary-label" style="font-size: 12.5px;">GRAND TOTAL :-</td>
+                            <td colspan="3" class="text-end font-monospace" style="font-size: 13.5px;"><%= total.toLocaleString('en-IN') %></td>
+                        </tr>
+                        <tr style="font-weight: 800;">
+                            <td colspan="6" class="ses-summary-label">Payment Received :-</td>
+                            <td colspan="2" class="text-center font-monospace"><%= percent %></td>
+                            <td colspan="3" class="text-end font-monospace"><%= receivedAmt.toLocaleString('en-IN') %></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 6. Footer Row: Bank Details, Terms, Verified Seal -->
+            <div class="ses-bill-footer-row">
+                <div class="ses-bill-bank-col">
+                    <div style="font-weight: 800; text-decoration: underline; margin-bottom: 2px;">BANK DETAILS :</div>
+                    <div><strong>NAME :-</strong> <%= (inv.bankDetails && inv.bankDetails.name) || 'STATE BANK OF INDIA' %></div>
+                    <div><strong>IFSC :-</strong> <%= (inv.bankDetails && inv.bankDetails.ifsc) || 'SBIN0000462' %></div>
+                    <div><strong>ACCOUNT NO. :-</strong> <%= (inv.bankDetails && inv.bankDetails.accountNo) || '44391949170' %></div>
+                    <div><strong>BRANCH ADD.</strong> <%= (inv.bankDetails && inv.bankDetails.branch) || 'YASHWANT NAGAR, SAUGOR ROAD RAISEN ,' %></div>
+                </div>
+                <div class="ses-bill-terms-col">
+                    <div style="font-weight: 800; text-decoration: underline; margin-bottom: 2px;">TERMS AND CONDITIONS</div>
+                    <% if (Array.isArray(inv.termsAndConditions) && inv.termsAndConditions.length > 0) { %>
+                        <% inv.termsAndConditions.forEach(t => { %>
+                            <div>* <%= t %></div>
+                        <% }); %>
+                    <% } else { %>
+                        <div>* 100% PAYMENT IN ADVANCE</div>
+                        <div>* ALL MATTER UNDER RAISEN JURISDICTION ONLY</div>
+                    <% } %>
+                </div>
+                <div class="ses-bill-stamp-col">
+                    <div class="ses-seal-stamp" title="Authorized Verified Stamp">
+                        <div class="ses-seal-ring-top">SHIVAY ENERGY SOLUTIONS</div>
+                        <div class="ses-seal-center">VERIFIED</div>
+                        <div class="ses-seal-ring-bottom">ARJUN NAGAR RAISEN (M.P.)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Action Bar (Hidden in Print) -->
+    <div class="text-center mt-3 mb-4 no-print d-flex justify-content-center gap-2 flex-wrap">
+        <a href="<%= backUrl %>" class="btn btn-sm btn-outline-secondary px-3 fw-bold" style="border-radius: 8px;">
+            <i class="icofont-arrow-left me-1"></i> Back to Tax Invoices
+        </a>
+        <button type="button" onclick="window.print()" class="btn btn-sm btn-dark px-4 fw-bold shadow-sm" style="background: #0f2a4a; border-radius: 8px;">
+            <i class="icofont-print me-1"></i> Print / Download PDF
+        </button>
+    </div>
+</div>
+
+<% if (typeof autoPrint !== 'undefined' && autoPrint) { %>
+<script>
+    window.addEventListener('load', function() {
+        setTimeout(function() { window.print(); }, 250);
+    });
+</script>
+<% } %>
+</body>
+</html>

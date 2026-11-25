@@ -6,6 +6,7 @@ const Setting = require('../models/Setting');
 const AuditService = require('../services/auditService');
 const WebsiteService = require('../services/websiteService');
 const AuthorizationService = require('../services/authorizationService');
+const UploadService = require('../services/uploadService');
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 const {
@@ -13,6 +14,7 @@ const {
     PERMISSIONS,
     SENSITIVE_FIELDS,
     ROLE_MIGRATION_BASELINES,
+    DESIGNATION_PRESETS,
     getFullPermissionTree,
     isValidPermission,
     isValidFieldPermission,
@@ -273,17 +275,40 @@ exports.getInvoices = async (req, res) => {
                     }
                 }
 
-                const [invoicesData, projectsData, quotationsData] = await Promise.all([
+                const SerialNumber = require('../models/SerialNumber');
+
+                const [invoicesData, projectsData, quotationsData, serialsData] = await Promise.all([
                     Invoice.find(invFilter).sort({ createdAt: -1, _id: -1 }).lean(),
                     Project.find(projFilter)
-                        .select('projectNumber capacityKw siteAddress city customer customerContact')
+                        .select('projectNumber capacityKw siteAddress city customer customerContact solarRequirements materials')
                         .populate('customer', 'name mobile city address consumerNumber gstin')
                         .lean(),
                     Quotation.find(quoteFilter)
-                        .select('quotationNumber systemCapacityKw customerId customer customerName customerMobile customerAddress customerCity pricing')
+                        .select('quotationNumber plantCapacityKw systemType customerId customer customerName customerMobile customerAddress city lineItems taxableValue grandTotal totalGstAmount panelSpecs panelQty inverterSpecs inverterQty')
                         .populate('customerId', 'name mobile city address consumerNumber gstin')
+                        .lean(),
+                    SerialNumber.find({ project: { $ne: null } })
+                        .select('serialNumber itemType category project brand model')
                         .lean()
                 ]);
+
+                // Map allocated serial numbers to projects
+                const serialsByProject = {};
+                if (Array.isArray(serialsData)) {
+                    serialsData.forEach(s => {
+                        if (s.project) {
+                            const pId = String(s.project);
+                            if (!serialsByProject[pId]) serialsByProject[pId] = [];
+                            serialsByProject[pId].push(s);
+                        }
+                    });
+                }
+                if (Array.isArray(projectsData)) {
+                    projectsData.forEach(p => {
+                        p.allocatedSerials = serialsByProject[String(p._id)] || [];
+                    });
+                }
+
                 invoices = invoicesData || [];
                 projects = projectsData || [];
                 quotations = quotationsData || [];
@@ -311,6 +336,64 @@ exports.getInvoices = async (req, res) => {
         res.status(500).render('private/errors/403', {
             title: 'Error | Shivay Energy Solutions',
             message: 'Unable to load invoice records.'
+        });
+    }
+};
+
+exports.getInvoiceDocumentPage = async (req, res) => {
+    try {
+        const rawId = decodeURIComponent(String(req.params.id || '')).trim();
+        const sessionUser = req.session.user;
+        let invoice = null;
+
+        if (mongoose.connection && mongoose.connection.readyState === 1) {
+            const Invoice = require('../models/Invoice');
+            const isObjId = mongoose.Types.ObjectId.isValid(rawId);
+            const query = {
+                isArchived: { $ne: true },
+                ...(isObjId ? { $or: [{ _id: rawId }, { invoiceNumber: rawId }] } : { invoiceNumber: rawId })
+            };
+            invoice = await Invoice.findOne(query).lean();
+        }
+
+        if (!invoice && Array.isArray(DataStore.getAllInvoices && DataStore.getAllInvoices())) {
+            invoice = DataStore.getAllInvoices().find(inv =>
+                !inv.isArchived && (String(inv._id || '') === rawId || String(inv.invoiceNumber || '') === rawId)
+            ) || null;
+        }
+
+        if (!invoice) {
+            return res.status(404).render('private/errors/403', {
+                title: 'Invoice Not Found | Shivay Energy Solutions',
+                message: 'Requested tax invoice was not found or has been archived.'
+            });
+        }
+
+        if (['MANAGER', 'BRANCH_MANAGER'].includes(sessionUser.role)) {
+            const matchesBranch = sessionUser.branchId && invoice.branch && String(invoice.branch) === String(sessionUser.branchId);
+            const matchesCreator = invoice.createdByUser && String(invoice.createdByUser) === String(sessionUser._id);
+            if (!matchesBranch && !matchesCreator) {
+                return res.status(403).render('private/errors/403', {
+                    title: 'Access Denied | Shivay Energy Solutions',
+                    message: 'You do not have permission to view this branch invoice.'
+                });
+            }
+        }
+
+        return res.render('private/admin/invoice-document', {
+            title: `${invoice.invoiceNumber || 'Tax Invoice'} | ${data.company.name}`,
+            company: data.company,
+            invoice,
+            returnUrl: '/admin/invoices',
+            autoPrint: req.query.autoPrint === '1' || req.query.print === '1',
+            user: sessionUser,
+            currentUser: sessionUser
+        });
+    } catch (err) {
+        console.error('Error in getInvoiceDocumentPage:', err);
+        return res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Unable to load tax invoice document.'
         });
     }
 };
@@ -355,7 +438,15 @@ exports.getEmployees = async (req, res) => {
 // 5. MANAGERS MANAGEMENT
 exports.getManagers = async (req, res) => {
     try {
-        const users = await DataStore.getUsers();
+        const [users, branchList] = await Promise.all([
+            DataStore.getUsers(),
+            (mongoose.connection && mongoose.connection.readyState === 1)
+                ? Branch.find({}).lean().catch(() => [])
+                : Promise.resolve([])
+        ]);
+        const branches = (branchList && branchList.length > 0)
+            ? branchList
+            : [{ _id: 'br-raisen-1', name: 'Raisen Central Branch', code: 'MP-RSN-01' }];
         const managers = users.filter(u => u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER');
         const employees = users.filter(u => u.role === 'EMPLOYEE');
 
@@ -377,6 +468,7 @@ exports.getManagers = async (req, res) => {
             data,
             company: data.company,
             managers: annotatedManagers,
+            branches,
             user: req.session.user,
             currentUser: req.session.user,
             activePage: 'admin-managers',
@@ -1420,7 +1512,26 @@ exports.getModulePlaceholder = (moduleKey) => {
 
 // 9. API: CREATE USER (SUPER ADMIN ONLY)
 exports.createUser = async (req, res) => {
-    let { name, email, mobile, password, role, employeeId, branchId, managerId, designation, department } = req.body;
+    let {
+        name,
+        email,
+        mobile,
+        password,
+        role,
+        employeeId,
+        branchId,
+        managerId,
+        designation,
+        department,
+        bloodGroup,
+        alternateMobile,
+        joiningDate,
+        expiryDate,
+        avatar,
+        avatarData,
+        avatarFilename,
+        avatarMimeType
+    } = req.body;
     const adminUser = req.session.user;
 
     try {
@@ -1431,6 +1542,20 @@ exports.createUser = async (req, res) => {
         const validRoles = ['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER', 'EMPLOYEE'];
         if (!validRoles.includes(role)) {
             return res.status(400).json({ success: false, message: 'Invalid role specified.' });
+        }
+
+        let resolvedAvatar = (avatar && typeof avatar === 'string' && avatar.trim()) ? avatar.trim() : '';
+        if (avatarData) {
+            try {
+                const uploadedUrl = await UploadService.processProfileAvatar({
+                    avatarData,
+                    avatarFilename,
+                    avatarMimeType
+                });
+                if (uploadedUrl) resolvedAvatar = uploadedUrl;
+            } catch (uploadErr) {
+                return res.status(400).json({ success: false, message: uploadErr.message || 'Invalid profile picture upload.' });
+            }
         }
 
         // Check existing user by email
@@ -1506,6 +1631,9 @@ exports.createUser = async (req, res) => {
                 cleanEmpId = `${prefix}${Date.now().toString().slice(-4)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
             }
 
+            const parsedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
+            const parsedExpiryDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000);
+
             createdUserObj = await User.create({
                 name: name.trim(),
                 email: email.trim().toLowerCase(),
@@ -1513,10 +1641,16 @@ exports.createUser = async (req, res) => {
                 password,
                 role,
                 employeeId: cleanEmpId,
+                idCardNumber: cleanEmpId,
                 branchId: (branchId && mongoose.isValidObjectId(branchId)) ? branchId : null,
                 managerId: (managerId && mongoose.isValidObjectId(managerId)) ? managerId : null,
                 designation: designation ? designation.trim() : (role === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Staff'),
                 department: department ? department.trim() : (role === 'BRANCH_MANAGER' ? 'Operations Management' : 'Field Operations'),
+                bloodGroup: bloodGroup ? bloodGroup.trim() : 'B+',
+                alternateMobile: alternateMobile ? alternateMobile.trim() : '',
+                joiningDate: parsedJoiningDate,
+                expiryDate: parsedExpiryDate,
+                avatar: resolvedAvatar,
                 status: 'ACTIVE'
             });
 
@@ -1527,6 +1661,8 @@ exports.createUser = async (req, res) => {
                 } catch (bErr) {}
             }
         } else {
+            const parsedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
+            const parsedExpiryDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000);
             createdUserObj = {
                 _id: new mongoose.Types.ObjectId(),
                 name: name.trim(),
@@ -1538,10 +1674,16 @@ exports.createUser = async (req, res) => {
                 fieldPermissions: [],
                 permissionVersion: 1,
                 employeeId: cleanEmpId,
+                idCardNumber: cleanEmpId,
                 branchId: branchId || 'br-raisen-1',
                 managerId: managerId || null,
                 designation: designation || (role === 'BRANCH_MANAGER' ? 'Branch Manager' : 'Staff'),
                 department: department || (role === 'BRANCH_MANAGER' ? 'Operations Management' : 'General'),
+                bloodGroup: bloodGroup ? bloodGroup.trim() : 'B+',
+                alternateMobile: alternateMobile ? alternateMobile.trim() : '',
+                joiningDate: parsedJoiningDate,
+                expiryDate: parsedExpiryDate,
+                avatar: resolvedAvatar,
                 status: 'ACTIVE',
                 createdAt: new Date()
             };
@@ -1601,12 +1743,16 @@ exports.updateUserStatus = async (req, res) => {
             });
         }
 
-        // Branch Managers can only manage employees within their branch or team
+        // Branch Managers can only manage active/existing employees within their branch or team,
+        // and CANNOT approve PENDING/REJECTED accounts (Super Admin approval required).
         if (['MANAGER', 'BRANCH_MANAGER'].includes(adminUser.role)) {
             const sameBranch = targetUser.branchId && adminUser.branchId && targetUser.branchId.toString() === adminUser.branchId.toString();
             const sameManager = targetUser.managerId && targetUser.managerId.toString() === adminUser._id.toString();
             if (targetUser.role !== 'EMPLOYEE' || (!sameBranch && !sameManager)) {
                 return res.status(403).json({ success: false, message: 'Forbidden: You cannot modify staff outside your branch or team.' });
+            }
+            if (['PENDING', 'REJECTED'].includes(targetUser.status) && status === 'ACTIVE') {
+                return res.status(403).json({ success: false, message: 'Only Super Admin can approve pending employee accounts.' });
             }
         }
 
@@ -1762,6 +1908,142 @@ exports.assignManager = async (req, res) => {
     }
 };
 
+// 12.01 API: UPDATE USER DETAILS (ADMIN & MANAGERS)
+exports.updateUserDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const adminUser = req.session.user;
+        const {
+            name,
+            email,
+            mobile,
+            role,
+            employeeId,
+            designation,
+            department,
+            bloodGroup,
+            alternateMobile,
+            joiningDate,
+            expiryDate,
+            status,
+            branchId,
+            managerId,
+            password,
+            avatarData,
+            avatarFilename,
+            avatarMimeType
+        } = req.body;
+
+        let targetUser = null;
+        if (mongoose.connection.readyState === 1 && mongoose.isValidObjectId(id)) {
+            targetUser = await User.findById(id);
+        } else {
+            targetUser = await DataStore.getUserById(id);
+        }
+
+        if (!targetUser) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        const isSuperAdmin = adminUser.role === 'SUPER_ADMIN' || adminUser.isPrimarySuperAdmin;
+        if (targetUser.isPrimarySuperAdmin && !adminUser.isPrimarySuperAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: 'Security Policy Violation: Only the Primary Super Admin can modify the Primary Super Admin profile.'
+            });
+        }
+
+        if (avatarData) {
+            try {
+                const uploadedUrl = await UploadService.processProfileAvatar({
+                    avatarData,
+                    avatarFilename,
+                    avatarMimeType
+                });
+                if (uploadedUrl) targetUser.avatar = uploadedUrl;
+            } catch (uploadErr) {
+                return res.status(400).json({ success: false, message: uploadErr.message || 'Invalid profile picture upload.' });
+            }
+        }
+
+        if (name) targetUser.name = name.trim();
+        if (email) targetUser.email = email.trim().toLowerCase();
+        if (mobile) targetUser.mobile = mobile.trim();
+        if (employeeId && employeeId.trim()) {
+            const cleanEmpId = employeeId.trim().toUpperCase();
+            targetUser.employeeId = cleanEmpId;
+            targetUser.idCardNumber = cleanEmpId;
+        }
+        if (role && isSuperAdmin && !targetUser.isPrimarySuperAdmin && ['EMPLOYEE', 'BRANCH_MANAGER', 'MANAGER', 'SUPER_ADMIN'].includes(role)) {
+            targetUser.role = role;
+            if (role === 'BRANCH_MANAGER' || role === 'MANAGER') {
+                targetUser.managerId = null;
+            }
+        }
+        if (designation !== undefined) targetUser.designation = designation.trim();
+        if (department !== undefined) targetUser.department = department.trim();
+        if (bloodGroup !== undefined) targetUser.bloodGroup = bloodGroup.trim();
+        if (alternateMobile !== undefined) targetUser.alternateMobile = alternateMobile.trim();
+        if (joiningDate) targetUser.joiningDate = new Date(joiningDate);
+        if (expiryDate) targetUser.expiryDate = new Date(expiryDate);
+        if (status && ['PENDING', 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'REJECTED'].includes(status)) {
+            if (targetUser.isPrimarySuperAdmin && status !== 'ACTIVE') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Primary Super Admin account must remain ACTIVE.'
+                });
+            }
+            if (!isSuperAdmin && ['PENDING', 'REJECTED'].includes(targetUser.status) && status === 'ACTIVE') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Only Super Admin can approve pending employee accounts.'
+                });
+            }
+            targetUser.status = status;
+        }
+        if (branchId && mongoose.isValidObjectId(branchId)) {
+            targetUser.branchId = branchId;
+        }
+        if (managerId !== undefined && targetUser.role === 'EMPLOYEE') {
+            targetUser.managerId = (managerId && mongoose.isValidObjectId(managerId)) ? managerId : null;
+        }
+        if (password && password.trim().length >= 8) {
+            targetUser.password = password.trim();
+        }
+
+        if (targetUser.save) {
+            await targetUser.save();
+        }
+
+        AuditService.log({
+            action: 'USER_MODIFIED',
+            user: adminUser._id,
+            targetUser: targetUser._id,
+            role: adminUser.role,
+            ipAddress: req.ip,
+            details: { name: targetUser.name, role: targetUser.role, designation: targetUser.designation, status: targetUser.status }
+        });
+
+        return res.json({
+            success: true,
+            user: {
+                _id: targetUser._id,
+                name: targetUser.name,
+                email: targetUser.email,
+                mobile: targetUser.mobile,
+                role: targetUser.role,
+                employeeId: targetUser.employeeId,
+                designation: targetUser.designation,
+                avatar: targetUser.avatar,
+                status: targetUser.status
+            },
+            message: `User details updated successfully for ${targetUser.name}.`
+        });
+    } catch (err) {
+        return res.status(500).json({ success: false, message: err.message || 'Error updating user.' });
+    }
+};
+
 // 12.1 GET USER PERMISSIONS VIEW (PHASE 4 FBAC MANAGEMENT CONSOLE)
 exports.getUserPermissions = async (req, res) => {
     try {
@@ -1824,6 +2106,7 @@ exports.getUserPermissions = async (req, res) => {
             permissionTree,
             sensitiveFields: SENSITIVE_FIELDS,
             roleBaselines: ROLE_MIGRATION_BASELINES,
+            designationPresets: DESIGNATION_PRESETS,
             modules: MODULES,
             branches: branchList,
             user: currentUser,
@@ -2108,31 +2391,86 @@ exports.saveInvoice = async (req, res) => {
     let calculatedSgst = 0;
     let calculatedGstAmount = 0;
     let calculatedTotalAmount = 0;
-    const gstRate = parseFloat(invData.gstRate) || 12;
+    let roundOff = 0;
+    const defaultGstRate = parseFloat(invData.gstRate) || 12;
 
-    if (Array.isArray(invData.items) && invData.items.length > 0) {
-        for (const it of invData.items) {
+    let rawItems = invData.items;
+    if (typeof rawItems === 'string') {
+        try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
+    }
+
+    if (Array.isArray(rawItems) && rawItems.length > 0) {
+        for (const it of rawItems) {
             const qty = Math.max(0.001, parseFloat(it.qty) || 1);
             const rate = Math.max(0, parseFloat(it.rate) || 0);
-            const lineAmount = Math.round(qty * rate * 100) / 100;
+            const lineAmount = (it.amount !== undefined && it.amount !== null && it.amount !== '') 
+                ? Math.round(parseFloat(it.amount) * 100) / 100 
+                : Math.round(qty * rate * 100) / 100;
+            
+            // Tax split per item (supports 6%, 2.5%, 9% or custom)
+            const cgstRate = (it.cgstRate !== undefined && it.cgstRate !== null && it.cgstRate !== '') 
+                ? parseFloat(it.cgstRate) 
+                : (defaultGstRate / 2);
+            const sgstRate = (it.sgstRate !== undefined && it.sgstRate !== null && it.sgstRate !== '') 
+                ? parseFloat(it.sgstRate) 
+                : (defaultGstRate / 2);
+
+            const cgstAmount = (it.cgstAmount !== undefined && it.cgstAmount !== null && it.cgstAmount !== '') 
+                ? Math.round(parseFloat(it.cgstAmount) * 100) / 100 
+                : Math.round(lineAmount * (cgstRate / 100) * 100) / 100;
+            const sgstAmount = (it.sgstAmount !== undefined && it.sgstAmount !== null && it.sgstAmount !== '') 
+                ? Math.round(parseFloat(it.sgstAmount) * 100) / 100 
+                : Math.round(lineAmount * (sgstRate / 100) * 100) / 100;
+            const itemTotal = (it.itemTotal !== undefined && it.itemTotal !== null && it.itemTotal !== '')
+                ? Math.round(parseFloat(it.itemTotal) * 100) / 100
+                : Math.round((lineAmount + cgstAmount + sgstAmount) * 100) / 100;
+
+            // Process serial numbers (support array or newline/comma string)
+            let serials = [];
+            if (Array.isArray(it.serialNumbers)) {
+                serials = it.serialNumbers.map(s => String(s).trim()).filter(Boolean);
+            } else if (typeof it.serialNumbers === 'string' && it.serialNumbers.trim()) {
+                serials = it.serialNumbers.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+            } else if (typeof it.serialNumbersRaw === 'string' && it.serialNumbersRaw.trim()) {
+                serials = it.serialNumbersRaw.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+            }
+
             calculatedSubtotal += lineAmount;
+            calculatedCgst += cgstAmount;
+            calculatedSgst += sgstAmount;
+
             validatedItems.push({
-                description: String(it.description || 'Solar Component').trim(),
-                hsnCode: String(it.hsnCode || '8541').trim(),
+                itemName: String(it.itemName || it.description || 'Solar Component').trim(),
+                description: String(it.description || it.itemName || 'Solar Component').trim(),
+                model: String(it.model || '').trim(),
+                serialNumbers: serials,
+                serialNumbersRaw: serials.join('\n'),
+                hsnCode: String(it.hsnCode || '85414012').trim(),
                 qty,
                 rate,
-                amount: lineAmount
+                amount: lineAmount,
+                cgstRate,
+                cgstAmount,
+                sgstRate,
+                sgstAmount,
+                itemTotal
             });
         }
         calculatedSubtotal = Math.round(calculatedSubtotal * 100) / 100;
-        const halfRate = gstRate / 2;
-        calculatedCgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
-        calculatedSgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
-        calculatedGstAmount = calculatedCgst + calculatedSgst;
-        calculatedTotalAmount = Math.round((calculatedSubtotal + calculatedGstAmount) * 100) / 100;
+        calculatedCgst = Math.round(calculatedCgst * 100) / 100;
+        calculatedSgst = Math.round(calculatedSgst * 100) / 100;
+        calculatedGstAmount = Math.round((calculatedCgst + calculatedSgst) * 100) / 100;
+
+        if (invData.roundOff !== undefined && invData.roundOff !== null && invData.roundOff !== '') {
+            roundOff = Math.round(parseFloat(invData.roundOff) * 100) / 100;
+        } else {
+            const rawSum = calculatedSubtotal + calculatedGstAmount;
+            roundOff = Math.round((Math.round(rawSum) - rawSum) * 100) / 100;
+        }
+        calculatedTotalAmount = Math.round((calculatedSubtotal + calculatedGstAmount + roundOff) * 100) / 100;
     } else if (invData.subtotal !== undefined && invData.subtotal !== null && parseFloat(invData.subtotal) > 0) {
         calculatedSubtotal = Math.max(0, parseFloat(invData.subtotal) || 0);
-        const halfRate = gstRate / 2;
+        const halfRate = defaultGstRate / 2;
         calculatedCgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
         calculatedSgst = Math.round(calculatedSubtotal * (halfRate / 100) * 100) / 100;
         calculatedGstAmount = calculatedCgst + calculatedSgst;
@@ -2140,7 +2478,7 @@ exports.saveInvoice = async (req, res) => {
     } else {
         // Direct totalAmount supplied without separate subtotal or item breakdown
         calculatedTotalAmount = Math.max(0, parseFloat(invData.totalAmount) || 0);
-        calculatedSubtotal = Math.round((calculatedTotalAmount / (1 + gstRate / 100)) * 100) / 100;
+        calculatedSubtotal = Math.round((calculatedTotalAmount / (1 + defaultGstRate / 100)) * 100) / 100;
         calculatedGstAmount = Math.round((calculatedTotalAmount - calculatedSubtotal) * 100) / 100;
         calculatedCgst = Math.round((calculatedGstAmount / 2) * 100) / 100;
         calculatedSgst = Math.round((calculatedGstAmount - calculatedCgst) * 100) / 100;
@@ -2248,9 +2586,16 @@ exports.saveInvoice = async (req, res) => {
             existingInvoice.cgst = calculatedCgst;
             existingInvoice.sgst = calculatedSgst;
             existingInvoice.gstAmount = calculatedGstAmount;
+            existingInvoice.roundOff = roundOff;
+            existingInvoice.totalTaxAmount = calculatedGstAmount;
             existingInvoice.totalAmount = calculatedTotalAmount;
             existingInvoice.paidAmount = paidAmount;
             existingInvoice.balanceAmount = balanceAmount;
+            existingInvoice.paymentReceivedPercent = invData.paymentReceivedPercent || (calculatedTotalAmount > 0 && paidAmount >= calculatedTotalAmount ? '100%' : '100%');
+            existingInvoice.paymentReceivedAmount = invData.paymentReceivedAmount !== undefined ? parseFloat(invData.paymentReceivedAmount) : paidAmount;
+            existingInvoice.mprgNo = invData.mprgNo || existingInvoice.mprgNo || 'CZS2026042411080336';
+            existingInvoice.companyGstin = invData.companyGstin || existingInvoice.companyGstin || '23AFRFS0964B1Z0';
+            existingInvoice.invoiceTitle = invData.invoiceTitle || existingInvoice.invoiceTitle || 'TAX INVOICE ORIGINAL FOR RECIPIENT';
             existingInvoice.paymentStatus = paymentStatus;
             existingInvoice.paymentMethod = invData.paymentMethod || existingInvoice.paymentMethod;
             existingInvoice.invoiceDate = invData.date || existingInvoice.invoiceDate;
@@ -2287,15 +2632,22 @@ exports.saveInvoice = async (req, res) => {
     invData.subtotal = calculatedSubtotal;
     invData.cgst = calculatedCgst;
     invData.sgst = calculatedSgst;
+    invData.roundOff = roundOff;
+    invData.totalTaxAmount = calculatedGstAmount;
     invData.totalAmount = calculatedTotalAmount;
     invData.paidAmount = paidAmount;
     invData.balanceAmount = balanceAmount;
+    invData.paymentReceivedPercent = invData.paymentReceivedPercent || (calculatedTotalAmount > 0 && paidAmount >= calculatedTotalAmount ? '100%' : '100%');
+    invData.paymentReceivedAmount = invData.paymentReceivedAmount !== undefined ? parseFloat(invData.paymentReceivedAmount) : paidAmount;
+    invData.mprgNo = invData.mprgNo || 'CZS2026042411080336';
+    invData.companyGstin = invData.companyGstin || '23AFRFS0964B1Z0';
+    invData.invoiceTitle = invData.invoiceTitle || 'TAX INVOICE ORIGINAL FOR RECIPIENT';
     invData.paymentStatus = paymentStatus;
     if (validatedItems.length > 0) {
         invData.items = validatedItems;
     }
 
-    // If new invoice and MongoDB is ready, persist to MongoDB FIRST before updating in-memory store
+    let persistedInvoiceId = existingInvoice ? existingInvoice._id : null;
     if (!existingInvoice && mongoose.connection.readyState === 1) {
         try {
             const crypto = require('crypto');
@@ -2316,11 +2668,18 @@ exports.saveInvoice = async (req, res) => {
                 subtotal: calculatedSubtotal,
                 cgst: calculatedCgst,
                 sgst: calculatedSgst,
-                gstRate: gstRate,
+                gstRate: defaultGstRate,
                 gstAmount: calculatedGstAmount,
+                roundOff: roundOff,
+                totalTaxAmount: calculatedGstAmount,
                 totalAmount: calculatedTotalAmount,
                 paidAmount: paidAmount,
                 balanceAmount: balanceAmount,
+                paymentReceivedPercent: invData.paymentReceivedPercent,
+                paymentReceivedAmount: invData.paymentReceivedAmount,
+                mprgNo: invData.mprgNo,
+                companyGstin: invData.companyGstin,
+                invoiceTitle: invData.invoiceTitle,
                 paymentStatus: paymentStatus,
                 paymentMethod: invData.paymentMethod || 'Bank Transfer (NEFT/RTGS/UPI)',
                 invoiceDate: invData.date || new Date().toISOString().split('T')[0],
@@ -2330,7 +2689,10 @@ exports.saveInvoice = async (req, res) => {
                 branch: user.branchId || null,
                 createdByUser: user._id
             };
-            await Invoice.create(mongoData);
+            const createdDoc = await Invoice.create(mongoData);
+            if (createdDoc && createdDoc._id) {
+                persistedInvoiceId = createdDoc._id;
+            }
         } catch (e) {
             console.error('Invoice create DB error:', e);
             if (e.code === 11000) {
@@ -2341,6 +2703,7 @@ exports.saveInvoice = async (req, res) => {
     }
 
     const saved = DataStore.addInvoice(invData);
+    const docKey = persistedInvoiceId || saved._id || saved.invoiceNumber;
 
     AuditService.log({
         action: existingInvoice ? 'INVOICE_UPDATED' : 'INVOICE_GENERATED',
@@ -2354,6 +2717,7 @@ exports.saveInvoice = async (req, res) => {
     return res.json({
         success: true,
         invoice: saved,
+        documentUrl: docKey ? `/admin/invoices/${encodeURIComponent(String(docKey))}/document` : '/admin/invoices',
         message: existingInvoice 
             ? `Invoice ${saved.invoiceNumber} (v${existingInvoice.version}) updated successfully. Customer details locked.`
             : `Invoice ${saved.invoiceNumber} recorded successfully`

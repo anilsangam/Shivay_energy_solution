@@ -5,6 +5,10 @@ const employeeController = require('../../controllers/employeeController');
 const quotationController = require('../../controllers/quotationController');
 const projectController = require('../../controllers/projectController');
 const customerController = require('../../controllers/customerController');
+const leadController = require('../../controllers/leadController');
+const fieldInspectionController = require('../../controllers/fieldInspectionController');
+const projectExecutionController = require('../../controllers/projectExecutionController');
+const complaintController = require('../../controllers/complaintController');
 
 const {
     requireAuth,
@@ -24,8 +28,11 @@ router.get(['/employee', '/employee/dashboard'], requireAuth, requirePermission(
 router.get('/employee/attendance', requireAuth, requirePermission('attendance.personal.view'), employeeController.getAttendancePage);
 router.post('/api/attendance', requireAuth, requirePermission('attendance.punch.create'), verifyCsrf, employeeController.submitAttendance);
 
-// Commercial Lifecycle: Field Quotation Requests & Drafts
+// Commercial Lifecycle: Field Quotation Requests, Self-Service Generation & Drafts
 router.get('/employee/quotations', requireAuth, requirePermission('quotations.requests.view'), quotationController.getEmployeeQuotations);
+router.get('/employee/quotations/generate', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), quotationController.getGeneratePackageQuotationPage);
+router.post('/employee/quotations/preview-package', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), verifyCsrf, quotationController.previewPackageQuotation);
+router.post('/employee/quotations/generate', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), verifyCsrf, quotationController.postGenerateEmployeeQuotation);
 router.get(['/employee/quotations/new', '/quotations/new'], requireAuth, requirePermission('quotations.requests.create'), quotationController.getNewRequestPage);
 router.post(['/employee/quotations/new', '/quotations/new', '/api/employee/quotations/request', '/api/quotations/request'], requireAuth, requirePermission('quotations.requests.create'), verifyCsrf, quotationController.postCreateRequest);
 router.get(['/employee/quotations/request/:id', '/employee/quotations/requests/:id'], requireAuth, requirePermission('quotations.requests.view'), validateObjectId('id'), quotationController.getRequestDetails);
@@ -42,6 +49,21 @@ router.post('/employee/projects/:id/site-visit', requireAuth, requirePermission(
 router.post('/employee/projects/:id/tasks/:taskId/status', requireAuth, requirePermission('projects.tasks.edit'), verifyCsrf, validateObjectId('id'), projectController.updateTaskStatus);
 router.post('/employee/projects/:id/documents', requireAuth, requirePermission('projects.documents.create'), verifyCsrf, validateObjectId('id'), projectController.uploadDocument);
 router.get('/employee/projects/:id/documents/:documentId', requireAuth, requirePermission('projects.documents.view'), validateObjectId('id'), projectController.downloadDocument);
+
+// Telecalling & Lead Management (Field / Telecaller Employees)
+router.get(['/employee/leads', '/leads'], requireAuth, requirePermission('crm.leads.view'), leadController.getLeadsPage);
+
+// Field Engineer Workspace & Site Inspections (Mobile-first)
+router.get(['/employee/inspections', '/field-engineer/workspace'], requireAuth, requireAnyPermission(['projects.tasks.view', 'projects.inspections.view']), fieldInspectionController.getWorkspace);
+
+// Installation Technician Workspace (Mobile-first)
+router.get(['/employee/installation/workspace', '/installation/workspace'], requireAuth, requireAnyPermission(['projects.tasks.view', 'projects.installation.manage']), projectExecutionController.getInstallationWorkspace);
+
+// Customer Complaints & Service Tasks (Field Technicians)
+router.get('/employee/complaints', requireAuth, requireAnyPermission(['complaints.records.view', 'complaints.tickets.view', 'complaints.progress.update']), employeeController.getAssignedComplaints);
+router.get('/employee/complaints/:id', requireAuth, requireAnyPermission(['complaints.records.view', 'complaints.tickets.view', 'complaints.progress.update']), validateObjectId('id'), complaintController.getComplaintDetailPage);
+router.post('/api/complaints/:id/progress', requireAuth, requireAnyPermission(['complaints.progress.update', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postUpdateProgress);
+router.post('/api/complaints/:id/resolve', requireAuth, requireAnyPermission(['complaints.resolve', 'complaints.tickets.edit']), verifyCsrf, validateObjectId('id'), complaintController.postResolveComplaint);
 
 // Employee Profile
 router.get('/employee/profile', requireAuth, employeeController.getProfile);

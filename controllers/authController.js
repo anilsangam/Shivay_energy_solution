@@ -115,7 +115,7 @@ class AuthController {
                     title: `Enterprise Portal Sign In | ${companyData.company.name}`,
                     company: companyData.company,
                     data: companyData,
-                    error: 'Your registration is currently PENDING approval from Super Admin / Branch Manager.',
+                    error: 'Your account is currently PENDING approval from the Super Admin. You can sign in once approved.',
                     returnUrl
                 });
             }

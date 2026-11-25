@@ -86,6 +86,10 @@ const customerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    leadId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Lead'
+    },
     notes: [{
         text: String,
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

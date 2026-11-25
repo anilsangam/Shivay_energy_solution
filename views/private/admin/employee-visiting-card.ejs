@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Employee Visiting Card | Shivay Energy Solutions' %></title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/fonts/icofont.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --blue: #145ca7;
+            --deep-blue: #103f78;
+            --dark-navy: #092342;
+            --light-blue: #e9f3fc;
+            --ink: #19304b;
+            --muted: #5c6e81;
+            --ses-solar-gold: #f59e0b;
+            --ses-border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #edf2f7;
+            color: var(--ink);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+
+        /* Screen Control Bar */
+        .card-control-bar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--ses-border);
+            padding: 14px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .bar-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            font-size: 13.5px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            border: 1px solid transparent;
+        }
+
+        .btn-print {
+            background: var(--deep-blue);
+            color: #ffffff;
+        }
+        .btn-print:hover {
+            background: #092c57;
+            color: #ffffff;
+        }
+
+        .btn-share {
+            background: #10b981;
+            color: #ffffff;
+        }
+        .btn-share:hover {
+            background: #059669;
+            color: #ffffff;
+        }
+
+        .btn-switch {
+            background: #ffffff;
+            color: var(--blue);
+            border-color: #cbd5e1;
+        }
+        .btn-switch:hover {
+            background: #f1f5f9;
+            color: var(--deep-blue);
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* Container for Cards Display */
+        .cards-preview-wrap {
+            max-width: 1100px;
+            margin: 40px auto 20px;
+            padding: 0 20px;
+        }
+
+        .cards-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 45px;
+        }
+
+        .card-perspective {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-side-label {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--muted);
+            background: #ffffff;
+            padding: 4px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--ses-border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+
+        /* ======================================================== */
+        /* STANDARD BUSINESS CARD (3.5" x 2" Landscape / 89mm x 51mm) */
+        /* Dimensions: 560px x 320px (Physical CR80 / Business Ratio) */
+        /* ======================================================== */
+        .visiting-card {
+            width: 560px;
+            height: 320px;
+            border-radius: 20px;
+            box-shadow: 0 18px 45px rgba(22, 55, 91, .15), 0 2px 8px rgba(22, 55, 91, .06);
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ======================================================== */
+        /* 1. FRONT SIDE: FULL SOLAR IMAGE + TOP-RIGHT BRAND & PHONE */
+        /* ======================================================== */
+        .visiting-card-front-solar {
+            background-color: var(--dark-navy);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 20px 22px;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .front-solar-full-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .front-solar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(7, 25, 47, 0.42) 0%, rgba(16, 63, 120, 0.22) 50%, rgba(7, 25, 47, 0.62) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Isometric Solar Cell Watermark on Front */
+        .solar-pattern-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1.2px, transparent 1.2px);
+            background-size: 22px 22px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Top Brand Header & Mobile (Logo + Company Name on Left, Phone on Right) */
+        .front-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            z-index: 5;
+            width: 100%;
+        }
+
+        .front-brand-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .front-logo-badge {
+            width: 60px;
+            height: 60px;
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            padding: 0;
+            flex-shrink: 0;
+        }
+
+        .front-logo-badge svg,
+        .front-logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+        }
+
+        .front-brand-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .front-company-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 17.5px;
+            color: #ffffff;
+            letter-spacing: 0.6px;
+            line-height: 1.15;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .front-company-tagline {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--ses-solar-gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 2px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Front Company Address below tagline */
+        .front-company-address {
+            font-size: 8.5px;
+            color: #f1f5f9;
+            margin-top: 5px;
+            line-height: 1.35;
+            max-width: 320px;
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        }
+
+        .front-company-address i {
+            color: var(--ses-solar-gold);
+            font-size: 10px;
+            flex-shrink: 0;
+            margin-top: 1.5px;
+        }
+
+        /* Phone pill on top right */
+        .front-phone-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 10.8px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .front-phone-pill i {
+            color: #ffffff;
+            font-size: 12px;
+        }
+
+        /* ======================================================== */
+        /* 2. SECOND SIDE: CHEVRON USER INFO + COMPANY DETAILS      */
+        /* ======================================================== */
+        .visiting-card-back-split {
+            background: #ffffff;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Full Right Side Solar Panel Image Background */
+        .v-right-full-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 62%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .v-right-full-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center bottom;
+            display: block;
+        }
+
+        /* Minimal Subtle White Fade at Top for Text Readability */
+        .v-right-full-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 62%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.35) 38%, rgba(255, 255, 255, 0.08) 62%, rgba(255, 255, 255, 0) 78%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Left Navy Blue Chevron Block */
+        .v-split-left-chevron {
+            width: 48%;
+            height: 100%;
+            background: linear-gradient(135deg, #07192f 0%, #0f2b48 60%, #145ca7 100%);
+            clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 0 100%);
+            padding: 20px 28px 18px 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            color: #ffffff;
+        }
+
+        /* Isometric Pattern inside dark chevron */
+        .v-chevron-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 16px 16px;
+            pointer-events: none;
+        }
+
+        /* Top of Left Side: Employee Name & Role */
+        .v-chevron-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 21px;
+            font-weight: 800;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+            position: relative;
+            z-index: 5;
+        }
+
+        .v-chevron-role {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ses-solar-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 3px;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* User Direct Contact Details on Left */
+        .v-chevron-contact-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            margin-top: 10px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .v-chevron-phone {
+            font-family: 'Montserrat', 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+        }
+
+        .v-chevron-email {
+            font-size: 10.5px;
+            color: #e2e8f0;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .v-chevron-rule {
+            width: 36px;
+            height: 2.5px;
+            background: var(--ses-solar-gold);
+            border-radius: 2px;
+            margin: 10px 0 10px 0;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Scannable Website QR Code in Left Chevron */
+        .v-chevron-qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+            z-index: 5;
+        }
+
+        .v-chevron-qr-box {
+            width: 68px;
+            height: 68px;
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .v-qr-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .v-chevron-qr-label {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .v-qr-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 8px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .v-qr-sub {
+            font-size: 7.5px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        /* Right Side: Top Logo, Company Name & Details over Full Right Solar Image */
+        .v-split-right-company {
+            width: 52%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 12px 16px 12px 22px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .v-right-top-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            align-self: flex-start;
+            background: transparent;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            margin-left: -14px;
+            margin-bottom: 6px;
+        }
+
+        .v-right-top-logo {
+            height: auto;
+            width: 100%;
+            max-width: 220px;
+            max-height: 70px;
+            object-fit: contain;
+            display: block;
+            filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.75));
+        }
+
+        .v-right-branch-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #07192f;
+            margin-top: 2px;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.75);
+        }
+
+        .v-right-address {
+            font-size: 9px;
+            font-weight: 700;
+            color: #0f2b48;
+            line-height: 1.3;
+            margin-top: 2px;
+            max-width: 250px;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.75);
+        }
+
+        .v-right-email {
+            font-size: 9px;
+            font-weight: 700;
+            color: #0f2b48;
+            margin-top: 2px;
+            word-break: break-all;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.75);
+        }
+
+        .v-right-website {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 10px;
+            font-weight: 800;
+            color: #07192f;
+            margin-top: 2px;
+            text-shadow: 0 1px 3px rgba(255, 255, 255, 0.75);
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .card-control-bar, .card-side-label, .modal, .modal-backdrop {
+                display: none !important;
+            }
+            .cards-preview-wrap {
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: none !important;
+            }
+            .cards-column {
+                gap: 20px !important;
+                page-break-inside: avoid;
+            }
+            .visiting-card {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                page-break-inside: avoid;
+            }
+            @page {
+                size: landscape;
+                margin: 10mm;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <%
+        const empName = employee.name || 'Richard Sanchez';
+        const empDesig = employee.designation || 'Manager';
+        const empCode = employee.employeeId || 'SES-EMP-01';
+        const empMobile = employee.mobile || '+91 70005 75496';
+        const empEmail = employee.email || 'Official@shivayenergysolutions.in';
+
+        // Dynamic Branch Information
+        const branchName = branch ? branch.name : 'Raisen Central Branch';
+        const branchAddress = branch ? branch.address : 'In Front Of P.H.E. Office Arjun Nagar, Raisen (M.P.) 464551';
+        const branchPhone = branch ? branch.contactNumber : '+91 70005 75496';
+        const branchEmail = branch ? (branch.email || 'sesraisen@gmail.com') : 'Official@shivayenergysolutions.in';
+        const branchCity = branch ? branch.city : 'Raisen';
+
+        // Corporate details
+        const mainCompanyEmail = 'Official@shivayenergysolutions.in';
+        const websiteUrl = 'www.shivayenergysolutions.com';
+    %>
+
+    <!-- Screen Control Bar (Hidden when Printing) -->
+    <div class="card-control-bar">
+        <div class="bar-container">
+            <div class="d-flex align-items-center gap-2">
+                <a href="<%= (user && user.role === 'SUPER_ADMIN') ? '/admin/employees' : '/manager/employees' %>" class="btn-action btn-back">
+                    <i class="icofont-arrow-left"></i> Back to Personnel
+                </a>
+                <span class="badge bg-light text-dark border px-3 py-2 font-weight-bold">
+                    <i class="icofont-credit-card text-warning me-1"></i> Corporate Visiting Card
+                </span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="<%= (user && user.role === 'SUPER_ADMIN') ? '/admin/employees/' + employee._id + '/id-card' : '/manager/employees/' + employee._id + '/id-card' %>" class="btn-action btn-switch">
+                    <i class="icofont-id-card"></i> View ID Card
+                </a>
+                
+                <% if (isManagerOrAdmin) { %>
+                    <button class="btn-action btn-share" data-bs-toggle="modal" data-bs-target="#shareVisitingModal">
+                        <i class="icofont-share"></i> Share with Employee
+                    </button>
+                <% } %>
+
+                <button class="btn-action btn-print" onclick="window.print()">
+                    <i class="icofont-printer"></i> Print Visiting Card (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Display Wrapper -->
+    <div class="cards-preview-wrap">
+        <div class="cards-column">
+            
+            <!-- 1. FRONT SIDE: FULL SOLAR IMAGE + TOP BRAND LOGO, NAME, ADDRESS & MOBILE NUMBER ONLY -->
+            <div class="card-perspective">
+                <div class="card-side-label">Front Side (विज़िटिंग कार्ड मुख पृष्ठ)</div>
+                <div class="visiting-card visiting-card-front-solar">
+                    <!-- Real Full Background Solar Rooftop Image -->
+                    <img src="/images/slider/slider1.webp" alt="Solar Rooftop Installation" class="front-solar-full-bg">
+                    <div class="front-solar-overlay"></div>
+                    <div class="solar-pattern-overlay"></div>
+
+                    <!-- Top Bar: Brand Logo, Name & Address on Left, Mobile Number on Right -->
+                    <div class="front-top-bar">
+                        <div class="front-brand-left">
+                            <div class="front-logo-badge">
+                                <img src="/images/brandlogo_transparent.png" alt="Shivay Energy Solutions Logo">
+                            </div>
+                            <div class="front-brand-text">
+                                <div class="front-company-title">SHIVAY ENERGY SOLUTIONS</div>
+                                <div class="front-company-tagline">SOLAR ROOFTOP &amp; EPC SPECIALIST</div>
+                                <div class="front-company-address">
+                                    <i class="icofont-location-pin"></i>
+                                    <span><%= branchAddress %></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Number Only on Right -->
+                        <div class="front-phone-pill">
+                            <i class="icofont-phone"></i>
+                            <span><%= empMobile %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SECOND SIDE: CHEVRON USER INFO & QR + RIGHT COMPANY DETAILS & BRAND IMAGE -->
+            <div class="card-perspective">
+                <div class="card-side-label">Back Side (विज़िटिंग कार्ड पृष्ठ भाग)</div>
+                <div class="visiting-card visiting-card-back-split">
+                    <!-- Full Right Side Solar Panel Background Image -->
+                    <div class="v-right-full-bg">
+                        <img src="/images/visiting-back-solar.jpg" alt="Solar Panel Installation">
+                    </div>
+                    <div class="v-right-full-overlay"></div>
+
+                    <!-- Left Dark Navy Chevron: Name, Role, User Contact & Scannable QR -->
+                    <div class="v-split-left-chevron">
+                        <div class="v-chevron-pattern"></div>
+
+                        <!-- Top: Name & Role -->
+                        <div class="v-chevron-name"><%= empName %></div>
+                        <div class="v-chevron-role"><%= empDesig %></div>
+
+                        <!-- User Direct Details -->
+                        <div class="v-chevron-contact-list">
+                            <div class="v-chevron-phone"><%= empMobile %></div>
+                            <div class="v-chevron-email"><%= empEmail %></div>
+                        </div>
+
+                        <!-- Golden Accent Line -->
+                        <div class="v-chevron-rule"></div>
+
+                        <!-- Real Scannable Website QR Code -->
+                        <div class="v-chevron-qr-section">
+                            <div class="v-chevron-qr-box">
+                                <svg class="v-qr-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges">
+                                    <path fill="#ffffff" d="M0 0h31v31H0z"/>
+                                    <path stroke="#103f78" d="M1 1.5h7m1 0h3m2 0h1m2 0h1m1 0h3m1 0h7M1 2.5h1m5 0h1m1 0h1m2 0h1m4 0h1m1 0h1m1 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m2 0h2m1 0h4m2 0h1m3 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h3m1 0h1m4 0h1m2 0h1m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m3 0h2m1 0h4m1 0h2m2 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m4 0h2m1 0h1m4 0h2m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h4m1 0h3m1 0h2M1 9.5h1m1 0h2m1 0h3m1 0h2m2 0h2m1 0h4m2 0h1m2 0h1m1 0h2M4 10.5h1m4 0h1m2 0h2m3 0h1m2 0h2m1 0h3m3 0h1M3 11.5h1m3 0h2m1 0h1m2 0h1m1 0h1m5 0h1m2 0h2m1 0h2M3 12.5h3m6 0h5m2 0h1m1 0h2m1 0h2m3 0h1M5 13.5h3m1 0h2m7 0h1m1 0h1m5 0h2M1 14.5h1m3 0h1m2 0h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h2m2 0h3M2 15.5h3m2 0h1m3 0h2m2 0h1m2 0h4m2 0h2m1 0h3M1 16.5h1m1 0h1m2 0h1m1 0h2m2 0h1m1 0h1m6 0h2m1 0h2m2 0h1M3 17.5h1m1 0h3m1 0h1m3 0h1m3 0h1m1 0h1m1 0h2m2 0h2m1 0h1M2 18.5h2m2 0h1m2 0h1m4 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3M1 19.5h1m1 0h2m2 0h2m1 0h1m1 0h1m3 0h1m4 0h4m2 0h1M3 20.5h2m4 0h3m4 0h3m2 0h2m4 0h1M2 21.5h2m1 0h1m1 0h3m1 0h1m1 0h2m1 0h4m1 0h7M9 22.5h1m1 0h1m1 0h3m1 0h1m2 0h2m3 0h5M1 23.5h7m1 0h1m1 0h4m2 0h5m1 0h1m1 0h2m1 0h1M1 24.5h1m5 0h1m1 0h2m1 0h1m3 0h1m2 0h1m1 0h1m3 0h2m1 0h2M1 25.5h1m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m2 0h1m2 0h5m1 0h1M1 26.5h1m1 0h3m1 0h1m1 0h1m1 0h1m3 0h8m2 0h2m2 0h1M1 27.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m3 0h2m1 0h1m1 0h1m2 0h1m1 0h1M1 28.5h1m5 0h1m2 0h1m2 0h4m2 0h1m1 0h1m2 0h1m1 0h1m1 0h1M1 29.5h7m1 0h1m2 0h5m2 0h3m1 0h1m2 0h1m1 0h1"/>
+                                </svg>
+                            </div>
+                            <div class="v-chevron-qr-label">
+                                <div class="v-qr-title">SCAN WEBSITE</div>
+                                <div class="v-qr-sub">shivayenergysolutions.com</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Transparent Logo (with Built-in Company Name) & Details over Full Solar Image -->
+                    <div class="v-split-right-company">
+                        <!-- Top Transparent Image Logo -->
+                        <div class="v-right-top-logo-wrap">
+                            <img src="/images/brandlogo_leftlgoog_rightname_trans.png" alt="Shivay Energy Solutions Logo" class="v-right-top-logo">
+                        </div>
+
+                        <!-- Branch Name -->
+                        <div class="v-right-branch-title"><%= branchName %></div>
+
+                        <!-- Address -->
+                        <div class="v-right-address"><%= branchAddress %></div>
+
+                        <!-- Company Email -->
+                        <div class="v-right-email"><%= mainCompanyEmail %></div>
+
+                        <!-- Website URL -->
+                        <div class="v-right-website"><%= websiteUrl %></div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Share Visiting Card with Employee -->
+    <% if (isManagerOrAdmin) { %>
+    <div class="modal fade" id="shareVisitingModal" tabindex="-1" aria-labelledby="shareVisitingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header text-white" style="background: var(--deep-blue);">
+                    <h5 class="modal-title font-weight-bold" id="shareVisitingModalLabel">
+                        <i class="icofont-share me-1 text-warning"></i> Share Visiting Card with <%= empName %>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Share this official Visiting Card link with <%= empName %>. They can share it with clients or print it for field operations.
+                    </p>
+
+                    <% 
+                        const cleanMobileDigits = (empMobile || '').replace(/\D/g, '');
+                        const shareLink = '/cards/view/visiting-card/' + employee._id + '?token=' + shareToken;
+                        const defaultShareText = `Namaste ${empName}, here is your official Shivay Energy Solutions Visiting Card (${branchName}):\n${shareLink}\nBranch: ${branchName} | Email: ${mainCompanyEmail}`;
+                        const waUrl = `https://wa.me/${cleanMobileDigits.length === 10 ? '91' + cleanMobileDigits : cleanMobileDigits}?text=${encodeURIComponent(defaultShareText)}`;
+                    %>
+
+                    <div class="mb-3">
+                        <label class="form-label small font-weight-bold">Direct Secure Card URL</label>
+                        <div class="input-group">
+                            <input type="text" id="shareUrlInput" class="form-control form-control-sm" value="<%= shareLink %>" readonly>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="copyShareLink()">
+                                <i class="icofont-copy me-1"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="<%= waUrl %>" target="_blank" class="btn btn-success font-weight-bold text-white">
+                            <i class="icofont-brand-whatsapp me-1"></i> Send Card on WhatsApp (<%= empMobile %>)
+                        </a>
+                        <button class="btn btn-primary font-weight-bold" onclick="copyShareText(`<%= defaultShareText.replace(/\n/g, ' ') %>`)">
+                            <i class="icofont-ui-copy me-1"></i> Copy Share Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyShareLink() {
+            const input = document.getElementById('shareUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            const fullUrl = window.location.origin + input.value;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                alert('Secure card link copied to clipboard: ' + fullUrl);
+            });
+        }
+
+        function copyShareText(text) {
+            const fullText = text.replace(document.getElementById('shareUrlInput').value, window.location.origin + document.getElementById('shareUrlInput').value);
+            navigator.clipboard.writeText(fullText).then(() => {
+                alert('Share message copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

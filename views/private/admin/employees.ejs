@@ -8,6 +8,7 @@
 
     const canCreateUser = checkPerm('users.employees.create');
     const canManageUser = checkPerm('users.employees.manage');
+    const pendingApprovalUsers = (users || []).filter(u => u.status === 'PENDING');
 %>
 
 <!-- Action Feedback Alert Banner -->
@@ -16,29 +17,176 @@
     <button type="button" class="btn-close" onclick="document.getElementById('empToast').classList.add('d-none')"></button>
 </div>
 
-<!-- Header Controls -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+<% if (pendingApprovalUsers.length > 0 && canManageUser) { %>
+<div class="alert alert-warning border-warning d-flex flex-wrap align-items-center justify-content-between mb-3 shadow-sm" role="alert">
     <div>
-        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
-            Staff & Personnel Management
+        <i class="icofont-shield-alt me-2"></i>
+        <strong><%= pendingApprovalUsers.length %> Employee Account(s) Awaiting Super Admin Approval:</strong>
+        <span class="small">Managers created these accounts; users cannot log in until you click <strong>Approve</strong>.</span>
+    </div>
+    <span class="badge bg-dark text-warning px-3 py-2"><%= pendingApprovalUsers.length %> Pending</span>
+</div>
+<% } %>
+
+<!-- Header Controls -->
+<div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: clamp(19px, 3.5vw, 24px);">
+            Staff &amp; Personnel Management
         </h2>
         <p class="text-muted small mb-0">
             Manage employees, branch managers, reporting lines, and security permissions for Shivay Energy Solutions
         </p>
     </div>
-    <div class="d-flex gap-2 mt-3 mt-md-0">
+    <div class="d-flex flex-wrap gap-2">
         <% if (canCreateUser) { %>
-            <button class="btn btn-warning font-weight-bold text-dark" data-bs-toggle="modal" data-bs-target="#createUserModal" style="border-radius: 8px;">
+            <button class="btn btn-warning font-weight-bold text-dark flex-grow-1 flex-sm-grow-0" data-bs-toggle="modal" data-bs-target="#createUserModal" style="border-radius: 8px;">
                 <i class="icofont-plus-circle me-1"></i> Add New Staff Member
             </button>
         <% } %>
         <% if (canManageUser) { %>
-            <a href="/admin/managers" class="btn btn-outline-primary" style="border-radius: 8px;">
+            <a href="/admin/managers" class="btn btn-outline-primary flex-grow-1 flex-sm-grow-0 text-center" style="border-radius: 8px;">
                 <i class="icofont-business-man me-1"></i> View Managers (<%= managers ? managers.length : 0 %>)
             </a>
         <% } %>
     </div>
 </div>
+
+<%
+    function renderStaffMeta(u) {
+        let roleClass = 'badge-role-employee';
+        let roleName = 'Employee';
+        if (u.role === 'SUPER_ADMIN') {
+            roleClass = 'badge-role-superadmin';
+            roleName = 'Super Admin';
+        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
+            roleClass = 'badge-role-manager';
+            roleName = 'Branch Manager';
+        }
+
+        let statusClass = 'badge-status-active';
+        if (u.status === 'PENDING') statusClass = 'badge-status-pending';
+        else if (u.status === 'SUSPENDED' || u.status === 'REJECTED') statusClass = 'badge-status-suspended';
+        else if (u.status === 'INACTIVE') statusClass = 'badge-status-inactive';
+
+        let mgrDisplay = '';
+        let mgrIcon = 'icofont-business-man text-warning';
+        if (u.role === 'SUPER_ADMIN') {
+            mgrDisplay = 'Self / Executive Board';
+            mgrIcon = 'icofont-shield-check text-primary';
+        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
+            const branchName = (u.branchId && u.branchId.name) ? u.branchId.name : ((u.branch && u.branch.name) ? u.branch.name : 'Central Branch');
+            mgrDisplay = `Self / Branch Head (${branchName})`;
+            mgrIcon = 'icofont-building text-info';
+        } else {
+            mgrDisplay = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : 'None (Unassigned)');
+        }
+        return { roleClass, roleName, statusClass, mgrDisplay, mgrIcon };
+    }
+%>
+<% function renderStaffActions(u) { %>
+    <div class="d-inline-flex align-items-center justify-content-end gap-1">
+        <% if (canManageUser) { %>
+            <!-- Visible Action 1: Profile Edit -->
+            <% if (!u.isPrimarySuperAdmin || (authUser && authUser.isPrimarySuperAdmin)) { %>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Edit Staff Profile & Photo" onclick="openEditUserModal('<%= u._id %>')">
+                    <i class="icofont-edit"></i>
+                </button>
+            <% } %>
+
+            <!-- Visible Action 2: Granular Permissions -->
+            <a href="/admin/users/<%= u._id %>/permissions" class="btn btn-sm btn-outline-warning py-1 px-2" title="Manage Granular Permissions & Security Scope">
+                <i class="icofont-key"></i>
+            </a>
+        <% } %>
+
+        <!-- 3-Dot Menu Containing ALL Actions (Left-Aligned on Open) -->
+        <div class="dropdown d-inline-block">
+            <button type="button" class="btn btn-sm btn-outline-dark py-1 px-2" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" title="All Actions">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;">
+                    <circle cx="8" cy="3" r="1.5"/>
+                    <circle cx="8" cy="8" r="1.5"/>
+                    <circle cx="8" cy="13" r="1.5"/>
+                </svg>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 py-1" style="min-width: 210px; max-height: 75vh; overflow-y: auto; font-size: 13px; z-index: 1055;">
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/employees/<%= u._id %>/id-card" target="_blank">
+                        <i class="icofont-id-card text-primary"></i> View / Print ID Card
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/employees/<%= u._id %>/visiting-card" target="_blank">
+                        <i class="icofont-credit-card text-info"></i> View / Print Visiting Card
+                    </a>
+                </li>
+
+                <% if (canManageUser) { %>
+                    <li><hr class="dropdown-divider my-1"></li>
+
+                    <% if (!u.isPrimarySuperAdmin || (authUser && authUser.isPrimarySuperAdmin)) { %>
+                        <li>
+                            <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2" onclick="openEditUserModal('<%= u._id %>')">
+                                <i class="icofont-edit text-secondary"></i> Edit Profile &amp; Photo
+                            </button>
+                        </li>
+                    <% } %>
+
+                    <li>
+                        <a class="dropdown-item py-2 d-flex align-items-center gap-2" href="/admin/users/<%= u._id %>/permissions">
+                            <i class="icofont-key text-warning"></i> Manage Permissions
+                        </a>
+                    </li>
+
+                    <% if (u.role === 'EMPLOYEE') { %>
+                        <li>
+                            <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2" onclick="openAssignModalById('<%= u._id %>')">
+                                <i class="icofont-business-man text-primary"></i> Assign Manager
+                            </button>
+                        </li>
+                    <% } %>
+
+                    <% if (u.role !== 'SUPER_ADMIN') { %>
+                        <% if (u.status === 'PENDING') { %>
+                            <li>
+                                <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2 text-success font-weight-bold" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
+                                    <i class="icofont-check-circled"></i> Approve Login
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2 text-danger" onclick="updateStatus('<%= u._id %>', 'REJECTED')">
+                                    <i class="icofont-close-circled"></i> Reject Request
+                                </button>
+                            </li>
+                        <% } else if (u.status === 'ACTIVE') { %>
+                            <li>
+                                <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2 text-warning" onclick="updateStatus('<%= u._id %>', 'SUSPENDED')">
+                                    <i class="icofont-ban"></i> Suspend Account
+                                </button>
+                            </li>
+                        <% } else { %>
+                            <li>
+                                <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2 text-success" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
+                                    <i class="icofont-check"></i> Activate Account
+                                </button>
+                            </li>
+                        <% } %>
+                    <% } %>
+
+                    <% if (!u.isPrimarySuperAdmin) { %>
+                        <li>
+                            <button type="button" class="dropdown-item py-2 d-flex align-items-center gap-2 text-dark" onclick="openResetModalById('<%= u._id %>')">
+                                <i class="icofont-ui-lock"></i> Reset Password
+                            </button>
+                        </li>
+                    <% } else { %>
+                        <li><span class="dropdown-item-text text-muted small py-1"><i class="icofont-shield-alt me-1"></i> Primary Root Protected</span></li>
+                    <% } %>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+<% } %>
 
 <!-- Users Table Card -->
 <div class="admin-card">
@@ -52,72 +200,51 @@
         </div>
     </div>
 
-    <div class="admin-table-container">
+    <!-- Desktop / Large Screen Table -->
+    <div class="admin-table-container d-none d-lg-block">
         <table class="admin-table">
             <thead>
                 <tr>
                     <th>Staff Name</th>
-                    <th>Employee ID</th>
-                    <th>Contact</th>
+                    <th>Emp ID</th>
+                    <th class="admin-table-col-contact">Contact</th>
                     <th>Role</th>
-                    <th>Assigned Manager / Branch</th>
+                    <th class="admin-table-col-mgr">Manager / Branch</th>
                     <th>Status</th>
-                    <th>Assigned Permissions</th>
+                    <th>Permissions</th>
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <% if (users && users.length > 0) { %>
-                    <% users.forEach(u => { 
-                        let roleClass = 'badge-role-employee';
-                        let roleName = 'Employee';
-                        if (u.role === 'SUPER_ADMIN') {
-                            roleClass = 'badge-role-superadmin';
-                            roleName = 'Super Admin';
-                        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
-                            roleClass = 'badge-role-manager';
-                            roleName = 'Branch Manager';
-                        }
-
-                        let statusClass = 'badge-status-active';
-                        if (u.status === 'PENDING') statusClass = 'badge-status-pending';
-                        else if (u.status === 'SUSPENDED') statusClass = 'badge-status-suspended';
-                        else if (u.status === 'INACTIVE') statusClass = 'badge-status-inactive';
-
-                        let mgrDisplay = '';
-                        let mgrIcon = 'icofont-business-man text-warning';
-                        if (u.role === 'SUPER_ADMIN') {
-                            mgrDisplay = 'Self / Executive Board';
-                            mgrIcon = 'icofont-shield-check text-primary';
-                        } else if (u.role === 'MANAGER' || u.role === 'BRANCH_MANAGER') {
-                            const branchName = (u.branchId && u.branchId.name) ? u.branchId.name : ((u.branch && u.branch.name) ? u.branch.name : 'Central Branch');
-                            mgrDisplay = `Self / Branch Head (${branchName})`;
-                            mgrIcon = 'icofont-building text-info';
-                        } else {
-                            mgrDisplay = (u.managerId && u.managerId.name) ? u.managerId.name : ((u.manager && u.manager.name) ? u.manager.name : 'None (Unassigned)');
-                        }
+                    <% users.forEach(u => {
+                        const { roleClass, roleName, statusClass, mgrDisplay, mgrIcon } = renderStaffMeta(u);
                     %>
                         <tr id="user-row-<%= u._id %>">
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="admin-avatar-circle" style="width: 34px; height: 34px; font-size: 12px;">
-                                        <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
-                                    </div>
+                                    <% if (u.avatar && u.avatar !== '/images/misc/cst-1.webp') { %>
+                                        <img src="<%= u.avatar %>" alt="<%= u.name %>" class="rounded-circle border flex-shrink-0" style="width: 34px; height: 34px; object-fit: cover;">
+                                    <% } else { %>
+                                        <div class="admin-avatar-circle flex-shrink-0" style="width: 34px; height: 34px; font-size: 11px;">
+                                            <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                        </div>
+                                    <% } %>
                                     <div>
-                                        <strong class="text-dark"><%= u.name %></strong>
+                                        <strong class="text-dark" style="font-size: 12.5px;"><%= u.name %></strong>
                                         <div class="text-muted" style="font-size: 11px;"><%= u.designation || 'Staff' %></div>
                                     </div>
                                 </div>
                             </td>
-                            <td><code><%= u.employeeId || 'N/A' %></code></td>
-                            <td>
-                                <div style="font-size: 12px;"><i class="icofont-envelope text-muted me-1"></i><%= u.email %></div>
-                                <div style="font-size: 12px;"><i class="icofont-phone text-muted me-1"></i><%= u.mobile %></div>
+                            <td style="font-size: 11px;"><code><%= u.employeeId || 'N/A' %></code></td>
+                            <td class="admin-table-col-contact">
+                                <div class="contact-email" style="font-size: 11.5px;" title="<%= u.email %>"><i class="icofont-envelope text-muted me-1"></i><%= u.email %></div>
+                                <div style="font-size: 11.5px; white-space: nowrap;"><i class="icofont-phone text-muted me-1"></i><%= u.mobile %></div>
                             </td>
                             <td><span class="badge-role <%= roleClass %>"><%= roleName %></span></td>
-                            <td>
-                                <span class="d-inline-flex align-items-center gap-1 font-weight-bold" style="font-size: 12px; color: var(--admin-navy-primary);">
-                                    <i class="<%= mgrIcon %>"></i> <%= mgrDisplay %>
+                            <td class="admin-table-col-mgr">
+                                <span class="d-inline-flex align-items-start gap-1 font-weight-bold" style="font-size: 11.5px; color: var(--admin-navy-primary);">
+                                    <i class="<%= mgrIcon %> mt-1"></i> <span><%= mgrDisplay %></span>
                                 </span>
                             </td>
                             <td>
@@ -142,49 +269,8 @@
                                     </a>
                                 <% } %>
                             </td>
-                            <td class="text-end">
-                                <div class="btn-group">
-                                    <% if (canManageUser) { %>
-                                        <!-- Granular Permissions Management Action -->
-                                        <a href="/admin/users/<%= u._id %>/permissions" class="btn btn-sm btn-outline-primary py-1 px-2" title="Manage Granular Permissions & Security Scope">
-                                            <i class="icofont-key"></i>
-                                        </a>
-
-                                        <% if (u.role !== 'SUPER_ADMIN') { %>
-                                            <% if (u.role === 'EMPLOYEE') { %>
-                                                <!-- Assign Manager Button ONLY for field staff/employees -->
-                                                <button class="btn btn-sm btn-outline-secondary py-1 px-2" title="Assign Manager" onclick="openAssignModal('<%= u._id %>', '<%= u.name %>', '<%= (u.managerId && u.managerId._id) ? u.managerId._id : (u.managerId || "") %>')">
-                                                    <i class="icofont-business-man"></i>
-                                                </button>
-                                            <% } %>
-
-                                            <!-- Status Toggle Button -->
-                                            <% if (u.status === 'ACTIVE') { %>
-                                                <button class="btn btn-sm btn-outline-warning py-1 px-2" title="Deactivate/Suspend Account" onclick="updateStatus('<%= u._id %>', 'SUSPENDED')">
-                                                    <i class="icofont-ban"></i>
-                                                </button>
-                                            <% } else { %>
-                                                <button class="btn btn-sm btn-outline-success py-1 px-2" title="Activate Account" onclick="updateStatus('<%= u._id %>', 'ACTIVE')">
-                                                    <i class="icofont-check"></i>
-                                                </button>
-                                            <% } %>
-
-                                            <!-- Password Reset Button -->
-                                            <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
-                                                <i class="icofont-key"></i>
-                                            </button>
-                                        <% } else if (u.isPrimarySuperAdmin) { %>
-                                            <span class="badge bg-light text-muted border">Primary Root Protected</span>
-                                        <% } else { %>
-                                            <!-- Password Reset Button for secondary Super Admin -->
-                                            <button class="btn btn-sm btn-outline-dark py-1 px-2" title="Reset Password" onclick="openResetModal('<%= u._id %>', '<%= u.name %>')">
-                                                <i class="icofont-key"></i>
-                                            </button>
-                                        <% } %>
-                                    <% } else { %>
-                                        <span class="badge bg-light text-muted border py-1 px-2" style="font-size: 10px;">View Only</span>
-                                    <% } %>
-                                </div>
+                            <td class="text-end" style="white-space: nowrap;">
+                                <% renderStaffActions(u); %>
                             </td>
                         </tr>
                     <% }); %>
@@ -196,11 +282,72 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Mobile & Tablet Responsive Compact Card List (< 992px) -->
+    <div class="admin-mobile-staff-list d-lg-none">
+        <% if (users && users.length > 0) { %>
+            <% users.forEach(u => {
+                const { roleClass, roleName, statusClass, mgrDisplay, mgrIcon } = renderStaffMeta(u);
+                const pCount = u.permissions ? u.permissions.length : 0;
+                const fCount = u.fieldPermissions ? u.fieldPermissions.length : 0;
+            %>
+                <div class="admin-mobile-staff-card" data-mobile-user-row="<%= u._id %>">
+                    <div class="d-flex align-items-center justify-content-between gap-2 pb-1 mb-1 border-bottom">
+                        <div class="d-flex align-items-center gap-2 min-w-0">
+                            <% if (u.avatar && u.avatar !== '/images/misc/cst-1.webp') { %>
+                                <img src="<%= u.avatar %>" alt="<%= u.name %>" class="rounded-circle border flex-shrink-0" style="width: 34px; height: 34px; object-fit: cover;">
+                            <% } else { %>
+                                <div class="admin-avatar-circle flex-shrink-0" style="width: 34px; height: 34px; font-size: 11px;">
+                                    <%= (u.name || 'U').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() %>
+                                </div>
+                            <% } %>
+                            <div class="min-w-0">
+                                <div class="font-weight-bold text-dark text-truncate" style="font-size: 13.5px; line-height: 1.2;"><%= u.name %></div>
+                                <div class="text-muted text-truncate" style="font-size: 11px;"><%= u.designation || 'Staff' %> &bull; <code><%= u.employeeId || 'N/A' %></code></div>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 text-end">
+                            <span class="badge-status <%= statusClass %>" style="font-size: 10px; padding: 2px 7px;"><%= u.status %></span>
+                            <div class="mt-1"><span class="badge-role <%= roleClass %>" style="font-size: 9px; padding: 2px 5px;"><%= roleName %></span></div>
+                        </div>
+                    </div>
+
+                    <div class="admin-mobile-meta-grid my-1">
+                        <div class="admin-mobile-meta-item">
+                            <i class="icofont-phone text-muted me-1"></i><strong><%= u.mobile %></strong>
+                        </div>
+                        <div class="admin-mobile-meta-item" style="color: var(--admin-navy-primary);">
+                            <i class="<%= mgrIcon %> me-1"></i><strong><%= mgrDisplay %></strong>
+                        </div>
+                        <div class="admin-mobile-meta-item" style="grid-column: span 2;">
+                            <i class="icofont-envelope text-muted me-1"></i><%= u.email %>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between gap-2 pt-1 mt-1 border-top">
+                        <div>
+                            <% if (u.isPrimarySuperAdmin) { %>
+                                <span class="badge bg-warning text-dark font-weight-bold" style="font-size: 10px;"><i class="icofont-crown me-1"></i>Root (117)</span>
+                            <% } else { %>
+                                <a href="/admin/users/<%= u._id %>/permissions" class="badge <%= pCount > 0 ? 'bg-primary' : 'bg-secondary' %> text-decoration-none" style="font-size: 10.5px;">
+                                    <i class="icofont-key me-1"></i><%= pCount %> / 117
+                                    <% if (fCount > 0) { %><span class="badge bg-danger ms-1" style="font-size: 9px;"><%= fCount %> fields</span><% } %>
+                                </a>
+                            <% } %>
+                        </div>
+                        <% renderStaffActions(u); %>
+                    </div>
+                </div>
+            <% }); %>
+        <% } else { %>
+            <div class="text-center py-4 text-muted">No personnel records found.</div>
+        <% } %>
+    </div>
 </div>
 
 <!-- Modal: Add New Staff Member -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <div class="modal-header text-white" style="background: var(--admin-navy-primary); border-top-left-radius: 16px; border-top-right-radius: 16px;">
                 <h5 class="modal-title font-weight-bold" id="createUserModalLabel">
@@ -209,8 +356,18 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form onsubmit="handleCreateUser(event)">
-                <div class="modal-body p-4">
+                <div class="modal-body p-3 p-sm-4">
                     <div id="createErrAlert" class="alert alert-danger d-none small"></div>
+
+                    <!-- Profile Picture Upload -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border d-flex flex-wrap align-items-center gap-3">
+                        <img id="newAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23e2e8f0'/%3E%3Ccircle cx='32' cy='24' r='12' fill='%2394a3b8'/%3E%3Cpath d='M12 56c0-11 9-18 20-18s20 7 20 18' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Profile Preview" class="rounded-circle border border-2 border-warning" style="width: 58px; height: 58px; object-fit: cover; flex-shrink: 0;">
+                        <div class="flex-grow-1 min-w-0">
+                            <label class="form-label small font-weight-bold mb-1">Profile Picture (ID Card Photo)</label>
+                            <input type="file" id="newAvatarFile" class="form-control form-control-sm" accept="image/jpeg,image/png,image/webp" onchange="previewAdminAvatar(this, 'newAvatarPreview')">
+                            <div class="form-text" style="font-size: 11px;">JPG, PNG or WEBP (Max 5 MB).</div>
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label small font-weight-bold">Full Name *</label>
@@ -218,22 +375,22 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Official Email *</label>
                             <input type="email" id="newEmail" class="form-control" required placeholder="vikram@shivayenergy.com">
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Mobile Phone *</label>
                             <input type="tel" id="newMobile" class="form-control" required placeholder="+91 98260 00000">
                         </div>
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Initial Password *</label>
                             <input type="password" id="newPass" class="form-control" required minlength="8" placeholder="••••••••">
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Role Assignment *</label>
                             <select id="newRole" class="form-select" required onchange="handleRoleChange(this.value)">
                                 <option value="EMPLOYEE" selected>Employee (Field Staff)</option>
@@ -279,13 +436,50 @@
                     </div>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Designation</label>
                             <input type="text" id="newDesig" class="form-control" placeholder="e.g. Site Engineer">
                         </div>
-                        <div class="col-6">
+                        <div class="col-12 col-sm-6">
                             <label class="form-label small font-weight-bold">Department</label>
                             <input type="text" id="newDept" class="form-control" placeholder="e.g. EPC Installations">
+                        </div>
+                    </div>
+
+                    <!-- ID Card Details -->
+                    <div class="p-3 bg-light rounded-3 mb-3 border">
+                        <h6 class="font-weight-bold text-dark mb-2" style="font-size: 13px;">
+                            <i class="icofont-id-card text-warning me-1"></i> Identity Card & Contact Information
+                        </h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Blood Group</label>
+                                <select id="newBlood" class="form-select">
+                                    <option value="B+" selected>B+ (Positive)</option>
+                                    <option value="O+">O+ (Positive)</option>
+                                    <option value="A+">A+ (Positive)</option>
+                                    <option value="AB+">AB+ (Positive)</option>
+                                    <option value="B-">B- (Negative)</option>
+                                    <option value="O-">O- (Negative)</option>
+                                    <option value="A-">A- (Negative)</option>
+                                    <option value="AB-">AB- (Negative)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Alt / Emergency Contact</label>
+                                <input type="tel" id="newAltMobile" class="form-control" placeholder="+91 98260 00000">
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Joining Date</label>
+                                <input type="date" id="newJoinDate" class="form-control">
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label small font-weight-bold">Card Expiry Date</label>
+                                <input type="date" id="newExpDate" class="form-control">
+                            </div>
                         </div>
                     </div>
 
@@ -304,6 +498,8 @@
         </div>
     </div>
 </div>
+
+<%- include('partials/staff-edit-modal', { staffList: users, branches, managers }) %>
 
 <!-- Modal: Assign Manager -->
 <div class="modal fade" id="assignModal" tabindex="-1" aria-hidden="true">
@@ -365,18 +561,6 @@
 </div>
 
 <script>
-const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
-
-function showToast(msg) {
-    const toast = document.getElementById('empToast');
-    const toastMsg = document.getElementById('empToastMsg');
-    if (toast && toastMsg) {
-        toastMsg.innerText = msg;
-        toast.classList.remove('d-none');
-        setTimeout(() => toast.classList.add('d-none'), 5000);
-    }
-}
-
 function handleRoleChange(role) {
     const mgrWrap = document.getElementById('managerSelectWrap');
     const branchWrap = document.getElementById('branchSelectWrap');
@@ -415,7 +599,17 @@ async function handleCreateUser(e) {
         return;
     }
 
-    const body = {
+    let avatarPayload = {};
+    try {
+        const imgObj = await readAdminAvatarInput('newAvatarFile');
+        if (imgObj) avatarPayload = imgObj;
+    } catch (imgErr) {
+        errBox.innerText = imgErr.message;
+        errBox.classList.remove('d-none');
+        return;
+    }
+
+    const body = Object.assign({
         name: document.getElementById('newName').value,
         email: document.getElementById('newEmail').value,
         mobile: document.getElementById('newMobile').value,
@@ -425,9 +619,13 @@ async function handleCreateUser(e) {
         managerId: managerId,
         designation: document.getElementById('newDesig').value,
         department: document.getElementById('newDept').value,
+        bloodGroup: document.getElementById('newBlood') ? document.getElementById('newBlood').value : 'B+',
+        alternateMobile: document.getElementById('newAltMobile') ? document.getElementById('newAltMobile').value : '',
+        joiningDate: document.getElementById('newJoinDate') ? document.getElementById('newJoinDate').value : '',
+        expiryDate: document.getElementById('newExpDate') ? document.getElementById('newExpDate').value : '',
         employeeId: document.getElementById('newEmpId').value,
         _csrf: CSRF_TOKEN
-    };
+    }, avatarPayload);
 
     try {
         const res = await fetch('/api/admin/users/create', {
@@ -471,6 +669,12 @@ async function updateStatus(userId, status) {
     }
 }
 
+function openAssignModalById(empId) {
+    const u = ADMIN_STAFF_MAP[empId];
+    if (!u) return;
+    openAssignModal(u.id, u.name, u.managerId || '');
+}
+
 function openAssignModal(empId, name, currentMgrId) {
     document.getElementById('assignEmpId').value = empId;
     document.getElementById('assignEmpName').innerText = name;
@@ -500,6 +704,12 @@ async function handleAssignManager(e) {
     } catch (err) {
         alert('Server communication error.');
     }
+}
+
+function openResetModalById(userId) {
+    const u = ADMIN_STAFF_MAP[userId];
+    if (!u) return;
+    openResetModal(u.id, u.name);
 }
 
 function openResetModal(userId, name) {
