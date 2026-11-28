@@ -506,15 +506,28 @@ class WebsiteService {
         const workingDays = settingDoc.workingDays || base.workingHours.days;
         const workingTime = settingDoc.workingTime || base.workingHours.time;
 
-        const whatsappUrl = settingDoc.whatsappUrl || `https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`;
-        const facebookUrl = settingDoc.facebookUrl || base.social.facebook;
-        const instagramUrl = settingDoc.instagramUrl || base.social.instagram;
-        const youtubeUrl = settingDoc.youtubeUrl || base.social.youtube;
+        const resolveSocialUrl = (settingVal, fallbackVal) => {
+            if (settingVal !== undefined && settingVal !== null) {
+                return String(settingVal).trim();
+            }
+            return String(fallbackVal || '').trim();
+        };
+
+        const whatsappUrl = resolveSocialUrl(settingDoc.whatsappUrl, base.social && base.social.whatsapp);
+        const facebookUrl = resolveSocialUrl(settingDoc.facebookUrl, base.social && base.social.facebook);
+        const instagramUrl = resolveSocialUrl(settingDoc.instagramUrl, base.social && base.social.instagram);
+        const youtubeUrl = resolveSocialUrl(settingDoc.youtubeUrl, base.social && base.social.youtube);
 
         const privacyPolicy = settingDoc.privacyPolicy || "";
         const termsAndConditions = settingDoc.termsAndConditions || "";
         const privacyPolicyUpdatedAt = settingDoc.privacyPolicyUpdatedAt || settingDoc.updatedAt || new Date();
         const termsAndConditionsUpdatedAt = settingDoc.termsAndConditionsUpdatedAt || settingDoc.updatedAt || new Date();
+        const homeQuickStatsCustomized = Boolean(settingDoc.homeQuickStatsCustomized);
+        const homeQuickStats = this.normalizeHomeQuickStats(
+            settingDoc.homeQuickStats,
+            base.establishedYear,
+            homeQuickStatsCustomized
+        );
 
         const contacts = [];
         if (settingDoc.founder1Name) {
@@ -585,8 +598,106 @@ class WebsiteService {
             privacyPolicy,
             termsAndConditions,
             privacyPolicyUpdatedAt,
-            termsAndConditionsUpdatedAt
+            termsAndConditionsUpdatedAt,
+            homeQuickStatsCustomized,
+            homeQuickStats
         };
+    }
+
+    /**
+     * Default quick stats shown on Home Page Hero Cards & Mobile Ticker
+     */
+    static getDefaultHomeQuickStats(establishedYear = 2018) {
+        const expYears = Math.max(1, new Date().getFullYear() - (Number(establishedYear) || 2018));
+        return [
+            {
+                value: '100+',
+                label: 'Solar installations',
+                tickerValue: '',
+                tickerLabel: '',
+                showOnDesktop: true,
+                showOnTicker: true,
+                isActive: true,
+                order: 1
+            },
+            {
+                value: `${expYears}+`,
+                label: 'Years of solar experience',
+                tickerValue: `${expYears}+ Years`,
+                tickerLabel: 'Solar experience',
+                showOnDesktop: true,
+                showOnTicker: true,
+                isActive: true,
+                order: 2
+            },
+            {
+                value: '16+',
+                label: 'Districts covered',
+                tickerValue: '',
+                tickerLabel: '',
+                showOnDesktop: true,
+                showOnTicker: true,
+                isActive: true,
+                order: 3
+            },
+            {
+                value: '90%',
+                label: 'Bill savings',
+                tickerValue: '',
+                tickerLabel: '',
+                showOnDesktop: false,
+                showOnTicker: true,
+                isActive: true,
+                order: 4
+            },
+            {
+                value: '100%',
+                label: 'Clean green energy',
+                tickerValue: '',
+                tickerLabel: '',
+                showOnDesktop: false,
+                showOnTicker: true,
+                isActive: true,
+                order: 5
+            }
+        ];
+    }
+
+    /**
+     * Normalize & validate Home Quick Stats list, returning defaults if never customized
+     */
+    static normalizeHomeQuickStats(rawStats, establishedYear = 2018, isCustomized = false) {
+        if (!isCustomized && (!Array.isArray(rawStats) || rawStats.length === 0)) {
+            return this.getDefaultHomeQuickStats(establishedYear);
+        }
+        if (!Array.isArray(rawStats)) {
+            return [];
+        }
+        const toBool = (v, fallback) => {
+            if (typeof v === 'boolean') return v;
+            if (typeof v === 'string') {
+                const lower = v.trim().toLowerCase();
+                if (lower === 'true' || lower === '1' || lower === 'on') return true;
+                if (lower === 'false' || lower === '0' || lower === 'off') return false;
+            }
+            if (typeof v === 'number') return v !== 0;
+            return fallback;
+        };
+
+        return rawStats
+            .slice(0, 20)
+            .map((item, idx) => ({
+                value: String(item && item.value !== undefined ? item.value : '').trim().slice(0, 40),
+                label: String(item && item.label !== undefined ? item.label : '').trim().slice(0, 80),
+                tickerValue: String(item && item.tickerValue !== undefined ? item.tickerValue : '').trim().slice(0, 40),
+                tickerLabel: String(item && item.tickerLabel !== undefined ? item.tickerLabel : '').trim().slice(0, 80),
+                showOnDesktop: toBool(item && item.showOnDesktop, true),
+                showOnTicker: toBool(item && item.showOnTicker, true),
+                isActive: toBool(item && item.isActive, true),
+                order: Number.isFinite(Number(item && item.order)) ? Number(item.order) : idx + 1
+            }))
+            .filter(item => item.value && item.label)
+            .sort((a, b) => a.order - b.order);
     }
 
     /**
@@ -734,8 +845,12 @@ class WebsiteService {
      */
     static async getHomeData() {
         const liveCompany = await this.getCompany();
+        const homeQuickStats = Array.isArray(liveCompany.homeQuickStats)
+            ? liveCompany.homeQuickStats
+            : this.getDefaultHomeQuickStats(liveCompany.establishedYear);
         const baseData = {
             ...this.getBaseLayoutData(liveCompany),
+            homeQuickStats,
             services: [],
             projects: []
         };

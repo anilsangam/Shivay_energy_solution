@@ -9,7 +9,7 @@
             <section id="section-intro" class="text-light relative overflow-visible" style="background: linear-gradient(rgba(22, 53, 99, 0.45), rgba(15, 38, 71, 0.75)), url('/images/slider/slider1.webp') center 100%/cover no-repeat; padding: 160px 0 130px 0;">
                 <div class="container z-2">
                     <div class="row g-4 align-items-center">
-                        <div class="col-lg-8 col-md-8 text-start">
+                        <div class="col-lg-8 col-md-7 text-start">
                             <h1 class="text-white font-weight-bold mb-3 wow fadeInUp" data-wow-delay=".2s" style="font-size: 52px; line-height: 1.15; letter-spacing: -0.5px;">
                                 Clean Solar Power for a Brighter Tomorrow.
                             </h1>
@@ -17,94 +17,65 @@
                                 <%= company.name %> makes reliable solar simple, helping homes and businesses lower electricity bills with clean energy.
                             </p>
                         </div>
-                        <div class="col-lg-4 col-md-4 d-flex justify-content-lg-center justify-content-md-center justify-content-start align-items-center wow fadeInUp" data-wow-delay=".6s" style="transform: translateX(-120px);">
-                            <a href="/services" class="btn-main fx-slide" style="background: var(--primary-color, #c6ff7d); color: #000; border-radius: 30px; padding: 16px 42px; font-weight: 700; font-size: 17px; white-space: nowrap;">
+                        <div class="col-lg-4 col-md-5 d-flex justify-content-lg-center justify-content-md-end justify-content-start align-items-center wow fadeInUp home-hero-cta-col" data-wow-delay=".6s">
+                            <a href="/services" class="btn-main fx-slide home-hero-cta-btn" style="background: var(--primary-color, #c6ff7d); color: #000; border-radius: 30px; padding: 16px 42px; font-weight: 700; font-size: 17px; white-space: nowrap;">
                                 <span>Explore Services</span>
                             </a>
                         </div>
                     </div>
                 </div>
+                <%
+                    const allHomeQuickStats = Array.isArray(data.homeQuickStats) && data.homeQuickStats.length > 0
+                        ? data.homeQuickStats
+                        : [
+                            { value: '100+', label: 'Solar installations', tickerValue: '', tickerLabel: '', showOnDesktop: true, showOnTicker: true, isActive: true, order: 1 },
+                            { value: `${Math.max(1, new Date().getFullYear() - (data.company.establishedYear || 2018))}+`, label: 'Years of solar experience', tickerValue: `${Math.max(1, new Date().getFullYear() - (data.company.establishedYear || 2018))}+ Years`, tickerLabel: 'Solar experience', showOnDesktop: true, showOnTicker: true, isActive: true, order: 2 },
+                            { value: '16+', label: 'Districts covered', tickerValue: '', tickerLabel: '', showOnDesktop: true, showOnTicker: true, isActive: true, order: 3 },
+                            { value: '90%', label: 'Bill savings', tickerValue: '', tickerLabel: '', showOnDesktop: false, showOnTicker: true, isActive: true, order: 4 },
+                            { value: '100%', label: 'Clean green energy', tickerValue: '', tickerLabel: '', showOnDesktop: false, showOnTicker: true, isActive: true, order: 5 }
+                        ];
+                    const desktopQuickStats = allHomeQuickStats.filter(s => s && s.isActive !== false && s.showOnDesktop !== false);
+                    const tickerQuickStats = allHomeQuickStats.filter(s => s && s.isActive !== false && s.showOnTicker !== false);
+                    const desktopStatColClass = desktopQuickStats.length === 1
+                        ? 'col-6'
+                        : desktopQuickStats.length === 2
+                            ? 'col-5'
+                            : desktopQuickStats.length === 4
+                                ? 'col-3'
+                                : 'col-4';
+                %>
+                <% if (desktopQuickStats.length > 0) { %>
                 <!-- Desktop Stats Cards (Hidden on mobile) -->
                 <div class="container relative z-2 home-stats-wrap d-none d-md-block" style="margin-top: 35px; margin-bottom: -65px;">
                     <div class="row g-3 justify-content-center">
-                        <div class="col-4 wow fadeInUp" data-wow-delay=".2s">
-                            <div class="home-stat-card home-stat-card-installations h-100">
-                                <strong class="home-stat-value">100+</strong>
-                                <span class="home-stat-label">Solar installations</span>
+                        <% desktopQuickStats.forEach((stat, statIdx) => { %>
+                            <div class="<%= desktopStatColClass %> wow fadeInUp" data-wow-delay="<%= ((statIdx % 4) * 0.1 + 0.2).toFixed(1).replace(/^0/, '') %>s">
+                                <div class="home-stat-card <%= statIdx === 0 ? 'home-stat-card-installations' : '' %> h-100">
+                                    <strong class="home-stat-value"><%= stat.value %></strong>
+                                    <span class="home-stat-label"><%= stat.label %></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-4 wow fadeInUp" data-wow-delay=".3s">
-                            <div class="home-stat-card h-100">
-                                <strong class="home-stat-value"><%= new Date().getFullYear() - data.company.establishedYear %>+</strong>
-                                <span class="home-stat-label">Years of solar experience</span>
-                            </div>
-                        </div>
-                        <div class="col-4 wow fadeInUp" data-wow-delay=".4s">
-                            <div class="home-stat-card h-100">
-                                <strong class="home-stat-value">16+</strong>
-                                <span class="home-stat-label">Districts covered</span>
-                            </div>
-                        </div>
+                        <% }); %>
                     </div>
                 </div>
+                <% } %>
 
+                <% if (tickerQuickStats.length > 0) { %>
                 <!-- Mobile Stats Ticker Patti (Continuous Right to Left Infinite Scroller) -->
                 <div class="stats-ticker-strip d-block d-md-none">
                     <div class="stats-ticker-track">
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">100+</strong>
-                            <span class="stats-ticker-txt">Solar installations</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val"><%= new Date().getFullYear() - data.company.establishedYear %>+ Years</strong>
-                            <span class="stats-ticker-txt">Solar experience</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">16+</strong>
-                            <span class="stats-ticker-txt">Districts covered</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">90%</strong>
-                            <span class="stats-ticker-txt">Bill savings</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">100%</strong>
-                            <span class="stats-ticker-txt">Clean green energy</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-
-                        <!-- Duplicate set for seamless infinite loop -->
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">100+</strong>
-                            <span class="stats-ticker-txt">Solar installations</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val"><%= new Date().getFullYear() - data.company.establishedYear %>+ Years</strong>
-                            <span class="stats-ticker-txt">Solar experience</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">16+</strong>
-                            <span class="stats-ticker-txt">Districts covered</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">90%</strong>
-                            <span class="stats-ticker-txt">Bill savings</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
-                        <div class="stats-ticker-item">
-                            <strong class="stats-ticker-val">100%</strong>
-                            <span class="stats-ticker-txt">Clean green energy</span>
-                        </div>
-                        <div class="stats-ticker-sep">•</div>
+                        <% for (let pass = 0; pass < 2; pass++) { %>
+                            <% tickerQuickStats.forEach((stat) => { %>
+                                <div class="stats-ticker-item">
+                                    <strong class="stats-ticker-val"><%= stat.tickerValue || stat.value %></strong>
+                                    <span class="stats-ticker-txt"><%= stat.tickerLabel || stat.label %></span>
+                                </div>
+                                <div class="stats-ticker-sep">&bull;</div>
+                            <% }); %>
+                        <% } %>
                     </div>
-                </div>            </section>
+                </div>
+                <% } %>            </section>
 
             <!-- Section 2: About Us - Clean Energy, CO2 Reduction & Pollution-Free India -->
             <section class="about-video-section py-5 bg-white position-relative overflow-hidden">
@@ -296,8 +267,8 @@
             </section>
 
             <!-- Section 3: Govt Solar Scheme (PM Surya Ghar: Saffron Banner with Leaders, Benefits, Required Docs & Subsidy Slabs) -->
-            <section id="govt-scheme-section" class="govt-scheme-section py-5">
-                <div class="container py-3">
+            <section id="govt-scheme-section" class="govt-scheme-section">
+                <div class="container">
 
                     <!-- 1. TOP ROYAL NAVY BANNER WITH LEADERS & GOLD ACCENTS -->
                     <div class="govt-scheme-banner wow fadeInUp" data-wow-delay=".2s">
@@ -546,35 +517,17 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Quick Consultation / Contact CTA -->
-            <section class="py-5 text-white home-consultation-cta" style="background: linear-gradient(rgba(22, 53, 99, 0.92), rgba(15, 38, 71, 0.95)), url('/images/background/3.webp') center/cover no-repeat;">
-                <div class="container py-4 text-center home-consultation-inner">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8">
-                            <h2 class="text-white font-weight-bold mb-3 home-consultation-title" style="font-size: 38px;">Ready to Switch to Clean Solar Energy?</h2>
-                            <p class="text-white-50 mb-4 home-consultation-copy" style="font-size: 17px;">
-                                Book a free rooftop survey with our expert engineers in Raisen &amp; Madhya Pradesh. Avail up to ₹78,000 Govt subsidy.
-                            </p>
-                            <div class="d-flex flex-wrap gap-3 justify-content-center">
-                                <a href="/calculator" class="btn-main fx-slide" style="background: var(--primary-color); color: #000; border-radius: 30px; padding: 13px 32px; font-weight: 700;">
-                                    <span>Calculate Your Savings</span>
-                                </a>
-                                <a href="tel:+917000575496" class="btn-main btn-line fx-slide hover-white" style="background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.55); border-radius: 30px; padding: 13px 32px; font-weight: 700;">
-                                    <span><i class="icofont-phone me-2"></i> Call: +91 70005 75496</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </div>
 
 <style>
-/* Page-specific responsive rules */
-.home-projects-section { padding: 58px 0 66px; overflow: hidden; background: #f5f8fc; }
-.home-services-section { padding: 52px 0 42px; overflow: hidden; background: #fff; }
-.home-projects-heading { margin-bottom: 24px; }
+/* Page-specific responsive rules (ID-scoped to cleanly override #content > section in main.css) */
+#content > section#govt-scheme-section.govt-scheme-section { padding: 36px 0 10px !important; }
+#content > section#govt-scheme-section.govt-scheme-section > .container { padding-top: 8px !important; padding-bottom: 4px !important; }
+#content > section.home-services-section { padding: 14px 0 14px !important; overflow: hidden; background: #fff; }
+#content > section.home-services-section > .container { padding-top: 4px !important; padding-bottom: 4px !important; }
+#content > section.home-projects-section { padding: 14px 0 32px !important; overflow: hidden; background: #f5f8fc; }
+#content > section.home-projects-section > .container { padding-top: 4px !important; padding-bottom: 8px !important; }
+.home-projects-heading { margin-bottom: 14px; }
 .home-projects-heading h2 { margin: 0; color: #102444; font-size: clamp(28px, 3.5vw, 38px); font-weight: 800; line-height: 1.2; }
 .home-project-rail { width: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; }
 .home-project-rail::-webkit-scrollbar { display: none; }
@@ -615,10 +568,13 @@
 .home-service-actions .home-service-quote { border-color: #fbec6b; background: #fbec6b; color: #163563; }
 .home-service-actions .home-service-quote:hover { background: #f5e456; color: #163563; }
 @media (max-width: 767.98px) {
-    .home-services-section { padding: 38px 0 28px; }
-    #content .govt-scheme-section > .container { max-width: 100%; padding-right: 11px; padding-left: 11px; }
-    .home-projects-section { padding: 38px 0 44px; }
-    .home-projects-heading { margin: 0 12px 18px; }
+    #content > section#govt-scheme-section.govt-scheme-section { padding: 24px 0 6px !important; }
+    #content > section#govt-scheme-section.govt-scheme-section > .container { max-width: 100%; padding: 4px 11px 2px !important; }
+    #content > section.home-services-section { padding: 10px 0 10px !important; }
+    #content > section.home-services-section > .container { padding-top: 2px !important; padding-bottom: 2px !important; }
+    #content > section.home-projects-section { padding: 10px 0 24px !important; }
+    #content > section.home-projects-section > .container { padding-top: 2px !important; padding-bottom: 4px !important; }
+    .home-projects-heading { margin: 0 12px 10px; }
     .home-project-rail { width: calc(100% + 24px); margin-left: -12px; padding-left: 12px; }
     .home-project-group { gap: 12px; padding-right: 12px; }
     .home-project-card { flex-basis: min(84vw, 340px); border-radius: 14px; }

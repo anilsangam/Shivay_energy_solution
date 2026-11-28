@@ -29,16 +29,16 @@ router.get('/employee/attendance', requireAuth, requirePermission('attendance.pe
 router.post('/api/attendance', requireAuth, requirePermission('attendance.punch.create'), verifyCsrf, employeeController.submitAttendance);
 
 // Commercial Lifecycle: Field Quotation Requests, Self-Service Generation & Drafts
-router.get('/employee/quotations', requireAuth, requirePermission('quotations.requests.view'), quotationController.getEmployeeQuotations);
+router.get('/employee/quotations', requireAuth, requireAnyPermission('quotations.module.access', 'quotations.requests.view', 'quotations.records.view', 'quotations.preparation.view', 'quotations.requests.create', 'quotations.preparation.create', 'quotations.records.detail', 'quotations.document.view'), quotationController.getEmployeeQuotations);
 router.get('/employee/quotations/generate', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), quotationController.getGeneratePackageQuotationPage);
 router.post('/employee/quotations/preview-package', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), verifyCsrf, quotationController.previewPackageQuotation);
 router.post('/employee/quotations/generate', requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), verifyCsrf, quotationController.postGenerateEmployeeQuotation);
-router.get(['/employee/quotations/new', '/quotations/new'], requireAuth, requirePermission('quotations.requests.create'), quotationController.getNewRequestPage);
-router.post(['/employee/quotations/new', '/quotations/new', '/api/employee/quotations/request', '/api/quotations/request'], requireAuth, requirePermission('quotations.requests.create'), verifyCsrf, quotationController.postCreateRequest);
-router.get(['/employee/quotations/request/:id', '/employee/quotations/requests/:id'], requireAuth, requirePermission('quotations.requests.view'), validateObjectId('id'), quotationController.getRequestDetails);
+router.get(['/employee/quotations/new', '/quotations/new'], requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), quotationController.getNewRequestPage);
+router.post(['/employee/quotations/new', '/quotations/new', '/api/employee/quotations/request', '/api/quotations/request'], requireAuth, requireAnyPermission('quotations.requests.create', 'quotations.preparation.create'), verifyCsrf, quotationController.postCreateRequest);
+router.get(['/employee/quotations/request/:id', '/employee/quotations/requests/:id'], requireAuth, requireAnyPermission('quotations.requests.view', 'quotations.records.view', 'quotations.requests.create', 'quotations.module.access'), validateObjectId('id'), quotationController.getRequestDetails);
 router.post(['/employee/quotations/request/:id/resubmit', '/employee/quotations/requests/:id/resubmit', '/api/employee/quotations/requests/:id/resubmit'], requireAuth, requirePermission('quotations.requests.edit'), verifyCsrf, validateObjectId('id'), quotationController.postResubmitRequest);
-router.get('/employee/quotations/:id', requireAuth, requirePermission('quotations.records.detail'), validateObjectId('id'), quotationController.getQuotationDetails);
-router.get('/employee/quotations/:id/document', requireAuth, requirePermission('quotations.document.view'), validateObjectId('id'), quotationController.getQuotationDocument);
+router.get('/employee/quotations/:id', requireAuth, requireAnyPermission('quotations.records.detail', 'quotations.records.view', 'quotations.requests.view', 'quotations.preparation.view', 'quotations.module.access'), validateObjectId('id'), quotationController.getQuotationDetails);
+router.get('/employee/quotations/:id/document', requireAuth, requireAnyPermission('quotations.document.view', 'quotations.records.detail', 'quotations.records.view', 'quotations.requests.view', 'quotations.preparation.view', 'quotations.module.access'), validateObjectId('id'), quotationController.getQuotationDocument);
 router.post(['/employee/quotations/:id/customer-response', '/manager/quotations/:id/customer-response', '/admin/quotations/:id/customer-response', '/quotations/:id/customer-response'], requireAuth, requirePermission('quotations.customer_response.edit'), verifyCsrf, validateObjectId('id'), quotationController.postCustomerResponse);
 
 // Phase 3: Field Project Execution, Survey & Tasks
@@ -75,8 +75,8 @@ router.post('/api/customers/create', requireAuth, requirePermission('crm.custome
 // Cross-Role Authenticated Project & Quotation Aliases
 router.post('/private/projects/:id/documents', requireAuth, requirePermission('projects.documents.create'), verifyCsrf, validateObjectId('id'), projectController.uploadDocument);
 router.get('/private/projects/:id/documents/:documentId', requireAuth, requirePermission('projects.documents.view'), validateObjectId('id'), projectController.downloadDocument);
-router.get('/quotations/:id', requireAuth, requirePermission('quotations.records.detail'), validateObjectId('id'), quotationController.getQuotationDetails);
-router.get('/quotations/:id/document', requireAuth, requirePermission('quotations.document.view'), validateObjectId('id'), quotationController.getQuotationDocument);
-router.get('/attachments/:filename', requireAuth, requireAnyPermission('quotations.requests.view', 'quotations.records.detail'), quotationController.serveAttachment);
+router.get('/quotations/:id', requireAuth, requireAnyPermission('quotations.records.detail', 'quotations.records.view', 'quotations.requests.view', 'quotations.preparation.view', 'quotations.module.access'), validateObjectId('id'), quotationController.getQuotationDetails);
+router.get('/quotations/:id/document', requireAuth, requireAnyPermission('quotations.document.view', 'quotations.records.detail', 'quotations.records.view', 'quotations.requests.view', 'quotations.preparation.view', 'quotations.module.access'), validateObjectId('id'), quotationController.getQuotationDocument);
+router.get('/attachments/:filename', requireAuth, requireAnyPermission('quotations.requests.view', 'quotations.records.detail', 'quotations.records.view', 'quotations.module.access'), quotationController.serveAttachment);
 
 module.exports = router;

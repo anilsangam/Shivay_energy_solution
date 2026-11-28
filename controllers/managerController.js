@@ -18,6 +18,7 @@ const {
     SENSITIVE_FIELDS,
     ROLE_MIGRATION_BASELINES,
     DESIGNATION_PRESETS,
+    getDefaultPermissionsForUser,
     getFullPermissionTree,
     isValidPermission,
     isValidFieldPermission,
@@ -210,9 +211,13 @@ class ManagerController {
                 cleanEmpId = `SES-EMP-${Date.now().toString().slice(-4)}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
             }
 
-            // Default dates
+            // Default dates & designation-based auto permissions (filtered within manager authority)
             const parsedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
             const parsedExpiryDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000);
+            const autoGrant = getDefaultPermissionsForUser('EMPLOYEE', designation);
+            const delegatableDefaultPerms = AuthorizationService.isPrimarySuperAdmin(manager)
+                ? autoGrant.permissions
+                : autoGrant.permissions.filter(p => AuthorizationService.hasPermission(manager, p));
 
             let createdUserObj = null;
             if (mongoose.connection.readyState === 1) {
@@ -222,6 +227,9 @@ class ManagerController {
                     mobile: mobile.trim(),
                     password,
                     role: 'EMPLOYEE',
+                    permissions: delegatableDefaultPerms,
+                    fieldPermissions: [],
+                    dataScope: autoGrant.dataScope,
                     employeeId: cleanEmpId,
                     idCardNumber: cleanEmpId,
                     branchId: (branchId && mongoose.isValidObjectId(branchId)) ? branchId : null,
@@ -243,8 +251,9 @@ class ManagerController {
                     mobile: mobile.trim(),
                     role: 'EMPLOYEE',
                     isPrimarySuperAdmin: false,
-                    permissions: [],
+                    permissions: delegatableDefaultPerms,
                     fieldPermissions: [],
+                    dataScope: autoGrant.dataScope,
                     permissionVersion: 1,
                     employeeId: cleanEmpId,
                     idCardNumber: cleanEmpId,
@@ -468,6 +477,13 @@ class ManagerController {
 
             const permissionTree = getFullPermissionTree();
 
+            const callerPerms = isSuperAdmin && manager.isPrimarySuperAdmin
+                ? null
+                : (Array.isArray(manager.permissions) ? manager.permissions : []);
+            const callerFieldPerms = isSuperAdmin && manager.isPrimarySuperAdmin
+                ? null
+                : (Array.isArray(manager.fieldPermissions) ? manager.fieldPermissions : []);
+
             res.render('private/admin/user-permissions', {
                 title: `Manage Staff Permissions: ${targetUser.name} | ${companyData.company.name}`,
                 data: companyData,
@@ -475,6 +491,9 @@ class ManagerController {
                 targetUser,
                 isTargetPrimaryAdmin: false,
                 isCallerPrimaryAdmin: false,
+                callerPermissions: callerPerms,
+                callerFieldPermissions: callerFieldPerms,
+                backUrl: '/manager/employees',
                 canEdit: true,
                 isSelf: false,
                 permissionTree,
@@ -606,14 +625,24 @@ class ManagerController {
         try {
             await DataStore.syncAttendanceFromDb();
         } catch (_) {}
-        const attendance = DataStore.getTodayAttendance();
+        const GeofenceService = require('../services/geofenceService');
+        const sessionUser = req.session.user;
+        const geofencePolicy = await GeofenceService.resolveEffectiveGeofenceForUser(sessionUser);
+        const allToday = DataStore.getTodayAttendance();
+        const isSuperAdmin = sessionUser && sessionUser.role === 'SUPER_ADMIN';
+        const managerBranchId = geofencePolicy && geofencePolicy.branchId ? String(geofencePolicy.branchId) : (sessionUser && sessionUser.branchId ? String(sessionUser.branchId) : '');
+        const attendance = (!isSuperAdmin && managerBranchId)
+            ? allToday.filter(a => !a.branch || String(a.branch) === managerBranchId || a.employeeId === sessionUser.employeeId)
+            : allToday;
+
         res.render('private/manager/attendance', {
             title: `Branch Field Attendance Logs | ${companyData.company.name}`,
             data: companyData,
             company: companyData.company,
             attendance,
-            user: req.session.user,
-            currentUser: req.session.user,
+            geofencePolicy,
+            user: sessionUser,
+            currentUser: sessionUser,
             activePage: 'manager-attendance',
             pageTitle: 'Branch Attendance & Field GPS Logs',
             breadcrumbs: [{ label: 'Operations' }, { label: 'Attendance' }]

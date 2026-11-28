@@ -55,59 +55,59 @@
                 <div class="col-lg-7">
                     <div class="solar-input-card franchise-form-card">
                         <h4 class="solar-input-heading mb-1">Franchise / Dealer Application Form</h4>
-                        <p class="text-muted small mb-4">Fill out your details to discuss district exclusivity and commercial terms.</p>
+                        <p class="text-muted small mb-3">Fill details to discuss district exclusivity &amp; commercial terms.</p>
 
                         <form id="franchiseForm" onsubmit="handleFranchiseSubmit(event)">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">Applicant / Business Name *</label>
-                                    <input type="text" name="applicantName" class="form-control" required placeholder="Full Name or Firm Name">
+                            <div class="row g-2">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label small font-weight-bold mb-1">Applicant / Firm Name *</label>
+                                    <input type="text" name="applicantName" class="form-control form-control-sm" required placeholder="Full Name or Firm Name">
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">Mobile Number *</label>
-                                    <div class="input-group">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label small font-weight-bold mb-1">Mobile Number *</label>
+                                    <div class="input-group input-group-sm">
                                         <span class="input-group-text franchise-input-prefix">+91</span>
-                                        <input type="tel" name="mobile" pattern="[6-9][0-9]{9}" maxlength="10" class="form-control" required placeholder="98XXXXXXXX">
+                                        <input type="tel" name="mobile" pattern="[6-9][0-9]{9}" maxlength="10" class="form-control form-control-sm" required placeholder="10-digit mobile">
                                     </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">Email Address</label>
-                                    <input type="email" name="email" class="form-control" placeholder="name@domain.com">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label small font-weight-bold mb-1">Email Address</label>
+                                    <input type="email" name="email" class="form-control form-control-sm" placeholder="name@domain.com">
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold" for="franchiseState">State *</label>
-                                    <select name="state" id="franchiseState" class="form-select" required onchange="syncFranchiseDistrict()">
+                                <div class="col-6 col-md-6">
+                                    <label class="form-label small font-weight-bold mb-1" for="franchiseState">State *</label>
+                                    <select name="state" id="franchiseState" class="form-select form-select-sm" required onchange="syncFranchiseDistrict()">
                                         <% data.regions.states.forEach(st => { %>
                                             <option value="<%= st %>" <%= st === 'Madhya Pradesh' ? 'selected' : '' %>><%= st %></option>
                                         <% }); %>
                                     </select>
                                 </div>
 
-                                <div class="col-md-6" id="franchiseMpDistrictField">
-                                    <label class="form-label small font-weight-bold" for="franchiseMpDistrict">Target District *</label>
-                                    <select name="district" id="franchiseMpDistrict" class="form-select" required>
+                                <div class="col-6 col-md-6" id="franchiseMpDistrictField">
+                                    <label class="form-label small font-weight-bold mb-1" for="franchiseMpDistrict">Target District *</label>
+                                    <select name="district" id="franchiseMpDistrict" class="form-select form-select-sm" required>
                                         <% data.regions.mpDistricts.forEach(d => { %>
                                             <option value="<%= d %>"><%= d %></option>
                                         <% }); %>
                                     </select>
                                 </div>
 
-                                <div class="col-md-6" id="franchiseOtherDistrictField" hidden>
-                                    <label class="form-label small font-weight-bold" for="franchiseOtherDistrict">Target District *</label>
-                                    <input type="text" name="district" id="franchiseOtherDistrict" class="form-control" placeholder="Enter your district" disabled required>
+                                <div class="col-6 col-md-6" id="franchiseOtherDistrictField" hidden>
+                                    <label class="form-label small font-weight-bold mb-1" for="franchiseOtherDistrict">Target District *</label>
+                                    <input type="text" name="district" id="franchiseOtherDistrict" class="form-control form-control-sm" placeholder="Enter your district" disabled required>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">City / Tehsil *</label>
-                                    <input type="text" name="city" class="form-control" required placeholder="e.g. Raisen / Mandideep / Vidisha">
+                                <div class="col-6 col-md-6">
+                                    <label class="form-label small font-weight-bold mb-1">City / Tehsil *</label>
+                                    <input type="text" name="city" class="form-control form-control-sm" required placeholder="e.g. Raisen / Vidisha">
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label small font-weight-bold">Investment Capacity *</label>
-                                    <select name="investmentCapacity" class="form-select" required>
+                                <div class="col-6 col-md-6">
+                                    <label class="form-label small font-weight-bold mb-1">Investment *</label>
+                                    <select name="investmentCapacity" class="form-select form-select-sm" required>
                                         <option value="₹2 - ₹5 Lakhs">₹2 - ₹5 Lakhs (Dealer)</option>
                                         <option value="₹5 - ₹10 Lakhs">₹5 - ₹10 Lakhs (District Partner)</option>
                                         <option value="Above ₹10 Lakhs">Above ₹10 Lakhs (Master Franchise)</option>
@@ -115,17 +115,17 @@
                                 </div>
 
                                 <div class="col-12">
-                                    <label class="form-label small font-weight-bold">Current Business Background & Experience</label>
-                                    <textarea name="message" class="form-control" rows="3" placeholder="Tell us about your current business, electrical/hardware shop, or professional background..."></textarea>
+                                    <label class="form-label small font-weight-bold mb-1">Business Background &amp; Experience</label>
+                                    <textarea name="message" class="form-control form-control-sm" rows="2" placeholder="Current business, electrical/hardware shop, or experience..."></textarea>
                                 </div>
 
-                                <div class="col-12">
-                                    <button type="submit" id="franchiseBtn" class="btn-main w-100 py-3 font-weight-bold" style="background: var(--primary-color); color: #000; border: none;">
+                                <div class="col-12 mt-2">
+                                    <button type="submit" id="franchiseBtn" class="btn-main w-100 py-2 font-weight-bold" style="background: var(--primary-color); color: #000; border: none;">
                                         <span>Submit Dealership Application</span>
                                     </button>
                                 </div>
                             </div>
-                            <div id="franchiseMsg" class="mt-3" style="display: none;"></div>
+                            <div id="franchiseMsg" class="mt-2" style="display: none;"></div>
                         </form>
                     </div>
                 </div>
@@ -203,16 +203,20 @@ function handleFranchiseSubmit(e) {
 .franchise-founder-card small { color: rgba(255,255,255,.78); line-height: 1.55; }
 .franchise-whatsapp-button { display: inline-flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: #16845b; color: #fff; font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; }
 .franchise-whatsapp-button:hover { background: #116a49; color: #fff; }
-.franchise-form-card { min-width: 0; height: auto; border-color: #e3eaf2; }
-.franchise-form-card .solar-input-heading { margin-bottom: 8px !important; }
-.franchise-form-card > p { margin-bottom: 20px !important; }
+.franchise-form-card { min-width: 0; height: auto; padding: 18px 20px !important; border-color: #e3eaf2; }
+.franchise-form-card .solar-input-heading { margin-bottom: 4px !important; font-size: 18px; }
+.franchise-form-card > p { margin-bottom: 14px !important; font-size: 12.5px; }
 .franchise-form-card form, .franchise-form-card .row, .franchise-form-card [class*="col-"] { min-width: 0; }
+.franchise-form-card .form-label { font-size: 12px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .franchise-form-card input, .franchise-form-card select, .franchise-form-card textarea, .franchise-form-card button { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
-.franchise-form-card .form-control, .franchise-form-card .form-select { min-height: 44px; }
-.franchise-form-card .input-group { min-width: 0; flex-wrap: nowrap; }
+.franchise-form-card .form-control, .franchise-form-card .form-select { min-height: 38px !important; height: 38px; font-size: 13.5px; }
+.franchise-form-card textarea.form-control { height: auto !important; min-height: 68px !important; }
+.franchise-form-card .input-group { min-width: 0; width: 100%; display: flex; flex-wrap: nowrap !important; align-items: stretch; }
 .franchise-form-card .input-group > * { min-width: 0; }
-.franchise-form-card .franchise-input-prefix { flex: 0 0 44px; }
+.franchise-form-card .input-group > .franchise-input-prefix { flex: 0 0 auto !important; width: auto !important; min-width: 48px !important; white-space: nowrap !important; display: inline-flex !important; align-items: center; justify-content: center; padding: 0 10px !important; height: 38px !important; min-height: 38px !important; font-size: 13px; }
+.franchise-form-card .input-group > .form-control { flex: 1 1 auto !important; width: 1% !important; min-width: 0 !important; }
 .franchise-form-card textarea { resize: vertical; }
+.franchise-form-card #franchiseBtn { min-height: 42px; padding: 10px 16px !important; font-size: 14.5px; }
 @media (min-width: 768px) {
     #content #subheader.franchise-hero > .container { margin-top: 0; }
 }
@@ -235,11 +239,12 @@ function handleFranchiseSubmit(e) {
     #content .franchise-grid { --bs-gutter-x: 1rem; --bs-gutter-y: 1.5rem; margin-top: 0; }
     #content .franchise-section h3 { font-size: 22px; line-height: 1.3; }
     #content .franchise-benefit-card, #content .franchise-founder-card { padding: 15px; }
-    #content .franchise-form-card { padding: 18px; border-radius: 14px; box-shadow: 0 8px 24px rgba(22,53,99,.08); }
-    #content .franchise-form-card .solar-input-heading { font-size: 19px; line-height: 1.3; }
-    #content .franchise-form-card .row { --bs-gutter-x: .75rem; --bs-gutter-y: .85rem; }
-    #content .franchise-form-card .input-group-text { padding: .375rem .55rem; }
-    #content .franchise-form-card .form-control, #content .franchise-form-card .form-select { font-size: 14px; }
+    #content .franchise-form-card { padding: 14px !important; border-radius: 14px; box-shadow: 0 8px 24px rgba(22,53,99,.08); }
+    #content .franchise-form-card .solar-input-heading { font-size: 17px; line-height: 1.3; }
+    #content .franchise-form-card .row { --bs-gutter-x: .5rem; --bs-gutter-y: .55rem; }
+    #content .franchise-form-card .input-group > .franchise-input-prefix { padding: 0 10px !important; min-width: 46px !important; white-space: nowrap !important; }
+    #content .franchise-form-card .form-control, #content .franchise-form-card .form-select { font-size: 13.5px; min-height: 36px !important; height: 36px; }
+    #content .franchise-form-card .input-group > .franchise-input-prefix { height: 36px !important; min-height: 36px !important; }
     #content .franchise-whatsapp-button { font-size: 12px; }
 }
 @media (max-width: 575.98px) {

@@ -5,6 +5,7 @@ const ProjectService = require('../services/projectService');
 const UploadService = require('../services/uploadService');
 const User = require('../models/User');
 const Quotation = require('../models/Quotation');
+const AuthorizationService = require('../services/authorizationService');
 const companyConfig = require('../config/company');
 
 class ProjectController {
@@ -28,17 +29,23 @@ class ProjectController {
             if (mongoose.connection && mongoose.connection.readyState === 1) {
                 const Project = require('../models/Project');
                 const statsFilter = {};
-                if (user.role === 'EMPLOYEE') {
+                const hasBranchProjPrivilege = AuthorizationService.hasAnyPermission(user, [
+                    'projects.all.view', 'projects.assignment.assign', 'projects.completion.approve',
+                    'projects.site_visit.approve', 'projects.records.create', 'projects.materials.manage'
+                ]);
+                if (user.role === 'EMPLOYEE' && !hasBranchProjPrivilege) {
                     statsFilter.$or = [
                         { assignedEngineer: user._id },
                         { 'assignedEmployees.user': user._id },
                         { 'siteVisit.assignedTo': user._id }
                     ];
-                } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER') {
-                    if (user.branchId) {
-                        statsFilter.$or = [{ branch: user.branchId }, { assignedManager: user._id }];
-                    } else {
-                        statsFilter.assignedManager = user._id;
+                } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || (user.role === 'EMPLOYEE' && hasBranchProjPrivilege)) {
+                    if (!AuthorizationService.hasPermission(user, 'projects.all.view') && user.dataScope !== 'GLOBAL') {
+                        if (user.branchId) {
+                            statsFilter.$or = [{ branch: user.branchId }, { assignedManager: user._id }, { assignedEngineer: user._id }];
+                        } else {
+                            statsFilter.$or = [{ assignedManager: user._id }, { assignedEngineer: user._id }];
+                        }
                     }
                 }
 
@@ -103,11 +110,15 @@ class ProjectController {
             const project = await ProjectService.getProjectById(projectId, user);
             const activities = await ProjectService.getProjectActivities(projectId);
 
-            // Fetch eligible employees for task/site visit assignment dropdowns (Managers & Admins only)
+            // Fetch eligible employees for task/site visit assignment dropdowns (Managers, Admins, or Employees with project management permissions)
             let branchEmployees = [];
-            if (user.role !== 'EMPLOYEE' && mongoose.connection && mongoose.connection.readyState === 1) {
+            const canAssignProjStaff = AuthorizationService.hasOperationalPrivilege(user, [
+                'projects.tasks.create', 'projects.assignment.assign', 'projects.site_visit.approve',
+                'projects.materials.manage', 'projects.completion.approve'
+            ]);
+            if (canAssignProjStaff && mongoose.connection && mongoose.connection.readyState === 1) {
                 const empQuery = { role: 'EMPLOYEE', status: 'ACTIVE' };
-                if (['MANAGER', 'BRANCH_MANAGER'].includes(user.role)) {
+                if (user.role !== 'SUPER_ADMIN') {
                     const orFilters = [{ managerId: user._id }];
                     if (user.branchId) {
                         orFilters.push({ branchId: user.branchId });
@@ -115,7 +126,7 @@ class ProjectController {
                     empQuery.$or = orFilters;
                 }
                 branchEmployees = await User.find(empQuery).select('_id name email employeeId role').lean();
-            } else if (user.role !== 'EMPLOYEE') {
+            } else if (canAssignProjStaff) {
                 const DataStore = require('../services/dataStore');
                 if (['MANAGER', 'BRANCH_MANAGER'].includes(user.role)) {
                     branchEmployees = await DataStore.getEmployeesByManager(user._id, user.branchId);

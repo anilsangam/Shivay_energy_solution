@@ -228,18 +228,25 @@
 
                 <!-- TAB 3: GPS GEOFENCING -->
                 <div class="tab-pane fade" id="geofence-pane" role="tabpanel">
-                    <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">Branch Geofence & Attendance Settings</h5>
-                    <p class="text-muted small mb-4">Configure GPS location parameters and radius for mobile employee attendance punches.</p>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div>
+                            <h5 class="font-weight-bold text-dark mb-1" style="font-size: 16px;">Branch Geofence &amp; Attendance Settings</h5>
+                            <p class="text-muted small mb-0">Configure strict attendance geofencing for Employees &amp; Managers and set the fallback HQ boundary on the map.</p>
+                        </div>
+                        <a href="/admin/branches" class="btn btn-sm btn-outline-primary font-weight-bold" style="border-radius: 8px;">
+                            <i class="icofont-map me-1"></i> Branch-Wise Geofence Maps
+                        </a>
+                    </div>
 
                     <div class="p-3 bg-light border rounded-3 mb-4">
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" id="enforceGeofenceSwitch" name="enforceGeofence" value="true" <%= setting.enforceGeofence ? 'checked' : '' %>>
                             <label class="form-check-label font-weight-bold text-dark ms-2" for="enforceGeofenceSwitch">
-                                Enforce Strict GPS Geofence Verification for Field Staff Check-In
+                                Enforce Strict GPS Geofence Verification for Manager &amp; Employee Check-In / Check-Out
                             </label>
                         </div>
                         <div class="small text-muted ms-4 mt-1" style="font-size: 11.5px;">
-                            When enabled, field staff cannot punch attendance unless their device is physically within the configured radius of their assigned branch.
+                            When enabled, Managers and Employees cannot mark attendance unless their live device GPS is inside their assigned branch's geofenced area (or fallback HQ zone below).
                         </div>
                     </div>
 
@@ -247,21 +254,37 @@
                         <div class="col-md-4">
                             <label class="form-label small font-weight-bold">Default Geofence Radius (Meters) *</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" name="defaultGeofenceRadiusMeters" value="<%= setting.defaultGeofenceRadiusMeters %>" min="50" max="5000" step="50" required>
+                                <input type="number" class="form-control" id="settingsHqRadius" name="defaultGeofenceRadiusMeters" value="<%= setting.defaultGeofenceRadiusMeters %>" min="50" max="50000" step="50" oninput="updateHqCircleRadius(this.value)" required>
                                 <span class="input-group-text bg-white">meters</span>
                             </div>
-                            <div class="form-text text-muted" style="font-size: 11px;">Standard office boundary radius (default 500m).</div>
+                            <div class="form-text text-muted" style="font-size: 11px;">Standard boundary radius when a branch uses default sizing (default 500m).</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small font-weight-bold">HQ Latitude *</label>
-                            <input type="number" class="form-control" name="hqLatitude" value="<%= setting.hqLatitude %>" step="0.000001" required>
+                            <input type="number" class="form-control" id="settingsHqLat" name="hqLatitude" value="<%= setting.hqLatitude %>" step="0.000001" onchange="syncHqMapFromInputs()" required>
                             <div class="form-text text-muted" style="font-size: 11px;">Raisen Central HQ: 23.331500</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small font-weight-bold">HQ Longitude *</label>
-                            <input type="number" class="form-control" name="hqLongitude" value="<%= setting.hqLongitude %>" step="0.000001" required>
+                            <input type="number" class="form-control" id="settingsHqLng" name="hqLongitude" value="<%= setting.hqLongitude %>" step="0.000001" onchange="syncHqMapFromInputs()" required>
                             <div class="form-text text-muted" style="font-size: 11px;">Raisen Central HQ: 77.780700</div>
                         </div>
+                    </div>
+
+                    <div class="p-3 bg-light border rounded-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <span class="small font-weight-bold text-dark"><i class="icofont-map-pins text-primary me-1"></i> Select Fallback HQ Geofence Area on Map</span>
+                            <div class="position-relative flex-grow-1" style="max-width: 440px;">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" id="hqMapSearchInput" class="form-control" autocomplete="off" placeholder="Search city, area, pincode or lat,lng..." oninput="scheduleHqAutocomplete()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHqMap(true);}">
+                                    <button type="button" class="btn btn-outline-primary" onclick="searchHqMap(true)"><i class="icofont-search-1"></i> Search</button>
+                                    <button type="button" class="btn btn-outline-success" id="hqGpsBtn" onclick="useCurrentGpsForHq()"><i class="icofont-location-arrow"></i> Current Location</button>
+                                </div>
+                                <div id="hqMapSuggestions" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; max-height: 200px; overflow-y: auto; top: 100%; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div id="settingsHqMap" style="height: 290px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1;"></div>
+                        <div id="hqMapStatus" class="small text-muted mt-1" style="font-size: 11px;">Click anywhere on map or drag pin to update HQ coordinates &amp; preview radius circle.</div>
                     </div>
                 </div>
 
@@ -543,6 +566,192 @@ function loadDefaultTerms() {
         showToast('Default Terms & Conditions loaded into editor.');
     }
 }
+</script>
+
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<script src="/vendor/leaflet/leaflet.js"></script>
+<script>
+let hqMapCtrl = null;
+
+function initHqGeofenceMap() {
+    if (typeof L === 'undefined') return;
+    const latInput = document.getElementById('settingsHqLat');
+    const lngInput = document.getElementById('settingsHqLng');
+    const radInput = document.getElementById('settingsHqRadius');
+    const lat = parseFloat(latInput.value) || 23.3315;
+    const lng = parseFloat(lngInput.value) || 77.7807;
+    const radius = Math.max(50, parseInt(radInput.value, 10) || 500);
+
+    if (!hqMapCtrl) {
+        const map = L.map('settingsHqMap').setView([lat, lng], 16);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 18,
+            maxZoom: 19,
+            attribution: '&copy; Esri Satellite'
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        const circle = L.circle([lat, lng], { radius, color: '#fbec6b', weight: 2.5, fillColor: '#38bdf8', fillOpacity: 0.22 }).addTo(map);
+
+        const updatePos = (newLat, newLng, pan = false) => {
+            const fLat = Number(newLat.toFixed(6));
+            const fLng = Number(newLng.toFixed(6));
+            latInput.value = fLat;
+            lngInput.value = fLng;
+            marker.setLatLng([fLat, fLng]);
+            circle.setLatLng([fLat, fLng]);
+            if (pan) map.setView([fLat, fLng], Math.max(map.getZoom(), 15));
+            document.getElementById('hqMapStatus').innerText = `HQ Pin: ${fLat}, ${fLng} (Default Radius: ${circle.getRadius()}m)`;
+        };
+
+        marker.on('dragend', (ev) => updatePos(ev.target.getLatLng().lat, ev.target.getLatLng().lng, false));
+        map.on('click', (ev) => updatePos(ev.latlng.lat, ev.latlng.lng, false));
+        hqMapCtrl = { map, marker, circle, updatePos };
+    } else {
+        hqMapCtrl.map.invalidateSize();
+    }
+    setTimeout(() => hqMapCtrl && hqMapCtrl.map.invalidateSize(), 200);
+}
+
+function syncHqMapFromInputs() {
+    const lat = parseFloat(document.getElementById('settingsHqLat').value);
+    const lng = parseFloat(document.getElementById('settingsHqLng').value);
+    if (hqMapCtrl && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        hqMapCtrl.updatePos(lat, lng, true);
+    }
+}
+
+function updateHqCircleRadius(val) {
+    if (hqMapCtrl) {
+        hqMapCtrl.circle.setRadius(Math.max(50, parseInt(val, 10) || 500));
+    }
+}
+
+let hqSearchTimer = null;
+let hqSearchResults = [];
+
+function selectHqResult(idx) {
+    const item = hqSearchResults[idx];
+    if (!item) return;
+    document.getElementById('hqMapSearchInput').value = item.label;
+    document.getElementById('hqMapSuggestions').classList.add('d-none');
+    initHqGeofenceMap();
+    if (hqMapCtrl) {
+        hqMapCtrl.updatePos(item.lat, item.lng, true);
+    }
+    document.getElementById('hqMapStatus').innerText = `Pinned: ${item.label} (${item.lat.toFixed(6)}, ${item.lng.toFixed(6)})`;
+}
+
+function scheduleHqAutocomplete() {
+    const q = (document.getElementById('hqMapSearchInput').value || '').trim();
+    clearTimeout(hqSearchTimer);
+    if (q.length < 3) {
+        document.getElementById('hqMapSuggestions').classList.add('d-none');
+        return;
+    }
+    hqSearchTimer = setTimeout(() => searchHqMap(false), 380);
+}
+
+async function searchHqMap(selectFirst = false) {
+    const q = (document.getElementById('hqMapSearchInput').value || '').trim();
+    const statusEl = document.getElementById('hqMapStatus');
+    const sugBox = document.getElementById('hqMapSuggestions');
+    if (q.length < 2) {
+        sugBox.classList.add('d-none');
+        return;
+    }
+    statusEl.innerText = 'Searching location...';
+    try {
+        const res = await fetch(`/api/admin/geocode?q=${encodeURIComponent(q)}`);
+        const payload = await res.json();
+        const list = (payload && payload.success && Array.isArray(payload.results)) ? payload.results : [];
+        hqSearchResults = list;
+        if (list.length === 0) {
+            sugBox.classList.add('d-none');
+            statusEl.innerText = 'No matching places found. Try city/area, pincode, or paste lat,lng coordinates.';
+            return;
+        }
+        if (selectFirst) {
+            selectHqResult(0);
+            return;
+        }
+        sugBox.innerHTML = list.map((item, idx) => `
+            <button type="button" class="list-group-item list-group-item-action py-2 px-3 small text-start" onclick="selectHqResult(${idx})">
+                <i class="icofont-location-pin text-danger me-1"></i> ${String(item.label).replace(/</g, '&lt;')}
+            </button>
+        `).join('');
+        sugBox.classList.remove('d-none');
+        statusEl.innerText = `Select a matching location (${list.length} found).`;
+    } catch (_) {
+        sugBox.classList.add('d-none');
+        statusEl.innerText = 'Search error. You can paste lat,lng or click directly on the map to set HQ pin.';
+    }
+}
+
+function useCurrentGpsForHq() {
+    const statusEl = document.getElementById('hqMapStatus');
+    const btn = document.getElementById('hqGpsBtn');
+    document.getElementById('hqMapSuggestions').classList.add('d-none');
+
+    if (!navigator.geolocation) {
+        statusEl.innerText = 'Browser geolocation unavailable.';
+        return;
+    }
+    if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        statusEl.innerText = 'Browser blocks GPS on non-HTTPS LAN URLs. Open via localhost/HTTPS or click directly on the map.';
+        return;
+    }
+
+    if (btn) btn.disabled = true;
+    statusEl.innerText = 'Detecting current location...';
+
+    const onSuccess = (pos) => {
+        if (btn) btn.disabled = false;
+        initHqGeofenceMap();
+        if (hqMapCtrl) {
+            hqMapCtrl.updatePos(pos.coords.latitude, pos.coords.longitude, true);
+        }
+        statusEl.innerText = `HQ Pin snapped to your current location: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)} (±${Math.round(pos.coords.accuracy)}m).`;
+    };
+
+    const onFail = (err) => {
+        if (btn) btn.disabled = false;
+        statusEl.innerText = (err && err.code === 1)
+            ? 'Location permission denied. Allow Location access in browser or click directly on the map.'
+            : 'Could not detect current GPS automatically. Search location or click directly on the map.';
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+            if (err && err.code === 1) {
+                onFail(err);
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                onSuccess,
+                onFail,
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+            );
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+}
+
+document.addEventListener('click', (ev) => {
+    const inp = document.getElementById('hqMapSearchInput');
+    const sug = document.getElementById('hqMapSuggestions');
+    if (sug && inp && !sug.contains(ev.target) && ev.target !== inp) {
+        sug.classList.add('d-none');
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const geoTabBtn = document.getElementById('geofence-tab');
+    if (geoTabBtn) {
+        geoTabBtn.addEventListener('shown.bs.tab', () => initHqGeofenceMap());
+    }
+});
 </script>
 
 <%- include('partials/admin-footer') %>

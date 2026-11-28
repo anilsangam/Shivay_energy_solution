@@ -455,3 +455,38 @@
         letter-spacing: -0.2px;
     }
 }
+
+@media (max-width: 380px) {
+    .about-video-top-badge {
+        top: 8px;
+        left: 8px;
+        padding: 5px 10px;
+        font-size: 10.5px;
+    }
+
+    .about-video-bottom-card {
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        padding: 7px 10px;
+        border-radius: 12px;
+    }
+
+    .about-video-bottom-card > .d-flex {
+        gap: 0 !important;
+    }
+
+    .about-video-stat-icon {
+        display: none !important;
+    }
+
+    .about-video-bottom-card h4 {
+        font-size: 13.5px !important;
+        line-height: 1.25;
+    }
+
+    .about-video-bottom-card p {
+        font-size: 11px !important;
+        line-height: 1.3;
+    }
+}

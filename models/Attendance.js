@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const attendanceSchema = new mongoose.Schema({
     employee: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' },
+    branchName: { type: String },
     employeeId: { type: String, index: true },
     employeeName: { type: String },
     role: { type: String, default: 'Field Engineer' },
@@ -12,6 +13,8 @@ const attendanceSchema = new mongoose.Schema({
     latitude: { type: Number },
     longitude: { type: Number },
     accuracy: { type: Number },
+    distanceMeters: { type: Number },
+    allowedRadiusMeters: { type: Number },
     isWithinGeofence: { type: Boolean, default: true },
     date: { type: String, required: true }, // Format: DD-MM-YYYY or YYYY-MM-DD
     checkInTime: { type: Date },

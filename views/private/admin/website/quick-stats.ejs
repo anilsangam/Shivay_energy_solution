@@ -1,0 +1,351 @@
+<%- include('../partials/admin-head') %>
+
+<!-- Action Feedback Alert Banner -->
+<div id="actionToast" class="alert alert-success alert-dismissible fade show d-none mb-4" role="alert">
+    <i class="icofont-check-circled me-2"></i><span id="actionToastMsg">Home quick stats updated successfully.</span>
+    <button type="button" class="btn-close" onclick="document.getElementById('actionToast').classList.add('d-none')"></button>
+</div>
+
+<!-- Header Controls -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
+            <i class="icofont-chart-bar-graph me-2 text-warning"></i> Home Page Quick Stats Manager
+        </h2>
+        <p class="text-muted small mb-0">
+            Manage the hero summary cards (desktop) and scrolling highlight bar (mobile) shown on the public home page.
+        </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="/" target="_blank" class="btn btn-outline-secondary font-weight-bold shadow-sm" style="border-radius: 8px;">
+            <i class="icofont-external-link me-1"></i> View Live Home Page
+        </a>
+        <button type="button" class="btn btn-outline-danger font-weight-bold shadow-sm" style="border-radius: 8px;" onclick="resetQuickStats()">
+            <i class="icofont-refresh me-1"></i> Reset Defaults
+        </button>
+        <button type="button" class="btn btn-warning font-weight-bold text-dark shadow-sm" style="border-radius: 8px;" onclick="addQuickStatRow()">
+            <i class="icofont-plus-circle me-1"></i> Add Quick Stat
+        </button>
+    </div>
+</div>
+
+<!-- Quick Module Navigation Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+    <div class="card-body py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="small font-weight-bold text-muted text-uppercase me-2"><i class="icofont-layers me-1"></i> Website CMS:</span>
+            <a href="/admin/website/projects" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-energy-solar me-1 text-warning"></i> Projects
+            </a>
+            <a href="/admin/website/products" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-box me-1 text-primary"></i> Products
+            </a>
+            <a href="/admin/website/services" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-tasks-alt me-1 text-primary"></i> Services
+            </a>
+            <a href="/admin/website/team" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-users-alt-5 me-1 text-info"></i> Founders &amp; Team
+            </a>
+            <a href="/admin/website/testimonials" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-star me-1 text-warning"></i> Testimonials
+            </a>
+            <a href="/admin/website/quick-stats" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
+                <i class="icofont-chart-bar-graph me-1 text-warning"></i> Quick Stats (Active)
+            </a>
+            <a href="/admin/website/contact" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-address-book me-1 text-success"></i> Contact Info
+            </a>
+        </div>
+        <span class="badge bg-light text-muted border" id="statCountBadge">Total Stats: <%= quickStats.length %></span>
+    </div>
+</div>
+
+<!-- Live Preview Strip -->
+<div class="card border-0 shadow-sm rounded-3 mb-4 bg-white overflow-hidden">
+    <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <h5 class="font-weight-bold mb-0 text-dark fs-6">
+            <i class="icofont-eye-alt me-2 text-primary"></i> Live Home Page Preview
+        </h5>
+        <span class="small text-muted">Updates automatically as you edit values below</span>
+    </div>
+    <div class="card-body p-3 p-md-4" style="background: linear-gradient(135deg, #102a4d, #163563);">
+        <div class="small text-white-50 text-uppercase fw-bold mb-2" style="letter-spacing: .8px;">Desktop Hero Cards</div>
+        <div id="previewDesktopRow" class="row g-3 justify-content-center mb-3"></div>
+        <div class="small text-white-50 text-uppercase fw-bold mb-2" style="letter-spacing: .8px;">Mobile Scrolling Ticker Items</div>
+        <div id="previewTickerRow" class="d-flex flex-wrap align-items-center gap-2 px-3 py-2 rounded-2" style="background: rgba(13, 32, 61, 0.9); border: 1px solid rgba(255,255,255,0.16);"></div>
+    </div>
+</div>
+
+<!-- Quick Stats Editor Form -->
+<form id="quickStatsForm" onsubmit="saveQuickStats(event)">
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-white">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div>
+                <h5 class="font-weight-bold mb-0 text-dark fs-6">
+                    <i class="icofont-listing-box me-2 text-warning"></i> Configure Quick Stats Items
+                </h5>
+                <small class="text-muted">Tip: Keep 3 to 4 items enabled for Desktop Hero Cards for the cleanest layout; all ticker-enabled items scroll on mobile.</small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary font-weight-bold" style="border-radius: 8px;" onclick="addQuickStatRow()">
+                <i class="icofont-plus me-1"></i> Add Row
+            </button>
+        </div>
+        <div class="card-body p-3 p-md-4">
+            <div id="quickStatsRows" class="d-flex flex-column gap-3"></div>
+        </div>
+        <div class="card-footer bg-light py-3 px-4 d-flex flex-wrap align-items-center justify-content-between gap-2 border-top">
+            <span class="small text-muted">Changes go live on the home page immediately after saving.</span>
+            <button type="submit" id="saveStatsBtn" class="btn btn-warning font-weight-bold text-dark px-4 py-2 shadow-sm" style="border-radius: 8px;">
+                <i class="icofont-save me-2"></i> Save &amp; Publish Quick Stats
+            </button>
+        </div>
+    </div>
+</form>
+
+<script id="initialQuickStatsData" type="application/json"><%- JSON.stringify(quickStats || []).replace(/</g, '\\u003c') %></script>
+
+<script>
+const CSRF_TOKEN = <%- JSON.stringify(csrfToken || '') %>;
+let quickStatsState = [];
+
+try {
+    quickStatsState = JSON.parse(document.getElementById('initialQuickStatsData').textContent || '[]');
+} catch (_) {
+    quickStatsState = [];
+}
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function showToast(message, isError) {
+    const toast = document.getElementById('actionToast');
+    const msgEl = document.getElementById('actionToastMsg');
+    toast.classList.remove('d-none', 'alert-success', 'alert-danger');
+    toast.classList.add(isError ? 'alert-danger' : 'alert-success');
+    msgEl.innerText = message;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPreview() {
+    const desktopBox = document.getElementById('previewDesktopRow');
+    const tickerBox = document.getElementById('previewTickerRow');
+    const badge = document.getElementById('statCountBadge');
+    badge.innerText = 'Total Stats: ' + quickStatsState.length;
+
+    const desktopItems = quickStatsState.filter(s => s.isActive && s.showOnDesktop && s.value.trim() && s.label.trim());
+    const tickerItems = quickStatsState.filter(s => s.isActive && s.showOnTicker && s.value.trim() && s.label.trim());
+
+    if (desktopItems.length === 0) {
+        desktopBox.innerHTML = '<div class="col-12 text-center text-white-50 small py-2">No desktop hero cards selected.</div>';
+    } else {
+        const colCls = desktopItems.length === 1 ? 'col-md-6' : desktopItems.length === 2 ? 'col-md-5' : desktopItems.length === 4 ? 'col-md-3' : 'col-md-4';
+        desktopBox.innerHTML = desktopItems.map((item, idx) => `
+            <div class="${colCls}">
+                <div class="p-3 rounded-3 h-100 text-center" style="background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); backdrop-filter: blur(8px);">
+                    <div class="fw-bold ${idx === 0 ? 'text-warning' : 'text-white'}" style="font-size: 26px; line-height: 1.15;">${escapeHtml(item.value)}</div>
+                    <div class="text-white-50 small mt-1">${escapeHtml(item.label)}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    if (tickerItems.length === 0) {
+        tickerBox.innerHTML = '<span class="text-white-50 small">No mobile ticker items selected.</span>';
+    } else {
+        tickerBox.innerHTML = tickerItems.map(item => `
+            <span class="d-inline-flex align-items-center gap-1 small text-white">
+                <strong class="text-warning">${escapeHtml(item.tickerValue || item.value)}</strong>
+                <span class="text-white-50">${escapeHtml(item.tickerLabel || item.label)}</span>
+                <span class="text-white-50 mx-1">&bull;</span>
+            </span>
+        `).join('');
+    }
+}
+
+function renderRows() {
+    const container = document.getElementById('quickStatsRows');
+    if (!quickStatsState.length) {
+        container.innerHTML = '<div class="text-center text-muted py-4">No quick stats configured yet. Click "Add Quick Stat" to create one.</div>';
+        renderPreview();
+        return;
+    }
+
+    container.innerHTML = quickStatsState.map((item, idx) => `
+        <div class="border rounded-3 p-3 bg-light bg-opacity-50" data-stat-index="${idx}">
+            <div class="row g-3 align-items-end">
+                <div class="col-6 col-md-1">
+                    <label class="form-label font-weight-bold small mb-1">Order</label>
+                    <input type="number" class="form-control form-control-sm" min="1" max="99" value="${Number(item.order) || (idx + 1)}" onchange="updateField(${idx}, 'order', Number(this.value) || 1)">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label font-weight-bold small mb-1">Stat Value *</label>
+                    <input type="text" class="form-control form-control-sm" maxlength="40" placeholder="e.g. 100+" value="${escapeHtml(item.value)}" oninput="updateField(${idx}, 'value', this.value)" required>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label font-weight-bold small mb-1">Stat Label *</label>
+                    <input type="text" class="form-control form-control-sm" maxlength="80" placeholder="e.g. Solar installations" value="${escapeHtml(item.label)}" oninput="updateField(${idx}, 'label', this.value)" required>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label font-weight-bold small mb-1">Ticker Value (Optional)</label>
+                    <input type="text" class="form-control form-control-sm" maxlength="40" placeholder="Same as Value" value="${escapeHtml(item.tickerValue)}" oninput="updateField(${idx}, 'tickerValue', this.value)">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label font-weight-bold small mb-1">Ticker Label (Optional)</label>
+                    <input type="text" class="form-control form-control-sm" maxlength="80" placeholder="Same as Label" value="${escapeHtml(item.tickerLabel)}" oninput="updateField(${idx}, 'tickerLabel', this.value)">
+                </div>
+                <div class="col-12 col-md-2 d-flex justify-content-md-end gap-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Move Up" ${idx === 0 ? 'disabled' : ''} onclick="moveRow(${idx}, -1)"><i class="icofont-arrow-up"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" title="Move Down" ${idx === quickStatsState.length - 1 ? 'disabled' : ''} onclick="moveRow(${idx}, 1)"><i class="icofont-arrow-down"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Stat" onclick="removeRow(${idx})"><i class="icofont-trash"></i></button>
+                </div>
+                <div class="col-12 d-flex flex-wrap align-items-center gap-4 pt-1 border-top">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="desktop_${idx}" ${item.showOnDesktop !== false ? 'checked' : ''} onchange="updateField(${idx}, 'showOnDesktop', this.checked)">
+                        <label class="form-check-label small fw-bold" for="desktop_${idx}">Show in Desktop Hero Cards</label>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="ticker_${idx}" ${item.showOnTicker !== false ? 'checked' : ''} onchange="updateField(${idx}, 'showOnTicker', this.checked)">
+                        <label class="form-check-label small fw-bold" for="ticker_${idx}">Show in Mobile Ticker Bar</label>
+                    </div>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="active_${idx}" ${item.isActive !== false ? 'checked' : ''} onchange="updateField(${idx}, 'isActive', this.checked)">
+                        <label class="form-check-label small fw-bold" for="active_${idx}">Active</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    renderPreview();
+}
+
+function updateField(idx, field, val) {
+    if (!quickStatsState[idx]) return;
+    quickStatsState[idx][field] = val;
+    if (field === 'order') {
+        quickStatsState.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+        renderRows();
+        return;
+    }
+    renderPreview();
+}
+
+function moveRow(idx, dir) {
+    const target = idx + dir;
+    if (target < 0 || target >= quickStatsState.length) return;
+    const temp = quickStatsState[idx];
+    quickStatsState[idx] = quickStatsState[target];
+    quickStatsState[target] = temp;
+    quickStatsState.forEach((s, i) => { s.order = i + 1; });
+    renderRows();
+}
+
+function addQuickStatRow() {
+    if (quickStatsState.length >= 20) {
+        alert('Maximum 20 quick stats allowed.');
+        return;
+    }
+    quickStatsState.push({
+        value: '',
+        label: '',
+        tickerValue: '',
+        tickerLabel: '',
+        showOnDesktop: true,
+        showOnTicker: true,
+        isActive: true,
+        order: quickStatsState.length + 1
+    });
+    renderRows();
+}
+
+function removeRow(idx) {
+    if (quickStatsState.length <= 1) {
+        alert('At least one quick stat is required. Use "Reset Defaults" if needed.');
+        return;
+    }
+    quickStatsState.splice(idx, 1);
+    quickStatsState.forEach((s, i) => { s.order = i + 1; });
+    renderRows();
+}
+
+async function saveQuickStats(e) {
+    e.preventDefault();
+    const btn = document.getElementById('saveStatsBtn');
+    const cleanStats = quickStatsState.map((s, idx) => ({
+        value: String(s.value || '').trim(),
+        label: String(s.label || '').trim(),
+        tickerValue: String(s.tickerValue || '').trim(),
+        tickerLabel: String(s.tickerLabel || '').trim(),
+        showOnDesktop: s.showOnDesktop !== false,
+        showOnTicker: s.showOnTicker !== false,
+        isActive: s.isActive !== false,
+        order: Number(s.order) || (idx + 1)
+    }));
+
+    if (cleanStats.some(s => !s.value || !s.label)) {
+        showToast('Every quick stat row must have both a Stat Value and a Stat Label.', true);
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Publishing...';
+
+    try {
+        const res = await fetch('/api/admin/website/quick-stats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ _csrf: CSRF_TOKEN, stats: cleanStats })
+        });
+        const data = await res.json();
+        if (data.success) {
+            quickStatsState = data.stats || cleanStats;
+            renderRows();
+            showToast(data.message || 'Home Page Quick Stats published live.');
+        } else {
+            showToast(data.message || 'Failed to save Home Quick Stats.', true);
+        }
+    } catch (err) {
+        showToast('Server communication error while saving stats.', true);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="icofont-save me-2"></i> Save &amp; Publish Quick Stats';
+    }
+}
+
+async function resetQuickStats() {
+    if (!confirm('Restore Home Page Quick Stats back to the default company stats?')) return;
+    try {
+        const res = await fetch('/api/admin/website/quick-stats/reset', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF_TOKEN
+            },
+            body: JSON.stringify({ _csrf: CSRF_TOKEN })
+        });
+        const data = await res.json();
+        if (data.success) {
+            quickStatsState = data.stats || [];
+            renderRows();
+            showToast(data.message || 'Restored default Quick Stats.');
+        } else {
+            showToast(data.message || 'Failed to reset Quick Stats.', true);
+        }
+    } catch (err) {
+        showToast('Server communication error while resetting stats.', true);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', renderRows);
+</script>
+
+<%- include('../partials/admin-footer') %>

@@ -8,6 +8,7 @@ const Quotation = require('../models/Quotation');
 const Customer = require('../models/Customer');
 const User = require('../models/User');
 const AuditService = require('./auditService');
+const AuthorizationService = require('./authorizationService');
 
 class ProjectService {
     // In-memory fallback registry for testing without live DB
@@ -252,8 +253,12 @@ class ProjectService {
     static async getProjects(user, query = {}) {
         const conditions = [];
 
-        // RBAC Boundary Isolation: Managers only see projects in their branch/jurisdiction
-        if (user.role === 'EMPLOYEE') {
+        // RBAC Boundary Isolation: Managers (and Employees with branch/manager project permissions) see branch projects
+        const hasBranchProjPrivilege = AuthorizationService.hasAnyPermission(user, [
+            'projects.all.view', 'projects.assignment.assign', 'projects.completion.approve',
+            'projects.site_visit.approve', 'projects.records.create', 'projects.materials.manage'
+        ]);
+        if (user.role === 'EMPLOYEE' && !hasBranchProjPrivilege) {
             conditions.push({
                 $or: [
                     { assignedEngineer: user._id },
@@ -261,16 +266,26 @@ class ProjectService {
                     { 'siteVisit.assignedTo': user._id }
                 ]
             });
-        } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER') {
-            if (user.branchId) {
+        } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || (user.role === 'EMPLOYEE' && hasBranchProjPrivilege)) {
+            if (AuthorizationService.hasPermission(user, 'projects.all.view') || user.dataScope === 'GLOBAL') {
+                // Global view
+            } else if (user.branchId) {
                 conditions.push({
                     $or: [
                         { branch: user.branchId },
-                        { assignedManager: user._id }
+                        { assignedManager: user._id },
+                        { assignedEngineer: user._id },
+                        { 'assignedEmployees.user': user._id }
                     ]
                 });
             } else {
-                conditions.push({ assignedManager: user._id });
+                conditions.push({
+                    $or: [
+                        { assignedManager: user._id },
+                        { assignedEngineer: user._id },
+                        { 'assignedEmployees.user': user._id }
+                    ]
+                });
             }
         } // SUPER_ADMIN views all
 
@@ -388,7 +403,11 @@ class ProjectService {
         }
 
         // Strict RBAC Access Check
-        if (user.role === 'EMPLOYEE') {
+        const hasBranchProjPrivilege = AuthorizationService.hasAnyPermission(user, [
+            'projects.all.view', 'projects.assignment.assign', 'projects.completion.approve',
+            'projects.site_visit.approve', 'projects.records.create', 'projects.materials.manage'
+        ]);
+        if (user.role === 'EMPLOYEE' && !hasBranchProjPrivilege) {
             const engId = project.assignedEngineer ? (project.assignedEngineer._id ? project.assignedEngineer._id.toString() : project.assignedEngineer.toString()) : null;
             const svId = project.siteVisit && project.siteVisit.assignedTo ? (project.siteVisit.assignedTo._id ? project.siteVisit.assignedTo._id.toString() : project.siteVisit.assignedTo.toString()) : null;
             const isAssigned = (engId === user._id.toString()) ||
@@ -403,15 +422,17 @@ class ProjectService {
                 err.status = 403;
                 throw err;
             }
-        } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER') {
-            const mgrId = project.assignedManager ? (project.assignedManager._id ? project.assignedManager._id.toString() : project.assignedManager.toString()) : null;
-            const isBranchMatch = (user.branchId && project.branch && project.branch.toString() === user.branchId.toString()) ||
-                (mgrId === user._id.toString());
+        } else if (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || (user.role === 'EMPLOYEE' && hasBranchProjPrivilege)) {
+            if (!AuthorizationService.hasPermission(user, 'projects.all.view') && user.dataScope !== 'GLOBAL') {
+                const mgrId = project.assignedManager ? (project.assignedManager._id ? project.assignedManager._id.toString() : project.assignedManager.toString()) : null;
+                const isBranchMatch = (user.branchId && project.branch && project.branch.toString() === user.branchId.toString()) ||
+                    (mgrId === user._id.toString());
 
-            if (!isBranchMatch) {
-                const err = new Error('HTTP 403 Forbidden: You are not authorized to view projects from another branch.');
-                err.status = 403;
-                throw err;
+                if (!isBranchMatch) {
+                    const err = new Error('HTTP 403 Forbidden: You are not authorized to view projects from another branch.');
+                    err.status = 403;
+                    throw err;
+                }
             }
         }
 
@@ -440,14 +461,15 @@ class ProjectService {
         const project = await ProjectService._findProject(projectId);
         if (!project) throw new Error('Project not found.');
 
-        // RBAC: Employees can update execution progress, but CANNOT mark project as COMPLETED (Requires Manager/Super Admin certification)
+        // RBAC: Employees without completion permission cannot mark COMPLETED, and without branch edit can only update assigned
         if (user.role === 'EMPLOYEE') {
-            if (newStatus === 'COMPLETED') {
-                const err = new Error('HTTP 403 Forbidden: Field employees cannot complete or commission a project. Final commissioning requires Branch Manager or Super Admin certification.');
+            if (newStatus === 'COMPLETED' && !AuthorizationService.hasPermission(user, 'projects.completion.approve')) {
+                const err = new Error('HTTP 403 Forbidden: Field employees cannot complete or commission a project without completion approval permission.');
                 err.status = 403;
                 throw err;
             }
-            if (project.assignedEngineer) {
+            const hasBranchStatusPrivilege = AuthorizationService.hasAnyPermission(user, ['projects.assignment.assign', 'projects.completion.approve', 'projects.all.view']);
+            if (!hasBranchStatusPrivilege && project.assignedEngineer) {
                 const assignedEngId = project.assignedEngineer._id ? project.assignedEngineer._id.toString() : project.assignedEngineer.toString();
                 if (assignedEngId !== user._id.toString()) {
                     const err = new Error('HTTP 403 Forbidden: You are only permitted to update status for projects assigned to you.');
@@ -596,8 +618,8 @@ class ProjectService {
     }
 
     static async reviewSiteVisit(projectId, action, managerRemarks, managerUser) {
-        if (managerUser.role === 'EMPLOYEE') {
-            const err = new Error('HTTP 403 Forbidden: Only managers can approve site visit reports.');
+        if (!AuthorizationService.hasOperationalPrivilege(managerUser, ['projects.site_visit.approve'])) {
+            const err = new Error('HTTP 403 Forbidden: Missing permission to approve site visit reports.');
             err.status = 403;
             throw err;
         }
@@ -650,8 +672,8 @@ class ProjectService {
     // 7. TASK MANAGEMENT
     // -------------------------------------------------------------
     static async createTask(projectId, taskData, creatorUser) {
-        if (creatorUser.role === 'EMPLOYEE') {
-            const err = new Error('HTTP 403 Forbidden: Only Managers or Admins can assign project tasks.');
+        if (!AuthorizationService.hasOperationalPrivilege(creatorUser, ['projects.tasks.create'])) {
+            const err = new Error('HTTP 403 Forbidden: Missing permission to assign project tasks.');
             err.status = 403;
             throw err;
         }
@@ -703,8 +725,8 @@ class ProjectService {
         const task = (project.tasks || []).find(t => t.taskId === taskId || (t._id && t._id.toString() === taskId));
         if (!task) throw new Error('Task not found.');
 
-        // RBAC: If employee, they can ONLY update tasks assigned to them!
-        if (user.role === 'EMPLOYEE') {
+        // RBAC: If employee without task/team management privilege, they can ONLY update tasks assigned to them!
+        if (user.role === 'EMPLOYEE' && !AuthorizationService.hasAnyPermission(user, ['projects.assignment.assign', 'projects.tasks.create'])) {
             const assignedId = task.assignedTo ? (task.assignedTo._id ? task.assignedTo._id.toString() : task.assignedTo.toString()) : null;
             if (assignedId !== user._id.toString()) {
                 const err = new Error('HTTP 403 Forbidden: You cannot modify tasks assigned to another employee.');
@@ -737,8 +759,8 @@ class ProjectService {
     }
 
     static async assignEmployee(projectId, employeeId, roleInProject, managerUser) {
-        if (managerUser.role === 'EMPLOYEE') {
-            const err = new Error('HTTP 403 Forbidden: Only managers can assign employees.');
+        if (!AuthorizationService.hasOperationalPrivilege(managerUser, ['projects.assignment.assign'])) {
+            const err = new Error('HTTP 403 Forbidden: Missing permission to assign employees.');
             err.status = 403;
             throw err;
         }
@@ -791,8 +813,8 @@ class ProjectService {
     // 8. MATERIAL TRACKING
     // -------------------------------------------------------------
     static async updateMaterialItem(projectId, materialIndexOrId, updates, user) {
-        if (user.role === 'EMPLOYEE') {
-            const err = new Error('HTTP 403 Forbidden: Only managers can update material allocations.');
+        if (!AuthorizationService.hasOperationalPrivilege(user, ['projects.materials.manage'])) {
+            const err = new Error('HTTP 403 Forbidden: Missing permission to update material allocations.');
             err.status = 403;
             throw err;
         }
@@ -845,8 +867,8 @@ class ProjectService {
     // 9. PROJECT COMPLETION CLEARANCE
     // -------------------------------------------------------------
     static async completeProject(projectId, completionData, user) {
-        if (user.role === 'EMPLOYEE') {
-            const err = new Error('HTTP 403 Forbidden: Only Managers or Admins can finalize and complete projects.');
+        if (!AuthorizationService.hasOperationalPrivilege(user, ['projects.completion.approve'])) {
+            const err = new Error('HTTP 403 Forbidden: Missing permission to finalize and complete projects.');
             err.status = 403;
             throw err;
         }

@@ -41,9 +41,9 @@ class LeadController {
                 }
             } else {
                 // EMPLOYEE (Telecaller / Sales Executive)
-                // Telecallers primarily see their own assigned leads, but can also view unassigned leads in their branch
+                // Telecallers with branch/manager lead permissions (assign/reassign/edit) see branch leads; others see assigned/created leads
                 const userBranch = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId) : null;
-                const viewAllBranchLeads = AuthorizationService.hasPermission(currentUser, 'crm.leads.assign');
+                const viewAllBranchLeads = AuthorizationService.hasAnyPermission(currentUser, ['crm.leads.assign', 'crm.leads.reassign', 'crm.leads.edit']);
 
                 if (viewAllBranchLeads && userBranch) {
                     conditions.push({ branch: userBranch });
@@ -151,7 +151,7 @@ class LeadController {
                     if (userBranch) baseScoping.push({ branch: userBranch });
                 } else {
                     const userBranch = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId) : null;
-                    const viewAllBranchLeads = AuthorizationService.hasPermission(currentUser, 'crm.leads.assign');
+                    const viewAllBranchLeads = AuthorizationService.hasAnyPermission(currentUser, ['crm.leads.assign', 'crm.leads.reassign', 'crm.leads.edit']);
                     if (viewAllBranchLeads && userBranch) {
                         baseScoping.push({ branch: userBranch });
                     } else {
@@ -315,7 +315,7 @@ class LeadController {
                 if (currentUser.role === 'EMPLOYEE') {
                     const isAssigned = lead.assignedTelecaller && String(lead.assignedTelecaller._id || lead.assignedTelecaller) === String(currentUser._id);
                     const isCreator = lead.createdBy && String(lead.createdBy._id || lead.createdBy) === String(currentUser._id);
-                    const canViewBranch = AuthorizationService.hasPermission(currentUser, 'crm.leads.assign');
+                    const canViewBranch = AuthorizationService.hasAnyPermission(currentUser, ['crm.leads.assign', 'crm.leads.reassign', 'crm.leads.edit']);
 
                     if (!isAssigned && !isCreator && !(canViewBranch && userBranch === leadBranch)) {
                         return res.status(403).json({ success: false, message: 'Access denied: You are not assigned to this lead.' });
@@ -667,7 +667,11 @@ class LeadController {
             if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER') {
                 if (currentUser.branchId) conditions.push({ branch: currentUser.branchId });
             } else if (currentUser.role === 'EMPLOYEE') {
-                conditions.push({ assignedTelecaller: currentUser._id });
+                if (AuthorizationService.hasAnyPermission(currentUser, ['crm.leads.assign', 'crm.leads.reassign', 'crm.leads.edit', 'crm.leads.export']) && currentUser.branchId) {
+                    conditions.push({ branch: currentUser.branchId });
+                } else {
+                    conditions.push({ assignedTelecaller: currentUser._id });
+                }
             }
 
             if (status && status !== 'ALL') conditions.push({ leadStatus: status });

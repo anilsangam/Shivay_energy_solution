@@ -25,9 +25,9 @@ app.use(helmet({
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-            imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+            imgSrc: ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://*.cloudinary.com", "https://*.tile.openstreetmap.org", "https://server.arcgisonline.com"],
             mediaSrc: ["'self'", "blob:", "https://res.cloudinary.com", "https://media.istockphoto.com"],
-            connectSrc: ["'self'", "https://res.cloudinary.com", "https://api.cloudinary.com"],
+            connectSrc: ["'self'", "https://res.cloudinary.com", "https://api.cloudinary.com", "https://nominatim.openstreetmap.org"],
             frameSrc: ["'self'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
@@ -48,6 +48,7 @@ app.use(express.json({ limit: '10mb' }));
 // Serve browser assets from public while keeping stable URL prefixes.
 app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
 app.use('/js', express.static(path.join(__dirname, 'public', 'js')));
+app.use('/vendor/leaflet', express.static(path.join(__dirname, 'node_modules', 'leaflet', 'dist')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/fonts', express.static(path.join(__dirname, 'public', 'fonts')));
 app.use('/videos', express.static(path.join(__dirname, 'videos')));

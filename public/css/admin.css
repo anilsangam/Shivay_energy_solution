@@ -1169,3 +1169,24 @@ i[class*="icofont-search"] {
 .fs-48 { font-size: 48px; }
 .fs-56 { font-size: 56px; }
 
+/* Ensure Bootstrap 5 .modal-dialog-scrollable scrolls cleanly when <form> sits inside .modal-content */
+.modal-dialog-scrollable .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-content > form .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal-dialog-scrollable .modal-content > form .modal-header,
+.modal-dialog-scrollable .modal-content > form .modal-footer {
+    flex-shrink: 0;
+}
+

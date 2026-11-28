@@ -9,14 +9,17 @@
     const canEditStatus = checkPerm('projects.status.edit');
     const canAssignMember = checkPerm('projects.assignment.assign');
     const canCompleteProject = checkPerm('projects.completion.approve');
+    const canReviewSiteVisit = checkPerm('projects.site_visit.approve');
     const canViewQuotation = checkPerm('quotations.document.view');
     const canCreateTask = checkPerm('projects.tasks.create');
+    const canEditTasks = checkPerm('projects.tasks.edit');
     const canUploadDoc = checkPerm('projects.documents.create');
     const canManageMaterials = checkPerm('projects.materials.manage');
 
     const isEmp = user.role === 'EMPLOYEE';
     const isMgrOrAdmin = user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER' || user.role === 'SUPER_ADMIN';
-    const postPrefix = user.role === 'SUPER_ADMIN' ? '/admin/projects' : (isEmp ? '/employee/projects' : '/manager/projects');
+    const hasManagerProjEdit = isMgrOrAdmin || canReviewSiteVisit || canCreateTask || canAssignMember || canManageMaterials || canCompleteProject;
+    const postPrefix = user.role === 'SUPER_ADMIN' ? '/admin/projects' : (hasManagerProjEdit ? '/manager/projects' : '/employee/projects');
 
     let badgeColor = 'bg-secondary';
     if (project.status === 'COMPLETED') badgeColor = 'bg-success';
@@ -361,7 +364,7 @@
                     <h5 class="fw-bold mb-3 border-bottom pb-2" style="color: var(--admin-navy-primary);">
                         <i class="icofont-check-circled text-success me-2"></i>Manager Site Survey Clearance
                     </h5>
-                    <% if (isMgrOrAdmin) { %>
+                    <% if (isMgrOrAdmin || canReviewSiteVisit) { %>
                         <p class="small text-muted mb-3">
                             Review the field survey data submitted by the installation engineer. Approving the survey advances the project to <strong>Site Visit Completed (25%)</strong> and clears material staging.
                         </p>
@@ -399,7 +402,7 @@
                 <h5 class="fw-bold mb-0" style="color: var(--admin-navy-primary);">
                     <i class="icofont-tasks-alt text-primary me-2"></i>Site Installation Milestones & Work Orders
                 </h5>
-                <% if (isMgrOrAdmin) { %>
+                <% if (isMgrOrAdmin || canCreateTask) { %>
                     <button type="button" class="btn btn-sm btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addTaskModal">
                         <i class="icofont-plus-circle me-1"></i> Add Task
                     </button>
@@ -454,7 +457,7 @@
                                         <span class="badge <%= taskBadge %>"><%= task.status %></span>
                                     </td>
                                     <td class="text-end">
-                                        <% if (isMgrOrAdmin || (task.assignedTo && task.assignedTo._id && task.assignedTo._id.toString() === user._id.toString())) { %>
+                                        <% if (isMgrOrAdmin || canAssignMember || canCreateTask || (canEditTasks && task.assignedTo && task.assignedTo._id && task.assignedTo._id.toString() === user._id.toString())) { %>
                                             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#updateTaskModal_<%= task.taskId %>">
                                                 Update
                                             </button>
@@ -532,7 +535,7 @@
                             <th style="width: 12%;">DELIVERED</th>
                             <th style="width: 12%;">PENDING</th>
                             <th style="width: 12%;">STATUS</th>
-                            <% if (isMgrOrAdmin) { %><th style="width: 5%;" class="text-end">ACTION</th><% } %>
+                            <% if (isMgrOrAdmin || canManageMaterials) { %><th style="width: 5%;" class="text-end">ACTION</th><% } %>
                         </tr>
                     </thead>
                     <tbody>
@@ -554,7 +557,7 @@
                                     <td class="text-success fw-bold"><%= mat.deliveredQty %> <%= mat.unit %></td>
                                     <td class="text-danger fw-bold"><%= mat.pendingQty %> <%= mat.unit %></td>
                                     <td><span class="badge <%= mBadge %>"><%= mat.status %></span></td>
-                                    <% if (isMgrOrAdmin) { %>
+                                    <% if (isMgrOrAdmin || canManageMaterials) { %>
                                         <td class="text-end">
                                             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editMatModal_<%= idx %>">
                                                 Edit
@@ -779,11 +782,11 @@
                             <option value="TESTING_AND_COMMISSIONING" <%= project.status === 'TESTING_AND_COMMISSIONING' ? 'selected' : '' %>>Testing & Commissioning (85%)</option>
                             <option value="DISCOM_DOCUMENTATION" <%= project.status === 'DISCOM_DOCUMENTATION' ? 'selected' : '' %>>DISCOM Documentation Clearance (95%)</option>
                             <option value="ON_HOLD" <%= project.status === 'ON_HOLD' ? 'selected' : '' %>>On Hold (Requires Reason)</option>
-                            <% if (isMgrOrAdmin) { %>
+                            <% if (isMgrOrAdmin || canCompleteProject) { %>
                                 <option value="CANCELLED" <%= project.status === 'CANCELLED' ? 'selected' : '' %>>Cancelled (Requires Reason)</option>
                             <% } %>
                         </select>
-                        <% if (isEmp) { %>
+                        <% if (isEmp && !canCompleteProject) { %>
                             <div class="alert alert-info py-2 px-3 small mt-2 mb-0" style="font-size: 11.5px; border-radius: 8px;">
                                 <i class="icofont-info-circle me-1"></i> Field Engineers can advance active execution milestones. Final commissioning & completion is certified by Branch Management.
                             </div>

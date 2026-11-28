@@ -35,12 +35,13 @@ class CustomerController {
             }
 
             const currentUser = req.session.user;
+            const hasFullBranchCustomerAccess = AuthorizationService.hasOperationalPrivilege(currentUser, ['crm.customers.edit', 'crm.customers.view']);
 
             // Authorization:
             // Super Admin can see any customer
-            // Manager can see customer if in same branch or assigned to an employee in their team
-            // Employee can see customer if assigned to them or unassigned
-            if (currentUser.role === 'EMPLOYEE') {
+            // Manager (or Employee with full customer view/edit permission) can see customer in same branch
+            // Basic Employee can see customer if assigned to them or unassigned
+            if (currentUser.role === 'EMPLOYEE' && !hasFullBranchCustomerAccess) {
                 if (customer.assignedEmployee && String(customer.assignedEmployee._id || customer.assignedEmployee) !== String(currentUser._id)) {
                     // Another employee owns this customer
                     return res.json({
@@ -57,7 +58,7 @@ class CustomerController {
                         message: `Customer is already registered and assigned to ${customer.assignedEmployee.name || 'another staff member'}.`
                     });
                 }
-            } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER') {
+            } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER' || (currentUser.role === 'EMPLOYEE' && hasFullBranchCustomerAccess)) {
                 const managerBranchStr = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId).toString() : '';
                 const customerBranchStr = customer.assignedBranch ? (customer.assignedBranch._id || customer.assignedBranch).toString() : '';
 
@@ -187,8 +188,9 @@ class CustomerController {
             }).populate('assignedEmployee', 'name employeeId mobile email');
 
             if (customer) {
+                const hasBranchCustEdit = AuthorizationService.hasOperationalPrivilege(currentUser, ['crm.customers.edit']);
                 // Check requesting user's authorization to access/modify this customer
-                if (currentUser.role === 'EMPLOYEE') {
+                if (currentUser.role === 'EMPLOYEE' && !hasBranchCustEdit) {
                     const isOwner = customer.assignedEmployee && String(customer.assignedEmployee._id || customer.assignedEmployee) === String(currentUser._id);
                     const isCreator = customer.createdBy && String(customer.createdBy._id || customer.createdBy) === String(currentUser._id);
                     const isUnassigned = !customer.assignedEmployee;
@@ -206,7 +208,7 @@ class CustomerController {
                             }
                         });
                     }
-                } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER') {
+                } else if (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'MANAGER' || (currentUser.role === 'EMPLOYEE' && hasBranchCustEdit)) {
                     const managerBranchStr = currentUser.branchId ? (currentUser.branchId._id || currentUser.branchId).toString() : '';
                     const customerBranchStr = customer.assignedBranch ? (customer.assignedBranch._id || customer.assignedBranch).toString() : '';
                     if (managerBranchStr && customerBranchStr && managerBranchStr !== customerBranchStr) {

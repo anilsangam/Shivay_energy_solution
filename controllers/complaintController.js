@@ -127,8 +127,9 @@ exports.getAdminComplaints = async (req, res) => {
         let query = {};
 
         // Multi-Branch Isolation
-        if (currentUser.role === 'BRANCH_MANAGER') {
-            query.branch = currentUser.branchId;
+        const hasBranchComplaintManage = AuthorizationService.hasAnyPermission(currentUser, ['complaints.tickets.edit', 'complaints.records.edit', 'complaints.assign', 'complaints.reassign']);
+        if (currentUser.role === 'BRANCH_MANAGER' || (currentUser.role === 'EMPLOYEE' && hasBranchComplaintManage)) {
+            if (currentUser.branchId) query.branch = currentUser.branchId;
         } else if (currentUser.role === 'EMPLOYEE') {
             // Field technicians view their assigned complaints
             query.$or = [
@@ -299,7 +300,8 @@ exports.getComplaintDetailPage = async (req, res) => {
         const complaint = details.complaint;
 
         // Multi-branch security check
-        if (currentUser.role === 'BRANCH_MANAGER') {
+        const hasBranchComplaintManage = AuthorizationService.hasAnyPermission(currentUser, ['complaints.tickets.edit', 'complaints.records.edit', 'complaints.assign', 'complaints.reassign']);
+        if (currentUser.role === 'BRANCH_MANAGER' || (currentUser.role === 'EMPLOYEE' && hasBranchComplaintManage)) {
             const compBranchId = complaint.branch ? (complaint.branch._id || complaint.branch).toString() : null;
             const userBranchId = currentUser.branchId ? currentUser.branchId.toString() : null;
             if (compBranchId && userBranchId && compBranchId !== userBranchId) {

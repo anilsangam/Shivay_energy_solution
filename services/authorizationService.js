@@ -96,6 +96,21 @@ class AuthorizationService {
     }
 
     /**
+     * Check whether a user can perform a manager-level operational action:
+     * allowed for Super Admin, Branch Manager/Manager, OR an Employee explicitly granted
+     * at least one of the required operational edit/manage/approve permissions.
+     * Does NOT bypass Super Admin system/governance routes.
+     */
+    static hasOperationalPrivilege(user, permissionKeys = []) {
+        if (!user) return false;
+        if (this.isPrimarySuperAdmin(user)) return true;
+        if (!this.isAccountActive(user)) return false;
+        if (['SUPER_ADMIN', 'MANAGER', 'BRANCH_MANAGER'].includes(user.role)) return true;
+        const keys = Array.isArray(permissionKeys) ? permissionKeys : [permissionKeys];
+        return this.hasAnyPermission(user, keys.filter(Boolean));
+    }
+
+    /**
      * Check if user has entry access to a top-level functional module.
      * Access is granted if user has `<module>.module.access` OR any feature permission
      * within that module.

@@ -43,6 +43,9 @@
             <a href="/admin/website/testimonials" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
                 <i class="icofont-star me-1 text-warning"></i> Testimonials
             </a>
+            <a href="/admin/website/quick-stats" class="btn btn-sm btn-outline-dark" style="border-radius: 20px;">
+                <i class="icofont-chart-bar-graph me-1 text-warning"></i> Quick Stats
+            </a>
             <a href="/admin/website/contact" class="btn btn-sm btn-dark font-weight-bold shadow-sm" style="border-radius: 20px;">
                 <i class="icofont-address-book me-1 text-warning"></i> Contact Info (Active)
             </a>
@@ -181,19 +184,19 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small"><i class="icofont-brand-whatsapp text-success me-1"></i> WhatsApp URL</label>
-                            <input type="text" name="whatsappUrl" class="form-control" value="<%= setting.whatsappUrl || company.social.whatsapp %>">
+                            <input type="text" name="whatsappUrl" class="form-control" placeholder="Leave blank to hide icon" value="<%= setting.whatsappUrl !== undefined && setting.whatsappUrl !== null ? setting.whatsappUrl : (company.social.whatsapp || '') %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small"><i class="icofont-facebook text-primary me-1"></i> Facebook URL</label>
-                            <input type="text" name="facebookUrl" class="form-control" value="<%= setting.facebookUrl || company.social.facebook %>">
+                            <input type="text" name="facebookUrl" class="form-control" placeholder="Leave blank to hide icon" value="<%= setting.facebookUrl !== undefined && setting.facebookUrl !== null ? setting.facebookUrl : (company.social.facebook || '') %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small"><i class="icofont-instagram text-danger me-1"></i> Instagram URL</label>
-                            <input type="text" name="instagramUrl" class="form-control" value="<%= setting.instagramUrl || company.social.instagram %>">
+                            <input type="text" name="instagramUrl" class="form-control" placeholder="Leave blank to hide icon" value="<%= setting.instagramUrl !== undefined && setting.instagramUrl !== null ? setting.instagramUrl : (company.social.instagram || '') %>">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label font-weight-bold small"><i class="icofont-youtube text-danger me-1"></i> YouTube URL</label>
-                            <input type="text" name="youtubeUrl" class="form-control" value="<%= setting.youtubeUrl || company.social.youtube %>">
+                            <input type="text" name="youtubeUrl" class="form-control" placeholder="Leave blank to hide icon" value="<%= setting.youtubeUrl !== undefined && setting.youtubeUrl !== null ? setting.youtubeUrl : (company.social.youtube || '') %>">
                         </div>
                     </div>
                 </div>

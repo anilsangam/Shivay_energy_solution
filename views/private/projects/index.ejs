@@ -272,7 +272,8 @@
                                             <%- statusLabel %>
                                         </span>
                                         <% 
-                                            const canEditStatus = (p.status !== 'COMPLETED') || (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER'));
+                                            const hasCompletePerm = (typeof hasPermission === 'function' && hasPermission('projects.completion.approve'));
+                                            const canEditStatus = (p.status !== 'COMPLETED') || hasCompletePerm || (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER'));
                                         %>
                                         <% if (canEditStatus) { %>
                                             <button type="button" 
@@ -352,17 +353,17 @@
                             <option value="INSTALLATION_IN_PROGRESS">Installation In Progress (70%)</option>
                             <option value="TESTING_AND_COMMISSIONING">Testing & Commissioning (85%)</option>
                             <option value="DISCOM_DOCUMENTATION">DISCOM Documentation Clearance (95%)</option>
-                            <% if (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER')) { %>
+                            <% if ((typeof hasPermission === 'function' && hasPermission('projects.completion.approve')) || (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER'))) { %>
                                 <option value="COMPLETED">Commissioned & Completed (100%)</option>
                             <% } %>
                             <option value="ON_HOLD">On Hold (Requires Reason)</option>
-                            <% if (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER')) { %>
+                            <% if ((typeof hasPermission === 'function' && hasPermission('projects.completion.approve')) || (user && (user.role === 'SUPER_ADMIN' || user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER'))) { %>
                                 <option value="CANCELLED">Cancelled (Requires Reason)</option>
                             <% } %>
                         </select>
                     </div>
 
-                    <% if (user && user.role === 'EMPLOYEE') { %>
+                    <% if (user && user.role === 'EMPLOYEE' && !(typeof hasPermission === 'function' && hasPermission('projects.completion.approve'))) { %>
                         <div class="alert alert-info py-2 px-3 small mb-3" style="font-size: 11.5px; border-radius: 8px;">
                             <i class="icofont-info-circle me-1"></i> Field Engineers can advance active site execution milestones. Final commissioning & completion is certified by Branch Management.
                         </div>

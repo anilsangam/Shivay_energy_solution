@@ -15,6 +15,7 @@ const {
     SENSITIVE_FIELDS,
     ROLE_MIGRATION_BASELINES,
     DESIGNATION_PRESETS,
+    getDefaultPermissionsForUser,
     getFullPermissionTree,
     isValidPermission,
     isValidFieldPermission,
@@ -560,6 +561,13 @@ exports.getBranches = async (req, res) => {
                     address: 'Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen',
                     coordinates: { latitude: 23.3315, longitude: 77.7807 },
                     geofenceRadiusMeters: 500,
+                    geofenceEnabled: true,
+                    attendanceTimeEnabled: true,
+                    attendanceStartTime: '09:00',
+                    attendanceEndTime: '17:00',
+                    checkInEarlyMinutes: 10,
+                    checkOutEarlyMinutes: 5,
+                    allowLateCheckOut: true,
                     isActive: true,
                     manager: { name: 'Rahul Saini', employeeId: 'SES-MGR-01', mobile: '+91 93997 61750' },
                     employeeCount: 4,
@@ -598,6 +606,119 @@ exports.getBranches = async (req, res) => {
     }
 };
 
+// 5.1.1 API: SERVER-SIDE LOCATION GEOCODE FOR MAP PICKER
+exports.geocodeLocation = async (req, res) => {
+    try {
+        const rawQuery = String(req.query.q || '').trim();
+        if (!rawQuery || rawQuery.length < 2) {
+            return res.status(400).json({ success: false, message: 'Enter at least 2 characters to search a location.', results: [] });
+        }
+
+        // 1. Direct lat,lng coordinate or Google Maps URL support (works even offline)
+        const coordMatch = rawQuery.match(/(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)/);
+        if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lng = parseFloat(coordMatch[2]);
+            if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                return res.json({
+                    success: true,
+                    results: [{
+                        label: `Pinned Coordinates (${lat.toFixed(6)}, ${lng.toFixed(6)})`,
+                        lat,
+                        lng,
+                        city: '',
+                        district: '',
+                        state: ''
+                    }]
+                });
+            }
+        }
+
+        const results = [];
+        const seen = new Set();
+        const pushUnique = (item) => {
+            if (!item || !Number.isFinite(item.lat) || !Number.isFinite(item.lng)) return;
+            const key = `${item.lat.toFixed(4)}_${item.lng.toFixed(4)}`;
+            if (seen.has(key)) return;
+            seen.add(key);
+            results.push(item);
+        };
+
+        // 2. Primary fast provider: Photon (biased toward Central India)
+        try {
+            const photonRes = await fetch(
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(rawQuery)}&limit=6&lat=23.3315&lon=77.7807`,
+                {
+                    headers: { 'User-Agent': 'ShivayEnergySolutions/1.0', 'Accept': 'application/json' },
+                    signal: AbortSignal.timeout(7000)
+                }
+            );
+            if (photonRes.ok) {
+                const photonJson = await photonRes.json();
+                const features = Array.isArray(photonJson.features) ? photonJson.features : [];
+                features.forEach(f => {
+                    const coords = f.geometry && Array.isArray(f.geometry.coordinates) ? f.geometry.coordinates : null;
+                    const p = f.properties || {};
+                    if (coords && coords.length >= 2) {
+                        const parts = [p.name, p.street, p.district || p.county, p.city || p.town || p.village, p.state, p.postcode, p.country].filter(Boolean);
+                        pushUnique({
+                            label: [...new Set(parts)].join(', ') || rawQuery,
+                            lat: Number(coords[1]),
+                            lng: Number(coords[0]),
+                            city: p.city || p.town || p.village || p.name || '',
+                            district: p.district || p.county || p.state_district || '',
+                            state: p.state || ''
+                        });
+                    }
+                });
+            }
+        } catch (photonErr) {
+            console.warn('[Geocode Photon fallback]:', photonErr.message);
+        }
+
+        // 3. Secondary provider: OpenStreetMap Nominatim with required server User-Agent
+        if (results.length < 3) {
+            try {
+                const nomUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=in&limit=6&q=${encodeURIComponent(rawQuery)}`;
+                const nomRes = await fetch(nomUrl, {
+                    headers: {
+                        'User-Agent': 'ShivayEnergySolutions/1.0 (https://shivayenergysolutions.com)',
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(7000)
+                });
+                if (nomRes.ok) {
+                    const nomList = await nomRes.json();
+                    if (Array.isArray(nomList)) {
+                        nomList.forEach(item => {
+                            const addr = item.address || {};
+                            pushUnique({
+                                label: item.display_name || rawQuery,
+                                lat: parseFloat(item.lat),
+                                lng: parseFloat(item.lon),
+                                city: addr.city || addr.town || addr.village || addr.suburb || '',
+                                district: addr.state_district || addr.county || '',
+                                state: addr.state || ''
+                            });
+                        });
+                    }
+                }
+            } catch (nomErr) {
+                console.warn('[Geocode Nominatim fallback]:', nomErr.message);
+            }
+        }
+
+        return res.json({
+            success: true,
+            results: results.slice(0, 6),
+            message: results.length ? '' : 'No matching places found.'
+        });
+    } catch (err) {
+        console.error('[Geocode Error]:', err);
+        return res.status(500).json({ success: false, message: 'Location search failed. Please click directly on map.', results: [] });
+    }
+};
+
 // 5.2 API: CREATE BRANCH
 exports.createBranch = async (req, res) => {
     try {
@@ -613,6 +734,13 @@ exports.createBranch = async (req, res) => {
             latitude,
             longitude,
             geofenceRadiusMeters,
+            geofenceEnabled,
+            attendanceTimeEnabled,
+            attendanceStartTime,
+            attendanceEndTime,
+            checkInEarlyMinutes,
+            checkOutEarlyMinutes,
+            allowLateCheckOut,
             managerId
         } = req.body;
 
@@ -662,6 +790,18 @@ exports.createBranch = async (req, res) => {
             validatedManagerId = managerId;
         }
 
+        const GeofenceService = require('../services/geofenceService');
+        const parsedLat = Number.isFinite(Number(latitude)) && Math.abs(Number(latitude)) <= 90 ? parseFloat(latitude) : 23.3315;
+        const parsedLng = Number.isFinite(Number(longitude)) && Math.abs(Number(longitude)) <= 180 ? parseFloat(longitude) : 77.7807;
+        const parsedRadius = Math.min(50000, Math.max(50, parseInt(geofenceRadiusMeters, 10) || 500));
+        const parsedGeofenceEnabled = geofenceEnabled === undefined ? true : (geofenceEnabled === true || geofenceEnabled === 'true');
+        const parsedTimeEnabled = attendanceTimeEnabled === undefined ? true : (attendanceTimeEnabled === true || attendanceTimeEnabled === 'true');
+        const parsedStartTime = GeofenceService.normalizeTimeHHMM(attendanceStartTime, '09:00');
+        const parsedEndTime = GeofenceService.normalizeTimeHHMM(attendanceEndTime, '17:00');
+        const parsedCheckInEarly = GeofenceService.clampGraceMinutes(checkInEarlyMinutes, 10);
+        const parsedCheckOutEarly = GeofenceService.clampGraceMinutes(checkOutEarlyMinutes, 5);
+        const parsedAllowLateCheckOut = allowLateCheckOut === undefined ? true : (allowLateCheckOut === true || allowLateCheckOut === 'true');
+
         let newBranch = null;
         if (mongoose.connection.readyState === 1) {
             newBranch = await Branch.create({
@@ -675,10 +815,17 @@ exports.createBranch = async (req, res) => {
                 district: cleanDistrict,
                 state: cleanState,
                 coordinates: {
-                    latitude: parseFloat(latitude) || 23.3315,
-                    longitude: parseFloat(longitude) || 77.7807
+                    latitude: parsedLat,
+                    longitude: parsedLng
                 },
-                geofenceRadiusMeters: parseInt(geofenceRadiusMeters, 10) || 500,
+                geofenceRadiusMeters: parsedRadius,
+                geofenceEnabled: parsedGeofenceEnabled,
+                attendanceTimeEnabled: parsedTimeEnabled,
+                attendanceStartTime: parsedStartTime,
+                attendanceEndTime: parsedEndTime,
+                checkInEarlyMinutes: parsedCheckInEarly,
+                checkOutEarlyMinutes: parsedCheckOutEarly,
+                allowLateCheckOut: parsedAllowLateCheckOut,
                 isActive: true
             });
 
@@ -698,8 +845,15 @@ exports.createBranch = async (req, res) => {
                 city: cleanCity,
                 district: cleanDistrict,
                 state: cleanState,
-                coordinates: { latitude: parseFloat(latitude) || 23.3315, longitude: parseFloat(longitude) || 77.7807 },
-                geofenceRadiusMeters: parseInt(geofenceRadiusMeters, 10) || 500,
+                coordinates: { latitude: parsedLat, longitude: parsedLng },
+                geofenceRadiusMeters: parsedRadius,
+                geofenceEnabled: parsedGeofenceEnabled,
+                attendanceTimeEnabled: parsedTimeEnabled,
+                attendanceStartTime: parsedStartTime,
+                attendanceEndTime: parsedEndTime,
+                checkInEarlyMinutes: parsedCheckInEarly,
+                checkOutEarlyMinutes: parsedCheckOutEarly,
+                allowLateCheckOut: parsedAllowLateCheckOut,
                 isActive: true,
                 createdAt: new Date()
             };
@@ -739,6 +893,13 @@ exports.updateBranch = async (req, res) => {
             latitude,
             longitude,
             geofenceRadiusMeters,
+            geofenceEnabled,
+            attendanceTimeEnabled,
+            attendanceStartTime,
+            attendanceEndTime,
+            checkInEarlyMinutes,
+            checkOutEarlyMinutes,
+            allowLateCheckOut,
             managerId,
             isActive
         } = req.body;
@@ -760,9 +921,37 @@ exports.updateBranch = async (req, res) => {
             if (city) branch.city = city.trim();
             if (district) branch.district = district.trim();
             if (state) branch.state = state.trim();
-            if (latitude) branch.coordinates.latitude = parseFloat(latitude);
-            if (longitude) branch.coordinates.longitude = parseFloat(longitude);
-            if (geofenceRadiusMeters) branch.geofenceRadiusMeters = parseInt(geofenceRadiusMeters, 10);
+            if (latitude !== undefined && latitude !== '' && Number.isFinite(Number(latitude)) && Math.abs(Number(latitude)) <= 90) {
+                branch.coordinates.latitude = parseFloat(latitude);
+            }
+            if (longitude !== undefined && longitude !== '' && Number.isFinite(Number(longitude)) && Math.abs(Number(longitude)) <= 180) {
+                branch.coordinates.longitude = parseFloat(longitude);
+            }
+            if (geofenceRadiusMeters !== undefined && geofenceRadiusMeters !== '') {
+                branch.geofenceRadiusMeters = Math.min(50000, Math.max(50, parseInt(geofenceRadiusMeters, 10) || 500));
+            }
+            if (geofenceEnabled !== undefined) {
+                branch.geofenceEnabled = (geofenceEnabled === true || geofenceEnabled === 'true');
+            }
+            const GeofenceService = require('../services/geofenceService');
+            if (attendanceTimeEnabled !== undefined) {
+                branch.attendanceTimeEnabled = (attendanceTimeEnabled === true || attendanceTimeEnabled === 'true');
+            }
+            if (attendanceStartTime) {
+                branch.attendanceStartTime = GeofenceService.normalizeTimeHHMM(attendanceStartTime, branch.attendanceStartTime || '09:00');
+            }
+            if (attendanceEndTime) {
+                branch.attendanceEndTime = GeofenceService.normalizeTimeHHMM(attendanceEndTime, branch.attendanceEndTime || '17:00');
+            }
+            if (checkInEarlyMinutes !== undefined && checkInEarlyMinutes !== '') {
+                branch.checkInEarlyMinutes = GeofenceService.clampGraceMinutes(checkInEarlyMinutes, 10);
+            }
+            if (checkOutEarlyMinutes !== undefined && checkOutEarlyMinutes !== '') {
+                branch.checkOutEarlyMinutes = GeofenceService.clampGraceMinutes(checkOutEarlyMinutes, 5);
+            }
+            if (allowLateCheckOut !== undefined) {
+                branch.allowLateCheckOut = (allowLateCheckOut === true || allowLateCheckOut === 'true');
+            }
             if (isActive !== undefined) branch.isActive = Boolean(isActive);
 
             if (managerId && mongoose.isValidObjectId(managerId)) {
@@ -1633,6 +1822,7 @@ exports.createUser = async (req, res) => {
 
             const parsedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
             const parsedExpiryDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000);
+            const autoGrant = getDefaultPermissionsForUser(role, designation);
 
             createdUserObj = await User.create({
                 name: name.trim(),
@@ -1640,6 +1830,9 @@ exports.createUser = async (req, res) => {
                 mobile: mobile.trim(),
                 password,
                 role,
+                permissions: autoGrant.permissions,
+                fieldPermissions: autoGrant.fieldPermissions,
+                dataScope: autoGrant.dataScope,
                 employeeId: cleanEmpId,
                 idCardNumber: cleanEmpId,
                 branchId: (branchId && mongoose.isValidObjectId(branchId)) ? branchId : null,
@@ -1663,6 +1856,7 @@ exports.createUser = async (req, res) => {
         } else {
             const parsedJoiningDate = joiningDate ? new Date(joiningDate) : new Date();
             const parsedExpiryDate = expiryDate ? new Date(expiryDate) : new Date(Date.now() + 3 * 365 * 24 * 60 * 60 * 1000);
+            const autoGrant = getDefaultPermissionsForUser(role, designation);
             createdUserObj = {
                 _id: new mongoose.Types.ObjectId(),
                 name: name.trim(),
@@ -1670,8 +1864,9 @@ exports.createUser = async (req, res) => {
                 mobile: mobile.trim(),
                 role,
                 isPrimarySuperAdmin: false,
-                permissions: [],
-                fieldPermissions: [],
+                permissions: autoGrant.permissions,
+                fieldPermissions: autoGrant.fieldPermissions,
+                dataScope: autoGrant.dataScope,
                 permissionVersion: 1,
                 employeeId: cleanEmpId,
                 idCardNumber: cleanEmpId,
@@ -2094,6 +2289,9 @@ exports.getUserPermissions = async (req, res) => {
 
         const permissionTree = getFullPermissionTree();
 
+        const callerPerms = isCallerPrimaryAdmin ? null : (Array.isArray(currentUser.permissions) ? currentUser.permissions : []);
+        const callerFieldPerms = isCallerPrimaryAdmin ? null : (Array.isArray(currentUser.fieldPermissions) ? currentUser.fieldPermissions : []);
+
         res.render('private/admin/user-permissions', {
             title: `Manage Permissions: ${targetUser.name} | ${data.company.name}`,
             data,
@@ -2101,6 +2299,9 @@ exports.getUserPermissions = async (req, res) => {
             targetUser,
             isTargetPrimaryAdmin,
             isCallerPrimaryAdmin,
+            callerPermissions: callerPerms,
+            callerFieldPermissions: callerFieldPerms,
+            backUrl: '/admin/employees',
             canEdit,
             isSelf,
             permissionTree,

@@ -139,9 +139,17 @@
                                 <% } %>
                             </td>
                             <td>
-                                <span class="badge bg-light text-dark border">
-                                    <i class="icofont-location-pin text-primary me-1"></i><%= b.geofenceRadiusMeters || 500 %>m
+                                <span class="badge <%= b.geofenceEnabled !== false ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-secondary-subtle text-secondary border' %>">
+                                    <i class="icofont-location-pin me-1"></i><%= b.geofenceEnabled !== false ? `${b.geofenceRadiusMeters || 500}m Strict` : 'Geofence Off' %>
                                 </span>
+                                <div class="text-muted mt-1" style="font-size: 10.5px;">
+                                    <i class="icofont-clock-time me-1 text-warning"></i><%= b.attendanceTimeEnabled !== false ? `${b.attendanceStartTime || '09:00'} – ${b.attendanceEndTime || '17:00'} IST` : 'Anytime' %>
+                                </div>
+                                <% if (b.attendanceTimeEnabled !== false) { %>
+                                    <div class="text-muted" style="font-size: 10px;">
+                                        -<%= b.checkInEarlyMinutes !== undefined ? b.checkInEarlyMinutes : 10 %>m In / -<%= b.checkOutEarlyMinutes !== undefined ? b.checkOutEarlyMinutes : 5 %>m Out <%= b.allowLateCheckOut !== false ? '• Late Out OK' : '' %>
+                                    </div>
+                                <% } %>
                             </td>
                             <td>
                                 <% if (b.isActive !== false) { %>
@@ -153,6 +161,9 @@
                             <td class="text-end">
                                 <div class="btn-group">
                                     <% if (canEditBranch) { %>
+                                        <button class="btn btn-sm btn-outline-info py-1 px-2" title="Configure Geofence Map" onclick='openEditModal(<%= JSON.stringify(b) %>, true)'>
+                                            <i class="icofont-map"></i>
+                                        </button>
                                         <button class="btn btn-sm btn-outline-primary py-1 px-2" title="Edit Branch" onclick='openEditModal(<%= JSON.stringify(b) %>)'>
                                             <i class="icofont-ui-edit"></i>
                                         </button>
@@ -238,18 +249,85 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">GPS Latitude</label>
-                            <input type="number" id="newBranchLat" class="form-control" step="0.000001" value="23.259933">
+                    <div class="p-3 bg-light border rounded-3 mb-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="font-weight-bold small text-dark"><i class="icofont-map-pins text-primary me-1"></i> Select Branch Geofence Area on Map</div>
+                                <div class="text-muted" style="font-size: 11px;">Click on the map, drag the pin, search address, or use your current GPS location.</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="newBranchGeofenceEnabled" checked>
+                                <label class="form-check-label small fw-bold" for="newBranchGeofenceEnabled">Enforce Geofence</label>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">GPS Longitude</label>
-                            <input type="number" id="newBranchLng" class="form-control" step="0.000001" value="77.412613">
+
+                        <div class="position-relative mb-2">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="createMapSearchInput" class="form-control" autocomplete="off" placeholder="Search city, area, pincode, or paste lat,lng (e.g. MP Nagar Bhopal)..." oninput="scheduleMapAutocomplete('create')" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBranchMap('create', true);}">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchBranchMap('create', true)"><i class="icofont-search-1"></i> Search</button>
+                                <button type="button" class="btn btn-outline-success" id="createGpsBtn" onclick="useCurrentGpsForMap('create')"><i class="icofont-location-arrow"></i> Current Location</button>
+                            </div>
+                            <div id="createMapSuggestions" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; max-height: 210px; overflow-y: auto; top: 100%; left: 0;"></div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">Geofence Radius (Meters)</label>
-                            <input type="number" id="newBranchRadius" class="form-control" value="500" min="50" max="5000" step="50">
+
+                        <div id="createBranchMap" style="height: 270px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1;"></div>
+                        <div id="createMapMsg" class="small text-muted mt-1" style="font-size: 11px;">Click or drag marker to position the branch center.</div>
+
+                        <div class="row g-2 mt-2 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label small font-weight-bold mb-1">GPS Latitude</label>
+                                <input type="number" id="newBranchLat" class="form-control form-control-sm" step="0.000001" value="23.259933" onchange="syncMapFromInputs('create')">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small font-weight-bold mb-1">GPS Longitude</label>
+                                <input type="number" id="newBranchLng" class="form-control form-control-sm" step="0.000001" value="77.412613" onchange="syncMapFromInputs('create')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small font-weight-bold mb-1">Geofence Radius: <span id="newBranchRadiusLabel" class="text-primary">500m</span></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="range" id="newBranchRadiusSlider" class="form-range flex-grow-1" min="50" max="5000" step="50" value="500" oninput="syncRadiusFromSlider('create', this.value)">
+                                    <input type="number" id="newBranchRadius" class="form-control form-control-sm" style="width: 88px;" value="500" min="50" max="50000" step="50" oninput="syncRadiusFromInput('create', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light border rounded-3 mb-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="font-weight-bold small text-dark"><i class="icofont-clock-time text-warning me-1"></i> Branch Attendance Time Duration (IST)</div>
+                                <div class="text-muted" style="font-size: 11px;">Employees &amp; Managers can mark attendance only during this window when enabled.</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="newBranchTimeEnabled" checked>
+                                <label class="form-check-label small fw-bold" for="newBranchTimeEnabled">Enforce Timing</label>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small font-weight-bold mb-1">Start Time (IST)</label>
+                                <input type="time" id="newBranchStartTime" class="form-control form-control-sm" value="09:00" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small font-weight-bold mb-1">End Time (IST)</label>
+                                <input type="time" id="newBranchEndTime" class="form-control form-control-sm" value="17:00" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small font-weight-bold mb-1">Early Check-In (Min)</label>
+                                <input type="number" id="newBranchCheckInEarly" class="form-control form-control-sm" value="10" min="0" max="180">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small font-weight-bold mb-1">Early Check-Out (Min)</label>
+                                <input type="number" id="newBranchCheckOutEarly" class="form-control form-control-sm" value="5" min="0" max="180">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="newBranchAllowLateOut" checked>
+                                    <label class="form-check-label small fw-bold" for="newBranchAllowLateOut">Allow Late Evening Out</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -334,18 +412,85 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">Latitude</label>
-                            <input type="number" id="editBranchLat" class="form-control" step="0.000001">
+                    <div class="p-3 bg-light border rounded-3 mb-3" id="editGeofenceSection">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="font-weight-bold small text-dark"><i class="icofont-map-pins text-primary me-1"></i> Branch Geofence Location &amp; Boundary Map</div>
+                                <div class="text-muted" style="font-size: 11px;">Staff (Managers &amp; Employees) must be inside this circle to mark attendance.</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="editBranchGeofenceEnabled" checked>
+                                <label class="form-check-label small fw-bold" for="editBranchGeofenceEnabled">Enforce Geofence</label>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">Longitude</label>
-                            <input type="number" id="editBranchLng" class="form-control" step="0.000001">
+
+                        <div class="position-relative mb-2">
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="editMapSearchInput" class="form-control" autocomplete="off" placeholder="Search city, area, pincode, or paste lat,lng..." oninput="scheduleMapAutocomplete('edit')" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBranchMap('edit', true);}">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchBranchMap('edit', true)"><i class="icofont-search-1"></i> Search</button>
+                                <button type="button" class="btn btn-outline-success" id="editGpsBtn" onclick="useCurrentGpsForMap('edit')"><i class="icofont-location-arrow"></i> Current Location</button>
+                            </div>
+                            <div id="editMapSuggestions" class="list-group position-absolute w-100 shadow-sm d-none" style="z-index: 1055; max-height: 210px; overflow-y: auto; top: 100%; left: 0;"></div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label small font-weight-bold">Geofence Radius (Meters)</label>
-                            <input type="number" id="editBranchRadius" class="form-control" min="50" max="5000" step="50">
+
+                        <div id="editBranchMap" style="height: 270px; width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; z-index: 1;"></div>
+                        <div id="editMapMsg" class="small text-muted mt-1" style="font-size: 11px;">Click on map or drag pin to update exact branch coordinates.</div>
+
+                        <div class="row g-2 mt-2 align-items-center">
+                            <div class="col-md-3">
+                                <label class="form-label small font-weight-bold mb-1">Latitude</label>
+                                <input type="number" id="editBranchLat" class="form-control form-control-sm" step="0.000001" onchange="syncMapFromInputs('edit')">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small font-weight-bold mb-1">Longitude</label>
+                                <input type="number" id="editBranchLng" class="form-control form-control-sm" step="0.000001" onchange="syncMapFromInputs('edit')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small font-weight-bold mb-1">Geofence Radius: <span id="editBranchRadiusLabel" class="text-primary">500m</span></label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <input type="range" id="editBranchRadiusSlider" class="form-range flex-grow-1" min="50" max="5000" step="50" value="500" oninput="syncRadiusFromSlider('edit', this.value)">
+                                    <input type="number" id="editBranchRadius" class="form-control form-control-sm" style="width: 88px;" min="50" max="50000" step="50" oninput="syncRadiusFromInput('edit', this.value)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light border rounded-3 mb-3">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <div class="font-weight-bold small text-dark"><i class="icofont-clock-time text-warning me-1"></i> Branch Attendance Time Duration (IST)</div>
+                                <div class="text-muted" style="font-size: 11px;">Staff (Employees &amp; Managers) can mark attendance only during these hours when enabled.</div>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="editBranchTimeEnabled" checked>
+                                <label class="form-check-label small fw-bold" for="editBranchTimeEnabled">Enforce Timing</label>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small font-weight-bold mb-1">Start Time (IST)</label>
+                                <input type="time" id="editBranchStartTime" class="form-control form-control-sm" value="09:00" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small font-weight-bold mb-1">End Time (IST)</label>
+                                <input type="time" id="editBranchEndTime" class="form-control form-control-sm" value="17:00" required>
+                            </div>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small font-weight-bold mb-1">Early Check-In (Min)</label>
+                                <input type="number" id="editBranchCheckInEarly" class="form-control form-control-sm" value="10" min="0" max="180">
+                            </div>
+                            <div class="col-6 col-md-4">
+                                <label class="form-label small font-weight-bold mb-1">Early Check-Out (Min)</label>
+                                <input type="number" id="editBranchCheckOutEarly" class="form-control form-control-sm" value="5" min="0" max="180">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="editBranchAllowLateOut" checked>
+                                    <label class="form-check-label small fw-bold" for="editBranchAllowLateOut">Allow Late Evening Out</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -372,8 +517,272 @@
     </div>
 </div>
 
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<script src="/vendor/leaflet/leaflet.js"></script>
 <script>
 const CSRF_TOKEN = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+
+const mapControllers = {};
+
+function getFieldIds(mode) {
+    return mode === 'create'
+        ? { mapEl: 'createBranchMap', latEl: 'newBranchLat', lngEl: 'newBranchLng', radEl: 'newBranchRadius', sliderEl: 'newBranchRadiusSlider', labelEl: 'newBranchRadiusLabel', searchEl: 'createMapSearchInput', sugEl: 'createMapSuggestions', gpsBtnEl: 'createGpsBtn', msgEl: 'createMapMsg' }
+        : { mapEl: 'editBranchMap', latEl: 'editBranchLat', lngEl: 'editBranchLng', radEl: 'editBranchRadius', sliderEl: 'editBranchRadiusSlider', labelEl: 'editBranchRadiusLabel', searchEl: 'editMapSearchInput', sugEl: 'editMapSuggestions', gpsBtnEl: 'editGpsBtn', msgEl: 'editMapMsg' };
+}
+
+function initOrRefreshMap(mode, focusCoords = null) {
+    if (typeof L === 'undefined') return;
+    const ids = getFieldIds(mode);
+    const latInput = document.getElementById(ids.latEl);
+    const lngInput = document.getElementById(ids.lngEl);
+    const radInput = document.getElementById(ids.radEl);
+    const lat = Number.isFinite(Number(focusCoords && focusCoords.lat)) ? Number(focusCoords.lat) : (parseFloat(latInput.value) || 23.3315);
+    const lng = Number.isFinite(Number(focusCoords && focusCoords.lng)) ? Number(focusCoords.lng) : (parseFloat(lngInput.value) || 77.7807);
+    const radius = Math.max(50, parseInt(radInput.value, 10) || 500);
+
+    if (!mapControllers[mode]) {
+        const map = L.map(ids.mapEl, { zoomControl: true }).setView([lat, lng], 16);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 18,
+            maxZoom: 19,
+            attribution: '&copy; Esri Satellite'
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        const circle = L.circle([lat, lng], {
+            radius,
+            color: '#fbec6b',
+            weight: 2.5,
+            fillColor: '#38bdf8',
+            fillOpacity: 0.22
+        }).addTo(map);
+
+        const updatePosition = (newLat, newLng, pan = false) => {
+            const fixedLat = Number(newLat.toFixed(6));
+            const fixedLng = Number(newLng.toFixed(6));
+            latInput.value = fixedLat;
+            lngInput.value = fixedLng;
+            marker.setLatLng([fixedLat, fixedLng]);
+            circle.setLatLng([fixedLat, fixedLng]);
+            if (pan) map.setView([fixedLat, fixedLng], Math.max(map.getZoom(), 15));
+            document.getElementById(ids.msgEl).innerText = `Pinned: ${fixedLat}, ${fixedLng} (Radius: ${circle.getRadius()}m)`;
+        };
+
+        marker.on('dragend', (ev) => {
+            const pos = ev.target.getLatLng();
+            updatePosition(pos.lat, pos.lng, false);
+        });
+        map.on('click', (ev) => {
+            updatePosition(ev.latlng.lat, ev.latlng.lng, false);
+        });
+
+        mapControllers[mode] = { map, marker, circle, updatePosition };
+    } else {
+        const ctrl = mapControllers[mode];
+        ctrl.marker.setLatLng([lat, lng]);
+        ctrl.circle.setLatLng([lat, lng]);
+        ctrl.circle.setRadius(radius);
+        ctrl.map.setView([lat, lng], 16);
+    }
+
+    document.getElementById(ids.labelEl).innerText = `${radius}m`;
+    const slider = document.getElementById(ids.sliderEl);
+    if (slider) slider.value = Math.min(5000, Math.max(50, radius));
+    setTimeout(() => mapControllers[mode] && mapControllers[mode].map.invalidateSize(), 220);
+}
+
+function syncMapFromInputs(mode) {
+    const ids = getFieldIds(mode);
+    const lat = parseFloat(document.getElementById(ids.latEl).value);
+    const lng = parseFloat(document.getElementById(ids.lngEl).value);
+    const ctrl = mapControllers[mode];
+    if (ctrl && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        ctrl.updatePosition(lat, lng, true);
+    }
+}
+
+function syncRadiusFromSlider(mode, val) {
+    const ids = getFieldIds(mode);
+    const radius = Math.max(50, parseInt(val, 10) || 500);
+    document.getElementById(ids.radEl).value = radius;
+    document.getElementById(ids.labelEl).innerText = `${radius}m`;
+    if (mapControllers[mode]) {
+        mapControllers[mode].circle.setRadius(radius);
+    }
+}
+
+function syncRadiusFromInput(mode, val) {
+    const ids = getFieldIds(mode);
+    const radius = Math.min(50000, Math.max(50, parseInt(val, 10) || 500));
+    document.getElementById(ids.labelEl).innerText = `${radius}m`;
+    const slider = document.getElementById(ids.sliderEl);
+    if (slider) slider.value = Math.min(5000, radius);
+    if (mapControllers[mode]) {
+        mapControllers[mode].circle.setRadius(radius);
+    }
+}
+
+const mapSearchTimers = {};
+const mapLastResults = {};
+
+function hideSuggestions(mode) {
+    const ids = getFieldIds(mode);
+    const box = document.getElementById(ids.sugEl);
+    if (box) box.classList.add('d-none');
+}
+
+function selectMapSearchResult(mode, idx) {
+    const list = mapLastResults[mode] || [];
+    const item = list[idx];
+    if (!item) return;
+    const ids = getFieldIds(mode);
+    document.getElementById(ids.searchEl).value = item.label;
+    hideSuggestions(mode);
+    initOrRefreshMap(mode, { lat: item.lat, lng: item.lng });
+    if (mapControllers[mode]) {
+        mapControllers[mode].updatePosition(item.lat, item.lng, true);
+    }
+    if (mode === 'create') {
+        const cityEl = document.getElementById('newBranchCity');
+        const distEl = document.getElementById('newBranchDistrict');
+        const stateEl = document.getElementById('newBranchState');
+        if (cityEl && !cityEl.value.trim() && item.city) cityEl.value = item.city;
+        if (distEl && !distEl.value.trim() && item.district) distEl.value = item.district;
+        if (stateEl && item.state) stateEl.value = item.state;
+    }
+    document.getElementById(ids.msgEl).innerText = `Pinned: ${item.label} (${item.lat.toFixed(6)}, ${item.lng.toFixed(6)})`;
+}
+
+function scheduleMapAutocomplete(mode) {
+    const ids = getFieldIds(mode);
+    const q = (document.getElementById(ids.searchEl).value || '').trim();
+    clearTimeout(mapSearchTimers[mode]);
+    if (q.length < 3) {
+        hideSuggestions(mode);
+        return;
+    }
+    mapSearchTimers[mode] = setTimeout(() => searchBranchMap(mode, false), 380);
+}
+
+async function searchBranchMap(mode, selectFirst = false) {
+    const ids = getFieldIds(mode);
+    const q = (document.getElementById(ids.searchEl).value || '').trim();
+    const msgEl = document.getElementById(ids.msgEl);
+    const sugBox = document.getElementById(ids.sugEl);
+    if (q.length < 2) {
+        hideSuggestions(mode);
+        return;
+    }
+    msgEl.innerText = 'Searching location on map...';
+    try {
+        const res = await fetch(`/api/admin/geocode?q=${encodeURIComponent(q)}`);
+        const payload = await res.json();
+        const results = (payload && payload.success && Array.isArray(payload.results)) ? payload.results : [];
+        mapLastResults[mode] = results;
+
+        if (results.length === 0) {
+            hideSuggestions(mode);
+            msgEl.innerText = 'No matching places found. Try city/area name, pin code, or paste lat,lng coordinates.';
+            return;
+        }
+
+        if (selectFirst) {
+            selectMapSearchResult(mode, 0);
+            return;
+        }
+
+        sugBox.innerHTML = results.map((item, idx) => `
+            <button type="button" class="list-group-item list-group-item-action py-2 px-3 small text-start" onclick="selectMapSearchResult('${mode}', ${idx})">
+                <i class="icofont-location-pin text-danger me-1"></i> ${String(item.label).replace(/</g, '&lt;')}
+            </button>
+        `).join('');
+        sugBox.classList.remove('d-none');
+        msgEl.innerText = `Select a matching location from the dropdown (${results.length} found).`;
+    } catch (_) {
+        hideSuggestions(mode);
+        msgEl.innerText = 'Location search failed. You can paste lat,lng (e.g. 23.2599, 77.4126) or click directly on the map.';
+    }
+}
+
+function useCurrentGpsForMap(mode) {
+    const ids = getFieldIds(mode);
+    const msgEl = document.getElementById(ids.msgEl);
+    const btn = document.getElementById(ids.gpsBtnEl);
+    hideSuggestions(mode);
+
+    if (!navigator.geolocation) {
+        msgEl.innerText = 'Device GPS is not supported by this browser.';
+        return;
+    }
+    if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        msgEl.innerText = 'Browser blocks GPS on non-HTTPS LAN URLs. Open via localhost/HTTPS or click directly on the map.';
+        return;
+    }
+
+    if (btn) btn.disabled = true;
+    msgEl.innerText = 'Detecting your current location...';
+
+    const onSuccess = (pos) => {
+        if (btn) btn.disabled = false;
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        initOrRefreshMap(mode, { lat, lng });
+        if (mapControllers[mode]) {
+            mapControllers[mode].updatePosition(lat, lng, true);
+        }
+        msgEl.innerText = `Current location selected: ${lat.toFixed(6)}, ${lng.toFixed(6)} (±${Math.round(pos.coords.accuracy)}m).`;
+    };
+
+    const onFinalError = (err) => {
+        if (btn) btn.disabled = false;
+        if (err && err.code === 1) {
+            msgEl.innerText = 'Location permission blocked in browser settings. Please allow Location access or pick on the map.';
+        } else {
+            msgEl.innerText = 'Could not detect device location automatically. Please search area or click directly on the map.';
+        }
+    };
+
+    navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+            if (err && err.code === 1) {
+                onFinalError(err);
+                return;
+            }
+            // Retry with Wi-Fi / network location for Windows desktops & indoors
+            navigator.geolocation.getCurrentPosition(
+                onSuccess,
+                onFinalError,
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+            );
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+}
+
+document.addEventListener('click', (ev) => {
+    ['create', 'edit'].forEach(mode => {
+        const ids = getFieldIds(mode);
+        const searchEl = document.getElementById(ids.searchEl);
+        const sugEl = document.getElementById(ids.sugEl);
+        if (sugEl && searchEl && !sugEl.contains(ev.target) && ev.target !== searchEl) {
+            hideSuggestions(mode);
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const createModalEl = document.getElementById('createBranchModal');
+    const editModalEl = document.getElementById('editBranchModal');
+    if (createModalEl) {
+        createModalEl.addEventListener('shown.bs.modal', () => initOrRefreshMap('create'));
+    }
+    if (editModalEl) {
+        editModalEl.addEventListener('shown.bs.modal', () => {
+            initOrRefreshMap('edit');
+        });
+    }
+});
 
 function showToast(msg) {
     const toast = document.getElementById('branchToast');
@@ -402,6 +811,13 @@ async function handleCreateBranch(e) {
         latitude: document.getElementById('newBranchLat').value,
         longitude: document.getElementById('newBranchLng').value,
         geofenceRadiusMeters: document.getElementById('newBranchRadius').value,
+        geofenceEnabled: document.getElementById('newBranchGeofenceEnabled').checked,
+        attendanceTimeEnabled: document.getElementById('newBranchTimeEnabled').checked,
+        attendanceStartTime: document.getElementById('newBranchStartTime').value,
+        attendanceEndTime: document.getElementById('newBranchEndTime').value,
+        checkInEarlyMinutes: document.getElementById('newBranchCheckInEarly').value,
+        checkOutEarlyMinutes: document.getElementById('newBranchCheckOutEarly').value,
+        allowLateCheckOut: document.getElementById('newBranchAllowLateOut').checked,
         managerId: document.getElementById('newBranchManagerId').value || null,
         _csrf: CSRF_TOKEN
     };
@@ -427,7 +843,7 @@ async function handleCreateBranch(e) {
     }
 }
 
-function openEditModal(branch) {
+function openEditModal(branch, focusMap = false) {
     document.getElementById('editBranchId').value = branch._id;
     document.getElementById('editBranchName').value = branch.name || '';
     document.getElementById('editBranchCode').value = branch.code || '';
@@ -437,14 +853,32 @@ function openEditModal(branch) {
     document.getElementById('editBranchCity').value = branch.city || '';
     document.getElementById('editBranchDistrict').value = branch.district || '';
     document.getElementById('editBranchState').value = branch.state || '';
-    document.getElementById('editBranchLat').value = branch.coordinates ? branch.coordinates.latitude : '';
-    document.getElementById('editBranchLng').value = branch.coordinates ? branch.coordinates.longitude : '';
-    document.getElementById('editBranchRadius').value = branch.geofenceRadiusMeters || 500;
+    document.getElementById('editBranchLat').value = (branch.coordinates && Number.isFinite(Number(branch.coordinates.latitude))) ? branch.coordinates.latitude : 23.3315;
+    document.getElementById('editBranchLng').value = (branch.coordinates && Number.isFinite(Number(branch.coordinates.longitude))) ? branch.coordinates.longitude : 77.7807;
+    const rad = branch.geofenceRadiusMeters || 500;
+    document.getElementById('editBranchRadius').value = rad;
+    document.getElementById('editBranchRadiusSlider').value = Math.min(5000, Math.max(50, rad));
+    document.getElementById('editBranchRadiusLabel').innerText = `${rad}m`;
+    document.getElementById('editBranchGeofenceEnabled').checked = branch.geofenceEnabled !== false;
+    document.getElementById('editBranchTimeEnabled').checked = branch.attendanceTimeEnabled !== false;
+    document.getElementById('editBranchStartTime').value = branch.attendanceStartTime || '09:00';
+    document.getElementById('editBranchEndTime').value = branch.attendanceEndTime || '17:00';
+    document.getElementById('editBranchCheckInEarly').value = branch.checkInEarlyMinutes !== undefined ? branch.checkInEarlyMinutes : 10;
+    document.getElementById('editBranchCheckOutEarly').value = branch.checkOutEarlyMinutes !== undefined ? branch.checkOutEarlyMinutes : 5;
+    document.getElementById('editBranchAllowLateOut').checked = branch.allowLateCheckOut !== false;
     
     const mgrId = branch.manager ? (branch.manager._id || branch.manager) : '';
     document.getElementById('editBranchManagerId').value = mgrId;
 
-    new bootstrap.Modal(document.getElementById('editBranchModal')).show();
+    const modalEl = document.getElementById('editBranchModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+    if (focusMap) {
+        setTimeout(() => {
+            const sec = document.getElementById('editGeofenceSection');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 260);
+    }
 }
 
 async function handleUpdateBranch(e) {
@@ -464,6 +898,13 @@ async function handleUpdateBranch(e) {
         latitude: document.getElementById('editBranchLat').value,
         longitude: document.getElementById('editBranchLng').value,
         geofenceRadiusMeters: document.getElementById('editBranchRadius').value,
+        geofenceEnabled: document.getElementById('editBranchGeofenceEnabled').checked,
+        attendanceTimeEnabled: document.getElementById('editBranchTimeEnabled').checked,
+        attendanceStartTime: document.getElementById('editBranchStartTime').value,
+        attendanceEndTime: document.getElementById('editBranchEndTime').value,
+        checkInEarlyMinutes: document.getElementById('editBranchCheckInEarly').value,
+        checkOutEarlyMinutes: document.getElementById('editBranchCheckOutEarly').value,
+        allowLateCheckOut: document.getElementById('editBranchAllowLateOut').checked,
         managerId: document.getElementById('editBranchManagerId').value || null,
         _csrf: CSRF_TOKEN
     };

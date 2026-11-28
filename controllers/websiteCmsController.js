@@ -980,3 +980,122 @@ exports.updateContactInfo = async (req, res) => {
         return res.status(500).json({ success: false, message: err.message || 'Error updating company contact profile.' });
     }
 };
+
+// ==========================================
+// 7. HOME QUICK STATS MANAGER
+// ==========================================
+exports.getQuickStatsPage = async (req, res) => {
+    try {
+        let setting = null;
+        if (isDbConnected()) {
+            setting = await Setting.findOne().lean();
+        } else {
+            setting = WebsiteService.getMemSetting();
+        }
+
+        const liveCompany = await WebsiteService.refreshCompanyCache();
+        const quickStats = setting && setting.homeQuickStatsCustomized
+            ? WebsiteService.normalizeHomeQuickStats(setting.homeQuickStats, liveCompany.establishedYear, true)
+            : (Array.isArray(liveCompany.homeQuickStats) ? liveCompany.homeQuickStats : WebsiteService.getDefaultHomeQuickStats(liveCompany.establishedYear));
+
+        res.render('private/admin/website/quick-stats', {
+            title: `Home Quick Stats Manager | ${liveCompany.name}`,
+            company: liveCompany,
+            quickStats,
+            isCustomized: Boolean(setting && setting.homeQuickStatsCustomized),
+            user: req.session.user,
+            currentUser: req.session.user,
+            csrfToken: req.session ? req.session.csrfToken : '',
+            activePage: 'cms-quick-stats',
+            pageTitle: 'Home Page Quick Stats'
+        });
+    } catch (err) {
+        console.error('[WebsiteCMS] Error loading quick stats page:', err);
+        res.status(500).render('private/errors/403', {
+            title: 'Error | Shivay Energy Solutions',
+            message: 'Failed to load Home Page Quick Stats editor.'
+        });
+    }
+};
+
+exports.updateQuickStats = async (req, res) => {
+    try {
+        const rawStats = Array.isArray(req.body && req.body.stats) ? req.body.stats : [];
+        if (rawStats.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please keep at least one quick stat item before saving, or use Reset Defaults.'
+            });
+        }
+
+        const hasInvalidRow = rawStats.some(item => !item || !String(item.value || '').trim() || !String(item.label || '').trim());
+        if (hasInvalidRow) {
+            return res.status(400).json({
+                success: false,
+                message: 'Every quick stat row must have both a Stat Value and a Stat Label.'
+            });
+        }
+
+        const liveCompany = await WebsiteService.getCompany();
+        const normalizedStats = WebsiteService.normalizeHomeQuickStats(rawStats, liveCompany.establishedYear, true);
+
+        if (isDbConnected()) {
+            let setting = await Setting.findOne();
+            if (!setting) {
+                setting = new Setting();
+            }
+            setting.homeQuickStats = normalizedStats;
+            setting.homeQuickStatsCustomized = true;
+            await setting.save();
+        } else {
+            let memSetting = WebsiteService.getMemSetting() || {};
+            memSetting.homeQuickStats = normalizedStats;
+            memSetting.homeQuickStatsCustomized = true;
+            WebsiteService.setMemSetting(memSetting);
+        }
+
+        await WebsiteService.refreshCompanyCache();
+
+        return res.json({
+            success: true,
+            message: 'Home Page Quick Stats updated and published live.',
+            stats: normalizedStats
+        });
+    } catch (err) {
+        console.error('[WebsiteCMS] Error updating quick stats:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Failed to update Home Quick Stats.' });
+    }
+};
+
+exports.resetQuickStats = async (req, res) => {
+    try {
+        const liveCompany = await WebsiteService.getCompany();
+        const defaultStats = WebsiteService.getDefaultHomeQuickStats(liveCompany.establishedYear);
+
+        if (isDbConnected()) {
+            let setting = await Setting.findOne();
+            if (!setting) {
+                setting = new Setting();
+            }
+            setting.homeQuickStats = undefined;
+            setting.homeQuickStatsCustomized = false;
+            await setting.save();
+        } else {
+            let memSetting = WebsiteService.getMemSetting() || {};
+            delete memSetting.homeQuickStats;
+            memSetting.homeQuickStatsCustomized = false;
+            WebsiteService.setMemSetting(memSetting);
+        }
+
+        await WebsiteService.refreshCompanyCache();
+
+        return res.json({
+            success: true,
+            message: 'Home Page Quick Stats restored to default values.',
+            stats: defaultStats
+        });
+    } catch (err) {
+        console.error('[WebsiteCMS] Error resetting quick stats:', err);
+        return res.status(500).json({ success: false, message: err.message || 'Failed to reset Home Quick Stats.' });
+    }
+};

@@ -110,6 +110,7 @@ router.get('/admin/activity-logs', requireAuth, requirePermission('settings.audi
 router.get('/admin/settings', requireAuth, requirePermission('settings.general.view'), adminController.getSettings);
 router.get('/admin/profile', requireAuth, adminController.getProfile);
 router.get('/admin/branches', requireAuth, requirePermission('branches.offices.view'), adminController.getBranches);
+router.get('/api/admin/geocode', requireAuth, requireAnyPermission(['branches.offices.view', 'branches.offices.edit', 'branches.offices.create', 'settings.general.view', 'settings.general.edit']), adminController.geocodeLocation);
 router.get('/admin/enquiries', requireAuth, requirePermission('crm.enquiries.view'), adminController.getDashboard);
 router.get('/admin/complaints', requireAuth, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), complaintController.getAdminComplaints);
 router.get('/admin/complaints/:id', requireAuth, requireAnyPermission(['complaints.tickets.view', 'complaints.records.view']), validateObjectId('id'), complaintController.getComplaintDetailPage);
@@ -277,5 +278,10 @@ router.post('/api/admin/website/testimonials/:id/delete', requireAuth, requirePe
 // Contact & Company Info
 router.get('/admin/website/contact', requireAuth, requirePermission('cms.contact.manage'), websiteCmsController.getContactInfoPage);
 router.post('/api/admin/website/contact', requireAuth, requirePermission('cms.contact.manage'), verifyCsrf, websiteCmsController.updateContactInfo);
+
+// Home Page Quick Stats
+router.get('/admin/website/quick-stats', requireAuth, requirePermission('cms.contact.manage'), websiteCmsController.getQuickStatsPage);
+router.post('/api/admin/website/quick-stats', requireAuth, requirePermission('cms.contact.manage'), verifyCsrf, websiteCmsController.updateQuickStats);
+router.post('/api/admin/website/quick-stats/reset', requireAuth, requirePermission('cms.contact.manage'), verifyCsrf, websiteCmsController.resetQuickStats);
 
 module.exports = router;

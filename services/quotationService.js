@@ -5,6 +5,7 @@ const Quotation = require('../models/Quotation');
 const QuotationRequest = require('../models/QuotationRequest');
 const QuotationStatusHistory = require('../models/QuotationStatusHistory');
 const AuditService = require('./auditService');
+const AuthorizationService = require('./authorizationService');
 const User = require('../models/User');
 const { evaluatePackagePricing } = require('../config/solarPackages');
 
@@ -817,13 +818,14 @@ class QuotationService {
             throw new Error(`Quotation is already in status "${quotation.status}" and cannot be approved.`);
         }
 
-        // Maker-Checker Separation: Creator cannot approve their own quotation (unless Single Manager or Super Admin per Business Rule 1.1)
-        if (String(quotation.preparedBy) === String(approverUser._id) && approverUser.role !== 'SUPER_ADMIN' && approverUser.role !== 'MANAGER' && approverUser.role !== 'BRANCH_MANAGER') {
+        // Maker-Checker Separation: Creator cannot approve their own quotation (unless Manager/Admin or explicit approval privilege)
+        const hasApprovalPerm = AuthorizationService.hasPermission(approverUser, 'quotations.approval.approve');
+        if (String(quotation.preparedBy) === String(approverUser._id) && !hasApprovalPerm && approverUser.role !== 'SUPER_ADMIN' && approverUser.role !== 'MANAGER' && approverUser.role !== 'BRANCH_MANAGER') {
             throw new Error('Maker-Checker Violation: You cannot approve a quotation that you prepared. Another manager or Super Admin must review it.');
         }
 
-        // Branch Isolation Check for Managers
-        if (approverUser.role === 'MANAGER' || approverUser.role === 'BRANCH_MANAGER') {
+        // Branch Isolation Check for Managers & Permitted Employees
+        if (approverUser.role !== 'SUPER_ADMIN') {
             if (quotation.branch && approverUser.branchId && String(quotation.branch) !== String(approverUser.branchId._id || approverUser.branchId)) {
                 throw new Error('Unauthorized: You can only approve quotations belonging to your branch.');
             }

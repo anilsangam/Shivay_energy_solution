@@ -1,27 +1,52 @@
 <%- include('../admin/partials/admin-head') %>
 
+<%
+    const policy = (typeof geofencePolicy !== 'undefined' && geofencePolicy) ? geofencePolicy : null;
+    const staffRole = currentUser ? currentUser.role : '';
+%>
+
 <!-- Header Controls -->
-<div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
     <div>
         <h2 class="font-weight-bold mb-1" style="color: var(--admin-navy-primary); font-size: 24px;">
-            Branch Field Attendance & GPS Logs
+            Branch Field Attendance &amp; GPS Logs
         </h2>
         <p class="text-muted small mb-0">
-            Real-time verified GPS check-in logs for rooftop installation and survey personnel
+            Real-time geofence-verified GPS check-in logs for Managers, Field Engineers, and Branch Staff
         </p>
     </div>
-    <div class="d-flex gap-2 mt-3 mt-md-0">
+    <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+        <% if (staffRole === 'MANAGER' || staffRole === 'BRANCH_MANAGER') { %>
+            <a href="/manager/my-attendance" class="btn btn-success font-weight-bold shadow-sm" style="border-radius: 8px;">
+                <i class="icofont-location-pin me-1"></i> Mark My Attendance (GPS)
+            </a>
+        <% } %>
         <a href="/manager/employees" class="btn btn-outline-primary" style="border-radius: 8px;">
             <i class="icofont-users-alt-2 me-1"></i> Staff Directory
         </a>
     </div>
 </div>
 
+<% if (policy) { %>
+<div class="alert alert-light border shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div class="small">
+        <i class="icofont-map-pins text-primary me-1"></i>
+        Active Branch Geofence: <strong><%= policy.branchName %></strong>
+        &bull; Allowed Radius: <strong><%= policy.radiusMeters %>m</strong>
+        &bull; Timing: <strong><%= policy.attendanceTimeEnabled !== false ? `${policy.attendanceStartDisplay || '09:00 AM'} – ${policy.attendanceEndDisplay || '05:00 PM'} IST (-${policy.checkInEarlyMinutes !== undefined ? policy.checkInEarlyMinutes : 10}m In / -${policy.checkOutEarlyMinutes !== undefined ? policy.checkOutEarlyMinutes : 5}m Out${policy.allowLateCheckOut !== false ? ' • Late Out OK' : ''})` : 'Flexible Hours' %></strong>
+        &bull; Coordinates: <code><%= Number(policy.latitude).toFixed(5) %>, <%= Number(policy.longitude).toFixed(5) %></code>
+    </div>
+    <span class="badge <%= policy.enforceGeofence ? 'bg-success' : 'bg-secondary' %>">
+        <%= policy.enforceGeofence ? 'Strict Geofence Enabled' : 'Geofence Enforcement Off' %>
+    </span>
+</div>
+<% } %>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <div>
             <h5 class="admin-card-title">Today's Geo-Tagged Records (<%= attendance ? attendance.length : 0 %>)</h5>
-            <div class="admin-card-subtitle">Session-verified attendance entries</div>
+            <div class="admin-card-subtitle">Session-verified &amp; geofence-checked attendance entries</div>
         </div>
         <span class="badge bg-success text-white">Live System</span>
     </div>
@@ -31,11 +56,11 @@
             <thead>
                 <tr>
                     <th>Staff Name</th>
+                    <th>Role</th>
                     <th>Employee ID</th>
                     <th>Punch Type</th>
                     <th>Time (IST)</th>
-                    <th>GPS Coordinates</th>
-                    <th>Accuracy</th>
+                    <th>GPS &amp; Geofence Status</th>
                     <th>Map Verification</th>
                 </tr>
             </thead>
@@ -44,6 +69,7 @@
                     <% attendance.forEach(a => { %>
                         <tr>
                             <td><strong><%= a.employeeName %></strong></td>
+                            <td><span class="badge bg-light text-dark border"><%= a.role || 'EMPLOYEE' %></span></td>
                             <td><code><%= a.employeeId %></code></td>
                             <td>
                                 <span class="badge <%= a.type === 'check_in' ? 'bg-success' : 'bg-secondary' %>">
@@ -51,10 +77,19 @@
                                 </span>
                             </td>
                             <td><strong><%= a.timestamp %></strong></td>
-                            <td><small class="text-muted"><%= a.latitude %>, <%= a.longitude %></small></td>
-                            <td><small class="text-muted">±<%= a.accuracy %>m</small></td>
                             <td>
-                                <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;">
+                                <span class="badge <%= a.isWithinGeofence !== false ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle' %>">
+                                    <%= a.isWithinGeofence !== false ? 'Inside Geofence' : 'Outside Zone' %>
+                                    <% if (Number.isFinite(Number(a.distanceMeters))) { %>
+                                        (<%= a.distanceMeters %>m<%= Number.isFinite(Number(a.allowedRadiusMeters)) ? ' / ' + a.allowedRadiusMeters + 'm' : '' %>)
+                                    <% } %>
+                                </span>
+                                <div class="text-muted mt-1" style="font-size: 11px;">
+                                    <%= a.latitude %>, <%= a.longitude %> (±<%= a.accuracy %>m)
+                                </div>
+                            </td>
+                            <td>
+                                <a href="https://www.google.com/maps?q=<%= a.latitude %>,<%= a.longitude %>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size: 11px;">
                                     <i class="icofont-google-map"></i> View Map
                                 </a>
                             </td>

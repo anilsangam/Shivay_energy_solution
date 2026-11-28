@@ -29,7 +29,16 @@
 
     // 2. Operations & Commercials
     const canViewProjects = checkAnyPerm(['projects.records.view', 'projects.all.view']);
-    const canViewQuotations = checkAnyPerm(['quotations.records.view', 'quotations.requests.view', 'quotations.all.view']);
+    const canViewQuotations = checkAnyPerm([
+        'quotations.module.access',
+        'quotations.records.view',
+        'quotations.requests.view',
+        'quotations.preparation.view',
+        'quotations.requests.create',
+        'quotations.preparation.create',
+        'quotations.records.detail',
+        'quotations.all.view'
+    ]);
     const canCreateQuotation = checkAnyPerm(['quotations.preparation.create', 'quotations.requests.create']);
     const canViewInvoices = checkPerm('invoices.records.view');
     const canViewCustomers = checkPerm('crm.customers.view');
@@ -113,7 +122,7 @@
 
             <% if (canViewPersonalAttendance) { %>
                 <li class="admin-nav-item">
-                    <a href="/employee/attendance" class="admin-nav-link <%= currentActive === 'employee' || currentActive === 'employee-attendance' ? 'active' : '' %>">
+                    <a href="<%= isManager ? '/manager/my-attendance' : '/employee/attendance' %>" class="admin-nav-link <%= currentActive === 'employee' || currentActive === 'employee-attendance' || currentActive === 'manager-my-attendance' ? 'active' : '' %>">
                         <i class="icofont-location-pin"></i>
                         <span>GPS Attendance</span>
                     </a>
@@ -417,6 +426,12 @@
                         </li>
                     <% } %>
                     <% if (canCmsContact) { %>
+                        <li>
+                            <a href="/admin/website/quick-stats" class="admin-subnav-link <%= currentActive === 'cms-quick-stats' ? 'active' : '' %>">
+                                <i class="icofont-chart-bar-graph"></i>
+                                <span>Home Quick Stats</span>
+                            </a>
+                        </li>
                         <li>
                             <a href="/admin/website/contact" class="admin-subnav-link <%= currentActive === 'cms-contact' ? 'active' : '' %>">
                                 <i class="icofont-address-book"></i>

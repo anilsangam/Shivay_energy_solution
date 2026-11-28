@@ -5,15 +5,12 @@
     <div id="top"></div>
 
     <!-- Subheader Banner -->
-    <section id="subheader" class="bg-dark text-light relative py-5" style="background: linear-gradient(135deg, rgba(22, 53, 99, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%), url('/images/background/2.webp') center/cover no-repeat;">
-        <div class="container py-3">
+    <section id="subheader" class="bg-dark text-light relative legal-hero" style="background: linear-gradient(135deg, rgba(22, 53, 99, 0.94) 0%, rgba(15, 23, 42, 0.96) 100%), url('/images/background/2.webp') center/cover no-repeat;">
+        <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-9">
-                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-warning bg-opacity-20 text-warning small font-weight-bold mb-3">
-                        <i class="icofont-shield-alt"></i> Transparency &amp; Data Protection
-                    </div>
                     <h1 class="text-white font-weight-bold mb-2">Privacy Policy</h1>
-                    <p class="text-white-50 mb-0" style="font-size: 16px;">
+                    <p class="legal-hero-subtitle mb-0">
                         <%= company.name %> • Ward No. 15, In front of PHE Office, Arjun Nagar, Raisen (M.P.)
                     </p>
                     <div class="small text-white-50 mt-2">
@@ -26,7 +23,7 @@
     </section>
 
     <!-- Main Content Section -->
-    <section class="py-5 bg-light">
+    <section class="py-4 py-md-5 bg-light legal-main-section">
         <div class="container">
             <div class="row gy-4">
                 
@@ -59,16 +56,18 @@
 
                 <!-- Right Policy Document Content -->
                 <div class="col-lg-9">
-                    <div class="bg-white p-4 p-md-5 rounded-3 shadow-sm border legal-content-card">
+                    <div class="bg-white p-3 p-sm-4 p-md-5 rounded-3 shadow-sm border legal-content-card">
                         
                         <!-- Trust Highlight Banner -->
-                        <div class="alert alert-success border-0 bg-success bg-opacity-10 d-flex align-items-center gap-3 p-3 rounded-3 mb-4">
-                            <i class="icofont-safety-hat text-success fs-2"></i>
-                            <div class="small">
-                                <strong class="text-dark d-block mb-1">Official Shivay Energy Solutions Privacy Commitment</strong>
-                                <span class="text-muted">
+                        <div class="legal-highlight-box legal-highlight-success p-3 rounded-3 mb-4">
+                            <div class="legal-highlight-icon legal-highlight-icon-success flex-shrink-0">
+                                <i class="icofont-safety-hat"></i>
+                            </div>
+                            <div class="legal-highlight-copy">
+                                <strong class="d-block mb-1">Official Shivay Energy Solutions Privacy Commitment</strong>
+                                <p class="legal-highlight-text mb-0">
                                     Your personal information is collected solely to engineer customized rooftop solar systems, process central PM Surya Ghar Muft Bijli Yojana subsidies (up to ₹78,000/-), and coordinate DISCOM net-metering with MPPKVVCL. We strictly do not sell customer data to any telemarketers.
-                                </span>
+                                </p>
                             </div>
                         </div>
 
@@ -118,6 +117,97 @@
 </div>
 
 <style>
+#content #subheader.legal-hero {
+    min-height: 250px !important;
+    padding: 155px 0 46px !important;
+}
+#content #subheader.legal-hero > .container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+#content #subheader.legal-hero h1 {
+    margin: 6px 0 8px !important;
+    font-size: clamp(28px, 4.5vw, 46px) !important;
+    line-height: 1.15 !important;
+    text-transform: none !important;
+    color: #ffffff !important;
+}
+.legal-hero-subtitle {
+    color: rgba(255, 255, 255, 0.84) !important;
+    font-size: clamp(14px, 2vw, 16px);
+    line-height: 1.55;
+}
+.legal-main-section .row > [class*="col-"] {
+    min-width: 0;
+    max-width: 100%;
+}
+.legal-highlight-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+@media (min-width: 576px) {
+    .legal-highlight-box {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 14px;
+    }
+}
+.legal-highlight-success {
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+    border-left: 4px solid #047857 !important;
+    color: #1e293b;
+}
+.legal-highlight-icon-success {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #d1fae5;
+    color: #047857;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex: 0 0 38px;
+}
+.legal-highlight-copy {
+    flex: 1 1 auto;
+    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+}
+.legal-highlight-copy strong {
+    color: #064e3b;
+    font-size: 14px;
+    line-height: 1.35;
+    white-space: normal !important;
+    overflow-wrap: break-word;
+}
+.legal-highlight-copy .legal-highlight-text,
+.legal-highlight-copy span {
+    color: #334155 !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+}
+.legal-content-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
 .legal-content-card h3 {
     color: #163563;
     font-size: 20px;
@@ -156,6 +246,26 @@
 .legal-content-card a {
     color: #2563eb;
     text-decoration: underline;
+}
+@media (max-width: 999px) {
+    #content #subheader.legal-hero {
+        min-height: auto !important;
+        padding: 112px 0 34px !important;
+    }
+    .legal-main-section {
+        padding-top: 20px !important;
+        padding-bottom: 28px !important;
+    }
+    .legal-content-card h3 {
+        font-size: 17px;
+        margin-top: 22px;
+    }
+    .legal-content-card p,
+    .legal-content-card ul,
+    .legal-content-card ol {
+        font-size: 14px;
+        line-height: 1.65;
+    }
 }
 </style>
 

@@ -23,9 +23,10 @@
             <i class="icofont-arrow-left me-1"></i> Back
         </a>
 
-        <!-- Maker-Checker Approval Actions for Manager / Admin -->
-        <% if (quotation.status === 'PENDING_APPROVAL' && currentUser && (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'SUPER_ADMIN')) { %>
-            <% if (String(quotation.preparedBy._id) !== String(currentUser._id) || currentUser.role === 'SUPER_ADMIN') { %>
+        <!-- Maker-Checker Approval Actions for Manager, Admin, or Permitted Staff -->
+        <% const canApproveQuote = (typeof hasPermission === 'function' && hasPermission('quotations.approval.approve')) || (currentUser && (currentUser.role === 'BRANCH_MANAGER' || currentUser.role === 'SUPER_ADMIN')); %>
+        <% if (quotation.status === 'PENDING_APPROVAL' && canApproveQuote) { %>
+            <% if (String(quotation.preparedBy._id) !== String(currentUser._id) || currentUser.role === 'SUPER_ADMIN' || (typeof hasPermission === 'function' && hasPermission('quotations.approval.approve'))) { %>
                 <button class="btn btn-sm btn-success fw-bold" onclick="openApproveModal()">
                     <i class="icofont-check-circled me-1"></i> Authorize & Approve Quotation
                 </button>

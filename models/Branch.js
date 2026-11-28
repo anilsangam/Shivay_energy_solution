@@ -15,6 +15,13 @@ const branchSchema = new mongoose.Schema({
         longitude: { type: Number, default: 77.7807 }
     },
     geofenceRadiusMeters: { type: Number, default: 500 },
+    geofenceEnabled: { type: Boolean, default: true },
+    attendanceTimeEnabled: { type: Boolean, default: true },
+    attendanceStartTime: { type: String, trim: true, default: '09:00' },
+    attendanceEndTime: { type: String, trim: true, default: '17:00' },
+    checkInEarlyMinutes: { type: Number, default: 10, min: 0, max: 180 },
+    checkOutEarlyMinutes: { type: Number, default: 5, min: 0, max: 180 },
+    allowLateCheckOut: { type: Boolean, default: true },
     // Service Coverage & PIN Routing Configuration (Phase 4)
     serviceablePinCodes: [{ type: String, trim: true }],
     districts: [{ type: String, trim: true }],

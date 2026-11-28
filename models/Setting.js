@@ -59,7 +59,23 @@ const settingSchema = new mongoose.Schema({
     privacyPolicy: { type: String, default: "" },
     termsAndConditions: { type: String, default: "" },
     privacyPolicyUpdatedAt: { type: Date, default: Date.now },
-    termsAndConditionsUpdatedAt: { type: Date, default: Date.now }
+    termsAndConditionsUpdatedAt: { type: Date, default: Date.now },
+
+    // Home Page Hero Quick Stats & Mobile Ticker
+    homeQuickStatsCustomized: { type: Boolean, default: false },
+    homeQuickStats: {
+        type: [{
+            value: { type: String, trim: true, default: "" },
+            label: { type: String, trim: true, default: "" },
+            tickerValue: { type: String, trim: true, default: "" },
+            tickerLabel: { type: String, trim: true, default: "" },
+            showOnDesktop: { type: Boolean, default: true },
+            showOnTicker: { type: Boolean, default: true },
+            isActive: { type: Boolean, default: true },
+            order: { type: Number, default: 1 }
+        }],
+        default: undefined
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Setting || mongoose.model('Setting', settingSchema);

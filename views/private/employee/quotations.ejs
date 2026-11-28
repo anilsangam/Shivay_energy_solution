@@ -225,13 +225,13 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fw-semibold text-dark text-nowrap">₹<%= q.grandTotal.toLocaleString('en-IN') %></div>
+                                    <div class="fw-semibold text-dark text-nowrap">₹<%= (q.grandTotal || 0).toLocaleString('en-IN') %></div>
                                     <div class="small text-success fw-bold text-nowrap" style="font-size: 10.5px;">
-                                        <i class="icofont-tag me-1"></i>Subsidy: ₹<%= q.estimatedSubsidy.toLocaleString('en-IN') %>
+                                        <i class="icofont-tag me-1"></i>Subsidy: ₹<%= (q.estimatedSubsidy || 0).toLocaleString('en-IN') %>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fw-bold text-primary text-nowrap" style="font-size: 14.5px;">₹<%= q.netPayableAfterSubsidy.toLocaleString('en-IN') %></div>
+                                    <div class="fw-bold text-primary text-nowrap" style="font-size: 14.5px;">₹<%= (q.netPayableAfterSubsidy || 0).toLocaleString('en-IN') %></div>
                                     <span class="badge bg-light text-dark border" style="font-size: 9.5px;">Net Payable</span>
                                 </td>
                                 <td>

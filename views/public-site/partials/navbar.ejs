@@ -1,6 +1,6 @@
         <% const navActivePage = typeof activePage !== 'undefined' ? activePage : ''; %>
         <!-- header begin -->
-        <header class="transparent site-header-fixed">
+        <header class="header-light site-header-fixed">
             <div id="topbar">
                 <div class="container">
                     <div class="row">
@@ -25,12 +25,30 @@
                                 </div>
 
                                 <div class="d-flex align-items-center">
-                                    <div class="social-icons">
-                                        <a href="<%= company.social.whatsapp %>" target="_blank" title="Chat on WhatsApp" class="text-success"><i class="fa-brands fa-whatsapp fa-lg"></i></a>
-                                        <a href="<%= company.social.facebook %>" target="_blank" title="Facebook"><i class="fa-brands fa-facebook fa-lg"></i></a>
-                                        <a href="<%= company.social.instagram %>" target="_blank" title="Instagram"><i class="fa-brands fa-instagram fa-lg"></i></a>
-                                        <a href="<%= company.social.youtube %>" target="_blank" title="YouTube"><i class="fa-brands fa-youtube fa-lg"></i></a>
-                                    </div>
+                                    <%
+                                        const isValidSocialUrl = (url) => {
+                                            const cleaned = String(url || '').trim();
+                                            return Boolean(cleaned && cleaned !== '#' && cleaned.toLowerCase() !== 'null' && cleaned.toLowerCase() !== 'undefined');
+                                        };
+                                        const topSocial = (company && company.social) ? company.social : {};
+                                        const hasTopSocial = isValidSocialUrl(topSocial.whatsapp) || isValidSocialUrl(topSocial.facebook) || isValidSocialUrl(topSocial.instagram) || isValidSocialUrl(topSocial.youtube);
+                                    %>
+                                    <% if (hasTopSocial) { %>
+                                        <div class="social-icons">
+                                            <% if (isValidSocialUrl(topSocial.whatsapp)) { %>
+                                                <a href="<%= topSocial.whatsapp %>" target="_blank" rel="noopener noreferrer" title="Chat on WhatsApp" class="text-success"><i class="fa-brands fa-whatsapp fa-lg"></i></a>
+                                            <% } %>
+                                            <% if (isValidSocialUrl(topSocial.facebook)) { %>
+                                                <a href="<%= topSocial.facebook %>" target="_blank" rel="noopener noreferrer" title="Facebook"><i class="fa-brands fa-facebook fa-lg"></i></a>
+                                            <% } %>
+                                            <% if (isValidSocialUrl(topSocial.instagram)) { %>
+                                                <a href="<%= topSocial.instagram %>" target="_blank" rel="noopener noreferrer" title="Instagram"><i class="fa-brands fa-instagram fa-lg"></i></a>
+                                            <% } %>
+                                            <% if (isValidSocialUrl(topSocial.youtube)) { %>
+                                                <a href="<%= topSocial.youtube %>" target="_blank" rel="noopener noreferrer" title="YouTube"><i class="fa-brands fa-youtube fa-lg"></i></a>
+                                            <% } %>
+                                        </div>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
@@ -47,7 +65,7 @@
                                 <!-- logo begin -->
                                 <div id="logo">
                                     <a href="/" class="d-flex align-items-center text-decoration-none">
-                                        <img class="logo-main" src="/images/brandlogo2.webp" alt="Shivay Energy Solutions" style="display: inline-block !important; width: auto !important; max-width: min(230px, 58vw) !important; height: 54px !important; object-fit: contain;">
+                                        <img class="logo-main" src="/images/brandlogo_leftlgoog_rightname_trans.png" alt="Shivay Energy Solutions" style="display: inline-block !important; width: auto !important; max-width: min(230px, 58vw) !important; height: 54px !important; object-fit: contain;">
                                     </a>
                                 </div>
                                 <!-- logo end -->
@@ -80,7 +98,7 @@
                             </div>
                             <div class="de-flex-col">
                                 <div class="menu_side_area d-flex align-items-center">
-                                    <a href="/calculator#solar-calculator" class="btn-main btn-line fx-slide hover-white navbar-quote-btn"><span>Solar Calculator</span></a>
+                                    <a href="/calculator#solar-calculator" class="btn-main btn-line fx-slide navbar-quote-btn"><span>Solar Calculator</span></a>
                                     <a href="/contact#enquiry-form" class="btn-main btn-line fx-slide hover-white ms-2 navbar-enquiry-btn"><span>Enquiry</span></a>
 
                                     <button id="menu-btn" type="button" aria-label="Open navigation menu" aria-controls="mainmenu" aria-expanded="false"></button>
@@ -101,42 +119,122 @@
                 margin-right: auto !important;
                 margin-left: auto !important;
             }
+            @media (min-width: 1280px) {
+                header.site-header-fixed #logo img.logo-main {
+                    height: 62px !important;
+                    max-width: 265px !important;
+                }
+            }
             @media (min-width: 1000px) and (max-width: 1279px) {
+                header.site-header-fixed #topbar > .container,
+                header.site-header-fixed > .container {
+                    max-width: 100% !important;
+                    min-width: 0 !important;
+                    padding-left: 16px !important;
+                    padding-right: 16px !important;
+                }
+                header.site-header-fixed #topbar .topbar-widget {
+                    font-size: 11.5px !important;
+                    margin-right: 12px !important;
+                    white-space: nowrap;
+                }
+                header.site-header-fixed #topbar .topbar-widget i {
+                    font-size: 13px !important;
+                    margin-right: 5px !important;
+                }
+                header.site-header-fixed #topbar .social-icons a {
+                    padding: 4px 8px !important;
+                    font-size: 12px !important;
+                }
                 header.site-header-fixed .de-flex {
                     display: flex !important;
-                    flex-wrap: wrap !important;
+                    flex-wrap: nowrap !important;
+                    align-items: center !important;
+                    justify-content: space-between !important;
+                    gap: 10px !important;
                     row-gap: 0;
                 }
                 header.site-header-fixed .de-flex > .de-flex-col:first-child {
                     flex: 0 0 auto;
+                    position: relative;
+                    z-index: 2;
                 }
                 header.site-header-fixed .de-flex > .header-col-mid {
-                    order: 3;
-                    flex: 0 0 100%;
-                    width: 100%;
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    display: flex !important;
                     justify-content: center;
                     padding: 0 !important;
                 }
                 header.site-header-fixed .de-flex > .de-flex-col:last-child {
                     flex: 0 0 auto;
                     margin-left: auto;
+                    position: relative;
+                    z-index: 2;
                 }
                 header.site-header-fixed #mainmenu {
                     display: flex !important;
+                    flex-wrap: nowrap !important;
+                    align-items: center;
                     justify-content: center;
-                    width: 100%;
+                    width: auto;
                     margin: 0;
+                    white-space: nowrap;
+                }
+                header.site-header-fixed #mainmenu > li:not(.nav-mobile-only) {
+                    float: none !important;
+                    display: inline-block !important;
+                    flex-shrink: 0;
+                    margin-right: 12px !important;
+                }
+                header.site-header-fixed #mainmenu > li.nav-mobile-only {
+                    display: none !important;
+                }
+                header.site-header-fixed #mainmenu > li:last-child,
+                header.site-header-fixed #mainmenu > li:nth-last-child(3) {
+                    margin-right: 0 !important;
+                }
+                header.site-header-fixed #mainmenu li a:after {
+                    margin-left: 0 !important;
+                }
+                header.site-header-fixed #mainmenu > li > a.menu-item,
+                header.site-header-fixed #mainmenu > li > span.nav-services-label {
+                    font-size: 12.5px !important;
+                    padding: 18px 2px !important;
+                    white-space: nowrap !important;
+                }
+                header.site-header-fixed .menu_side_area {
+                    display: flex !important;
+                    align-items: center !important;
+                    flex-wrap: nowrap !important;
+                    gap: 6px;
+                    white-space: nowrap !important;
+                }
+                header.site-header-fixed .menu_side_area .navbar-quote-btn,
+                header.site-header-fixed .menu_side_area .navbar-enquiry-btn {
+                    margin-left: 0 !important;
+                    padding: 7px 10px !important;
+                    font-size: 11.5px !important;
+                    letter-spacing: 0 !important;
+                    white-space: nowrap !important;
                 }
                 header.site-header-fixed #logo img.logo-main {
-                    max-width: min(210px, 28vw) !important;
+                    height: 36px !important;
+                    max-width: 155px !important;
                 }
             }
             @media (max-width: 999px) {
+                header.site-header-fixed #topbar {
+                    display: none !important;
+                }
                 header.site-header-fixed #logo img.logo-main {
                     width: auto !important;
-                    max-width: min(250px, 64vw) !important;
-                    height: 60px !important;
-                    transform: translateY(3px);
+                    max-width: min(220px, 64vw) !important;
+                    height: 46px !important;
+                    transform: none !important;
+                }
+                .mobile-floating-calculator {
+                    display: none !important;
                 }
             }
         </style>

@@ -462,14 +462,18 @@ class DataStore {
                         attendanceRecords.push({
                             id: doc._id ? doc._id.toString() : ('ATT-' + (attendanceRecords.length + 101)),
                             _id: doc._id,
+                            branch: doc.branch ? doc.branch.toString() : null,
+                            branchName: doc.branchName || '',
                             employeeId: doc.employeeId,
                             employeeName: doc.employeeName,
                             role: doc.role || 'Field Engineer',
                             type: doc.type || 'check_in',
-                            latitude: doc.latitude || 23.3315,
-                            longitude: doc.longitude || 77.7807,
+                            latitude: doc.latitude !== undefined ? doc.latitude : 23.3315,
+                            longitude: doc.longitude !== undefined ? doc.longitude : 77.7807,
                             accuracy: doc.accuracy || 10,
-                            locationName: doc.locationName || `Lat: ${(doc.latitude || 23.3315).toFixed(4)}, Lng: ${(doc.longitude || 77.7807).toFixed(4)}`,
+                            distanceMeters: Number.isFinite(Number(doc.distanceMeters)) ? Number(doc.distanceMeters) : null,
+                            allowedRadiusMeters: Number.isFinite(Number(doc.allowedRadiusMeters)) ? Number(doc.allowedRadiusMeters) : null,
+                            locationName: doc.locationName || `Lat: ${(doc.latitude !== undefined ? doc.latitude : 23.3315).toFixed(4)}, Lng: ${(doc.longitude !== undefined ? doc.longitude : 77.7807).toFixed(4)}`,
                             timestamp: doc.timestamp || (doc.createdAt ? dateUtils.getIstTime(doc.createdAt) : ''),
                             date: doc.date || todayStr,
                             isWithinGeofence: doc.isWithinGeofence !== false,
@@ -490,19 +494,29 @@ class DataStore {
         const timeStr = dateUtils.getIstTime();
         const todayStr = dateUtils.getIstDate();
 
+        const parsedLat = Number.isFinite(Number(data.latitude)) ? parseFloat(data.latitude) : 23.3315;
+        const parsedLng = Number.isFinite(Number(data.longitude)) ? parseFloat(data.longitude) : 77.7807;
+        const parsedWithinGeofence = data.isWithinGeofence !== undefined ? Boolean(data.isWithinGeofence) : true;
+        const parsedDistance = Number.isFinite(Number(data.distanceMeters)) ? Math.round(Number(data.distanceMeters)) : null;
+        const parsedAllowedRadius = Number.isFinite(Number(data.allowedRadiusMeters)) ? Math.round(Number(data.allowedRadiusMeters)) : null;
+
         const rec = {
             id,
+            branch: data.branchId ? String(data.branchId) : null,
+            branchName: data.branchName || '',
             employeeId: data.employeeId,
             employeeName: data.employeeName,
             role: data.role || 'Field Engineer',
             type: data.type || 'check_in',
-            latitude: parseFloat(data.latitude) || 23.3315,
-            longitude: parseFloat(data.longitude) || 77.7807,
+            latitude: parsedLat,
+            longitude: parsedLng,
             accuracy: parseFloat(data.accuracy) || 10,
-            locationName: `Lat: ${(parseFloat(data.latitude) || 23.3315).toFixed(4)}, Lng: ${(parseFloat(data.longitude) || 77.7807).toFixed(4)}`,
+            distanceMeters: parsedDistance,
+            allowedRadiusMeters: parsedAllowedRadius,
+            locationName: `Lat: ${parsedLat.toFixed(4)}, Lng: ${parsedLng.toFixed(4)}`,
             timestamp: timeStr,
             date: todayStr,
-            isWithinGeofence: true,
+            isWithinGeofence: parsedWithinGeofence,
             photoUrl: data.photoUrl || null
         };
 
@@ -513,6 +527,7 @@ class DataStore {
                 const doc = await Attendance.create({
                     employee: (data.employee && mongoose.isValidObjectId(data.employee)) ? data.employee : undefined,
                     branch: (data.branchId && mongoose.isValidObjectId(data.branchId)) ? data.branchId : undefined,
+                    branchName: rec.branchName || undefined,
                     employeeId: rec.employeeId,
                     employeeName: rec.employeeName,
                     role: rec.role,
@@ -520,6 +535,8 @@ class DataStore {
                     latitude: rec.latitude,
                     longitude: rec.longitude,
                     accuracy: rec.accuracy,
+                    distanceMeters: rec.distanceMeters !== null ? rec.distanceMeters : undefined,
+                    allowedRadiusMeters: rec.allowedRadiusMeters !== null ? rec.allowedRadiusMeters : undefined,
                     locationName: rec.locationName,
                     timestamp: rec.timestamp,
                     date: rec.date,
@@ -527,8 +544,8 @@ class DataStore {
                     photoUrl: rec.photoUrl,
                     checkInTime: rec.type === 'check_in' ? new Date() : undefined,
                     checkOutTime: rec.type === 'check_out' ? new Date() : undefined,
-                    checkInLocation: rec.type === 'check_in' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: true } : undefined,
-                    checkOutLocation: rec.type === 'check_out' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: true } : undefined,
+                    checkInLocation: rec.type === 'check_in' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: rec.isWithinGeofence } : undefined,
+                    checkOutLocation: rec.type === 'check_out' ? { latitude: rec.latitude, longitude: rec.longitude, accuracy: rec.accuracy, isWithinGeofence: rec.isWithinGeofence } : undefined,
                     status: 'present'
                 });
                 rec._id = doc._id;

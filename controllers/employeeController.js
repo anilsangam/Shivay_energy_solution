@@ -1,6 +1,7 @@
 const data = require('../config/company');
 const DataStore = require('../services/dataStore');
 const AuditService = require('../services/auditService');
+const GeofenceService = require('../services/geofenceService');
 const dateUtils = require('../services/dateUtils');
 const mongoose = require('mongoose');
 
@@ -9,7 +10,7 @@ exports.getDashboard = async (req, res) => {
     return res.redirect('/employee/attendance');
 };
 
-// Employee Field GPS Attendance Page
+// Employee & Manager Field GPS Attendance Page
 exports.getAttendancePage = async (req, res) => {
     try {
         await DataStore.syncAttendanceFromDb();
@@ -18,22 +19,26 @@ exports.getAttendancePage = async (req, res) => {
     const today = dateUtils.getIstDisplayDate();
     const todayStr = dateUtils.getIstDate();
     const userPunches = DataStore.getTodayAttendance().filter(a => a.employeeId === (user ? user.employeeId : '') && (a.date === todayStr || !a.date));
+    const geofencePolicy = await GeofenceService.resolveEffectiveGeofenceForUser(user);
+    const isManager = user && (user.role === 'MANAGER' || user.role === 'BRANCH_MANAGER');
 
     res.render('private/employee/attendance', {
-        title: `Employee Field GPS Attendance | ${data.company.name}`,
+        title: `GPS Branch Attendance | ${data.company.name}`,
         data,
         company: data.company,
         user,
         currentUser: user,
+        csrfToken: req.session ? req.session.csrfToken : '',
         today,
         userPunches,
-        activePage: 'employee',
-        pageTitle: 'Geo-Tagged Field Attendance',
-        breadcrumbs: [{ label: 'Field Portal' }, { label: 'Attendance' }]
+        geofencePolicy,
+        activePage: isManager && req.path === '/manager/my-attendance' ? 'manager-my-attendance' : 'employee',
+        pageTitle: 'Geo-Tagged Branch Attendance',
+        breadcrumbs: [{ label: isManager ? 'Manager Portal' : 'Field Portal' }, { label: 'GPS Attendance' }]
     });
 };
 
-// Secure Attendance Submission (Session-derived identity, confirmed persistence)
+// Secure Attendance Submission (Session-derived identity, strict geofence verification, confirmed persistence)
 exports.submitAttendance = async (req, res) => {
     // 1. Enforce session-derived identity
     if (!req.session || !req.session.user) {
@@ -47,15 +52,85 @@ exports.submitAttendance = async (req, res) => {
     const { type, latitude, longitude, accuracy } = req.body;
 
     const punchType = (type === 'check_out') ? 'check_out' : 'check_in';
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
-    const acc = parseFloat(accuracy) || 15;
+    const lat = GeofenceService.parseFiniteCoord(latitude, -90, 90);
+    const lng = GeofenceService.parseFiniteCoord(longitude, -180, 180);
+    const acc = Math.max(0, Math.round(parseFloat(accuracy) || 15));
 
-    // 2. Validate GPS coordinates
-    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    // 2. Strictly require real device GPS coordinates (no dummy fallback)
+    if (lat === null || lng === null) {
         return res.status(400).json({
             success: false,
-            message: 'Invalid GPS coordinates received from device.'
+            code: 'GPS_REQUIRED',
+            message: 'Live GPS location is required to mark attendance. Please enable location permission on your device and try again.'
+        });
+    }
+
+    // 3. Resolve effective branch geofence + time window policy & verify both
+    const policy = await GeofenceService.resolveEffectiveGeofenceForUser(sessionUser);
+    const timeEval = GeofenceService.evaluateAttendanceTimeWindow(policy, new Date(), punchType);
+    if (policy.attendanceTimeEnabled && !timeEval.isWithinTimeWindow) {
+        AuditService.log({
+            action: 'ATTENDANCE_TIME_BLOCKED',
+            user: sessionUser._id,
+            role: sessionUser.role,
+            branchId: policy.branchId || sessionUser.branchId,
+            ipAddress: req.ip,
+            details: {
+                type: punchType,
+                branchName: policy.branchName,
+                currentIstHHMM: timeEval.currentIstHHMM,
+                startTime: timeEval.startTime,
+                endTime: timeEval.endTime,
+                checkInEarlyMinutes: timeEval.checkInEarlyMinutes,
+                checkOutEarlyMinutes: timeEval.checkOutEarlyMinutes,
+                allowLateCheckOut: timeEval.allowLateCheckOut
+            }
+        });
+
+        const blockMessage = punchType === 'check_in'
+            ? `Check-In blocked: Current time (${timeEval.currentDisplay} IST) is outside ${policy.branchName}'s Check-In window (${timeEval.checkInOpenDisplay} – ${timeEval.endDisplay}, includes ${timeEval.checkInEarlyMinutes} min early entry).`
+            : `Check-Out blocked: Current time (${timeEval.currentDisplay} IST) is outside ${policy.branchName}'s Check-Out window (opens at ${timeEval.checkOutOpenDisplay} IST${timeEval.allowLateCheckOut ? ', late evening Check-Out permitted' : ` until ${timeEval.endDisplay}`}).`;
+
+        return res.status(403).json({
+            success: false,
+            code: 'OUTSIDE_TIME_WINDOW',
+            startDisplay: timeEval.startDisplay,
+            endDisplay: timeEval.endDisplay,
+            checkInOpenDisplay: timeEval.checkInOpenDisplay,
+            checkOutOpenDisplay: timeEval.checkOutOpenDisplay,
+            currentDisplay: timeEval.currentDisplay,
+            branchName: policy.branchName,
+            message: blockMessage
+        });
+    }
+
+    const geoEval = GeofenceService.evaluateLocationAgainstPolicy(lat, lng, policy);
+
+    if (policy.enforceGeofence && !geoEval.isWithinGeofence) {
+        AuditService.log({
+            action: 'ATTENDANCE_GEOFENCE_BLOCKED',
+            user: sessionUser._id,
+            role: sessionUser.role,
+            branchId: policy.branchId || sessionUser.branchId,
+            ipAddress: req.ip,
+            details: {
+                type: punchType,
+                lat,
+                lng,
+                acc,
+                branchName: policy.branchName,
+                distanceMeters: geoEval.distanceMeters,
+                allowedRadiusMeters: geoEval.allowedRadiusMeters
+            }
+        });
+
+        return res.status(403).json({
+            success: false,
+            code: 'OUTSIDE_GEOFENCE',
+            distanceMeters: geoEval.distanceMeters,
+            allowedRadiusMeters: geoEval.allowedRadiusMeters,
+            branchName: policy.branchName,
+            message: `Attendance blocked: You are ${geoEval.distanceMeters}m away from ${policy.branchName}. You must be within the ${geoEval.allowedRadiusMeters}m branch geofence area to mark attendance.`
         });
     }
 
@@ -109,11 +184,15 @@ exports.submitAttendance = async (req, res) => {
             employeeId: sessionUser.employeeId,
             employeeName: sessionUser.name,
             role: sessionUser.role,
-            branchId: sessionUser.branchId,
+            branchId: policy.branchId || sessionUser.branchId,
+            branchName: policy.branchName,
             type: punchType,
             latitude: lat,
             longitude: lng,
-            accuracy: acc
+            accuracy: acc,
+            distanceMeters: geoEval.distanceMeters,
+            allowedRadiusMeters: geoEval.allowedRadiusMeters,
+            isWithinGeofence: geoEval.isWithinGeofence
         });
 
         // 5. Audit log
@@ -121,17 +200,28 @@ exports.submitAttendance = async (req, res) => {
             action: 'ATTENDANCE_SUBMITTED',
             user: sessionUser._id,
             role: sessionUser.role,
-            branchId: sessionUser.branchId,
+            branchId: policy.branchId || sessionUser.branchId,
             ipAddress: req.ip,
-            details: { type: punchType, lat, lng, acc }
+            details: {
+                type: punchType,
+                lat,
+                lng,
+                acc,
+                branchName: policy.branchName,
+                distanceMeters: geoEval.distanceMeters,
+                allowedRadiusMeters: geoEval.allowedRadiusMeters,
+                isWithinGeofence: geoEval.isWithinGeofence
+            }
         });
 
-        console.log(`[SECURE ATTENDANCE] ${record.type.toUpperCase()}: ${record.employeeName} (${record.employeeId}) from Session. Lat: ${lat}, Lng: ${lng}`);
+        console.log(`[SECURE ATTENDANCE] ${record.type.toUpperCase()}: ${record.employeeName} (${record.employeeId}) [${sessionUser.role}] at ${policy.branchName} (${geoEval.distanceMeters}m/${geoEval.allowedRadiusMeters}m). Lat: ${lat}, Lng: ${lng}`);
 
         return res.json({
             success: true,
             record,
-            message: `${punchType === 'check_in' ? 'Check-In' : 'Check-Out'} successfully recorded for ${sessionUser.name} at ${record.timestamp} (IST). GPS Geo-tagged.`
+            geofence: geoEval,
+            policy,
+            message: `${punchType === 'check_in' ? 'Check-In' : 'Check-Out'} recorded for ${sessionUser.name} at ${record.timestamp} (IST). Verified at ${policy.branchName} (${geoEval.distanceMeters}m from branch center).`
         });
     } catch (persistErr) {
         console.error('[Attendance Submission Persistence Failed]:', persistErr);

@@ -708,6 +708,7 @@ const ROLE_MIGRATION_BASELINES = {
             'projects.records.detail',
             'projects.records.create',
             'projects.status.edit',
+            'projects.site_visit.create',
             'projects.site_visit.approve',
             'projects.tasks.view',
             'projects.tasks.create',
@@ -717,6 +718,13 @@ const ROLE_MIGRATION_BASELINES = {
             'projects.documents.view',
             'projects.documents.create',
             'projects.completion.approve',
+            'projects.inspections.view',
+            'projects.inspections.create',
+            'projects.inspections.approve',
+            'projects.inspections.photos',
+            'projects.activation.create',
+            'projects.installation.manage',
+            'projects.handover.approve',
             // Quotations
             'quotations.module.access',
             'quotations.requests.view',
@@ -782,6 +790,7 @@ const ROLE_MIGRATION_BASELINES = {
             'projects.records.detail',
             'projects.records.create',
             'projects.status.edit',
+            'projects.site_visit.create',
             'projects.site_visit.approve',
             'projects.tasks.view',
             'projects.tasks.create',
@@ -791,6 +800,13 @@ const ROLE_MIGRATION_BASELINES = {
             'projects.documents.view',
             'projects.documents.create',
             'projects.completion.approve',
+            'projects.inspections.view',
+            'projects.inspections.create',
+            'projects.inspections.approve',
+            'projects.inspections.photos',
+            'projects.activation.create',
+            'projects.installation.manage',
+            'projects.handover.approve',
             'quotations.module.access',
             'quotations.requests.view',
             'quotations.requests.create',
@@ -1115,44 +1131,64 @@ function getFullPermissionTree() {
     return tree;
 }
 
+const COMMON_BASIC_ATTENDANCE = [
+    'attendance.module.access',
+    'attendance.punch.create',
+    'attendance.personal.view'
+];
+
+const getModuleKeys = (moduleId) => getPermissionsByModule(moduleId).map(p => p.key);
+
+const FIELD_INSPECTOR_PERMS = Array.from(new Set([
+    ...COMMON_BASIC_ATTENDANCE,
+    ...getModuleKeys('projects'),
+    ...getModuleKeys('crm'),
+    ...getModuleKeys('quotations')
+]));
+
 const DESIGNATION_PRESETS = {
     TELECALLER: [
-        'crm.module.access',
-        'crm.leads.view',
-        'crm.leads.call_update',
-        'crm.leads.followup_update',
-        'crm.search.view'
-    ],
-    SALES_EXECUTIVE: [
+        ...COMMON_BASIC_ATTENDANCE,
         'crm.module.access',
         'crm.leads.view',
         'crm.leads.create',
+        'crm.leads.import',
+        'crm.leads.edit',
+        'crm.leads.assign',
+        'crm.leads.reassign',
+        'crm.leads.call_update',
+        'crm.leads.followup_update',
+        'crm.leads.export',
+        'crm.search.view'
+    ],
+    FIELD_INSPECTOR: FIELD_INSPECTOR_PERMS,
+    FIELD_ENGINEER: FIELD_INSPECTOR_PERMS,
+    SALES_EXECUTIVE: [
+        ...COMMON_BASIC_ATTENDANCE,
+        'crm.module.access',
+        'crm.leads.view',
+        'crm.leads.create',
+        'crm.leads.edit',
         'crm.leads.call_update',
         'crm.leads.followup_update',
         'crm.search.view',
+        'crm.customers.view',
+        'crm.customers.create',
+        'crm.customers.edit',
+        'quotations.module.access',
+        'quotations.requests.view',
         'quotations.requests.create',
-        'quotations.records.view'
-    ],
-    FIELD_ENGINEER: [
-        'projects.module.access',
-        'projects.tasks.view',
-        'projects.tasks.edit',
-        'projects.site_visit.create',
-        'projects.inspections.view',
-        'projects.inspections.create',
-        'projects.inspections.photos',
-        'projects.documents.view',
-        'projects.documents.create',
-        'crm.leads.view',
-        'crm.surveys.view',
-        'crm.surveys.edit',
-        'quotations.preparation.view',
-        'quotations.preparation.create',
+        'quotations.requests.edit',
         'quotations.records.view',
-        'quotations.requests.create'
+        'quotations.records.detail',
+        'quotations.document.view',
+        'quotations.customer_response.edit'
     ],
     INSTALLATION_TECHNICIAN: [
+        ...COMMON_BASIC_ATTENDANCE,
         'projects.module.access',
+        'projects.records.view',
+        'projects.records.detail',
         'projects.tasks.view',
         'projects.tasks.edit',
         'projects.installation.manage',
@@ -1161,6 +1197,7 @@ const DESIGNATION_PRESETS = {
         'projects.documents.create'
     ],
     SERVICE_TECHNICIAN: [
+        ...COMMON_BASIC_ATTENDANCE,
         'complaints.module.access',
         'complaints.tickets.view',
         'complaints.records.view',
@@ -1171,6 +1208,7 @@ const DESIGNATION_PRESETS = {
         'inventory.serials.manage'
     ],
     STORE_KEEPER: [
+        ...COMMON_BASIC_ATTENDANCE,
         'inventory.module.access',
         'inventory.stock.view',
         'inventory.stock.manage',
@@ -1183,9 +1221,11 @@ const DESIGNATION_PRESETS = {
         'inventory.history.view'
     ],
     ACCOUNTANT: [
+        ...COMMON_BASIC_ATTENDANCE,
         'invoices.module.access',
         'invoices.records.view',
         'invoices.records.create',
+        'invoices.records.edit',
         'invoices.records.export',
         'reports.module.access',
         'reports.analytics.view',
@@ -1193,12 +1233,65 @@ const DESIGNATION_PRESETS = {
     ]
 };
 
+/**
+ * Resolve automatic default permissions & dataScope based on Role and Designation.
+ * Ensures Telecaller gets Attendance + Telecaller/CRM section,
+ * and Field Inspector/Engineer gets Attendance + All Projects, Customers & Quotations.
+ */
+function getDefaultPermissionsForUser(role, designation = '') {
+    const cleanRole = String(role || 'EMPLOYEE').trim().toUpperCase();
+    const cleanDesig = String(designation || '').trim().toLowerCase();
+
+    if (cleanRole === 'BRANCH_MANAGER' || cleanRole === 'MANAGER') {
+        return {
+            permissions: [...(ROLE_MIGRATION_BASELINES.BRANCH_MANAGER.permissions || [])],
+            fieldPermissions: [...(ROLE_MIGRATION_BASELINES.BRANCH_MANAGER.fieldPermissions || [])],
+            dataScope: 'BRANCH'
+        };
+    }
+
+    if (cleanRole === 'SUPER_ADMIN') {
+        return {
+            permissions: [],
+            fieldPermissions: [],
+            dataScope: 'GLOBAL'
+        };
+    }
+
+    let selectedPerms = null;
+    if (/telecall|caller|tellecall/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.TELECALLER;
+    } else if (/field.*(insp|eng|survey)|inspector|surveyor/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.FIELD_INSPECTOR;
+    } else if (/sales/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.SALES_EXECUTIVE;
+    } else if (/install/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.INSTALLATION_TECHNICIAN;
+    } else if (/service|complaint|maint/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.SERVICE_TECHNICIAN;
+    } else if (/store|invent|warehouse/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.STORE_KEEPER;
+    } else if (/account|finance|bill/i.test(cleanDesig)) {
+        selectedPerms = DESIGNATION_PRESETS.ACCOUNTANT;
+    } else {
+        selectedPerms = ROLE_MIGRATION_BASELINES.EMPLOYEE.permissions;
+    }
+
+    return {
+        permissions: Array.from(new Set([...COMMON_BASIC_ATTENDANCE, ...(selectedPerms || [])])),
+        fieldPermissions: [],
+        dataScope: /field.*(insp|eng|survey)|inspector|surveyor/i.test(cleanDesig) ? 'BRANCH' : 'ASSIGNED'
+    };
+}
+
 module.exports = {
     MODULES,
     PERMISSIONS,
     SENSITIVE_FIELDS,
     ROLE_MIGRATION_BASELINES,
     DESIGNATION_PRESETS,
+    COMMON_BASIC_ATTENDANCE,
+    getDefaultPermissionsForUser,
     isValidPermission,
     isValidFieldPermission,
     getAllPermissionKeys,

@@ -428,6 +428,88 @@ class QuotationController {
     }
 
     /**
+     * Collect all QuotationRequest IDs, linked Quotation IDs, and Customer IDs owned by an employee
+     */
+    static async getEmployeeRelatedRefs(empId) {
+        const [allEmpRequests, empCustomers] = await Promise.all([
+            QuotationRequest.find({ assignedEmployee: empId }).select('_id linkedQuotation status').lean(),
+            Customer.find({
+                $or: [
+                    { assignedEmployee: empId },
+                    { createdBy: empId }
+                ]
+            }).select('_id').lean()
+        ]);
+
+        const empRequestIds = allEmpRequests.map(r => r._id).filter(Boolean);
+        const empLinkedQuoteIds = allEmpRequests
+            .map(r => (r.linkedQuotation && r.linkedQuotation._id) ? r.linkedQuotation._id : r.linkedQuotation)
+            .filter(Boolean);
+        const empCustomerIds = empCustomers.map(c => c._id).filter(Boolean);
+
+        return { allEmpRequests, empRequestIds, empLinkedQuoteIds, empCustomerIds };
+    }
+
+    /**
+     * Verify whether an EMPLOYEE owns or is assigned to view a Quotation record/document
+     */
+    static async canEmployeeAccessQuotation(quotation, sessionUser) {
+        if (!quotation || !sessionUser) return false;
+        if (sessionUser.role !== 'EMPLOYEE') return true;
+        if (AuthorizationService.hasPermission(sessionUser, 'quotations.all.view')) return true;
+
+        // Employees granted manager-level quotation edit/prepare/approve permissions can access same-branch quotations
+        const hasBranchQuotePrivilege = AuthorizationService.hasAnyPermission(sessionUser, [
+            'quotations.preparation.view', 'quotations.preparation.create',
+            'quotations.approval.approve', 'quotations.approval.reject',
+            'quotations.archive.manage'
+        ]);
+        if (hasBranchQuotePrivilege) {
+            const userBranch = sessionUser.branchId ? String(sessionUser.branchId._id || sessionUser.branchId) : '';
+            const quoteBranch = quotation.branch ? String(quotation.branch._id || quotation.branch) : '';
+            if (!quoteBranch || !userBranch || quoteBranch === userBranch) return true;
+        }
+
+        const empIdStr = String(sessionUser._id);
+        const isPreparer = quotation.preparedBy && String(quotation.preparedBy._id || quotation.preparedBy) === empIdStr;
+        const isAssignedEmp = quotation.assignedEmployee && String(quotation.assignedEmployee._id || quotation.assignedEmployee) === empIdStr;
+        if (isPreparer || isAssignedEmp) return true;
+
+        // Check populated or stored quotationRequestId ownership
+        const reqRef = quotation.quotationRequestId;
+        if (reqRef && typeof reqRef === 'object' && reqRef.assignedEmployee) {
+            if (String(reqRef.assignedEmployee._id || reqRef.assignedEmployee) === empIdStr) return true;
+        }
+        const reqId = reqRef ? (reqRef._id || reqRef) : null;
+        const matchingRequest = await QuotationRequest.exists({
+            assignedEmployee: sessionUser._id,
+            $or: [
+                ...(reqId ? [{ _id: reqId }] : []),
+                { linkedQuotation: quotation._id }
+            ]
+        });
+        if (matchingRequest) return true;
+
+        // Check associated Customer ownership
+        const custIds = [
+            quotation.customerId && (quotation.customerId._id || quotation.customerId),
+            quotation.customer && (quotation.customer._id || quotation.customer)
+        ].filter(Boolean);
+        if (custIds.length > 0) {
+            const ownsCustomer = await Customer.exists({
+                _id: { $in: custIds },
+                $or: [
+                    { assignedEmployee: sessionUser._id },
+                    { createdBy: sessionUser._id }
+                ]
+            });
+            if (ownsCustomer) return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Employee Quotations & Requests Workspace
      */
     static async getEmployeeQuotations(req, res) {
@@ -445,23 +527,36 @@ class QuotationController {
                 requestQuery.status = statusFilter;
             }
 
-            const requests = await QuotationRequest.find(requestQuery)
-                .populate('customer', 'name mobile city')
-                .populate('linkedQuotation')
-                .sort({ createdAt: -1 });
+            const [requests, refs] = await Promise.all([
+                QuotationRequest.find(requestQuery)
+                    .populate('customer', 'name mobile city')
+                    .populate('linkedQuotation')
+                    .sort({ createdAt: -1 }),
+                QuotationController.getEmployeeRelatedRefs(sessionUser._id)
+            ]);
 
-            // Calculate Employee KPI metrics
-            const allEmpRequests = await QuotationRequest.find({ assignedEmployee: sessionUser._id });
-            const empRequestIds = allEmpRequests.map(r => r._id);
+            const { allEmpRequests, empRequestIds, empLinkedQuoteIds, empCustomerIds } = refs;
 
-            const quotations = await Quotation.find({
-                isArchived: { $ne: true },
-                $or: [
-                    { preparedBy: sessionUser._id },
-                    { assignedEmployee: sessionUser._id },
-                    { quotationRequestId: { $in: empRequestIds } }
-                ]
-            })
+            const quoteOrConditions = [
+                { preparedBy: sessionUser._id },
+                { assignedEmployee: sessionUser._id }
+            ];
+            if (empRequestIds.length > 0) {
+                quoteOrConditions.push({ quotationRequestId: { $in: empRequestIds } });
+            }
+            if (empLinkedQuoteIds.length > 0) {
+                quoteOrConditions.push({ _id: { $in: empLinkedQuoteIds } });
+            }
+            if (empCustomerIds.length > 0) {
+                quoteOrConditions.push({ customerId: { $in: empCustomerIds } });
+                quoteOrConditions.push({ customer: { $in: empCustomerIds } });
+            }
+
+            const quoteFilter = AuthorizationService.hasPermission(sessionUser, 'quotations.all.view')
+                ? { isArchived: { $ne: true } }
+                : { isArchived: { $ne: true }, $or: quoteOrConditions };
+
+            const quotations = await Quotation.find(quoteFilter)
                 .populate('quotationRequestId', 'requestNumber proposedCapacityKw')
                 .sort({ createdAt: -1 });
 
@@ -522,12 +617,22 @@ class QuotationController {
                 });
             }
 
-            // Authorization: Employee can only view their own request
-            if (sessionUser.role === 'EMPLOYEE' && String(request.assignedEmployee._id) !== String(sessionUser._id)) {
-                return res.status(403).render('private/errors/403', {
-                    title: 'Access Denied | Shivay Energy Solutions',
-                    message: 'You are not authorized to view this quotation request.'
-                });
+            // Authorization: Employee can only view their own request (unless granted all view or branch quotation management perms)
+            if (sessionUser.role === 'EMPLOYEE' && !AuthorizationService.hasPermission(sessionUser, 'quotations.all.view')) {
+                const hasBranchQuotePrivilege = AuthorizationService.hasAnyPermission(sessionUser, [
+                    'quotations.preparation.view', 'quotations.preparation.create',
+                    'quotations.approval.approve', 'quotations.requests.edit', 'quotations.requests.reject'
+                ]);
+                const userBranch = sessionUser.branchId ? String(sessionUser.branchId._id || sessionUser.branchId) : '';
+                const reqBranch = request.branch ? String(request.branch._id || request.branch) : '';
+                const canViewBranchReq = hasBranchQuotePrivilege && (!reqBranch || !userBranch || reqBranch === userBranch);
+                const assignedEmpId = request.assignedEmployee ? String(request.assignedEmployee._id || request.assignedEmployee) : '';
+                if (!canViewBranchReq && assignedEmpId !== String(sessionUser._id)) {
+                    return res.status(403).render('private/errors/403', {
+                        title: 'Access Denied | Shivay Energy Solutions',
+                        message: 'You are not authorized to view this quotation request.'
+                    });
+                }
             }
 
             // Fetch Status History
@@ -1123,9 +1228,8 @@ class QuotationController {
 
             // Authorization
             if (sessionUser.role === 'EMPLOYEE') {
-                const isPreparer = quotation.preparedBy && String(quotation.preparedBy._id || quotation.preparedBy) === String(sessionUser._id);
-                const isAssignedEmp = quotation.assignedEmployee && String(quotation.assignedEmployee._id || quotation.assignedEmployee) === String(sessionUser._id);
-                if (!isPreparer && !isAssignedEmp) {
+                const canViewQuote = await QuotationController.canEmployeeAccessQuotation(quotation, sessionUser);
+                if (!canViewQuote) {
                     return res.status(403).render('private/errors/403', {
                         title: 'Access Denied | Shivay Energy Solutions',
                         message: 'You are not authorized to view this quotation.'
@@ -1145,13 +1249,14 @@ class QuotationController {
             }
 
             // Generate WhatsApp Sharing Text
-            const acceptUrl = `${req.protocol}://${req.get('host')}/quotation/accept/${quotation.customerResponse.acceptanceToken}`;
+            const acceptToken = quotation.customerResponse ? quotation.customerResponse.acceptanceToken : '';
+            const acceptUrl = `${req.protocol}://${req.get('host')}/quotation/accept/${acceptToken}`;
             const whatsappText = encodeURIComponent(
                 `Namaste ${quotation.customerName} ji! Greetings from Shivay Energy Solutions.\n\n` +
                 `Your official rooftop solar quotation *${quotation.quotationNumber}* (${quotation.plantCapacityKw} kW) is ready!\n\n` +
-                `⚡ Gross Cost: ₹${quotation.grandTotal.toLocaleString('en-IN')}\n` +
-                `🎁 PM Surya Ghar Subsidy: ₹${quotation.estimatedSubsidy.toLocaleString('en-IN')}\n` +
-                `✅ Net Investment: *₹${quotation.netPayableAfterSubsidy.toLocaleString('en-IN')}*\n\n` +
+                `⚡ Gross Cost: ₹${(quotation.grandTotal || 0).toLocaleString('en-IN')}\n` +
+                `🎁 PM Surya Ghar Subsidy: ₹${(quotation.estimatedSubsidy || 0).toLocaleString('en-IN')}\n` +
+                `✅ Net Investment: *₹${(quotation.netPayableAfterSubsidy || 0).toLocaleString('en-IN')}*\n\n` +
                 `View proposal details & confirm your approval online here:\n${acceptUrl}\n\n` +
                 `For any queries, please call us at ${companyData.company.contact.phone}.`
             );
@@ -1203,17 +1308,14 @@ class QuotationController {
             }
 
             // Authorization: If accessed via internal app, verify session role
-            if (sessionUser) {
-                if (sessionUser.role === 'EMPLOYEE') {
-                    const isPreparer = quotation.preparedBy && String(quotation.preparedBy._id || quotation.preparedBy) === String(sessionUser._id);
-                    const isAssigned = quotation.assignedEmployee && String(quotation.assignedEmployee._id || quotation.assignedEmployee) === String(sessionUser._id);
-                    const isApprovedState = ['APPROVED', 'SHARED', 'CUSTOMER_ACCEPTED'].includes(quotation.status);
-                    if (!isPreparer && !isAssigned && !isApprovedState) {
-                        return res.status(403).render('private/errors/403', {
-                            title: 'Access Denied',
-                            message: 'Unauthorized access to quotation document.'
-                        });
-                    }
+            if (sessionUser && sessionUser.role === 'EMPLOYEE') {
+                const isApprovedState = ['APPROVED', 'SHARED', 'CUSTOMER_ACCEPTED', 'CUSTOMER_REJECTED'].includes(quotation.status);
+                const canViewDoc = isApprovedState || await QuotationController.canEmployeeAccessQuotation(quotation, sessionUser);
+                if (!canViewDoc) {
+                    return res.status(403).render('private/errors/403', {
+                        title: 'Access Denied',
+                        message: 'Unauthorized access to quotation document.'
+                    });
                 }
             }
 
